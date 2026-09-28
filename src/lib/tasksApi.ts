@@ -1,6 +1,7 @@
 import { supabase } from "./supabase";
-import { Task, TaskTiming } from "./types";
+import { Task, TaskDraft } from "./types";
 
+// Newest-first, which taskHistory and upsertTask both rely on.
 export async function fetchTasks(userId: string): Promise<Task[]> {
   const { data, error } = await supabase
     .from("tasks")
@@ -12,34 +13,20 @@ export async function fetchTasks(userId: string): Promise<Task[]> {
   return data ?? [];
 }
 
-export async function addTask(
-  userId: string,
-  title: string,
-  estimatedMinutes: number,
-  timing: TaskTiming,
-  category: string | null,
-  scheduledTime: string | null
-): Promise<Task> {
-  const { data, error } = await supabase
-    .from("tasks")
-    .insert({
-      user_id: userId,
-      title: title.trim(),
-      estimated_minutes: estimatedMinutes,
-      timing,
-      category,
-      scheduled_time: scheduledTime,
-    })
-    .select()
-    .single();
+// Creates a task through public.create_task, the single creation path shared
+// with Brain Dump and Siri; the owner comes from the session, not the draft.
+export async function createTask(draft: TaskDraft): Promise<Task> {
+  const { data, error } = await supabase.rpc("create_task", { draft });
 
   if (error) throw error;
-  return data;
+  return data as Task;
 }
 
+// `actualMinutes` is null when the real time is unknown (e.g. completed via
+// Siri), so the estimate-accuracy stat isn't skewed by a guess.
 export async function completeTask(
   taskId: string,
-  actualMinutes: number
+  actualMinutes: number | null
 ): Promise<Task> {
   const { data, error } = await supabase
     .from("tasks")

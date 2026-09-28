@@ -1,4 +1,4 @@
-import { Task, TaskTiming } from "./types";
+import type { Task, TaskTiming } from "./task.ts";
 
 export interface TaskHistoryEntry {
   title: string; // most recent casing used for this task name

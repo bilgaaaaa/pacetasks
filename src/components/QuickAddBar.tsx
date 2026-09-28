@@ -15,7 +15,7 @@ import {
   TaskHistoryEntry,
   findExactMatch,
   findMatches,
-} from "../lib/taskHistory";
+} from "@domain/taskHistory";
 import { DropdownPill } from "./DropdownPill";
 
 const MINUTE_PRESETS = [3, 5, 15, 30, 60];

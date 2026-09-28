@@ -13,11 +13,13 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { theme } from "../lib/theme";
-import { Task, TaskTiming } from "../lib/types";
+import { Task } from "../lib/types";
 import { useTasks } from "../hooks/useTasks";
 import { useSettings } from "../hooks/useSettings";
-import { buildTaskHistory, findExactMatch } from "../lib/taskHistory";
 import { computeStats } from "../lib/stats";
+import { buildTaskHistory, findExactMatch } from "@domain/taskHistory";
+import { selectTodayTasks } from "@domain/todayTasks";
+import { toLocalDateKey } from "@domain/dates";
 import { QuickAddBar } from "../components/QuickAddBar";
 import { TaskItem } from "../components/TaskItem";
 import { FocusSessionModal } from "../components/FocusSessionModal";
@@ -27,12 +29,6 @@ interface Props {
   userId: string | undefined;
 }
 
-// Pending tasks read in this fixed order (before work, then anytime, then
-// after work) so the "when" grouping from earlier versions is still implied
-// by list order, even though this design shows one continuous list with no
-// section headers.
-const TIMING_ORDER: TaskTiming[] = ["before_work", "anytime", "after_work"];
-
 function greetingEyebrow(): string {
   const now = new Date();
   const day = now.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
@@ -41,12 +37,13 @@ function greetingEyebrow(): string {
   return `${day} · ${part}`;
 }
 
-// Home screen: quick capture, then every task in one calm list (ordered by
-// timing, completed ones sink to the bottom). Each task can be timed one of
-// two ways: a lightweight range timer (tap its minutes pill — counts down
-// from the task's suggested max, learned from history) or, for tasks with a
-// fixed scheduled time, the full-screen Focus/Pomodoro modal via its FOCUS
-// badge. An end-of-day card appears once nothing is left pending.
+// Home screen: quick capture, then today's tasks in one calm list (ordered by
+// timing, completed ones sink to the bottom, future-dated ones stay hidden).
+// Each task can be timed one of two ways: a lightweight range timer (tap its
+// minutes pill — counts down from the task's suggested max, learned from
+// history) or, for tasks with a fixed scheduled time, the full-screen
+// Focus/Pomodoro modal via its FOCUS badge. An end-of-day card appears once
+// nothing is left pending.
 export function TaskListScreen({ userId }: Props) {
   const { tasks, loading, error, refresh, create, complete, remove, clearCompleted } =
     useTasks(userId);
@@ -56,31 +53,25 @@ export function TaskListScreen({ userId }: Props) {
   const history = useMemo(() => buildTaskHistory(tasks), [tasks]);
   const stats = useMemo(() => computeStats(tasks), [tasks]);
 
-  const totalCount = tasks.length;
-  const completedCount = useMemo(
-    () => tasks.filter((t) => t.status === "done").length,
-    [tasks]
+  // "Today" is the phone's local calendar day; recomputed on every render so a
+  // list left open past midnight updates on the next foreground reload.
+  const todayKey = toLocalDateKey(new Date());
+  const { pending, done } = useMemo(
+    () => selectTodayTasks(tasks, todayKey),
+    [tasks, todayKey]
   );
-  const remainingCount = totalCount - completedCount;
-  const hasCompleted = completedCount > 0;
-  const allDone = totalCount > 0 && remainingCount === 0;
+  const orderedTasks = useMemo(() => [...pending, ...done], [pending, done]);
+  const hasCompleted = done.length > 0;
+  const allDone = orderedTasks.length > 0 && pending.length === 0;
 
-  const orderedTasks = useMemo(() => {
-    const pending = tasks
-      .filter((t) => t.status === "pending")
-      .sort((a, b) => TIMING_ORDER.indexOf(a.timing) - TIMING_ORDER.indexOf(b.timing));
-    const done = tasks.filter((t) => t.status === "done");
-    return [...pending, ...done];
-  }, [tasks]);
-
-  // Focus tasks (any task with a fixed start time) ordered by that time —
+  // Today's Focus tasks (any task with a fixed start time) ordered by that time —
   // this is what "SESSION X OF Y" in the Focus modal counts against.
   const focusTasksToday = useMemo(
     () =>
-      [...tasks]
+      orderedTasks
         .filter((t) => t.scheduled_time)
         .sort((a, b) => (a.scheduled_time! < b.scheduled_time! ? -1 : 1)),
-    [tasks]
+    [orderedTasks]
   );
   const focusSessionIndex = focusTask
     ? focusTasksToday.findIndex((t) => t.id === focusTask.id) + 1
@@ -119,7 +110,14 @@ export function TaskListScreen({ userId }: Props) {
           <QuickAddBar
             history={history}
             onAdd={(title, minutes, timing, category, scheduledTime) =>
-              create(title, minutes, timing, category, scheduledTime)
+              create({
+                title,
+                estimated_minutes: minutes,
+                timing,
+                category,
+                scheduled_time: scheduledTime,
+                source: "app",
+              })
             }
           />
         </View>

@@ -1,4 +1,5 @@
 import { Task } from "./types";
+import { addDays, daysBetween, toLocalDateKey } from "@domain/dates";
 
 export interface DailyStat {
   date: string;
@@ -18,18 +19,13 @@ export interface Stats {
   dailyBreakdown: DailyStat[];
 }
 
+// Days are bucketed in the phone's local calendar, not UTC, so a task finished
+// at 01:00 in Padova counts toward that day rather than the previous one.
 function toDateKey(iso: string): string {
-  return iso.slice(0, 10);
+  return toLocalDateKey(new Date(iso));
 }
 
-function daysBetween(a: string, b: string): number {
-  const msPerDay = 24 * 60 * 60 * 1000;
-  return Math.round(
-    (new Date(`${a}T00:00:00Z`).getTime() - new Date(`${b}T00:00:00Z`).getTime()) /
-      msPerDay
-  );
-}
-
+// Streaks, best day and estimate accuracy from completed tasks, all in local days.
 export function computeStats(tasks: Task[]): Stats {
   const completed = tasks.filter(
     (t) => t.status === "done" && t.completed_at !== null
@@ -54,23 +50,21 @@ export function computeStats(tasks: Task[]): Stats {
     a.date < b.date ? 1 : -1
   );
 
-  const todayKey = toDateKey(new Date().toISOString());
+  const todayKey = toLocalDateKey(new Date());
   const today = byDay.get(todayKey);
 
   let currentStreakDays = 0;
   let cursor = todayKey;
   while (byDay.has(cursor)) {
     currentStreakDays += 1;
-    const prevDate = new Date(`${cursor}T00:00:00Z`);
-    prevDate.setUTCDate(prevDate.getUTCDate() - 1);
-    cursor = prevDate.toISOString().slice(0, 10);
+    cursor = addDays(cursor, -1);
   }
 
   const sortedAsc = [...dailyBreakdown].sort((a, b) => (a.date > b.date ? 1 : -1));
   let bestStreakDays = 0;
   let runLength = 0;
   for (let i = 0; i < sortedAsc.length; i++) {
-    if (i === 0 || daysBetween(sortedAsc[i].date, sortedAsc[i - 1].date) === 1) {
+    if (i === 0 || daysBetween(sortedAsc[i - 1].date, sortedAsc[i].date) === 1) {
       runLength += 1;
     } else {
       runLength = 1;
@@ -156,15 +150,15 @@ export function buildWeekdayHeatmap(
     for (let d = 0; d < 5; d++) {
       const date = new Date(weekStart);
       date.setDate(date.getDate() + d);
-      const key = date.toISOString().slice(0, 10);
+      const key = toLocalDateKey(date);
       const completedCount = countByDate.get(key) ?? 0;
       week.push({ date: key, completedCount, level: levelFor(completedCount) });
     }
     weeks.push(week);
   }
 
-  const firstDate = new Date(weeks[0][0].date);
-  const lastDate = new Date(weeks[weeks.length - 1][4].date);
+  const firstDate = new Date(`${weeks[0][0].date}T12:00:00`);
+  const lastDate = new Date(`${weeks[weeks.length - 1][4].date}T12:00:00`);
   const monthFormat = (d: Date) => d.toLocaleDateString("en-US", { month: "short" });
   const rangeLabel = `${monthFormat(firstDate)} — ${monthFormat(lastDate)}`;
 

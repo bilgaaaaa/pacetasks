@@ -1,12 +1,5 @@
--- PaceTasks database schema.
--- Run this once in your Supabase project: Dashboard -> SQL Editor -> New query -> paste -> Run.
--- Already have a "tasks"/"user_settings" table from an earlier version? Just run these instead:
---   alter table public.tasks add column if not exists category text;
---   alter table public.tasks add column if not exists scheduled_time text;
---   alter table public.user_settings add column if not exists timer_chime_enabled boolean not null default true;
---   alter table public.user_settings add column if not exists haptics_enabled boolean not null default false;
---   alter table public.user_settings add column if not exists pomodoro_work_minutes int not null default 25;
---   alter table public.user_settings add column if not exists pomodoro_break_minutes int not null default 5;
+-- Baseline: the PaceTasks schema as it existed before Supabase CLI migrations were adopted.
+-- Existing projects already have this; mark it applied with `supabase migration repair --status applied 20260928000000`.
 
 create table if not exists public.tasks (
   id uuid primary key default gen_random_uuid(),
