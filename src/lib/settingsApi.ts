@@ -10,6 +10,7 @@ const DEFAULTS: Omit<UserSettings, "user_id" | "updated_at"> = {
   haptics_enabled: false,
   pomodoro_work_minutes: 25,
   pomodoro_break_minutes: 5,
+  brain_dump_auto_create: false,
 };
 
 export async function fetchOrCreateSettings(
