@@ -50,3 +50,20 @@ export function daysBetween(from: string, to: string): number {
     (new Date(`${to}T00:00:00Z`).getTime() - new Date(`${from}T00:00:00Z`).getTime()) / msPerDay
   );
 }
+
+const WEEKDAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+// English weekday name of a date key, e.g. "Monday"; used to anchor the AI's relative dates.
+export function weekdayName(dateKey: string): string {
+  return WEEKDAY_NAMES[new Date(`${dateKey}T00:00:00Z`).getUTCDay()];
+}
+
+// True when `timeZone` is an IANA zone this runtime knows, e.g. "Europe/Rome".
+export function isValidTimeZone(timeZone: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone });
+    return true;
+  } catch {
+    return false;
+  }
+}

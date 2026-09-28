@@ -22,5 +22,6 @@ export interface UserSettings {
   haptics_enabled: boolean; // haptic tap when a task is completed
   pomodoro_work_minutes: number; // Focus session length
   pomodoro_break_minutes: number; // break length between Focus sessions
+  brain_dump_auto_create: boolean; // create high-confidence Brain Dump tasks without review
   updated_at: string;
 }

@@ -6,5 +6,6 @@
     "paths": {
       "@domain/*": ["./supabase/functions/_shared/domain/*"]
     }
-  }
+  },
+  "include": ["App.tsx", "src/**/*", "supabase/functions/_shared/domain/**/*"]
 }

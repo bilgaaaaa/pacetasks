@@ -38,8 +38,14 @@ supabase/migrations/       Database schema, RLS policies and the create_task RPC
 supabase/tests/database/   pgTAP tests for the database (`npm run db:test`)
 supabase/functions/_shared/domain/
                            Pure TypeScript domain logic shared by the app and
-                           (later) Edge Functions: task model, dates, Today
-                           selection, task history. Imported in the app as `@domain/...`.
+                           Edge Functions: task model, dates, Today selection,
+                           task history, Brain Dump schema/normalization.
+                           Imported in the app as `@domain/...`.
+supabase/functions/_shared/server/
+                           Deno-only server code: vendor-neutral AI layer,
+                           Brain Dump service/handler, HTTP errors.
+supabase/functions/brain-dump/   The Brain Dump Edge Function (thin entrypoint)
+supabase/functions/_eval/        AI evaluation set + runner (never deployed)
 ```
 
 ## 1. Set up Supabase (free tier is enough)
@@ -89,7 +95,61 @@ No quotes, no trailing slash on the URL, no duplicated variable names.
 npm test            # Jest: shared domain logic and stats (runs in Europe/Rome time)
 npm run typecheck   # TypeScript
 npm run db:test     # pgTAP database tests — needs Docker and `npx supabase start`
+cd supabase/functions && deno task test    # Edge Function + AI layer tests (needs Deno 2)
+cd supabase/functions && deno task check   # type-check the Edge Function
 ```
+
+## AI Brain Dump (backend)
+
+Brain Dump turns messy text ("domani chiamare il veterinario, finish the
+presentation before Friday, belki spora giderim") into task proposals. The AI
+only *proposes*: its output is schema-validated, normalized with PaceTasks'
+own rules (dates from the phone's today, durations from your history, timing
+from your work hours), and tasks are only created through `create_task`.
+
+```
+app / Siri / Shortcuts → POST /functions/v1/brain-dump
+  → quota → AIProvider.parseBrainDump (any vendor) → zod validation (1 retry)
+  → normalizeBrainDump → review policy → brain_dump_sessions (proposal)
+  → mode "auto" + auto-create on + nothing to review → commit_brain_dump → create_task
+```
+
+**Choose a model with the evaluation set** (30 English/Italian/Turkish/mixed
+cases, anchored to Monday 2026-09-28). Needs [Deno 2](https://deno.com) and an API key:
+```bash
+cd supabase/functions
+ANTHROPIC_API_KEY=... deno task eval --provider anthropic --model <model> --price-in <$/M in> --price-out <$/M out>
+OPENAI_API_KEY=...    deno task eval --provider openai    --model <model> --price-in <$/M in> --price-out <$/M out>
+```
+It prints each case and a scorecard (cases passed, tasks kept in their original
+language, field accuracy, retries, latency, cost per dump). Reports are saved
+in `_eval/brainDump/results/` (git-ignored).
+
+**Deploy:**
+```bash
+npx supabase db push                                  # brain_dump migration
+npx supabase secrets set AI_PROVIDER=anthropic AI_MODEL_BRAIN_DUMP=<model> ANTHROPIC_API_KEY=<key>
+npx supabase secrets set BRAIN_DUMP_DAILY_LIMIT=30    # optional, default 30 per user per day
+npx supabase functions deploy brain-dump
+```
+Switching vendor or model later is only a `secrets set` — no code change or
+redeploy. API keys live only in Supabase secrets, never in the app.
+
+**Try it** with a signed-in user's access token (e.g. log `session.access_token` once in the app):
+```bash
+curl -X POST "$EXPO_PUBLIC_SUPABASE_URL/functions/v1/brain-dump" \
+  -H "Authorization: Bearer <access_token>" -H "apikey: $EXPO_PUBLIC_SUPABASE_ANON_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"text": "domani chiamare il veterinario e comprare lo shampoo", "timeZone": "Europe/Rome"}'
+```
+Request: `text` (≤2000 chars), `timeZone` (the phone's IANA zone), optional
+`locale`, `channel` (`app` | `siri` | `shortcut`), `mode` (`propose` | `auto`).
+Response: `sessionId`, `status`, `needsReview`, `reviewReasons`, `candidates`
+(each with the exact `draft` that will be created, `issues`, `confidence`),
+`unparsedFragments`, `createdTasks`. Errors are `{ error: { code, message, retryable } }`.
+
+Privacy: raw brain dump text is deleted after 30 days by a nightly `pg_cron`
+job; function logs never contain the text.
 
 ## 4. Install and run
 
