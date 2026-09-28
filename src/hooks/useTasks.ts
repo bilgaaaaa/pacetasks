@@ -28,13 +28,21 @@ export function useTasks(userId: string | undefined) {
   }, [refresh]);
 
   const create = useCallback(
-    async (title: string, estimatedMinutes: number, timing: TaskTiming) => {
+    async (
+      title: string,
+      estimatedMinutes: number,
+      timing: TaskTiming,
+      category: string | null,
+      scheduledTime: string | null
+    ) => {
       if (!userId) return;
       const newTask = await tasksApi.addTask(
         userId,
         title,
         estimatedMinutes,
-        timing
+        timing,
+        category,
+        scheduledTime
       );
       setTasks((prev) => [newTask, ...prev]);
     },
@@ -51,5 +59,11 @@ export function useTasks(userId: string | undefined) {
     setTasks((prev) => prev.filter((t) => t.id !== taskId));
   }, []);
 
-  return { tasks, loading, error, refresh, create, complete, remove };
+  const clearCompleted = useCallback(async () => {
+    if (!userId) return;
+    await tasksApi.clearCompletedTasks(userId);
+    setTasks((prev) => prev.filter((t) => t.status !== "done"));
+  }, [userId]);
+
+  return { tasks, loading, error, refresh, create, complete, remove, clearCompleted };
 }

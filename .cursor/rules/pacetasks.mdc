@@ -1,0 +1,41 @@
+---
+description: PaceTasks project conventions
+alwaysApply: true
+---
+
+# PaceTasks
+
+Expo (React Native) + TypeScript task app backed by Supabase. Anonymous
+auth — no login screen, each device gets a stable Supabase user id via
+`ensureSession()` in `src/lib/supabase.ts`. UI matches the "PaceTasks Film"
+Claude Design: a light sage/cream theme with a forest-green accent (see
+`src/lib/theme.ts`), plain white cards with no per-timing color coding, and
+a text-only pill tab bar (see `App.tsx`'s `PillTabBar`).
+
+## Structure
+
+- `App.tsx` — root: waits for session, sets up the 3-tab navigator (Tasks / Stats / Settings) behind a custom `PillTabBar` (text-only, no icons).
+- `src/screens/` — one file per tab screen. Screens own layout + hook wiring, no direct Supabase calls.
+- `src/components/` — presentational pieces reused across screens (QuickAddBar, TaskItem, FocusSessionModal, EndOfDayCard, WeekHeatmap, DropdownPill, Stepper, StatCard). No data fetching here.
+- `src/hooks/` — `useSession`, `useTasks`, `useSettings`. All Supabase reads/writes for a screen go through these, never inline in a component. Both `TaskListScreen` and `SettingsScreen` call `useSettings` independently (each screen owns its own data, per convention) rather than prop-drilling settings down from `App.tsx`.
+- `src/lib/tasksApi.ts` / `src/lib/settingsApi.ts` — the only files that call `supabase.from(...)` directly. If the schema changes, start here.
+- `src/lib/stats.ts` — pure functions only (no React, no network): `computeStats` (streaks/accuracy) and `buildWeekdayHeatmap` (the Stats tab's Mon-Fri × N-week grid).
+- `src/lib/taskHistory.ts` — pure functions only, groups tasks by normalized (trimmed, lowercased) title. Powers quick-add autocomplete, the min/last/max time suggestions, and `TaskItem`'s range-timer bounds (`findExactMatch` looked up per task in `TaskListScreen`).
+- `src/lib/categories.ts` — fixed list of task categories (`id`, `label`, `icon`, `color`). A task's `category` field stores a category `id` or `null` ("No category"). Add new categories here, never inline in a component.
+- `src/components/DropdownPill.tsx` — generic one-tap choice control (Modal-based) used for the timing/time/category/scheduled-time pickers in `QuickAddBar`. Reuse it for any future "pick one of a few options" control.
+- `src/components/TaskItem.tsx` — owns two independent timers: a manual actual-minutes stepper (always available via the checkbox) and, for tasks without a `scheduled_time`, a lightweight range timer (tap the minutes pill) that counts down from `suggestedMax` and flags "in range" once past `suggestedMin` — both props computed by the caller (`TaskListScreen`) from `taskHistory`, not fetched inside the component.
+- `src/components/FocusSessionModal.tsx` — the Pomodoro countdown, opened from a task's FOCUS badge (shown when `task.scheduled_time` is set — mutually exclusive with the range timer). Reaching zero calls `onComplete` with `actual_minutes = workMinutes` — don't change that without considering the "estimate accuracy" stat, which depends on real actual-vs-estimated data.
+- `src/lib/theme.ts` — single source of colors/spacing/radius/typography. Never hardcode a hex color or px value in a component; add it to `theme` instead.
+- `supabase/schema.sql` — source of truth for the DB schema + RLS policies. Keep it in sync with `src/lib/types.ts`. The `alter table` migration lines at the top must stay in sync with any new column added to `create table`.
+- `src/components/TaskStatsBar.tsx`, `CategoryFilterRow.tsx`, `ProgressRing.tsx` — dead code from an earlier redesign, unused by any screen. Don't import them; delete them if this environment ever lets you.
+
+## Conventions
+
+- Naming: `camelCase` for functions/variables, `PascalCase` for components/types, snake_case only for DB columns (matches Postgres/Supabase convention) — mirrored exactly in `src/lib/types.ts`.
+- Every exported function/component gets a 1–2 sentence comment explaining *why*, not a restatement of the code.
+- Timing values are always one of `"before_work" | "after_work" | "anytime"` (see `TaskTiming` in `src/lib/types.ts`) — don't introduce new string literals for this without updating the type and the DB check constraint.
+- Category values are a category `id` from `src/lib/categories.ts` or `null` — always look categories up via `getCategory(id)` (handles `null` and unknown/deleted ids) rather than indexing `CATEGORIES` directly.
+- A task's `scheduled_time` (`"HH:MM"` or `null`) is what enables Focus mode instead of the range timer — it's independent of `timing`; a task can have both a timing bucket and a fixed time.
+- Keep screens dumb: fetching/mutation logic belongs in `src/hooks/*` or `src/lib/*Api.ts`, not inside a screen component.
+- Icons: use `Ionicons` from `@expo/vector-icons`. The current design mostly avoids icons in favor of plain text (pills, tab bar) — only add an icon where the design shows one.
+- Color: this design intentionally uses one green-based palette everywhere (no per-timing color coding on task rows) — category tags are the one place distinct accent hues (`theme.colors.indigo/purple/warning/pink`) are used, to tell categories apart at a glance.

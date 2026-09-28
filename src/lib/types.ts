@@ -10,6 +10,8 @@ export interface Task {
   estimated_minutes: number;
   actual_minutes: number | null;
   timing: TaskTiming;
+  category: string | null; // Category id from lib/categories.ts, or null for "No category"
+  scheduled_time: string | null; // "HH:MM", 24h — a fixed start time enables Focus/Pomodoro mode for this task
   status: TaskStatus;
   created_at: string;
   completed_at: string | null;
@@ -21,5 +23,9 @@ export interface UserSettings {
   work_end_hour: number;
   reminder_enabled: boolean;
   reminder_time: string; // "HH:MM", 24h
+  timer_chime_enabled: boolean; // haptic "chime" when a Focus session or range-timer ends
+  haptics_enabled: boolean; // haptic tap when a task is completed
+  pomodoro_work_minutes: number; // Focus session length
+  pomodoro_break_minutes: number; // break length between Focus sessions
   updated_at: string;
 }

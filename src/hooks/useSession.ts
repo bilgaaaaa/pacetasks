@@ -2,8 +2,6 @@ import { useEffect, useState } from "react";
 import { Session } from "@supabase/supabase-js";
 import { ensureSession, supabase } from "../lib/supabase";
 
-// Establishes (or restores) the anonymous Supabase session once at app
-// startup, then keeps it in sync if Supabase refreshes the token.
 export function useSession() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);

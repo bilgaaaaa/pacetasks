@@ -1,7 +1,7 @@
 import { Task } from "./types";
 
 export interface DailyStat {
-  date: string; // "YYYY-MM-DD"
+  date: string;
   completedCount: number;
   estimatedMinutes: number;
   actualMinutes: number;
@@ -14,12 +14,12 @@ export interface Stats {
   bestStreakDays: number;
   bestDayCount: number;
   totalCompleted: number;
-  estimateAccuracyPercent: number | null; // 100 = estimates matched reality exactly
+  estimateAccuracyPercent: number | null;
   dailyBreakdown: DailyStat[];
 }
 
 function toDateKey(iso: string): string {
-  return iso.slice(0, 10); // "YYYY-MM-DD" prefix of an ISO timestamp
+  return iso.slice(0, 10);
 }
 
 function daysBetween(a: string, b: string): number {
@@ -30,9 +30,6 @@ function daysBetween(a: string, b: string): number {
   );
 }
 
-// Turns raw completed tasks into the "beat your own record" numbers shown
-// on the stats screen. Pure function — no network/state — so it's easy to
-// reason about and unit test independently of the UI.
 export function computeStats(tasks: Task[]): Stats {
   const completed = tasks.filter(
     (t) => t.status === "done" && t.completed_at !== null
@@ -60,7 +57,6 @@ export function computeStats(tasks: Task[]): Stats {
   const todayKey = toDateKey(new Date().toISOString());
   const today = byDay.get(todayKey);
 
-  // Streak: walk backward from today while each preceding day has an entry.
   let currentStreakDays = 0;
   let cursor = todayKey;
   while (byDay.has(cursor)) {
@@ -70,7 +66,6 @@ export function computeStats(tasks: Task[]): Stats {
     cursor = prevDate.toISOString().slice(0, 10);
   }
 
-  // Best streak: scan all days sorted ascending, count consecutive runs.
   const sortedAsc = [...dailyBreakdown].sort((a, b) => (a.date > b.date ? 1 : -1));
   let bestStreakDays = 0;
   let runLength = 0;
@@ -116,4 +111,62 @@ export function computeStats(tasks: Task[]): Stats {
     estimateAccuracyPercent,
     dailyBreakdown,
   };
+}
+
+export interface HeatmapCell {
+  date: string;
+  completedCount: number;
+  level: number; // 0-4, darker = more tasks completed that day
+}
+
+export interface Heatmap {
+  weeks: HeatmapCell[][]; // outer: week (oldest first), inner: Mon..Fri
+  rangeLabel: string; // e.g. "Jun — Sep"
+}
+
+function levelFor(count: number): number {
+  if (count <= 0) return 0;
+  if (count <= 1) return 1;
+  if (count <= 2) return 2;
+  if (count <= 4) return 3;
+  return 4;
+}
+
+// Weekday-only (Mon-Fri) contribution grid for the Stats tab, covering the
+// most recent `weekCount` weeks including the current one. Weekends are
+// skipped since this app is built around a work schedule.
+export function buildWeekdayHeatmap(
+  dailyBreakdown: DailyStat[],
+  weekCount = 13
+): Heatmap {
+  const countByDate = new Map(dailyBreakdown.map((d) => [d.date, d.completedCount]));
+
+  const today = new Date();
+  const dayOfWeek = today.getDay(); // 0 = Sunday
+  const daysSinceMonday = (dayOfWeek + 6) % 7;
+  const thisMonday = new Date(today);
+  thisMonday.setHours(0, 0, 0, 0);
+  thisMonday.setDate(thisMonday.getDate() - daysSinceMonday);
+
+  const weeks: HeatmapCell[][] = [];
+  for (let w = weekCount - 1; w >= 0; w--) {
+    const weekStart = new Date(thisMonday);
+    weekStart.setDate(weekStart.getDate() - w * 7);
+    const week: HeatmapCell[] = [];
+    for (let d = 0; d < 5; d++) {
+      const date = new Date(weekStart);
+      date.setDate(date.getDate() + d);
+      const key = date.toISOString().slice(0, 10);
+      const completedCount = countByDate.get(key) ?? 0;
+      week.push({ date: key, completedCount, level: levelFor(completedCount) });
+    }
+    weeks.push(week);
+  }
+
+  const firstDate = new Date(weeks[0][0].date);
+  const lastDate = new Date(weeks[weeks.length - 1][4].date);
+  const monthFormat = (d: Date) => d.toLocaleDateString("en-US", { month: "short" });
+  const rangeLabel = `${monthFormat(firstDate)} — ${monthFormat(lastDate)}`;
+
+  return { weeks, rangeLabel };
 }

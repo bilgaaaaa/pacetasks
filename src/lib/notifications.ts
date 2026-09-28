@@ -3,11 +3,10 @@ import { Platform } from "react-native";
 
 const REMINDER_IDENTIFIER = "pacetasks-daily-reminder";
 
-// Foreground notifications still show a banner + sound, matching what the
-// user would expect from a background reminder.
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
   }),
@@ -21,9 +20,6 @@ export async function requestNotificationPermission(): Promise<boolean> {
   return requested.granted;
 }
 
-// Cancels any existing daily reminder and, if enabled, schedules a fresh one
-// at the given "HH:MM" time. Called any time settings are saved so there is
-// never more than one reminder scheduled at once.
 export async function syncDailyReminder(
   enabled: boolean,
   time: string
@@ -52,9 +48,9 @@ export async function syncDailyReminder(
       sound: Platform.OS === "ios" ? "default" : undefined,
     },
     trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.DAILY,
       hour,
       minute,
-      repeats: true,
     },
   });
 }

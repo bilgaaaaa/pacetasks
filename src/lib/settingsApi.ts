@@ -6,9 +6,12 @@ const DEFAULTS: Omit<UserSettings, "user_id" | "updated_at"> = {
   work_end_hour: 17,
   reminder_enabled: true,
   reminder_time: "18:30",
+  timer_chime_enabled: true,
+  haptics_enabled: false,
+  pomodoro_work_minutes: 25,
+  pomodoro_break_minutes: 5,
 };
 
-// Returns the user's settings row, creating a default one on first launch.
 export async function fetchOrCreateSettings(
   userId: string
 ): Promise<UserSettings> {

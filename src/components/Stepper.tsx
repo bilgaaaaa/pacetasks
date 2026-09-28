@@ -1,5 +1,6 @@
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { theme } from "../lib/theme";
 
 interface Props {
@@ -12,8 +13,8 @@ interface Props {
   onChange: (value: number) => void;
 }
 
-// Reusable +/- numeric control used for work-hour pickers and reminder time.
-// Kept generic so every "pick a number" input in the app looks identical.
+// Reusable +/- numeric control used for work-hour pickers and reminder time,
+// styled with filled Ionicons circles like native iOS stepper affordances.
 export function Stepper({
   label,
   value,
@@ -29,18 +30,16 @@ export function Stepper({
     <View style={styles.row}>
       <Text style={styles.label}>{label}</Text>
       <View style={styles.controls}>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => onChange(Math.max(min, value - step))}
-        >
-          <Text style={styles.buttonText}>-</Text>
+        <TouchableOpacity onPress={() => onChange(Math.max(min, value - step))}>
+          <Ionicons
+            name="remove-circle"
+            size={28}
+            color={theme.colors.accent}
+          />
         </TouchableOpacity>
         <Text style={styles.value}>{displayValue}</Text>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => onChange(Math.min(max, value + step))}
-        >
-          <Text style={styles.buttonText}>+</Text>
+        <TouchableOpacity onPress={() => onChange(Math.min(max, value + step))}>
+          <Ionicons name="add-circle" size={28} color={theme.colors.accent} />
         </TouchableOpacity>
       </View>
     </View>
@@ -56,29 +55,16 @@ const styles = StyleSheet.create({
   },
   label: {
     color: theme.colors.textPrimary,
-    fontSize: 15,
+    fontSize: theme.typography.body.fontSize,
   },
   controls: {
     flexDirection: "row",
     alignItems: "center",
     gap: theme.spacing.sm,
   },
-  button: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: theme.colors.surfaceAlt,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  buttonText: {
-    color: theme.colors.textPrimary,
-    fontSize: 18,
-    fontWeight: "700",
-  },
   value: {
     color: theme.colors.textPrimary,
-    fontSize: 15,
+    fontSize: theme.typography.body.fontSize,
     minWidth: 56,
     textAlign: "center",
     fontVariant: ["tabular-nums"],

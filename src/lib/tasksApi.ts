@@ -1,9 +1,6 @@
 import { supabase } from "./supabase";
 import { Task, TaskTiming } from "./types";
 
-// Thin wrapper around every tasks-table query so screens never write raw
-// Supabase calls directly — one place to fix if the schema changes.
-
 export async function fetchTasks(userId: string): Promise<Task[]> {
   const { data, error } = await supabase
     .from("tasks")
@@ -19,7 +16,9 @@ export async function addTask(
   userId: string,
   title: string,
   estimatedMinutes: number,
-  timing: TaskTiming
+  timing: TaskTiming,
+  category: string | null,
+  scheduledTime: string | null
 ): Promise<Task> {
   const { data, error } = await supabase
     .from("tasks")
@@ -28,6 +27,8 @@ export async function addTask(
       title: title.trim(),
       estimated_minutes: estimatedMinutes,
       timing,
+      category,
+      scheduled_time: scheduledTime,
     })
     .select()
     .single();
@@ -57,5 +58,14 @@ export async function completeTask(
 
 export async function deleteTask(taskId: string): Promise<void> {
   const { error } = await supabase.from("tasks").delete().eq("id", taskId);
+  if (error) throw error;
+}
+
+export async function clearCompletedTasks(userId: string): Promise<void> {
+  const { error } = await supabase
+    .from("tasks")
+    .delete()
+    .eq("user_id", userId)
+    .eq("status", "done");
   if (error) throw error;
 }
