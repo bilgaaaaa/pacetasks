@@ -1,22 +1,24 @@
 import { Ionicons } from "@expo/vector-icons";
-import { theme } from "./theme";
 import { CATEGORY_IDS, CategoryId } from "@domain/categories";
+import type { AppTheme } from "./theme";
+
+type CategoryColorKey = "indigo" | "purple" | "warning" | "accentDark" | "pink" | "textTertiary";
 
 export interface Category {
   id: string;
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
-  color: string;
+  colorKey: CategoryColorKey; // theme color, so the tag adapts to light/dark and the accent
 }
 
 // Visuals for each shared category id. Typed by CategoryId, so adding an id to
 // @domain/categories without visuals here fails the typecheck.
 const CATEGORY_VISUALS: Record<CategoryId, Omit<Category, "id">> = {
-  work: { label: "Work", icon: "briefcase-outline", color: theme.colors.indigo },
-  personal: { label: "Personal", icon: "person-outline", color: theme.colors.purple },
-  shopping: { label: "Shopping", icon: "cart-outline", color: theme.colors.warning },
-  home: { label: "Home", icon: "home-outline", color: theme.colors.success },
-  health: { label: "Health", icon: "heart-outline", color: theme.colors.pink },
+  work: { label: "Work", icon: "briefcase-outline", colorKey: "indigo" },
+  personal: { label: "Personal", icon: "person-outline", colorKey: "purple" },
+  shopping: { label: "Shopping", icon: "cart-outline", colorKey: "warning" },
+  home: { label: "Home", icon: "home-outline", colorKey: "accentDark" },
+  health: { label: "Health", icon: "heart-outline", colorKey: "pink" },
 };
 
 // Fixed set of categories (separate from task "timing"). A task's category
@@ -29,10 +31,14 @@ export const NO_CATEGORY: Category = {
   id: "none",
   label: "No category",
   icon: "folder-outline",
-  color: theme.colors.textTertiary,
+  colorKey: "textTertiary",
 };
 
 export function getCategory(id: string | null): Category {
   if (!id) return NO_CATEGORY;
   return CATEGORIES.find((c) => c.id === id) ?? NO_CATEGORY;
+}
+
+export function categoryColor(category: Category, theme: AppTheme): string {
+  return theme.colors[category.colorKey];
 }

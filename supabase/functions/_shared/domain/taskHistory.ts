@@ -2,7 +2,8 @@ import type { Task, TaskTiming } from "./task.ts";
 
 export interface TaskHistoryEntry {
   title: string; // most recent casing used for this task name
-  timing: TaskTiming; // most recently used category for this task
+  timing: TaskTiming; // most recently used timing for this task
+  category: string | null; // most recently used category for this task
   lastMinutes: number; // last actual time if ever completed, else last estimate
   minMinutes: number | null; // only meaningful once completed at least once
   maxMinutes: number | null;
@@ -30,6 +31,7 @@ export function buildTaskHistory(tasks: Task[]): Map<string, TaskHistoryEntry> {
       history.set(key, {
         title: task.title.trim(),
         timing: task.timing,
+        category: task.category,
         lastMinutes: task.actual_minutes ?? task.estimated_minutes,
         minMinutes: task.actual_minutes,
         maxMinutes: task.actual_minutes,

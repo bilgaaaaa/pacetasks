@@ -1,9 +1,9 @@
-import React from "react";
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
+import React, { useMemo } from "react";
+import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
+import { NavigationContainer, DarkTheme, DefaultTheme } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { StatusBar } from "expo-status-bar";
-import { theme } from "./src/lib/theme";
+import { ThemeProvider, makeStyles, useTheme } from "./src/hooks/useTheme";
 import { useSession } from "./src/hooks/useSession";
 import { TaskListScreen } from "./src/screens/TaskListScreen";
 import { StatsScreen } from "./src/screens/StatsScreen";
@@ -11,28 +11,16 @@ import { SettingsScreen } from "./src/screens/SettingsScreen";
 
 const Tab = createBottomTabNavigator();
 
-const navigationTheme = {
-  ...DefaultTheme,
-  colors: {
-    ...DefaultTheme.colors,
-    background: theme.colors.background,
-    card: theme.colors.surface,
-    text: theme.colors.textPrimary,
-    border: theme.colors.border,
-    primary: theme.colors.accent,
-  },
-};
-
-// Text-only pill tab bar matching the design: a single rounded white bar,
-// the active tab shown as a filled dark-green pill, inactive tabs plain
-// gray text — no icons, unlike the previous iOS-style tab bar.
+// Text-only pill tab bar matching the design: a single rounded bar, the
+// active tab shown as a filled ink pill, inactive tabs plain secondary text.
 function PillTabBar({ state, descriptors, navigation }: any) {
+  const styles = useStyles();
   return (
     <View style={styles.tabBarWrapper}>
       <View style={styles.tabBar}>
         {state.routes.map((route: any, index: number) => {
           const isFocused = state.index === index;
-          const label = route.name.toUpperCase();
+          const label = String(descriptors[route.key]?.options.tabBarLabel ?? route.name).toUpperCase();
 
           const onPress = () => {
             const event = navigation.emit({
@@ -50,6 +38,8 @@ function PillTabBar({ state, descriptors, navigation }: any) {
               key={route.key}
               onPress={onPress}
               style={[styles.tab, isFocused && styles.tabActive]}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: isFocused }}
             >
               <Text style={[styles.tabLabel, isFocused && styles.tabLabelActive]}>
                 {label}
@@ -62,12 +52,29 @@ function PillTabBar({ state, descriptors, navigation }: any) {
   );
 }
 
-// Root component: waits for the anonymous Supabase session, then wires the
-// three tabs (Tasks / Stats / Settings) behind the custom pill tab bar.
-export default function App() {
+// Waits for the anonymous Supabase session and the saved appearance, then
+// wires the three tabs (Today / Pace / Settings) behind the pill tab bar.
+function AppContent() {
+  const { theme, appearanceLoaded } = useTheme();
+  const styles = useStyles();
   const { session, loading, error } = useSession();
 
-  if (loading) {
+  const navigationTheme = useMemo(() => {
+    const base = theme.isDark ? DarkTheme : DefaultTheme;
+    return {
+      ...base,
+      colors: {
+        ...base.colors,
+        background: theme.colors.background,
+        card: theme.colors.surface,
+        text: theme.colors.textPrimary,
+        border: theme.colors.border,
+        primary: theme.colors.accent,
+      },
+    };
+  }, [theme]);
+
+  if (loading || !appearanceLoaded) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator color={theme.colors.accent} size="large" />
@@ -91,18 +98,18 @@ export default function App() {
 
   return (
     <NavigationContainer theme={navigationTheme}>
-      <StatusBar style="dark" />
+      <StatusBar style={theme.isDark ? "light" : "dark"} />
       <Tab.Navigator
         screenOptions={{ headerShown: false }}
         tabBar={(props) => <PillTabBar {...props} />}
       >
-        <Tab.Screen name="Tasks">
+        <Tab.Screen name="Tasks" options={{ tabBarLabel: "Today" }}>
           {() => <TaskListScreen userId={userId} />}
         </Tab.Screen>
-        <Tab.Screen name="Stats">
+        <Tab.Screen name="Stats" options={{ tabBarLabel: "Pace" }}>
           {() => <StatsScreen userId={userId} />}
         </Tab.Screen>
-        <Tab.Screen name="Settings">
+        <Tab.Screen name="Settings" options={{ tabBarLabel: "Settings" }}>
           {() => <SettingsScreen userId={userId} />}
         </Tab.Screen>
       </Tab.Navigator>
@@ -110,7 +117,15 @@ export default function App() {
   );
 }
 
-const styles = StyleSheet.create({
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
+  );
+}
+
+const useStyles = makeStyles((theme) => ({
   centered: {
     flex: 1,
     backgroundColor: theme.colors.background,
@@ -131,35 +146,35 @@ const styles = StyleSheet.create({
     marginTop: theme.spacing.sm,
   },
   tabBarWrapper: {
-    backgroundColor: theme.colors.background,
-    paddingHorizontal: theme.spacing.lg,
+    backgroundColor: theme.colors.backgroundEnd,
+    paddingHorizontal: theme.spacing.md,
     paddingBottom: theme.spacing.md,
-    paddingTop: theme.spacing.xs,
+    paddingTop: theme.spacing.sm,
   },
   tabBar: {
     flexDirection: "row",
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.surfaceAlt,
     borderRadius: theme.radius.pill,
-    padding: 6,
-    gap: 6,
+    padding: 4,
+    gap: 4,
   },
   tab: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 12,
+    minHeight: 44,
     borderRadius: theme.radius.pill,
   },
   tabActive: {
-    backgroundColor: theme.colors.accentDark,
+    backgroundColor: theme.colors.textPrimary,
   },
   tabLabel: {
     color: theme.colors.textSecondary,
-    fontSize: theme.typography.caption.fontSize,
-    fontWeight: "700",
-    letterSpacing: 0.5,
+    fontSize: 12,
+    fontWeight: "600",
+    letterSpacing: 1.2,
   },
   tabLabelActive: {
-    color: "#FFFFFF",
+    color: theme.colors.surface,
   },
-});
+}));

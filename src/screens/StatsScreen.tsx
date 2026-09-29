@@ -3,12 +3,11 @@ import {
   ActivityIndicator,
   FlatList,
   SafeAreaView,
-  StyleSheet,
   Text,
   View,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { theme } from "../lib/theme";
+import { makeStyles, useTheme } from "../hooks/useTheme";
 import { useTasks } from "../hooks/useTasks";
 import { computeStats, buildWeekdayHeatmap } from "../lib/stats";
 import { StatCard } from "../components/StatCard";
@@ -22,6 +21,8 @@ interface Props {
 // contribution heatmap, and a per-day history list with a relative progress
 // bar — no comparisons to anyone else's numbers, only your own history.
 export function StatsScreen({ userId }: Props) {
+  const { theme } = useTheme();
+  const styles = useStyles();
   const { tasks, loading } = useTasks(userId);
   const stats = useMemo(() => computeStats(tasks), [tasks]);
   const heatmap = useMemo(() => buildWeekdayHeatmap(stats.dailyBreakdown), [stats]);
@@ -115,7 +116,7 @@ export function StatsScreen({ userId }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((theme) => ({
   gradient: {
     flex: 1,
   },
@@ -131,6 +132,8 @@ const styles = StyleSheet.create({
     color: theme.colors.textPrimary,
     fontSize: theme.typography.largeTitle.fontSize,
     fontWeight: theme.typography.largeTitle.fontWeight,
+    fontFamily: theme.typography.largeTitle.fontFamily,
+    letterSpacing: theme.typography.largeTitle.letterSpacing,
   },
   headerSubtitle: {
     color: theme.colors.textSecondary,
@@ -160,7 +163,7 @@ const styles = StyleSheet.create({
   },
   dayRow: {
     backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.lg,
+    borderRadius: 16,
     padding: theme.spacing.md,
     marginBottom: theme.spacing.xs,
     gap: theme.spacing.xs,
@@ -175,7 +178,8 @@ const styles = StyleSheet.create({
   },
   dayMeta: {
     color: theme.colors.textSecondary,
-    fontSize: theme.typography.caption.fontSize,
+    fontSize: theme.typography.footnote.fontSize,
+    fontFamily: theme.fonts.mono,
   },
   dayProgressTrack: {
     flexDirection: "row",
@@ -196,4 +200,4 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     textAlign: "center",
   },
-});
+}));

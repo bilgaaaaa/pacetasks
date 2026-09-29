@@ -6,21 +6,24 @@ then knock them out before or after work — competing only against their own
 past pace, not anyone else's.
 
 Built with Expo SDK 57 (React Native 0.86 + TypeScript) and Supabase. Styled
-to match the "PaceTasks Film" Claude Design: a calm, light sage/cream theme
-with a forest-green accent, plain white cards, and a text-only pill tab bar.
+to match the "PaceTasks Sage" Claude Design: a calm sage theme in light and
+dark, a serif display face for titles, monospaced minutes, and a text-only
+pill tab bar.
 
 ## Features
 
-- **Quick add** — a name field with autocomplete over past task names, plus dropdown pills for timing, time estimate, category, and an optional fixed start time. Nothing is mandatory so it never blocks a quick add; typing a task name you've used before shows a dropdown of matches and, once recognized, the time pill switches from generic presets to that task's own **min / last time / max**.
+- **Add a task** — an always-visible **Add a task…** bar opens a capture sheet: type, hit return, next thought. The sheet stays open and shows what you just added, so a burst of small tasks takes seconds. Only the name is needed; chips above the keyboard set how long, when in the day, which day (Any day / Today / Tomorrow / This week), category and an optional fixed start time. Typing a name you've used before suggests it and fills in its usual time, timing and category ("Done 8× before · usually 15–23 min").
 - **Range timer** — tap a task's minutes pill to start a simple countdown from its suggested max time (learned from your history for that task name); the countdown turns green once you cross the suggested min, so you can see you're in the acceptable window without checking off yet. Reaching zero opens the actual-minutes confirm step so you finish logging it yourself. Tasks with no history yet just use their single estimate as both ends of the range.
-- **Focus sessions (Pomodoro)** — give a task a fixed start time and it gets a FOCUS badge instead of the range timer; tapping it opens a full-screen countdown (session X of Y, progress bar, session segments) using your Pomodoro length from Settings. Finishing a session auto-completes the task and logs the real minutes spent.
-- **Categories** — tag a task as Work / Personal / Shopping / Home / Health (or leave it uncategorized) from the quick-add bar; shown alongside the timing label on each task row.
+- **Focus sessions (Pomodoro)** — give a task a fixed start time and it gets a **Focus HH:MM** pill instead of the range timer; tapping it opens a full-screen countdown (session X of Y, progress bar, session segments) using your Pomodoro length from Settings. Finishing a session auto-completes the task and logs the real minutes spent; **Done early** logs the minutes so far.
+- **Categories** — tag a task as Work / Personal / Shopping / Home / Health (or leave it uncategorized) from the add sheet; shown as a colored dot and label on each task row.
 - **Task memory** — every task name you've ever typed is remembered (grouped case-insensitively); a recognized name auto-fills its usual timing and time, and feeds the range timer's min/max, unless you manually override them for that entry.
-- **One calm list** — today's pending tasks (undated, due today, or overdue) ordered before work → anytime → after work, completed ones sink to the bottom, no section dividers. Future-dated tasks stay hidden until their day; "today" is always the phone's local day.
-- **Brain Dump** — tap **Brain dump** on Today, then type or dictate (keyboard mic) everything on your mind, in English, Italian, Turkish or a mix. PaceTasks shows what it understood (titles kept in your words, due days like "Tomorrow" / "by Fri", durations, "maybe" tasks) and highlights anything unclear or already on your list. Edit titles, untick what you don't want, then add. With **Add clear brain dumps directly** on in Settings, clear dumps skip the review.
+- **Today, in sections you choose** — today's pending tasks (undated, due today, or overdue), with a summary of how small the day really is ("4 left, about 62 min. 3 take 5 minutes or less."). Group them **by size** (quick wins vs. longer), **by place** (At home / Out & about / At work / Anywhere, derived from the category), **by category**, **by time of day**, or as one list — switch right on Today or in Settings. Tasks finished today collect in a Done section. Future-dated tasks stay hidden until their day; "today" is always the phone's local day.
+- **Quick wins** — tasks at or under your quick-win limit (5 min by default, 1–15 in Settings) get a highlighted time pill, so the 2-minute jobs stand out.
+- **Make it yours** — theme (Match phone / Light / Dark) and accent (Sage, Ocean, Clay, Plum, Ink); "Match phone" follows the phone's light/dark setting live. These look & layout preferences are saved on the device.
+- **Brain Dump** — tap the mic next to **Add a task…** (or in the add sheet), then type or dictate (keyboard mic) everything on your mind, in English, Italian, Turkish or a mix. PaceTasks shows what it understood (titles kept in your words, due days like "Tomorrow" / "by Fri", durations, "maybe" tasks) and highlights anything unclear or already on your list. Edit titles, untick what you don't want, then add. With **Add clear brain dumps directly** on in Settings, clear dumps skip the review.
 - **Due days on tasks** — tasks with a date show it first on their row ("Today", "by Fri", "Overdue"); "maybe" tasks are marked as such.
 - **Live sync** — changes made outside the list (another screen, device, or later Siri/Brain Dump) appear immediately via Supabase Realtime, and the list silently reloads whenever the app returns to the foreground.
-- **Day cleared card** — once every task is done, a green summary card appears with today's task count, minutes, and current streak.
+- **Day cleared card** — once every task is done, an accent-colored summary card appears with today's task count, minutes, and current streak.
 - **Work schedule** — set your work start/end hour once in Settings; used for the before/after-work timing labels.
 - **Evening review** — a single configurable local notification (renamed from "daily reminder", same mechanism).
 - **Timer chime / Haptics** — toggle a haptic pulse when a Focus session or range timer ends, or when you complete a task (no audio asset pipeline in this build — "chime" is a haptic, not a sound).
@@ -29,13 +32,16 @@ with a forest-green accent, plain white cards, and a text-only pill tab bar.
 ## Project structure
 
 ```
-App.tsx                  Root component, custom pill tab bar, session bootstrap
+App.tsx                  Root component, ThemeProvider, pill tab bar, session bootstrap
 src/screens/              TaskListScreen, SettingsScreen, StatsScreen
-src/components/           QuickAddBar, TaskItem, FocusSessionModal, EndOfDayCard,
-                          WeekHeatmap, DropdownPill, Stepper, StatCard
-src/hooks/                useSession, useTasks, useSettings
+src/components/           AddTaskSheet, TaskItem, FocusSessionModal, EndOfDayCard,
+                          WeekHeatmap, Stepper, StatCard, BrainDumpSheet
+src/hooks/                useSession, useTasks, useSettings, useTheme (ThemeProvider,
+                          makeStyles), useBrainDump
 src/lib/                  supabase client, tasksApi, settingsApi, notifications,
-                          stats, categories, theme, types
+                          stats, categories, theme (light/dark palettes + accents),
+                          appearance (+ appearanceStorage), taskSections,
+                          dueOptions, types
 supabase/migrations/       Database schema, RLS policies and the create_task RPC
 supabase/tests/database/   pgTAP tests for the database (`npm run db:test`)
 supabase/functions/_shared/domain/
