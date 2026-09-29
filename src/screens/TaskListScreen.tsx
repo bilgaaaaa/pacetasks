@@ -19,6 +19,7 @@ import { useBrainDump } from "../hooks/useBrainDump";
 import { computeStats } from "../lib/stats";
 import { GROUP_BY_LABELS, GROUP_BY_OPTIONS } from "../lib/appearance";
 import { groupTodayTasks, summarizePending } from "../lib/taskSections";
+import { selectUsuals } from "../lib/taskRhythm";
 import { buildTaskHistory, findExactMatch } from "@domain/taskHistory";
 import { selectTodayTasks } from "@domain/todayTasks";
 import { toLocalDateKey } from "@domain/dates";
@@ -91,6 +92,7 @@ export function TaskListScreen({ userId }: Props) {
   // "Today" is the phone's local calendar day; recomputed on every render so a
   // list left open past midnight updates on the next foreground reload.
   const todayKey = toLocalDateKey(new Date());
+  const usuals = useMemo(() => selectUsuals(tasks, todayKey), [tasks, todayKey]);
   const { pending, done: completedTasks } = useMemo(
     () => selectTodayTasks(tasks, todayKey),
     [tasks, todayKey]
@@ -284,7 +286,9 @@ export function TaskListScreen({ userId }: Props) {
         <AddTaskSheet
           visible={addOpen}
           history={history}
+          usuals={usuals}
           onAdd={create}
+          onUndo={remove}
           onOpenBrainDump={openBrainDumpFromAdd}
           onClose={() => setAddOpen(false)}
         />

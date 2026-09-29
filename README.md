@@ -12,7 +12,7 @@ pill tab bar.
 
 ## Features
 
-- **Add a task** — an always-visible **Add a task…** bar opens a capture sheet: type, hit return, next thought. The sheet stays open and shows what you just added, so a burst of small tasks takes seconds. Only the name is needed; chips above the keyboard set how long, when in the day, which day (Any day / Today / Tomorrow / This week), category and an optional fixed start time. Typing a name you've used before suggests it and fills in its usual time, timing and category ("Done 8× before · usually 15–23 min").
+- **Add a task** — an always-visible **Add a task…** bar opens the add sheet on **your usuals**: tasks you've done more than once, each showing when you last did it ("9 days ago · usually 7"), the ones past their usual rhythm first. One tap adds a usual for today (with Undo); **⋯** adjusts it first. Typing something new in the big **What?** field switches to three calm questions — how long (big 2 / 5 / 15 / 30 / 60 buttons) and when (Today / After work / Tomorrow) — with category, time of day and a fixed start time tucked behind one link. A name you've used before is suggested and its usual time, timing and category are filled in ("Done 8× before · usually 15–23 min"). After each add you're back on the usuals.
 - **Range timer** — tap a task's minutes pill to start a simple countdown from its suggested max time (learned from your history for that task name); the countdown turns green once you cross the suggested min, so you can see you're in the acceptable window without checking off yet. Reaching zero opens the actual-minutes confirm step so you finish logging it yourself. Tasks with no history yet just use their single estimate as both ends of the range.
 - **Focus sessions (Pomodoro)** — give a task a fixed start time and it gets a **Focus HH:MM** pill instead of the range timer; tapping it opens a full-screen countdown (session X of Y, progress bar, session segments) using your Pomodoro length from Settings. Finishing a session auto-completes the task and logs the real minutes spent; **Done early** logs the minutes so far.
 - **Categories** — tag a task as Work / Personal / Shopping / Home / Health (or leave it uncategorized) from the add sheet; shown as a colored dot and label on each task row.
@@ -40,7 +40,7 @@ src/hooks/                useSession, useTasks, useSettings, useTheme (ThemeProv
                           makeStyles), useBrainDump
 src/lib/                  supabase client, tasksApi, settingsApi, notifications,
                           stats, categories, theme (light/dark palettes + accents),
-                          appearance (+ appearanceStorage), taskSections,
+                          appearance (+ appearanceStorage), taskSections, taskRhythm,
                           dueOptions, types
 supabase/migrations/       Database schema, RLS policies and the create_task RPC
 supabase/tests/database/   pgTAP tests for the database (`npm run db:test`)

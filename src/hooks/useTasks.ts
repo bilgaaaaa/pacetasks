@@ -88,11 +88,13 @@ export function useTasks(userId: string | undefined) {
     };
   }, [userId]);
 
+  // Returns the created task (e.g. so the add sheet can offer Undo).
   const create = useCallback(
-    async (draft: TaskDraft) => {
-      if (!userId) return;
+    async (draft: TaskDraft): Promise<Task | undefined> => {
+      if (!userId) return undefined;
       const newTask = await tasksApi.createTask(draft);
       setTasks((prev) => upsertTask(prev, newTask));
+      return newTask;
     },
     [userId]
   );
