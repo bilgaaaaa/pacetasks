@@ -41,8 +41,8 @@ function formatTime(hour: number, minute: number): string {
 }
 
 // Work schedule (feeds the before/after-work task labels), the evening
-// reminder, and the two settings the Focus timer + range timer read (chime +
-// Pomodoro length). "Keep it calm and out of the way" — plain white cards,
+// reminder, Brain Dump auto-create, and the two settings the Focus timer +
+// range timer read (chime + Pomodoro length). "Keep it calm and out of the way" — plain white cards,
 // no icons.
 export function SettingsScreen({ userId }: Props) {
   const { settings, loading, error, save } = useSettings(userId);
@@ -175,6 +175,20 @@ export function SettingsScreen({ userId }: Props) {
             <Switch
               value={settings.haptics_enabled}
               onValueChange={(enabled) => save({ haptics_enabled: enabled })}
+              trackColor={{ false: theme.colors.border, true: theme.colors.accentDark }}
+            />
+          </View>
+
+          <View style={styles.toggleRow}>
+            <View style={styles.toggleText}>
+              <Text style={styles.toggleTitle}>Add clear brain dumps directly</Text>
+              <Text style={styles.toggleSubtitle}>
+                Skip the review when every task is clear. Anything unclear still asks first.
+              </Text>
+            </View>
+            <Switch
+              value={settings.brain_dump_auto_create}
+              onValueChange={(enabled) => save({ brain_dump_auto_create: enabled })}
               trackColor={{ false: theme.colors.border, true: theme.colors.accentDark }}
             />
           </View>

@@ -97,6 +97,11 @@ export function useTasks(userId: string | undefined) {
     [userId]
   );
 
+  // Merges tasks created elsewhere (Brain Dump) without waiting for Realtime.
+  const applyCreated = useCallback((created: Task[]) => {
+    setTasks((prev) => created.reduce((list, task) => upsertTask(list, task), prev));
+  }, []);
+
   const complete = useCallback(async (taskId: string, actualMinutes: number | null) => {
     const updated = await tasksApi.completeTask(taskId, actualMinutes);
     setTasks((prev) => upsertTask(prev, updated));
@@ -113,5 +118,5 @@ export function useTasks(userId: string | undefined) {
     setTasks((prev) => prev.filter((t) => t.status !== "done"));
   }, [userId]);
 
-  return { tasks, loading, error, refresh, create, complete, remove, clearCompleted };
+  return { tasks, loading, error, refresh, create, applyCreated, complete, remove, clearCompleted };
 }

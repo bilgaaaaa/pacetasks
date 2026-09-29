@@ -16,6 +16,7 @@ import { theme } from "../lib/theme";
 import { Task } from "../lib/types";
 import { useTasks } from "../hooks/useTasks";
 import { useSettings } from "../hooks/useSettings";
+import { useBrainDump } from "../hooks/useBrainDump";
 import { computeStats } from "../lib/stats";
 import { buildTaskHistory, findExactMatch } from "@domain/taskHistory";
 import { selectTodayTasks } from "@domain/todayTasks";
@@ -24,6 +25,7 @@ import { QuickAddBar } from "../components/QuickAddBar";
 import { TaskItem } from "../components/TaskItem";
 import { FocusSessionModal } from "../components/FocusSessionModal";
 import { EndOfDayCard } from "../components/EndOfDayCard";
+import { BrainDumpSheet } from "../components/BrainDumpSheet";
 
 interface Props {
   userId: string | undefined;
@@ -37,7 +39,7 @@ function greetingEyebrow(): string {
   return `${day} · ${part}`;
 }
 
-// Home screen: quick capture, then today's tasks in one calm list (ordered by
+// Home screen: quick capture (plus Brain Dump for many tasks at once), then today's tasks in one calm list (ordered by
 // timing, completed ones sink to the bottom, future-dated ones stay hidden).
 // Each task can be timed one of two ways: a lightweight range timer (tap its
 // minutes pill — counts down from the task's suggested max, learned from
@@ -45,10 +47,17 @@ function greetingEyebrow(): string {
 // Focus/Pomodoro modal via its FOCUS badge. An end-of-day card appears once
 // nothing is left pending.
 export function TaskListScreen({ userId }: Props) {
-  const { tasks, loading, error, refresh, create, complete, remove, clearCompleted } =
+  const { tasks, loading, error, refresh, create, applyCreated, complete, remove, clearCompleted } =
     useTasks(userId);
   const { settings } = useSettings(userId);
   const [focusTask, setFocusTask] = useState<Task | null>(null);
+  const [brainDumpOpen, setBrainDumpOpen] = useState(false);
+  const brainDump = useBrainDump({ onTasksCreated: applyCreated });
+
+  const closeBrainDump = () => {
+    brainDump.close();
+    setBrainDumpOpen(false);
+  };
 
   const history = useMemo(() => buildTaskHistory(tasks), [tasks]);
   const stats = useMemo(() => computeStats(tasks), [tasks]);
@@ -101,9 +110,18 @@ export function TaskListScreen({ userId }: Props) {
             <Text style={styles.eyebrow}>{greetingEyebrow()}</Text>
             <Text style={styles.title}>Today</Text>
           </View>
-          <TouchableOpacity onPress={openMenu} hitSlop={8} style={styles.menuButton}>
-            <Ionicons name="ellipsis-horizontal" size={18} color={theme.colors.textSecondary} />
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              onPress={() => setBrainDumpOpen(true)}
+              style={styles.brainDumpButton}
+              accessibilityLabel="Open Brain Dump"
+            >
+              <Text style={styles.brainDumpButtonText}>Brain dump</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={openMenu} hitSlop={8} style={styles.menuButton}>
+              <Ionicons name="ellipsis-horizontal" size={18} color={theme.colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.quickAddWrapper}>
@@ -178,6 +196,17 @@ export function TaskListScreen({ userId }: Props) {
           />
         )}
 
+        <BrainDumpSheet
+          visible={brainDumpOpen}
+          state={brainDump.state}
+          onChangeText={brainDump.setText}
+          onSubmit={brainDump.submit}
+          onToggle={brainDump.setIncluded}
+          onChangeTitle={brainDump.setTitle}
+          onCommit={brainDump.commit}
+          onClose={closeBrainDump}
+        />
+
         <FocusSessionModal
           task={focusTask}
           sessionIndex={focusSessionIndex}
@@ -221,6 +250,23 @@ const styles = StyleSheet.create({
     color: theme.colors.textPrimary,
     fontSize: theme.typography.largeTitle.fontSize,
     fontWeight: theme.typography.largeTitle.fontWeight,
+  },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.spacing.sm,
+  },
+  brainDumpButton: {
+    backgroundColor: theme.colors.accentDark,
+    borderRadius: theme.radius.pill,
+    paddingHorizontal: theme.spacing.md,
+    height: 36,
+    justifyContent: "center",
+  },
+  brainDumpButtonText: {
+    color: "#FFFFFF",
+    fontSize: theme.typography.footnote.fontSize,
+    fontWeight: "700",
   },
   menuButton: {
     width: 36,
