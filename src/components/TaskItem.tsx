@@ -5,6 +5,8 @@ import * as Haptics from "expo-haptics";
 import { theme } from "../lib/theme";
 import { Task } from "../lib/types";
 import { getCategory } from "../lib/categories";
+import { formatDueLabel } from "../lib/dueLabel";
+import { toLocalDateKey } from "@domain/dates";
 
 const TIMING_LABELS: Record<Task["timing"], string> = {
   before_work: "Before work",
@@ -106,11 +108,17 @@ export function TaskItem({
     setIsConfirming(true);
   };
 
-  const subtitle = task.scheduled_time
+  const baseSubtitle = task.scheduled_time
     ? `${task.scheduled_time} · Pomodoro ${pomodoroWorkMinutes}+${pomodoroBreakMinutes}`
     : categoryLabel
     ? `${TIMING_LABELS[task.timing]} · ${categoryLabel}`
     : TIMING_LABELS[task.timing];
+  // Due day and "maybe" come first when set (e.g. from Brain Dump): "by Fri · Anytime · Work".
+  const dueLabel =
+    task.due_date && !isDone ? formatDueLabel(task.due_date, task.due_kind, toLocalDateKey(new Date())) : null;
+  const subtitle = [dueLabel, task.flexible && !isDone ? "maybe" : null, baseSubtitle]
+    .filter(Boolean)
+    .join(" · ");
 
   const showMenu = () => {
     Alert.alert(task.title, undefined, [

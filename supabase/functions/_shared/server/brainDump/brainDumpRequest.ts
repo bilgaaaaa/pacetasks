@@ -1,7 +1,6 @@
 import { z } from "zod";
+import { BRAIN_DUMP_MAX_TEXT_LENGTH } from "../../domain/brainDump/limits.ts";
 import { isValidTimeZone } from "../../domain/dates.ts";
-
-export const BRAIN_DUMP_MAX_TEXT_LENGTH = 2000;
 
 // Where the brain dump came from; decides the tasks' `source` and lets Siri
 // and Shortcuts share this endpoint with the app.
