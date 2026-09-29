@@ -173,6 +173,19 @@ haptics added).
 To run in a simulator instead: press `i` (iOS, requires Xcode) or `a`
 (Android, requires Android Studio) after `npx expo start`.
 
+### Web demo (no Supabase needed)
+
+```bash
+npm run web:demo
+```
+
+Runs the app in the browser with `EXPO_PUBLIC_DEMO_MODE=1`: `src/lib/demo/`
+replaces the Supabase client with in-memory tables seeded with six weeks of
+history. Brain Dump runs the real `runBrainDump` service and review policy;
+only the language model is swapped for a small rule-based parser
+(`demoBrainDumpAI.ts`), so no AI key or network call is involved. Data resets
+on reload. To export a static build: `EXPO_PUBLIC_DEMO_MODE=1 npx expo export --platform web`.
+
 ## 5. Publish to GitHub
 
 From inside the `pacetasks` folder:

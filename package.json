@@ -49,7 +49,8 @@
     "preset": "jest-expo",
     "globalSetup": "<rootDir>/jest.globalSetup.js",
     "moduleNameMapper": {
-      "^@domain/(.*)$": "<rootDir>/supabase/functions/_shared/domain/$1"
+      "^@domain/(.*)$": "<rootDir>/supabase/functions/_shared/domain/$1",
+      "^@server/(.*)$": "<rootDir>/supabase/functions/_shared/server/$1"
     },
     "testPathIgnorePatterns": [
       "/node_modules/",

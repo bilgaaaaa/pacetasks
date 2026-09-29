@@ -4,7 +4,8 @@
     "strict": true,
     "allowImportingTsExtensions": true,
     "paths": {
-      "@domain/*": ["./supabase/functions/_shared/domain/*"]
+      "@domain/*": ["./supabase/functions/_shared/domain/*"],
+      "@server/*": ["./supabase/functions/_shared/server/*"]
     }
   },
   "include": ["App.tsx", "src/**/*", "supabase/functions/_shared/domain/**/*"]

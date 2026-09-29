@@ -1,0 +1,115 @@
+import { TASK_LIMITS } from "@domain/task";
+import type { Task, TaskDraft, TaskTiming } from "@domain/task";
+import { addDays, toLocalDateKey } from "@domain/dates";
+
+// In-memory tables behind demo mode. Shapes and defaults mirror supabase/migrations
+// so demo data behaves like the real database; it resets on every reload.
+
+export const DEMO_USER_ID = "00000000-0000-4000-8000-000000000001";
+
+export type Row = Record<string, any>;
+
+export const demoTables: Record<string, Row[]> = {
+  tasks: buildSeedTasks(),
+  user_settings: [],
+  brain_dump_sessions: [],
+};
+
+export function newDemoId(): string {
+  return `demo-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+// Fills the columns Postgres would default, for inserts made through .from().insert().
+export function withTableDefaults(table: string, row: Row): Row {
+  const now = new Date().toISOString();
+  if (table === "tasks") return { ...taskFromDraft({ title: row.title ?? "" }), ...row };
+  if (table === "user_settings") return { brain_dump_auto_create: false, updated_at: now, ...row };
+  if (table === "brain_dump_sessions") return { id: newDemoId(), status: "proposed", created_at: now, ...row };
+  return row;
+}
+
+// Mirror of public.create_task: validates the draft, applies its defaults and
+// inserts it for the demo user. Throws the same kind of message the RPC raises.
+export function createDemoTask(draft: TaskDraft): Task {
+  const title = (draft.title ?? "").trim();
+  if (!title) throw new Error("create_task: title is required");
+
+  const task = taskFromDraft({ ...draft, title });
+  demoTables.tasks.push(task);
+  return { ...task };
+}
+
+function taskFromDraft(draft: TaskDraft): Task {
+  const tags = [...new Set((draft.tags ?? []).map((t) => t.trim()).filter(Boolean))];
+  return {
+    id: newDemoId(),
+    user_id: DEMO_USER_ID,
+    title: draft.title,
+    estimated_minutes: draft.estimated_minutes ?? TASK_LIMITS.defaultEstimatedMinutes,
+    actual_minutes: null,
+    timing: draft.timing ?? "anytime",
+    category: draft.category?.trim() || null,
+    scheduled_time: draft.scheduled_time?.trim() || null,
+    status: "pending",
+    created_at: new Date().toISOString(),
+    completed_at: null,
+    due_date: draft.due_date ?? null,
+    due_kind: draft.due_kind ?? null,
+    notes: draft.notes?.trim() || null,
+    priority: draft.priority ?? null,
+    energy_level: draft.energy_level ?? null,
+    flexible: draft.flexible ?? false,
+    tags,
+    source: draft.source ?? "app",
+    source_language: draft.source_language ?? null,
+    ai_confidence: draft.ai_confidence ?? null,
+  };
+}
+
+// Seeds ~6 weeks of weekday history plus today's list, so Stats, streaks,
+// range-timer bounds and Brain Dump's history-based durations have real input.
+function buildSeedTasks(): Task[] {
+  const recurring: Array<[string, number, TaskTiming, string | null]> = [
+    ["Morning run", 30, "before_work", "health"],
+    ["Groceries", 25, "after_work", "shopping"],
+    ["Answer emails", 15, "anytime", "work"],
+    ["Laundry", 20, "after_work", "home"],
+    ["Read 20 pages", 20, "after_work", "personal"],
+  ];
+  const tasks: Task[] = [];
+  const todayKey = toLocalDateKey(new Date());
+
+  for (let daysAgo = 42; daysAgo >= 1; daysAgo--) {
+    const dayKey = addDays(todayKey, -daysAgo);
+    const weekday = new Date(`${dayKey}T12:00:00`).getDay();
+    if (weekday === 0 || weekday === 6) continue;
+
+    // Deterministic variety: 0–3 tasks per day, so some days stay empty.
+    const count = (daysAgo * 7) % 4;
+    for (let i = 0; i < count; i++) {
+      const [title, estimate, timing, category] = recurring[(daysAgo + i) % recurring.length];
+      const completedAt = new Date(`${dayKey}T${timing === "before_work" ? "07" : "19"}:${10 + i * 10}:00`);
+      const task = taskFromDraft({ title, estimated_minutes: estimate, timing, category });
+      tasks.push({
+        ...task,
+        actual_minutes: Math.max(5, estimate + (((daysAgo * 13 + i * 5) % 11) - 5)),
+        status: "done",
+        created_at: completedAt.toISOString(),
+        completed_at: completedAt.toISOString(),
+      });
+    }
+  }
+
+  const today: TaskDraft[] = [
+    { title: "Morning run", estimated_minutes: 30, timing: "before_work", category: "health" },
+    { title: "Call the dentist", estimated_minutes: 5, category: "health", due_date: todayKey, due_kind: "on" },
+    { title: "Deep work: PaceTasks AI layer", estimated_minutes: 50, category: "personal", scheduled_time: "20:00" },
+    { title: "Renew bike insurance", estimated_minutes: 15, category: "personal", due_date: addDays(todayKey, 3), due_kind: "by" },
+    { title: "Groceries", estimated_minutes: 25, timing: "after_work", category: "shopping" },
+  ];
+  today.forEach((draft, i) => {
+    tasks.push({ ...taskFromDraft(draft), created_at: new Date(Date.now() - i * 60_000).toISOString() });
+  });
+
+  return tasks;
+}
