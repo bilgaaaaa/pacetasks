@@ -50,8 +50,8 @@ function greetingEyebrow(): string {
   return `${day} · ${part}`;
 }
 
-// Home screen: today's tasks split into the sections the user picked (by size,
-// place, category, time of day, or one list), with a summary of how small the
+// Home screen: today's tasks split into the sections the user picked (all in
+// one list, or by size, place, category, time of day), with a summary of how small the
 // day really is, and an always-visible capture bar that opens the add sheet
 // (plus Brain Dump for many tasks at once). Each task can be timed with a
 // lightweight range timer or, for fixed-time tasks, the Focus/Pomodoro modal.

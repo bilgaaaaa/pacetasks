@@ -58,13 +58,14 @@ describe("taskSections", () => {
     ]);
   });
 
-  it("groups by time of day and supports one plain list", () => {
+  it("groups by time of day and supports one plain 'All' list", () => {
     expect(ids(groupTodayTasks(pending, "when", 5))).toEqual([
       ["before_work", ["q4"]],
       ["anytime", ["bill", "marco"]],
       ["after_work", ["milk", "misc"]],
     ]);
-    const [all] = groupTodayTasks(pending, "none", 5);
+    const [all] = groupTodayTasks(pending, "all", 5);
+    expect(all.key).toBe("all");
     expect(all.tasks).toHaveLength(5);
     expect(all.totalMinutes).toBe(45);
   });

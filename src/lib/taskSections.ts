@@ -71,6 +71,8 @@ function buildSections(
 // Keeps each task's position from `pending` (already in timing order), drops empty sections.
 export function groupTodayTasks(pending: Task[], groupBy: GroupBy, quickWinMinutes: number): TaskSection[] {
   switch (groupBy) {
+    case "all":
+      return buildSections(pending, [{ key: "all", title: "To do", matches: () => true }]);
     case "size":
       return buildSections(pending, [
         { key: "quick", title: "Quick wins", matches: (t) => isQuickWin(t, quickWinMinutes) },
@@ -107,8 +109,6 @@ export function groupTodayTasks(pending: Task[], groupBy: GroupBy, quickWinMinut
           matches: (t: Task) => t.timing === timing,
         }))
       );
-    case "none":
-      return buildSections(pending, [{ key: "all", title: "All tasks", matches: () => true }]);
   }
 }
 

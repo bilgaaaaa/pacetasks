@@ -13,7 +13,7 @@ describe("parseAppearance", () => {
   });
 
   it("replaces unknown values field by field and clamps the quick-win limit", () => {
-    const stored = { themeMode: "sepia", accent: "ocean", groupBy: "mood", quickWinMinutes: 90 };
+    const stored = { themeMode: "sepia", accent: "ocean", groupBy: "none", quickWinMinutes: 90 };
     expect(parseAppearance(JSON.stringify(stored))).toEqual({
       themeMode: DEFAULT_APPEARANCE.themeMode,
       accent: "ocean",
