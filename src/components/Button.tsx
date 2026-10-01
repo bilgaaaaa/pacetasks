@@ -8,7 +8,7 @@ interface Props {
   variant?: "primary" | "secondary"; // primary = the one main action of a sheet; secondary = the calmer alternatives
   loading?: boolean;
   disabled?: boolean;
-  style?: StyleProp<ViewStyle>; // outer spacing only; the look comes from the variant
+  style?: StyleProp<ViewStyle>; // outer layout; the look comes from the variant (a card may swap the secondary fill so it stays visible)
 }
 
 // The app's full-width pill button, shared by every sheet so main and secondary

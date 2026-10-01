@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { AppState } from "react-native";
 import { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
-import { Task, TaskDraft } from "../lib/types";
+import { Task, TaskChange, TaskDraft, TaskPatch } from "../lib/types";
 import * as tasksApi from "../lib/tasksApi";
 import { supabase } from "../lib/supabase";
 import { removeTask, upsertTask } from "@domain/taskCollection";
@@ -125,6 +125,29 @@ export function useTasks(userId: string | undefined) {
     [run]
   );
 
+  // Moves or parks one task (see @domain/taskPatch for the patches).
+  const update = useCallback(
+    (taskId: string, patch: TaskPatch) =>
+      run("update task", async () => {
+        const updated = await tasksApi.updateTask(taskId, patch);
+        setTasks((prev) => upsertTask(prev, updated));
+      }),
+    [run]
+  );
+
+  // Applies several changes in order (rollover, Weekly Reset). Stops at the first
+  // failure; the ones already applied stay applied and show in the list.
+  const updateMany = useCallback(
+    (changes: TaskChange[]) =>
+      run("update tasks", async () => {
+        for (const { taskId, patch } of changes) {
+          const updated = await tasksApi.updateTask(taskId, patch);
+          setTasks((prev) => upsertTask(prev, updated));
+        }
+      }),
+    [run]
+  );
+
   const remove = useCallback(
     (taskId: string) =>
       run("delete task", async () => {
@@ -144,5 +167,17 @@ export function useTasks(userId: string | undefined) {
     [run, userId]
   );
 
-  return { tasks, loading, error, refresh, create, applyCreated, complete, remove, clearCompleted };
+  return {
+    tasks,
+    loading,
+    error,
+    refresh,
+    create,
+    applyCreated,
+    complete,
+    update,
+    updateMany,
+    remove,
+    clearCompleted,
+  };
 }

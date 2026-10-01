@@ -127,5 +127,34 @@ function buildSeedTasks(): Task[] {
     tasks.push({ ...taskFromDraft(draft), created_at: new Date(Date.now() - i * 60_000).toISOString() });
   });
 
+  // Tasks left unfinished on earlier days, one for each kind of rollover proposal.
+  const yesterdayKey = addDays(todayKey, -1);
+  const unfinished: Array<[TaskDraft, number]> = [
+    [{ title: "Send the tax documents", estimated_minutes: 20, category: "work", due_date: yesterdayKey, due_kind: "by" }, 0],
+    [{ title: "Call the bank", estimated_minutes: 10, category: "personal", due_date: yesterdayKey, due_kind: "on" }, 1],
+    [{ title: "Clean the bathroom", estimated_minutes: 45, category: "home", due_date: addDays(todayKey, -4), due_kind: "on" }, 3],
+    [{ title: "Try the new climbing gym", estimated_minutes: 60, category: "health", due_date: yesterdayKey, due_kind: "on", flexible: true }, 0],
+  ];
+  unfinished.forEach(([draft, postponedCount], i) => {
+    tasks.push({
+      ...taskFromDraft(draft),
+      postponed_count: postponedCount,
+      created_at: new Date(Date.now() - (i + 1) * 86_400_000).toISOString(),
+    });
+  });
+
+  // Parked "someday" tasks for the Someday sheet.
+  const someday: TaskDraft[] = [
+    { title: "Learn Spanish", estimated_minutes: 30, category: "personal" },
+    { title: "Redecorate the bedroom", estimated_minutes: 120, category: "home" },
+  ];
+  someday.forEach((draft, i) => {
+    tasks.push({
+      ...taskFromDraft(draft),
+      status: "someday",
+      created_at: new Date(Date.now() - (i + 10) * 86_400_000).toISOString(),
+    });
+  });
+
   return tasks;
 }

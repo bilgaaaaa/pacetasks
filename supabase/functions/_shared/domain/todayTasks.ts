@@ -24,3 +24,9 @@ export function selectTodayTasks(tasks: Task[], todayKey: string): TodayTasks {
   const done = tasks.filter((task) => task.status === "done");
   return { pending, done };
 }
+
+// Parked "someday" tasks, in the list's own order (newest first). They never
+// appear on Today; the Someday list is the only place they show.
+export function selectSomedayTasks(tasks: Task[]): Task[] {
+  return tasks.filter((task) => task.status === "someday");
+}

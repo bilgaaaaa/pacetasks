@@ -12,6 +12,8 @@ export type {
   TaskTiming,
 } from "@domain/task";
 
+export type { TaskChange, TaskPatch } from "@domain/taskPatch";
+
 export interface UserSettings {
   user_id: string;
   work_start_hour: number;
