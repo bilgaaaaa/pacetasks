@@ -7,6 +7,7 @@ import { oneThingEmptyMessage, oneThingMeta, remainingLabel } from "../lib/oneTh
 import { theme } from "../lib/theme";
 import { Task } from "../lib/types";
 import { Button } from "./Button";
+import { ErrorBanner } from "./ErrorBanner";
 import { Stepper } from "./Stepper";
 
 interface Props {
@@ -19,6 +20,7 @@ interface Props {
   saving: boolean;
   completedTitle: string | null;
   todayKey: string;
+  errorMessage: string | null; // a failed save from the task list, which this sheet covers
   onChangeMinutes: (minutes: number) => void;
   onSkip: () => void;
   onResetSkipped: () => void;
@@ -42,6 +44,7 @@ export function OneThingSheet({
   saving,
   completedTitle,
   todayKey,
+  errorMessage,
   onChangeMinutes,
   onSkip,
   onResetSkipped,
@@ -103,6 +106,7 @@ export function OneThingSheet({
                     onChange={onChangeMinutes}
                   />
                 </View>
+                {errorMessage && <ErrorBanner message={errorMessage} />}
                 <Button label={saving ? "Saving…" : "Log it"} loading={saving} onPress={onConfirm} />
                 <Button label="Not finished yet" variant="secondary" disabled={saving} onPress={onCancelConfirm} />
               </View>

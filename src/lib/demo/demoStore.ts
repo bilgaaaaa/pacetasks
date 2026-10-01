@@ -29,11 +29,13 @@ export function withTableDefaults(table: string, row: Row): Row {
 }
 
 // Mirror of the tasks_track_postponement trigger: the store owns postponed_count,
-// adding one whenever an unfinished task's due date moves to a later day.
+// adding one whenever an unfinished task's due date moves to a later day and
+// clearing it when a task comes back from someday.
 export function withUpdateRules(table: string, row: Row, patch: Row): Row {
   if (table !== "tasks") return patch;
   const nextStatus = patch.status ?? row.status;
   const nextDueDate = "due_date" in patch ? patch.due_date : row.due_date;
+  if (row.status === "someday" && nextStatus === "pending") return { ...patch, postponed_count: 0 };
   const postponed =
     row.status !== "done" && nextStatus !== "done" && row.due_date !== null && nextDueDate > row.due_date;
   return { ...patch, postponed_count: row.postponed_count + (postponed ? 1 : 0) };

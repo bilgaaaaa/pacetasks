@@ -33,7 +33,9 @@ export type ResetOutcome = "scheduled" | "parked" | "deleted" | "kept";
 function resetReason(task: Task, todayKey: string, timeZone?: string): ResetReason | null {
   if (task.status !== "pending") return null;
   if (task.due_date !== null && task.due_date < todayKey) return "overdue";
-  if (task.postponed_count >= WEEKLY_RESET_POLICY.postponedAtLeast) return "postponed_often";
+  // A task moved to a future day has just been dealt with; it comes back once that day arrives.
+  const isScheduledAhead = task.due_date !== null && task.due_date > todayKey;
+  if (!isScheduledAhead && task.postponed_count >= WEEKLY_RESET_POLICY.postponedAtLeast) return "postponed_often";
   if (task.due_date === null) {
     const createdKey = toLocalDateKey(new Date(task.created_at), timeZone);
     if (daysBetween(createdKey, todayKey) >= WEEKLY_RESET_POLICY.undatedOlderThanDays) return "undated_old";
@@ -42,7 +44,8 @@ function resetReason(task: Task, todayKey: string, timeZone?: string): ResetReas
 }
 
 // Every task worth a decision this week, each listed once: overdue first, then
-// repeatedly postponed, then long-undated; oldest first within each group.
+// repeatedly postponed (and not already scheduled ahead), then long-undated;
+// oldest first within each group.
 export function selectResetItems(tasks: Task[], todayKey: string, timeZone?: string): ResetItem[] {
   const reasonOrder: ResetReason[] = ["overdue", "postponed_often", "undated_old"];
   return tasks

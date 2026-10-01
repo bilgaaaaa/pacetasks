@@ -1,6 +1,6 @@
 -- pgTAP tests for the "someday" state and the postponed counter. Run with `npm run db:test` (needs `npx supabase start`).
 begin;
-select plan(9);
+select plan(11);
 
 insert into auth.users (id) values ('11111111-1111-1111-1111-111111111111');
 
@@ -66,6 +66,24 @@ select is(
   (select postponed_count from public.tasks where title = 'call bank'),
   1,
   'a task being completed is not postponed'
+);
+
+-- Someday round trip: parking keeps the count, bringing the task back clears it.
+insert into public.tasks (user_id, title, due_date)
+values ('11111111-1111-1111-1111-111111111111', 'clean the garage', '2026-10-01');
+update public.tasks set due_date = '2026-10-02' where title = 'clean the garage';
+update public.tasks set due_date = '2026-10-03' where title = 'clean the garage';
+update public.tasks set status = 'someday', due_date = null, due_kind = null where title = 'clean the garage';
+select is(
+  (select postponed_count from public.tasks where title = 'clean the garage'),
+  2,
+  'parking a task keeps its postponements'
+);
+update public.tasks set status = 'pending' where title = 'clean the garage';
+select is(
+  (select postponed_count from public.tasks where title = 'clean the garage'),
+  0,
+  'bringing a task back from someday is a fresh start'
 );
 
 select * from finish();

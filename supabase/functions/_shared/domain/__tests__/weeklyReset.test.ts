@@ -8,7 +8,7 @@ describe("selectResetItems", () => {
   it("picks overdue, repeatedly postponed and long-undated tasks, each with its reason", () => {
     const tasks = [
       makeTask({ id: "stale", due_date: null, created_at: "2026-09-10T08:00:00.000Z" }),
-      makeTask({ id: "moved", due_date: "2026-09-30", postponed_count: 2, created_at: RECENT }),
+      makeTask({ id: "moved", due_date: TODAY, postponed_count: 2, created_at: RECENT }),
       makeTask({ id: "overdue", due_date: "2026-09-26", created_at: RECENT }),
     ];
 
@@ -35,6 +35,7 @@ describe("selectResetItems", () => {
     const tasks = [
       makeTask({ id: "fresh", due_date: null, created_at: RECENT }),
       makeTask({ id: "upcoming", due_date: "2026-09-30", postponed_count: 1, created_at: RECENT }),
+      makeTask({ id: "just-rescheduled", due_date: "2026-09-30", postponed_count: 5, created_at: RECENT }),
       makeTask({ id: "done", status: "done", due_date: "2026-09-20" }),
       makeTask({ id: "parked", status: "someday", created_at: "2026-08-01T08:00:00.000Z" }),
     ];

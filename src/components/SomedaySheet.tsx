@@ -4,10 +4,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { getCategory } from "../lib/categories";
 import { theme } from "../lib/theme";
 import { Task } from "../lib/types";
+import { ErrorBanner } from "./ErrorBanner";
 
 interface Props {
   visible: boolean;
   tasks: Task[]; // parked tasks, from selectSomedayTasks
+  errorMessage: string | null; // a failed save from the task list, which this sheet covers
   onBringBack: (taskId: string) => void;
   onDelete: (taskId: string) => void;
   onClose: () => void;
@@ -16,7 +18,7 @@ interface Props {
 // Full-screen sheet listing the "someday" tasks: things worth keeping but not
 // part of the daily workload. Each can be brought back to Today or deleted.
 // Purely presentational — the list and the actions come from the screen.
-export function SomedaySheet({ visible, tasks, onBringBack, onDelete, onClose }: Props) {
+export function SomedaySheet({ visible, tasks, errorMessage, onBringBack, onDelete, onClose }: Props) {
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <SafeAreaView style={styles.safeArea}>
@@ -34,6 +36,8 @@ export function SomedaySheet({ visible, tasks, onBringBack, onDelete, onClose }:
           <Text style={styles.subtitle}>
             Parked tasks stay out of your day until you bring them back.
           </Text>
+
+          {errorMessage && <ErrorBanner style={styles.error} message={errorMessage} />}
 
           {tasks.length === 0 ? (
             <View style={styles.empty}>
@@ -118,6 +122,9 @@ const styles = StyleSheet.create({
   subtitle: {
     color: theme.colors.textSecondary,
     fontSize: theme.typography.subhead.fontSize,
+    marginBottom: theme.spacing.md,
+  },
+  error: {
     marginBottom: theme.spacing.md,
   },
   row: {

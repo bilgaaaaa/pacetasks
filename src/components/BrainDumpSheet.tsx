@@ -19,6 +19,7 @@ import { addButtonLabel, doneMessage, reviewSummary } from "../lib/brainDumpCopy
 import { BrainDumpState, selectedDrafts } from "../lib/brainDumpState";
 import { BrainDumpCandidateRow } from "./BrainDumpCandidateRow";
 import { Button } from "./Button";
+import { ErrorBanner } from "./ErrorBanner";
 
 interface Props {
   visible: boolean;
@@ -86,7 +87,7 @@ export function BrainDumpSheet({
               <Text style={styles.counter}>
                 {state.text.length}/{BRAIN_DUMP_MAX_TEXT_LENGTH}
               </Text>
-              {state.error && <ErrorBanner message={state.error.message} />}
+              {state.error && <ErrorBanner style={styles.errorBanner} message={state.error.message} />}
               <Button
                 style={styles.action}
                 label={phase === "interpreting" ? "Reading your brain dump…" : state.error?.retryable ? "Try again" : "Sort it out"}
@@ -123,7 +124,7 @@ export function BrainDumpSheet({
                   </View>
                 )}
               </ScrollView>
-              {state.error && <ErrorBanner message={state.error.message} />}
+              {state.error && <ErrorBanner style={styles.errorBanner} message={state.error.message} />}
               {proposal.candidates.length > 0 ? (
                 <Button
                   style={styles.action}
@@ -150,15 +151,6 @@ export function BrainDumpSheet({
         </KeyboardAvoidingView>
       </SafeAreaView>
     </Modal>
-  );
-}
-
-function ErrorBanner({ message }: { message: string }) {
-  return (
-    <View style={styles.errorBanner}>
-      <Ionicons name="alert-circle-outline" size={16} color={theme.colors.danger} />
-      <Text style={styles.errorText}>{message}</Text>
-    </View>
   );
 }
 
@@ -245,17 +237,8 @@ const styles = StyleSheet.create({
     marginVertical: theme.spacing.md,
   },
   errorBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: theme.spacing.xs,
     marginHorizontal: theme.spacing.lg,
     marginTop: theme.spacing.sm,
-  },
-  errorText: {
-    flex: 1,
-    color: theme.colors.danger,
-    fontSize: theme.typography.footnote.fontSize,
-    fontWeight: "600",
   },
   done: {
     flex: 1,
