@@ -1,7 +1,8 @@
 import { supabase } from "./supabase";
 import { UserSettings } from "./types";
 
-const DEFAULTS: Omit<UserSettings, "user_id" | "updated_at"> = {
+// What a new user starts with; also the fallback screens use while settings are still loading.
+export const DEFAULT_SETTINGS: Omit<UserSettings, "user_id" | "updated_at"> = {
   work_start_hour: 9,
   work_end_hour: 17,
   reminder_enabled: true,
@@ -27,7 +28,7 @@ export async function fetchOrCreateSettings(
 
   const { data: created, error: insertError } = await supabase
     .from("user_settings")
-    .insert({ user_id: userId, ...DEFAULTS })
+    .insert({ user_id: userId, ...DEFAULT_SETTINGS })
     .select()
     .single();
 

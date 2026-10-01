@@ -85,6 +85,18 @@ describe("normalizeBrainDump", () => {
     expect(candidates[0].draft).toMatchObject({ estimated_minutes: 35, timing: "after_work" });
   });
 
+  it("fills in the energy a known task usually needs when the AI gives none", () => {
+    const tasks = [makeTask({ id: "old", title: "Walk Bruno", status: "done", energy_level: "medium" })];
+    const { candidates } = normalizeBrainDump(
+      makeAiResult([
+        makeAiCandidate({ title: "walk bruno" }),
+        makeAiCandidate({ title: "Walk Bruno", energyRequired: "high" }),
+      ]),
+      { ...context, tasks }
+    );
+    expect(candidates.map((c) => c.draft.energy_level)).toEqual(["medium", "high"]);
+  });
+
   it("maps fixed times and parts of the day onto work-hour timing", () => {
     const { candidates } = normalizeBrainDump(
       makeAiResult([

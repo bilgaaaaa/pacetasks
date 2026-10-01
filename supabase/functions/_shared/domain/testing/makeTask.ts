@@ -24,6 +24,7 @@ export function makeTask(overrides: Partial<Task> = {}): Task {
     source: "app",
     source_language: null,
     ai_confidence: null,
+    postponed_count: 0,
     ...overrides,
   };
 }

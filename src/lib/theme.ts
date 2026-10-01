@@ -17,6 +17,7 @@ export const theme = {
     accentDark: "#4E8552", // deep green — filled cards, toggles-on, selected pills
     accentLight: "#9FC89D", // light green — partial/in-progress states
     success: "#4E8552", // completed checkmark (alias of accentDark)
+    onAccent: "#FFFFFF", // text and icons sitting on an accent-colored fill
     danger: "#C0504D", // destructive actions (delete) — not shown in the design, kept for existing confirm dialogs
     warning: "#D98A3D", // category accent: Shopping
     pink: "#D9678A", // category accent: Health

@@ -1,6 +1,6 @@
 import type { TaskDraft } from "@domain/task";
 import { commitDemoBrainDump, discardDemoBrainDump, invokeDemoBrainDump } from "./demoBrainDump";
-import { createDemoTask, DEMO_USER_ID, demoTables, Row, withTableDefaults } from "./demoStore";
+import { createDemoTask, DEMO_USER_ID, demoTables, Row, withTableDefaults, withUpdateRules } from "./demoStore";
 
 // In-memory stand-in for the Supabase client, used only when EXPO_PUBLIC_DEMO_MODE=1
 // so the web preview runs without real keys. It covers exactly the surface the app
@@ -90,7 +90,7 @@ class DemoQuery implements PromiseLike<QueryResult> {
       }
       case "update": {
         affected = rows.filter((r) => this.matches(r));
-        affected.forEach((r) => Object.assign(r, this.payload));
+        affected.forEach((r) => Object.assign(r, withUpdateRules(this.table, r, { ...this.payload })));
         break;
       }
       case "delete": {

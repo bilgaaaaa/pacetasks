@@ -11,12 +11,13 @@ with a forest-green accent, plain white cards, and a text-only pill tab bar.
 
 ## Features
 
-- **Quick add** — a name field with autocomplete over past task names, plus dropdown pills for timing, time estimate, category, and an optional fixed start time. Nothing is mandatory so it never blocks a quick add; typing a task name you've used before shows a dropdown of matches and, once recognized, the time pill switches from generic presets to that task's own **min / last time / max**.
+- **Quick add** — a name field with autocomplete over past task names, plus dropdown pills for timing, time estimate, category, energy, and an optional fixed start time. Nothing is mandatory so it never blocks a quick add; typing a task name you've used before shows a dropdown of matches and, once recognized, the time pill switches from generic presets to that task's own **min / last time / max**.
 - **Range timer** — tap a task's minutes pill to start a simple countdown from its suggested max time (learned from your history for that task name); the countdown turns green once you cross the suggested min, so you can see you're in the acceptable window without checking off yet. Reaching zero opens the actual-minutes confirm step so you finish logging it yourself. Tasks with no history yet just use their single estimate as both ends of the range.
 - **Focus sessions (Pomodoro)** — give a task a fixed start time and it gets a FOCUS badge instead of the range timer; tapping it opens a full-screen countdown (session X of Y, progress bar, session segments) using your Pomodoro length from Settings. Finishing a session auto-completes the task and logs the real minutes spent.
 - **Categories** — tag a task as Work / Personal / Shopping / Home / Health (or leave it uncategorized) from the quick-add bar; shown alongside the timing label on each task row.
-- **Task memory** — every task name you've ever typed is remembered (grouped case-insensitively); a recognized name auto-fills its usual timing and time, and feeds the range timer's min/max, unless you manually override them for that entry.
+- **Task memory** — every task name you've ever typed is remembered (grouped case-insensitively); a recognized name auto-fills its usual timing, time and energy, and feeds the range timer's min/max, unless you manually override them for that entry.
 - **One calm list** — today's pending tasks (undated, due today, or overdue) ordered before work → anytime → after work, completed ones sink to the bottom, no section dividers. Future-dated tasks stay hidden until their day; "today" is always the phone's local day.
+- **What can I do now?** — tap it on Today, pick how much time you have (5 min / 15 min / 30 min / 1 hour) and your energy (low / normal / high). PaceTasks answers with **Do these now**: the tasks that fit back to back in that time, ordered by what matters most (overdue and due today first, then priority, what suits this part of your day, and the best use of your energy), plus **Or instead** for other tasks that would also fit. Tasks never need more energy than you have; tasks with no energy set are never hidden. Completing a task there works exactly as on Today, and the next suggestion moves up. No AI involved.
 - **Brain Dump** — tap **Brain dump** on Today, then type or dictate (keyboard mic) everything on your mind, in English, Italian, Turkish or a mix. PaceTasks shows what it understood (titles kept in your words, due days like "Tomorrow" / "by Fri", durations, "maybe" tasks) and highlights anything unclear or already on your list. Edit titles, untick what you don't want, then add. With **Add clear brain dumps directly** on in Settings, clear dumps skip the review.
 - **Due days on tasks** — tasks with a date show it first on their row ("Today", "by Fri", "Overdue"); "maybe" tasks are marked as such.
 - **Live sync** — changes made outside the list (another screen, device, or later Siri/Brain Dump) appear immediately via Supabase Realtime, and the list silently reloads whenever the app returns to the foreground.
@@ -32,16 +33,18 @@ with a forest-green accent, plain white cards, and a text-only pill tab bar.
 App.tsx                  Root component, custom pill tab bar, session bootstrap
 src/screens/              TaskListScreen, SettingsScreen, StatsScreen
 src/components/           QuickAddBar, TaskItem, FocusSessionModal, EndOfDayCard,
-                          WeekHeatmap, DropdownPill, Stepper, StatCard
-src/hooks/                useSession, useTasks, useSettings
+                          WeekHeatmap, DropdownPill, ChoiceChips, Stepper, StatCard,
+                          BrainDumpSheet, DoNowSheet
+src/hooks/                useSession, useTasks, useSettings, useBrainDump, useDoNow
 src/lib/                  supabase client, tasksApi, settingsApi, notifications,
-                          stats, categories, theme, types
+                          stats, categories, energy, theme, types
 supabase/migrations/       Database schema, RLS policies and the create_task RPC
 supabase/tests/database/   pgTAP tests for the database (`npm run db:test`)
 supabase/functions/_shared/domain/
                            Pure TypeScript domain logic shared by the app and
                            Edge Functions: task model, dates, Today selection,
-                           task history, Brain Dump schema/normalization.
+                           "What can I do now?" rules, task history, Brain Dump
+                           schema/normalization.
                            Imported in the app as `@domain/...`.
 supabase/functions/_shared/server/
                            Deno-only server code: vendor-neutral AI layer,
@@ -214,7 +217,7 @@ your Supabase keys are never committed.
   read when the dev server *starts*. After editing `.env`, fully stop the
   server (Ctrl+C) and run `npx expo start -c` again.
 - **"Could not find the function public.create_task"** or a missing column
-  such as `due_date` — the database is behind the app. Run
+  such as `due_date` or `postponed_count` — the database is behind the app. Run
   `npx supabase db push` (see step 1).
 - **Tasks added elsewhere don't appear live** — check that Realtime is enabled
   for the `tasks` table (Dashboard → Database → Publications →
