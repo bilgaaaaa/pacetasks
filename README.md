@@ -18,6 +18,7 @@ with a forest-green accent, plain white cards, and a text-only pill tab bar.
 - **Task memory** — every task name you've ever typed is remembered (grouped case-insensitively); a recognized name auto-fills its usual timing, time and energy, and feeds the range timer's min/max, unless you manually override them for that entry.
 - **One calm list** — today's pending tasks (undated, due today, or overdue) ordered before work → anytime → after work, completed ones sink to the bottom, no section dividers. Future-dated tasks stay hidden until their day; "today" is always the phone's local day.
 - **What can I do now?** — tap it on Today, pick how much time you have (5 min / 15 min / 30 min / 1 hour) and your energy (low / normal / high). PaceTasks answers with **Do these now**: the tasks that fit back to back in that time, ordered by what matters most (overdue and due today first, then priority, what suits this part of your day, and the best use of your energy), plus **Or instead** for other tasks that would also fit. Tasks never need more energy than you have; tasks with no energy set are never hidden. Completing a task there works exactly as on Today, and the next suggestion moves up. No AI involved.
+- **Tell me what to do (One Thing mode)** — for when the list is too long to choose from. One task fills the screen, picked with the same ranking as "What can I do now?" (time and energy never hide a task here; your last energy choice only shapes the order). **Done** asks how long it took, logs it and offers the next one; **Not now** passes on it until you close the sheet.
 - **Brain Dump** — tap **Brain dump** on Today, then type or dictate (keyboard mic) everything on your mind, in English, Italian, Turkish or a mix. PaceTasks shows what it understood (titles kept in your words, due days like "Tomorrow" / "by Fri", durations, "maybe" tasks) and highlights anything unclear or already on your list. Edit titles, untick what you don't want, then add. With **Add clear brain dumps directly** on in Settings, clear dumps skip the review.
 - **Due days on tasks** — tasks with a date show it first on their row ("Today", "by Fri", "Overdue"); "maybe" tasks are marked as such.
 - **Live sync** — changes made outside the list (another screen, device, or later Siri/Brain Dump) appear immediately via Supabase Realtime, and the list silently reloads whenever the app returns to the foreground.
@@ -34,8 +35,9 @@ App.tsx                  Root component, custom pill tab bar, session bootstrap
 src/screens/              TaskListScreen, SettingsScreen, StatsScreen
 src/components/           QuickAddBar, TaskItem, FocusSessionModal, EndOfDayCard,
                           WeekHeatmap, DropdownPill, ChoiceChips, Stepper, StatCard,
-                          BrainDumpSheet, DoNowSheet
-src/hooks/                useSession, useTasks, useSettings, useBrainDump, useDoNow
+                          BrainDumpSheet, DoNowSheet, OneThingSheet, Button
+src/hooks/                useSession, useTasks, useSettings, useBrainDump, useDoNow,
+                          useOneThing
 src/lib/                  supabase client, tasksApi, settingsApi, notifications,
                           stats, categories, energy, theme, types
 supabase/migrations/       Database schema, RLS policies and the create_task RPC

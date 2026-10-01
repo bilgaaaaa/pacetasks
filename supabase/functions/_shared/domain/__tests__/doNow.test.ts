@@ -1,4 +1,4 @@
-import { fitsNow, selectDoNowTasks } from "../doNow";
+import { fitsNow, selectDoNowTasks, selectOneThingQueue } from "../doNow";
 import type { DoNowContext } from "../doNow";
 import { makeTask } from "../testing/makeTask";
 
@@ -110,5 +110,28 @@ describe("selectDoNowTasks", () => {
     const selection = selectDoNowTasks([makeTask({ estimated_minutes: 30 })], makeContext({ availableMinutes: 5 }));
 
     expect(selection).toEqual({ plan: [], planMinutes: 0, alternatives: [] });
+  });
+});
+
+describe("selectOneThingQueue", () => {
+  const rankContext = { todayKey: TODAY, energy: "low", currentTiming: "anytime" } as const;
+
+  it("ranks every task that can be started today, whatever its length or energy", () => {
+    const tasks = [
+      makeTask({ id: "long-deep", estimated_minutes: 120, energy_level: "high" }),
+      makeTask({ id: "due", estimated_minutes: 10, due_date: TODAY }),
+      makeTask({ id: "fixed", scheduled_time: "20:00" }),
+      makeTask({ id: "tomorrow", due_date: "2026-09-29" }),
+      makeTask({ id: "done", status: "done" }),
+    ];
+
+    expect(selectOneThingQueue(tasks, rankContext, new Set()).map((t) => t.id)).toEqual(["due", "long-deep"]);
+  });
+
+  it("leaves out tasks the user skipped", () => {
+    const tasks = [makeTask({ id: "a", due_date: TODAY }), makeTask({ id: "b" })];
+
+    expect(selectOneThingQueue(tasks, rankContext, new Set(["a"])).map((t) => t.id)).toEqual(["b"]);
+    expect(selectOneThingQueue(tasks, rankContext, new Set(["a", "b"]))).toEqual([]);
   });
 });
