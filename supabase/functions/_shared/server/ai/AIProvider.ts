@@ -1,6 +1,12 @@
 import type { BrainDumpAiResult } from "../../domain/brainDump/aiResult.ts";
 import type { AIProviderName, TokenUsage } from "./LLMClient.ts";
 
+// "rules" is PaceTasks' own rule-based parser: no vendor, no model, no cost.
+export const RULES_PROVIDER_NAME = "rules";
+
+// Where an interpretation came from: an AI vendor or the built-in rules.
+export type InterpretationProvider = AIProviderName | typeof RULES_PROVIDER_NAME;
+
 export interface BrainDumpInterpretationRequest {
   text: string;
   todayKey: string; // phone's local day
@@ -12,7 +18,7 @@ export interface BrainDumpInterpretationRequest {
 // and for comparing prompts/models later.
 export interface AIInterpretation<T> {
   result: T;
-  provider: AIProviderName;
+  provider: InterpretationProvider;
   model: string;
   promptVersion: string;
   usage: TokenUsage;

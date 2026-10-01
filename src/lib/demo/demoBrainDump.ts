@@ -4,8 +4,8 @@ import type { BrainDumpProposal } from "@domain/brainDump/types";
 import { runBrainDump } from "@server/brainDump/brainDumpService";
 import { brainDumpRequestSchema } from "@server/brainDump/brainDumpRequest";
 import type { BrainDumpRepository } from "@server/brainDump/brainDumpRepository";
+import { createRulesAIProvider } from "@server/ai/rulesAIProvider";
 import { ApiError } from "@server/http/apiError";
-import { createDemoAIProvider } from "./demoBrainDumpAI";
 import { createDemoTask, DEMO_USER_ID, demoTables, newDemoId } from "./demoStore";
 
 // Demo-mode replacements for the brain-dump Edge Function and its RPCs. The
@@ -99,7 +99,7 @@ export async function invokeDemoBrainDump(
 
     const proposal = await runBrainDump(parsed.data, {
       repository: demoRepository,
-      ai: createDemoAIProvider(),
+      ai: createRulesAIProvider(),
       now: () => new Date(),
       dailyLimit: DEMO_DAILY_LIMIT,
     });

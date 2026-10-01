@@ -125,6 +125,16 @@ app / Siri / Shortcuts → POST /functions/v1/brain-dump
   → mode "auto" + auto-create on + nothing to review → commit_brain_dump → create_task
 ```
 
+**Free mode (no AI key).** Set `AI_PROVIDER=rules` and Brain Dump runs on
+PaceTasks' own rule-based parser (`_shared/domain/brainDump/rulesParser.ts`):
+no model, no API key, no cost, nothing leaves Supabase. It reads simple lists
+in English, Italian and Turkish (separators, days, deadlines, times, durations,
+"maybe" wording). It cannot judge meaning, so rambling text, reminders
+("remind me 1h before"), dates like "the 5th" and "next week Tuesday" are where
+a real model does better. Measure it with `deno task eval --provider rules`
+(29/30 on the evaluation set, but the rules were written against that set, so
+expect less on your own dumps).
+
 **Choose a model with the evaluation set** (30 English/Italian/Turkish/mixed
 cases, anchored to Monday 2026-09-28). Needs [Deno 2](https://deno.com) and an API key:
 ```bash
@@ -139,11 +149,12 @@ in `_eval/brainDump/results/` (git-ignored).
 **Deploy:**
 ```bash
 npx supabase db push                                  # brain_dump migration
+npx supabase secrets set AI_PROVIDER=rules            # free mode, or instead:
 npx supabase secrets set AI_PROVIDER=anthropic AI_MODEL_BRAIN_DUMP=<model> ANTHROPIC_API_KEY=<key>
 npx supabase secrets set BRAIN_DUMP_DAILY_LIMIT=30    # optional, default 30 per user per day
 npx supabase functions deploy brain-dump
 ```
-Switching vendor or model later is only a `secrets set` — no code change or
+Switching between free mode, a vendor or a model later is only a `secrets set` — no code change or
 redeploy. API keys live only in Supabase secrets, never in the app.
 
 **Try it** with a signed-in user's access token (e.g. log `session.access_token` once in the app):
@@ -191,8 +202,8 @@ npm run web:demo
 Runs the app in the browser with `EXPO_PUBLIC_DEMO_MODE=1`: `src/lib/demo/`
 replaces the Supabase client with in-memory tables seeded with six weeks of
 history. Brain Dump runs the real `runBrainDump` service and review policy;
-only the language model is swapped for a small rule-based parser
-(`demoBrainDumpAI.ts`), so no AI key or network call is involved. Data resets
+with the same rule-based parser as free mode (`AI_PROVIDER=rules`), so no AI
+key or network call is involved. Data resets
 on reload. To export a static build: `EXPO_PUBLIC_DEMO_MODE=1 npx expo export --platform web`.
 
 ## 5. Publish to GitHub

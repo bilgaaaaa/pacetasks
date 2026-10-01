@@ -1,6 +1,7 @@
 import type { BrainDumpCandidate, ReviewReason } from "../../domain/brainDump/types.ts";
 import type { Task, TaskDraft } from "../../domain/task.ts";
-import type { AIProviderName, TokenUsage } from "../ai/LLMClient.ts";
+import type { InterpretationProvider } from "../ai/AIProvider.ts";
+import type { TokenUsage } from "../ai/LLMClient.ts";
 import type { BrainDumpChannel } from "./brainDumpRequest.ts";
 
 export interface BrainDumpUserContext {
@@ -21,7 +22,7 @@ export interface NewBrainDumpSession {
     detectedLanguages: string[];
     reviewReasons: ReviewReason[];
   };
-  aiProvider: AIProviderName;
+  aiProvider: InterpretationProvider;
   aiModel: string;
   promptVersion: string;
   usage: TokenUsage;

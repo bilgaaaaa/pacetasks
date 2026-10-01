@@ -1,4 +1,5 @@
 import { createAnthropicClient } from "./clients/anthropicClient.ts";
+import { RULES_PROVIDER_NAME } from "./AIProvider.ts";
 import { createOpenAIClient } from "./clients/openaiClient.ts";
 import { AIError } from "./errors.ts";
 import { AI_PROVIDER_NAMES } from "./LLMClient.ts";
@@ -24,7 +25,10 @@ const API_KEY_ENV: Record<AIProviderName, string> = {
 export function readAIConfig(env: (name: string) => string | undefined, feature: AIFeature): AIConfig {
   const provider = env("AI_PROVIDER")?.trim().toLowerCase();
   if (!provider || !(AI_PROVIDER_NAMES as readonly string[]).includes(provider)) {
-    throw new AIError("configuration", `AI_PROVIDER must be one of: ${AI_PROVIDER_NAMES.join(", ")}`);
+    throw new AIError(
+      "configuration",
+      `AI_PROVIDER must be one of: ${[...AI_PROVIDER_NAMES, RULES_PROVIDER_NAME].join(", ")}`
+    );
   }
 
   const model = env(`AI_MODEL_${feature}`)?.trim();
