@@ -103,7 +103,7 @@ export default function App() {
           {() => <StatsScreen userId={userId} />}
         </Tab.Screen>
         <Tab.Screen name="Settings">
-          {() => <SettingsScreen userId={userId} />}
+          {() => <SettingsScreen userId={userId} session={session} />}
         </Tab.Screen>
       </Tab.Navigator>
     </NavigationContainer>

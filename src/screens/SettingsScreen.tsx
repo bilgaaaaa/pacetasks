@@ -10,13 +10,18 @@ import {
   View,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { Session } from "@supabase/supabase-js";
 import { theme } from "../lib/theme";
 import { useSettings } from "../hooks/useSettings";
+import { useAccount } from "../hooks/useAccount";
+import { AccountCard } from "../components/AccountCard";
+import { AccountSheet } from "../components/AccountSheet";
 import { Stepper } from "../components/Stepper";
 import { syncDailyReminder } from "../lib/notifications";
 
 interface Props {
   userId: string | undefined;
+  session: Session | null; // who is using the app: an anonymous user or a signed-up account
 }
 
 const POMODORO_PRESETS: { work: number; break: number; label: string }[] = [
@@ -40,12 +45,15 @@ function formatTime(hour: number, minute: number): string {
   return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
 }
 
-// Work schedule (feeds the before/after-work task labels), the evening
+// The account (create one, sign in, email consent, sign out), then the
+// work schedule (feeds the before/after-work task labels), the evening
 // reminder, Brain Dump auto-create, and the two settings the Focus timer +
 // range timer read (chime + Pomodoro length). "Keep it calm and out of the way" — plain white cards,
 // no icons.
-export function SettingsScreen({ userId }: Props) {
+export function SettingsScreen({ userId, session }: Props) {
   const { settings, loading, error, save } = useSettings(userId);
+  const account = useAccount(session);
+  const [accountSheetOpen, setAccountSheetOpen] = useState(false);
   const [reminderHour, setReminderHour] = useState(18);
   const [reminderMinute, setReminderMinute] = useState(30);
 
@@ -87,6 +95,20 @@ export function SettingsScreen({ userId }: Props) {
           <Text style={styles.headerSubtitle}>Keep it calm and out of the way.</Text>
 
           {error && <Text style={styles.errorText}>{error}</Text>}
+
+          <AccountCard
+            isSignedUp={account.isSignedUp}
+            email={account.email}
+            profile={account.profile}
+            busy={account.busy}
+            errorMessage={account.cardError}
+            onOpen={(mode) => {
+              account.open(mode);
+              setAccountSheetOpen(true);
+            }}
+            onChangeMarketingOptIn={account.changeMarketingOptIn}
+            onSignOut={account.signOut}
+          />
 
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Work schedule</Text>
@@ -222,6 +244,22 @@ export function SettingsScreen({ userId }: Props) {
             </View>
           </View>
         </ScrollView>
+
+        <AccountSheet
+          visible={accountSheetOpen}
+          state={account.state}
+          profileFirstName={account.profile?.first_name ?? null}
+          resending={account.busy}
+          onChangeField={account.setField}
+          onChangeMarketingOptIn={account.setMarketingOptIn}
+          onChangeCode={account.setCode}
+          onChangeMode={account.setMode}
+          onSubmit={account.submit}
+          onVerify={account.verify}
+          onResendCode={account.resendCode}
+          onEditEmail={account.editEmail}
+          onClose={() => setAccountSheetOpen(false)}
+        />
       </SafeAreaView>
     </LinearGradient>
   );
