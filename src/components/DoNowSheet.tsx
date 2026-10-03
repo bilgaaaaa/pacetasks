@@ -1,9 +1,9 @@
 import React from "react";
-import { Modal, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Modal, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { DO_NOW_MINUTE_OPTIONS } from "@domain/doNow";
 import type { DoNowSelection } from "@domain/doNow";
-import { theme } from "../lib/theme";
+import { makeStyles, useTheme } from "../hooks/useTheme";
 import { emptyMessage, minutesLabel, planSummary } from "../lib/doNowCopy";
 import { ENERGY_OPTIONS } from "../lib/energy";
 import { EnergyLevel, Task } from "../lib/types";
@@ -42,6 +42,8 @@ export function DoNowSheet({
   renderTask,
   onClose,
 }: Props) {
+  const { theme } = useTheme();
+  const styles = useStyles();
   const { plan, planMinutes, alternatives } = selection;
   const shownAlternatives = alternatives.slice(0, MAX_ALTERNATIVES_SHOWN);
 
@@ -109,7 +111,7 @@ export function DoNowSheet({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((theme) => ({
   safeArea: {
     flex: 1,
     backgroundColor: theme.colors.background,
@@ -134,6 +136,7 @@ const styles = StyleSheet.create({
     color: theme.colors.textPrimary,
     fontSize: theme.typography.title.fontSize,
     fontWeight: theme.typography.title.fontWeight,
+    fontFamily: theme.typography.title.fontFamily,
     marginTop: 2,
   },
   closeButton: {
@@ -187,4 +190,4 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.subhead.fontSize,
     textAlign: "center",
   },
-});
+}));

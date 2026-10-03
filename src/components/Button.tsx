@@ -1,6 +1,6 @@
 import React from "react";
-import { ActivityIndicator, StyleProp, StyleSheet, Text, TouchableOpacity, ViewStyle } from "react-native";
-import { theme } from "../lib/theme";
+import { ActivityIndicator, StyleProp, Text, TouchableOpacity, ViewStyle } from "react-native";
+import { makeStyles, useTheme } from "../hooks/useTheme";
 
 interface Props {
   label: string;
@@ -14,6 +14,8 @@ interface Props {
 // The app's full-width pill button, shared by every sheet so main, secondary and
 // destructive actions look the same everywhere. Shows a spinner and ignores taps while loading.
 export function Button({ label, onPress, variant = "primary", loading = false, disabled = false, style }: Props) {
+  const { theme } = useTheme();
+  const styles = useStyles();
   const inactive = disabled || loading;
   const isPrimary = variant === "primary";
   return (
@@ -44,7 +46,7 @@ export function Button({ label, onPress, variant = "primary", loading = false, d
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((theme) => ({
   button: {
     alignSelf: "stretch", // full width even inside a centered layout
     flexDirection: "row",
@@ -79,4 +81,4 @@ const styles = StyleSheet.create({
   secondaryLabelInactive: {
     color: theme.colors.textTertiary,
   },
-});
+}));

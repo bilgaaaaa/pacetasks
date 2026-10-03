@@ -6,26 +6,29 @@ then knock them out before or after work — competing only against their own
 past pace, not anyone else's.
 
 Built with Expo SDK 57 (React Native 0.86 + TypeScript) and Supabase. Styled
-to match the "PaceTasks Film" Claude Design: a calm, light sage/cream theme
-with a forest-green accent, plain white cards, and a text-only pill tab bar.
+to match the "PaceTasks Sage" Claude Design: a calm sage theme in light and
+dark, a serif display face for titles, monospaced minutes, and a text-only
+pill tab bar.
 
 ## Features
 
-- **Quick add** — a name field with autocomplete over past task names, plus dropdown pills for timing, time estimate, category, energy, and an optional fixed start time. Nothing is mandatory so it never blocks a quick add; typing a task name you've used before shows a dropdown of matches and, once recognized, the time pill switches from generic presets to that task's own **min / last time / max**.
+- **Add a task** — an always-visible **Add a task…** bar opens the add sheet on **your usuals**: tasks you've done more than once, each showing when you last did it ("9 days ago · usually 7"), the ones past their usual rhythm first. One tap adds a usual for today (with Undo); **⋯** adjusts it first. Typing something new in the big **What?** field switches to three calm questions — how long (big 2 / 5 / 15 / 30 / 60 buttons) and when (Today / After work / Tomorrow) — with category, energy, time of day and a fixed start time tucked behind one link. A name you've used before is suggested and its usual time, timing, category and energy are filled in ("Done 8× before · usually 15–23 min"). After each add you're back on the usuals.
 - **Range timer** — tap a task's minutes pill to start a simple countdown from its suggested max time (learned from your history for that task name); the countdown turns green once you cross the suggested min, so you can see you're in the acceptable window without checking off yet. Reaching zero opens the actual-minutes confirm step so you finish logging it yourself. Tasks with no history yet just use their single estimate as both ends of the range.
-- **Focus sessions (Pomodoro)** — give a task a fixed start time and it gets a FOCUS badge instead of the range timer; tapping it opens a full-screen countdown (session X of Y, progress bar, session segments) using your Pomodoro length from Settings. Finishing a session auto-completes the task and logs the real minutes spent.
-- **Categories** — tag a task as Work / Personal / Shopping / Home / Health (or leave it uncategorized) from the quick-add bar; shown alongside the timing label on each task row.
-- **Task memory** — every task name you've ever typed is remembered (grouped case-insensitively); a recognized name auto-fills its usual timing, time and energy, and feeds the range timer's min/max, unless you manually override them for that entry.
-- **One calm list** — today's pending tasks (undated, due today, or overdue) ordered before work → anytime → after work, completed ones sink to the bottom, no section dividers. Future-dated tasks stay hidden until their day; "today" is always the phone's local day.
+- **Focus sessions (Pomodoro)** — give a task a fixed start time and it gets a **Focus HH:MM** pill instead of the range timer; tapping it opens a full-screen countdown (session X of Y, progress bar, session segments) using your Pomodoro length from Settings. Finishing a session auto-completes the task and logs the real minutes spent; **Done early** logs the minutes so far.
+- **Categories** — tag a task as Work / Personal / Shopping / Home / Health (or leave it uncategorized) from the add sheet; shown as a colored dot and label on each task row.
+- **Task memory** — every task name you've ever typed is remembered (grouped case-insensitively); a recognized name auto-fills its usual timing, time, category and energy, and feeds the range timer's min/max, unless you manually override them for that entry.
+- **Today, in sections you choose** — today's pending tasks (undated, due today, or overdue), with a summary of how small the day really is ("4 left, about 62 min. 3 take 5 minutes or less."). See **All** in one list (the default), or group them **by size** (quick wins vs. longer), **by place** (At home / Out & about / At work / Anywhere, derived from the category), **by category**, or **by time of day** — switch right on Today or in Settings. Tasks finished today collect in a Done section. Future-dated tasks stay hidden until their day; "today" is always the phone's local day.
+- **Quick wins** — tasks at or under your quick-win limit (5 min by default, 1–15 in Settings) get a highlighted time pill, so the 2-minute jobs stand out.
+- **Make it yours** — theme (Match phone / Light / Dark) and accent (Sage, Ocean, Clay, Plum, Ink); "Match phone" follows the phone's light/dark setting live. These look & layout preferences are saved on the device.
 - **What can I do now?** — tap it on Today, pick how much time you have (5 min / 15 min / 30 min / 1 hour) and your energy (low / normal / high). PaceTasks answers with **Do these now**: the tasks that fit back to back in that time, ordered by what matters most (overdue and due today first, then priority, what suits this part of your day, and the best use of your energy), plus **Or instead** for other tasks that would also fit. Tasks never need more energy than you have; tasks with no energy set are never hidden. Completing a task there works exactly as on Today, and the next suggestion moves up. No AI involved.
 - **Tell me what to do (One Thing mode)** — for when the list is too long to choose from. One task fills the screen, picked with the same ranking as "What can I do now?" (time and energy never hide a task here; your last energy choice only shapes the order). **Done** asks how long it took, logs it and offers the next one; **Not now** passes on it until you close the sheet.
 - **"I didn't do it" rollover** — when tasks from earlier days are still open, a card on top of Today lists them with where PaceTasks would move each one: missed deadlines and high-priority tasks come to **Today**, tasks already moved three times go to **Someday**, "maybe" tasks to the **Weekend**, and the rest fill up to 60 minutes of today, with the remainder moving to **Tomorrow**. Change any destination, then accept everything with **Looks good**. **Not now** hides the card until tomorrow. No AI involved.
 - **Weekly Reset** — the **Weekly reset** link at the foot of Today appears when tasks need a decision: overdue ones, ones you have moved two or more times, and undated ones that have sat for two weeks. It shows them one at a time with the choices **Today / Tomorrow / Weekend / Someday / Delete / Keep as is**. Each choice is saved as you make it, and the run ends with a summary of what you did. No AI involved.
 - **Someday** — park a task from its menu (**Move to Someday**) to take it out of your daily lists without deleting it. The **Someday** link at the foot of Today opens the parked list, where each task can be brought back or deleted.
-- **Brain Dump** — tap **Brain dump** on Today, then type or dictate (keyboard mic) everything on your mind, in English, Italian, Turkish or a mix. PaceTasks shows what it understood (titles kept in your words, due days like "Tomorrow" / "by Fri", durations, "maybe" tasks) and highlights anything unclear or already on your list. Edit titles, untick what you don't want, then add. With **Add clear brain dumps directly** on in Settings, clear dumps skip the review.
+- **Brain Dump** — tap the mic next to **Add a task…** (or in the add sheet), then type or dictate (keyboard mic) everything on your mind, in English, Italian, Turkish or a mix. PaceTasks shows what it understood (titles kept in your words, due days like "Tomorrow" / "by Fri", durations, "maybe" tasks) and highlights anything unclear or already on your list. Edit titles, untick what you don't want, then add. With **Add clear brain dumps directly** on in Settings, clear dumps skip the review.
 - **Due days on tasks** — tasks with a date show it first on their row ("Today", "by Fri", "Overdue"); "maybe" tasks are marked as such.
 - **Live sync** — changes made outside the list (another screen, device, or later Siri/Brain Dump) appear immediately via Supabase Realtime, and the list silently reloads whenever the app returns to the foreground.
-- **Day cleared card** — once every task is done, a green summary card appears with today's task count, minutes, and current streak.
+- **Day cleared card** — once every task is done, an accent-colored summary card appears with today's task count, minutes, and current streak.
 - **Work schedule** — set your work start/end hour once in Settings; used for the before/after-work timing labels.
 - **Evening review** — a single configurable local notification (renamed from "daily reminder", same mechanism).
 - **Timer chime / Haptics** — toggle a haptic pulse when a Focus session or range timer ends, or when you complete a task (no audio asset pipeline in this build — "chime" is a haptic, not a sound).
@@ -36,17 +39,20 @@ with a forest-green accent, plain white cards, and a text-only pill tab bar.
 ## Project structure
 
 ```
-App.tsx                  Root component, custom pill tab bar, session bootstrap
+App.tsx                  Root component, ThemeProvider, pill tab bar, session bootstrap
 src/screens/              TaskListScreen, SettingsScreen, StatsScreen
-src/components/           QuickAddBar, TaskItem, FocusSessionModal, EndOfDayCard,
+src/components/           AddTaskSheet, TaskItem, FocusSessionModal, EndOfDayCard,
                           WeekHeatmap, DropdownPill, ChoiceChips, Stepper, StatCard,
                           BrainDumpSheet, DoNowSheet, OneThingSheet, RolloverCard,
                           SomedaySheet, WeeklyResetSheet, AccountCard, AccountSheet,
                           TextField, ErrorBanner, Button
-src/hooks/                useSession, useTasks, useSettings, useBrainDump, useDoNow,
-                          useOneThing, useRollover, useWeeklyReset, useAccount
+src/hooks/                useSession, useTasks, useSettings, useTheme (ThemeProvider,
+                          makeStyles), useBrainDump, useDoNow, useOneThing,
+                          useRollover, useWeeklyReset, useAccount
 src/lib/                  supabase client, tasksApi, settingsApi, notifications,
-                          stats, categories, energy, theme, types
+                          stats, categories, energy, theme (light/dark palettes +
+                          accents), appearance (+ appearanceStorage), taskSections,
+                          taskRhythm, dueOptions, types
 supabase/migrations/       Database schema, RLS policies and the create_task RPC
 supabase/tests/database/   pgTAP tests for the database (`npm run db:test`)
 supabase/functions/_shared/domain/

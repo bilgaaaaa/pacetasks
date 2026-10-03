@@ -1,6 +1,6 @@
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
-import { theme } from "../lib/theme";
+import { Text, View } from "react-native";
+import { makeStyles } from "../hooks/useTheme";
 
 interface Props {
   lines: string[]; // one sentence per insight, from paceInsightLines
@@ -9,6 +9,7 @@ interface Props {
 // "My Pace" card on the Stats tab: what the user's own history says about how
 // they work, in plain sentences. Purely presentational.
 export function PaceInsightsCard({ lines }: Props) {
+  const styles = useStyles();
   return (
     <View style={styles.card}>
       <Text style={styles.eyebrow}>MY PACE</Text>
@@ -21,7 +22,7 @@ export function PaceInsightsCard({ lines }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((theme) => ({
   card: {
     backgroundColor: theme.colors.surface,
     borderRadius: theme.radius.lg,
@@ -39,4 +40,4 @@ const styles = StyleSheet.create({
     color: theme.colors.textPrimary,
     fontSize: theme.typography.body.fontSize,
   },
-});
+}));

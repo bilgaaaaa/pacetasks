@@ -1,8 +1,8 @@
 import React from "react";
-import { Modal, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Modal, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { getCategory } from "../lib/categories";
-import { theme } from "../lib/theme";
+import { makeStyles, useTheme } from "../hooks/useTheme";
 import { Task } from "../lib/types";
 import { ErrorBanner } from "./ErrorBanner";
 
@@ -19,6 +19,8 @@ interface Props {
 // part of the daily workload. Each can be brought back to Today or deleted.
 // Purely presentational — the list and the actions come from the screen.
 export function SomedaySheet({ visible, tasks, errorMessage, onBringBack, onDelete, onClose }: Props) {
+  const { theme } = useTheme();
+  const styles = useStyles();
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <SafeAreaView style={styles.safeArea}>
@@ -80,7 +82,7 @@ export function SomedaySheet({ visible, tasks, errorMessage, onBringBack, onDele
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((theme) => ({
   safeArea: {
     flex: 1,
     backgroundColor: theme.colors.background,
@@ -105,6 +107,7 @@ const styles = StyleSheet.create({
     color: theme.colors.textPrimary,
     fontSize: theme.typography.title.fontSize,
     fontWeight: theme.typography.title.fontWeight,
+    fontFamily: theme.typography.title.fontFamily,
     marginTop: 2,
   },
   closeButton: {
@@ -178,4 +181,4 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.subhead.fontSize,
     textAlign: "center",
   },
-});
+}));

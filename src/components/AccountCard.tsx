@@ -1,8 +1,8 @@
 import React from "react";
-import { StyleSheet, Switch, Text, View } from "react-native";
+import { Switch, Text, View } from "react-native";
 import type { AccountMode, Profile } from "../lib/accountApi";
 import { MARKETING_CONSENT_LABEL } from "../lib/accountCopy";
-import { theme } from "../lib/theme";
+import { makeStyles, useTheme } from "../hooks/useTheme";
 import { Button } from "./Button";
 import { ErrorBanner } from "./ErrorBanner";
 
@@ -30,6 +30,8 @@ export function AccountCard({
   onChangeMarketingOptIn,
   onSignOut,
 }: Props) {
+  const { theme } = useTheme();
+  const styles = useStyles();
   if (!isSignedUp) {
     return (
       <View style={styles.card}>
@@ -84,7 +86,7 @@ export function AccountCard({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((theme) => ({
   card: {
     backgroundColor: theme.colors.surface,
     borderRadius: theme.radius.xl,
@@ -125,4 +127,4 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.caption.fontSize,
     textAlign: "center",
   },
-});
+}));

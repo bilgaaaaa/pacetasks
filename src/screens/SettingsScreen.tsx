@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   SafeAreaView,
   ScrollView,
-  StyleSheet,
   Switch,
   Text,
   TouchableOpacity,
@@ -11,13 +10,22 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Session } from "@supabase/supabase-js";
-import { theme } from "../lib/theme";
+import { makeStyles, useTheme } from "../hooks/useTheme";
 import { useSettings } from "../hooks/useSettings";
 import { useAccount } from "../hooks/useAccount";
 import { AccountCard } from "../components/AccountCard";
 import { AccountSheet } from "../components/AccountSheet";
 import { Stepper } from "../components/Stepper";
 import { syncDailyReminder } from "../lib/notifications";
+import { ACCENT_OPTIONS, buildTheme } from "../lib/theme";
+import {
+  GROUP_BY_LABELS,
+  GROUP_BY_OPTIONS,
+  QUICK_WIN_LIMITS,
+  THEME_MODES,
+  THEME_MODE_LABELS,
+  ThemeMode,
+} from "../lib/appearance";
 
 interface Props {
   userId: string | undefined;
@@ -29,6 +37,15 @@ const POMODORO_PRESETS: { work: number; break: number; label: string }[] = [
   { work: 25, break: 5, label: "25 + 5" },
   { work: 50, break: 10, label: "50 + 10" },
 ];
+
+// Preview colors for the theme cards; "Match phone" shows half light, half dark.
+const LIGHT_PREVIEW = buildTheme("light", "sage").colors;
+const DARK_PREVIEW = buildTheme("dark", "sage").colors;
+const THEME_PREVIEWS: Record<ThemeMode, [typeof LIGHT_PREVIEW, typeof LIGHT_PREVIEW]> = {
+  system: [LIGHT_PREVIEW, DARK_PREVIEW],
+  light: [LIGHT_PREVIEW, LIGHT_PREVIEW],
+  dark: [DARK_PREVIEW, DARK_PREVIEW],
+};
 
 function formatHour(hour: number): string {
   const period = hour >= 12 ? "PM" : "AM";
@@ -45,12 +62,14 @@ function formatTime(hour: number, minute: number): string {
   return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
 }
 
-// The account (create one, sign in, email consent, sign out), then the
-// work schedule (feeds the before/after-work task labels), the evening
-// reminder, Brain Dump auto-create, and the two settings the Focus timer +
-// range timer read (chime + Pomodoro length). "Keep it calm and out of the way" — plain white cards,
-// no icons.
+// The account (create one, sign in, email consent, sign out), then "Make it
+// yours" (theme, accent, Today's sections, quick-win size — saved on this
+// phone), the work schedule (feeds the before/after-work labels), the evening
+// reminder, Brain Dump auto-create, and the settings the Focus timer + range
+// timer read (chime + Pomodoro length).
 export function SettingsScreen({ userId, session }: Props) {
+  const { theme, appearance, updateAppearance } = useTheme();
+  const styles = useStyles();
   const { settings, loading, error, save } = useSettings(userId);
   const account = useAccount(session);
   const [accountSheetOpen, setAccountSheetOpen] = useState(false);
@@ -64,6 +83,11 @@ export function SettingsScreen({ userId, session }: Props) {
       setReminderMinute(minute);
     }
   }, [settings?.reminder_time]);
+
+  const switchColors = {
+    trackColor: { false: theme.colors.border, true: theme.colors.accentDark },
+    thumbColor: theme.colors.surface,
+  };
 
   if (loading || !settings) {
     return (
@@ -91,11 +115,12 @@ export function SettingsScreen({ userId, session }: Props) {
     >
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.content}>
-          <Text style={styles.headerTitle}>Settings</Text>
-          <Text style={styles.headerSubtitle}>Keep it calm and out of the way.</Text>
+          <Text style={styles.eyebrow}>SETTINGS</Text>
+          <Text style={styles.headerTitle}>Make it yours</Text>
 
           {error && <Text style={styles.errorText}>{error}</Text>}
 
+          <Text style={styles.sectionLabel}>ACCOUNT</Text>
           <AccountCard
             isSignedUp={account.isSignedUp}
             email={account.email}
@@ -110,6 +135,98 @@ export function SettingsScreen({ userId, session }: Props) {
             onSignOut={account.signOut}
           />
 
+          <Text style={styles.sectionLabel}>THEME</Text>
+          <View style={styles.themeRow} accessibilityRole="radiogroup" accessibilityLabel="Theme">
+            {THEME_MODES.map((mode) => {
+              const isActive = appearance.themeMode === mode;
+              const [left, right] = THEME_PREVIEWS[mode];
+              return (
+                <TouchableOpacity
+                  key={mode}
+                  style={[styles.themeCard, isActive && styles.themeCardActive]}
+                  onPress={() => updateAppearance({ themeMode: mode })}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: isActive }}
+                  accessibilityLabel={THEME_MODE_LABELS[mode]}
+                >
+                  <View style={styles.themePreview}>
+                    {[left, right].map((colors, i) => (
+                      <View key={i} style={[styles.themePreviewHalf, { backgroundColor: colors.background }]}>
+                        <View style={[styles.themePreviewLine, { backgroundColor: colors.textPrimary }]} />
+                        <View style={[styles.themePreviewCard, { backgroundColor: colors.surface }]} />
+                        <View style={[styles.themePreviewCard, { backgroundColor: colors.surface }]} />
+                      </View>
+                    ))}
+                  </View>
+                  <Text style={styles.themeLabel}>{THEME_MODE_LABELS[mode]}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          <View style={styles.card}>
+            <View style={styles.cardHeaderRow}>
+              <Text style={styles.cardTitle}>Accent color</Text>
+              <Text style={styles.cardValue}>
+                {ACCENT_OPTIONS.find((a) => a.id === appearance.accent)?.label}
+              </Text>
+            </View>
+            <View style={styles.swatchRow} accessibilityRole="radiogroup" accessibilityLabel="Accent color">
+              {ACCENT_OPTIONS.map((option) => {
+                const isActive = appearance.accent === option.id;
+                const swatch = option.swatch[theme.scheme];
+                return (
+                  <TouchableOpacity
+                    key={option.id}
+                    style={[styles.swatchRing, isActive && { borderColor: swatch }]}
+                    onPress={() => updateAppearance({ accent: option.id })}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: isActive }}
+                    accessibilityLabel={option.label}
+                  >
+                    <View style={[styles.swatch, { backgroundColor: swatch }]} />
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Sections on Today</Text>
+            <Text style={styles.cardSubtitle}>You can also switch this right on the Today screen.</Text>
+            <View accessibilityRole="radiogroup" accessibilityLabel="Group Today by">
+              {GROUP_BY_OPTIONS.map((option) => {
+                const isActive = appearance.groupBy === option;
+                return (
+                  <TouchableOpacity
+                    key={option}
+                    style={[styles.radioRow, isActive && styles.radioRowActive]}
+                    onPress={() => updateAppearance({ groupBy: option })}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: isActive }}
+                  >
+                    <View style={[styles.radioOuter, isActive && styles.radioOuterActive]}>
+                      {isActive && <View style={styles.radioInner} />}
+                    </View>
+                    <View style={styles.radioText}>
+                      <Text style={styles.radioTitle}>{GROUP_BY_LABELS[option].label}</Text>
+                      <Text style={styles.radioHint}>{GROUP_BY_LABELS[option].hint}</Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            <Stepper
+              label="A quick win is up to"
+              value={appearance.quickWinMinutes}
+              min={QUICK_WIN_LIMITS.min}
+              max={QUICK_WIN_LIMITS.max}
+              format={(m) => `${m} min`}
+              onChange={(minutes) => updateAppearance({ quickWinMinutes: minutes })}
+            />
+          </View>
+
+          <Text style={styles.sectionLabel}>YOUR DAY</Text>
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Work schedule</Text>
             <Text style={styles.cardSubtitle}>
@@ -146,7 +263,7 @@ export function SettingsScreen({ userId, session }: Props) {
                 await save({ reminder_enabled: enabled });
                 await syncDailyReminder(enabled, settings.reminder_time);
               }}
-              trackColor={{ false: theme.colors.border, true: theme.colors.accentDark }}
+              {...switchColors}
             />
           </View>
           <View style={styles.card}>
@@ -185,7 +302,7 @@ export function SettingsScreen({ userId, session }: Props) {
             <Switch
               value={settings.timer_chime_enabled}
               onValueChange={(enabled) => save({ timer_chime_enabled: enabled })}
-              trackColor={{ false: theme.colors.border, true: theme.colors.accentDark }}
+              {...switchColors}
             />
           </View>
 
@@ -197,7 +314,7 @@ export function SettingsScreen({ userId, session }: Props) {
             <Switch
               value={settings.haptics_enabled}
               onValueChange={(enabled) => save({ haptics_enabled: enabled })}
-              trackColor={{ false: theme.colors.border, true: theme.colors.accentDark }}
+              {...switchColors}
             />
           </View>
 
@@ -211,7 +328,7 @@ export function SettingsScreen({ userId, session }: Props) {
             <Switch
               value={settings.brain_dump_auto_create}
               onValueChange={(enabled) => save({ brain_dump_auto_create: enabled })}
-              trackColor={{ false: theme.colors.border, true: theme.colors.accentDark }}
+              {...switchColors}
             />
           </View>
 
@@ -265,7 +382,7 @@ export function SettingsScreen({ userId, session }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((theme) => ({
   gradient: {
     flex: 1,
   },
@@ -279,42 +396,165 @@ const styles = StyleSheet.create({
     padding: theme.spacing.lg,
     gap: theme.spacing.md,
   },
+  eyebrow: {
+    color: theme.colors.textSecondary,
+    fontSize: theme.typography.eyebrow.fontSize,
+    fontWeight: theme.typography.eyebrow.fontWeight,
+    letterSpacing: theme.typography.eyebrow.letterSpacing,
+    marginBottom: -theme.spacing.sm,
+  },
   headerTitle: {
     color: theme.colors.textPrimary,
     fontSize: theme.typography.largeTitle.fontSize,
     fontWeight: theme.typography.largeTitle.fontWeight,
+    fontFamily: theme.typography.largeTitle.fontFamily,
+    letterSpacing: theme.typography.largeTitle.letterSpacing,
   },
-  headerSubtitle: {
+  sectionLabel: {
     color: theme.colors.textSecondary,
-    fontSize: theme.typography.subhead.fontSize,
-    marginTop: 2,
-    marginBottom: theme.spacing.xs,
+    fontSize: theme.typography.eyebrow.fontSize,
+    fontWeight: theme.typography.eyebrow.fontWeight,
+    letterSpacing: theme.typography.eyebrow.letterSpacing,
+    marginTop: theme.spacing.sm,
+    marginBottom: -theme.spacing.xs,
   },
   errorText: {
     color: theme.colors.danger,
   },
+  themeRow: {
+    flexDirection: "row",
+    gap: theme.spacing.sm,
+  },
+  themeCard: {
+    flex: 1,
+    padding: theme.spacing.sm,
+    gap: theme.spacing.sm,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: "transparent",
+    backgroundColor: theme.colors.surface,
+  },
+  themeCardActive: {
+    borderColor: theme.colors.accentDark,
+  },
+  themePreview: {
+    height: 72,
+    borderRadius: 12,
+    overflow: "hidden",
+    flexDirection: "row",
+  },
+  themePreviewHalf: {
+    flex: 1,
+    padding: theme.spacing.sm,
+    gap: 5,
+  },
+  themePreviewLine: {
+    height: 6,
+    width: "60%",
+    borderRadius: 3,
+  },
+  themePreviewCard: {
+    height: 12,
+    borderRadius: 4,
+  },
+  themeLabel: {
+    color: theme.colors.textPrimary,
+    fontSize: theme.typography.subhead.fontSize,
+    fontWeight: "600",
+  },
   card: {
     backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.xl,
+    borderRadius: theme.radius.lg,
     padding: theme.spacing.md,
+  },
+  cardHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   cardTitle: {
     color: theme.colors.textPrimary,
     fontSize: theme.typography.headline.fontSize,
-    fontWeight: "700",
+    fontWeight: theme.typography.headline.fontWeight,
+  },
+  cardValue: {
+    color: theme.colors.textSecondary,
+    fontSize: theme.typography.subhead.fontSize,
   },
   cardSubtitle: {
     color: theme.colors.textSecondary,
     fontSize: theme.typography.footnote.fontSize,
+    fontWeight: "400",
     marginTop: 2,
     marginBottom: theme.spacing.sm,
+  },
+  swatchRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: theme.spacing.md,
+  },
+  swatchRing: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 3,
+    borderColor: "transparent",
+    padding: 3,
+  },
+  swatch: {
+    flex: 1,
+    borderRadius: 20,
+  },
+  radioRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    minHeight: 56,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: 14,
+  },
+  radioRowActive: {
+    backgroundColor: theme.colors.surfaceAlt,
+  },
+  radioOuter: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: theme.colors.textTertiary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  radioOuterActive: {
+    borderColor: theme.colors.accentDark,
+  },
+  radioInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: theme.colors.accentDark,
+  },
+  radioText: {
+    flex: 1,
+    gap: 2,
+  },
+  radioTitle: {
+    color: theme.colors.textPrimary,
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  radioHint: {
+    color: theme.colors.textSecondary,
+    fontSize: theme.typography.footnote.fontSize,
+    fontWeight: "400",
   },
   toggleRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.xl,
+    borderRadius: theme.radius.lg,
     padding: theme.spacing.md,
   },
   toggleText: {
@@ -325,11 +565,12 @@ const styles = StyleSheet.create({
   toggleTitle: {
     color: theme.colors.textPrimary,
     fontSize: theme.typography.headline.fontSize,
-    fontWeight: "700",
+    fontWeight: theme.typography.headline.fontWeight,
   },
   toggleSubtitle: {
     color: theme.colors.textSecondary,
     fontSize: theme.typography.footnote.fontSize,
+    fontWeight: "400",
   },
   segmentedRow: {
     flexDirection: "row",
@@ -339,9 +580,10 @@ const styles = StyleSheet.create({
   segment: {
     flex: 1,
     alignItems: "center",
+    justifyContent: "center",
     backgroundColor: theme.colors.surfaceAlt,
     borderRadius: theme.radius.pill,
-    paddingVertical: 10,
+    minHeight: 44,
   },
   segmentActive: {
     backgroundColor: theme.colors.accentDark,
@@ -350,8 +592,9 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     fontWeight: "700",
     fontSize: theme.typography.footnote.fontSize,
+    fontFamily: theme.fonts.mono,
   },
   segmentTextActive: {
-    color: "#FFFFFF",
+    color: theme.colors.onAccent,
   },
-});
+}));

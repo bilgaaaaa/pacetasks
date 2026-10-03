@@ -1,8 +1,8 @@
 import React from "react";
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { BrainDumpCandidate } from "@domain/brainDump/types";
-import { theme } from "../lib/theme";
+import { makeStyles, useTheme } from "../hooks/useTheme";
 import { getCategory } from "../lib/categories";
 import { formatDueLabel } from "../lib/dueLabel";
 import { issueLabel } from "../lib/brainDumpCopy";
@@ -21,6 +21,8 @@ interface Props {
 // (editable, in the user's own language), what PaceTasks understood, and any
 // reasons it deserves a second look.
 export function BrainDumpCandidateRow({ candidate, edit, todayKey, disabled, onToggle, onChangeTitle }: Props) {
+  const { theme } = useTheme();
+  const styles = useStyles();
   const { draft } = edit;
   const hasIssues = candidate.issues.length > 0;
 
@@ -42,7 +44,7 @@ export function BrainDumpCandidateRow({ candidate, edit, todayKey, disabled, onT
         accessibilityState={{ checked: edit.included }}
       >
         <View style={[styles.checkCircle, edit.included && styles.checkCircleOn]}>
-          {edit.included && <Ionicons name="checkmark" size={16} color="#FFFFFF" />}
+          {edit.included && <Ionicons name="checkmark" size={16} color={theme.colors.onAccent} />}
         </View>
       </TouchableOpacity>
 
@@ -71,7 +73,7 @@ export function BrainDumpCandidateRow({ candidate, edit, todayKey, disabled, onT
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((theme) => ({
   row: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -81,7 +83,7 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.sm,
     gap: theme.spacing.sm,
     borderWidth: 1,
-    borderColor: theme.colors.surface,
+    borderColor: theme.colors.border,
   },
   rowFlagged: {
     borderColor: theme.colors.warning,
@@ -93,8 +95,8 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    borderWidth: 2,
-    borderColor: theme.colors.border,
+    borderWidth: 1.75,
+    borderColor: theme.colors.textTertiary,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 2,
@@ -137,4 +139,4 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.footnote.fontSize,
     fontWeight: "600",
   },
-});
+}));

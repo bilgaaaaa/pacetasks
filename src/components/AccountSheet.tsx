@@ -5,7 +5,6 @@ import {
   Platform,
   SafeAreaView,
   ScrollView,
-  StyleSheet,
   Switch,
   Text,
   TouchableOpacity,
@@ -27,7 +26,7 @@ import {
   switchModeLabel,
 } from "../lib/accountCopy";
 import { AccountState } from "../lib/accountState";
-import { theme } from "../lib/theme";
+import { makeStyles, useTheme } from "../hooks/useTheme";
 import { Button } from "./Button";
 import { ErrorBanner } from "./ErrorBanner";
 import { TextField } from "./TextField";
@@ -66,6 +65,8 @@ export function AccountSheet({
   onEditEmail,
   onClose,
 }: Props) {
+  const { theme } = useTheme();
+  const styles = useStyles();
   const { mode, phase, fieldErrors } = state;
   const isSignUp = mode === "sign_up";
   const isFormPhase = phase === "form" || phase === "sending";
@@ -227,7 +228,7 @@ export function AccountSheet({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((theme) => ({
   safeArea: {
     flex: 1,
     backgroundColor: theme.colors.background,
@@ -252,6 +253,7 @@ const styles = StyleSheet.create({
     color: theme.colors.textPrimary,
     fontSize: theme.typography.title.fontSize,
     fontWeight: theme.typography.title.fontWeight,
+    fontFamily: theme.typography.title.fontFamily,
     marginTop: 2,
   },
   closeButton: {
@@ -312,9 +314,10 @@ const styles = StyleSheet.create({
     color: theme.colors.textPrimary,
     fontSize: theme.typography.title.fontSize,
     fontWeight: theme.typography.title.fontWeight,
+    fontFamily: theme.typography.title.fontFamily,
     textAlign: "center",
   },
   doneButton: {
     marginTop: theme.spacing.sm,
   },
-});
+}));

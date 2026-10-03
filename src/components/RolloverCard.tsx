@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 import type { RolloverDestination } from "@domain/rollover";
 import { RolloverChoice } from "../hooks/useRollover";
 import { destinationLabel, reasonLabel, ROLLOVER_DESTINATION_OPTIONS, rolloverTitle } from "../lib/rolloverCopy";
-import { theme } from "../lib/theme";
+import { makeStyles } from "../hooks/useTheme";
 import { Button } from "./Button";
 import { DropdownPill } from "./DropdownPill";
 
@@ -19,6 +19,7 @@ interface Props {
 // task with the day PaceTasks would move it to, each changeable, accepted in one
 // tap. Purely presentational — the proposals come from useRollover.
 export function RolloverCard({ choices, saving, onChangeDestination, onApply, onDismiss }: Props) {
+  const styles = useStyles();
   return (
     <View style={styles.card}>
       <Text style={styles.eyebrow}>UNFINISHED</Text>
@@ -64,7 +65,7 @@ export function RolloverCard({ choices, saving, onChangeDestination, onApply, on
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((theme) => ({
   card: {
     backgroundColor: theme.colors.surface,
     borderRadius: theme.radius.xl,
@@ -81,6 +82,7 @@ const styles = StyleSheet.create({
     color: theme.colors.textPrimary,
     fontSize: theme.typography.title.fontSize,
     fontWeight: theme.typography.title.fontWeight,
+    fontFamily: theme.typography.title.fontFamily,
     marginTop: 2,
   },
   subtitle: {
@@ -121,4 +123,4 @@ const styles = StyleSheet.create({
   secondaryOnCard: {
     backgroundColor: theme.colors.surfaceAlt,
   },
-});
+}));

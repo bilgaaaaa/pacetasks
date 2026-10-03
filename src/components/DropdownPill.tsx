@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Modal, Pressable, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { theme } from "../lib/theme";
+import { makeStyles, useTheme } from "../hooks/useTheme";
 
 interface Option<T> {
   value: T;
@@ -15,10 +15,12 @@ interface Props<T> {
   onChange: (value: T) => void;
 }
 
-// A compact pill that opens a small choice dialog on tap — used for the
-// timing/time/category/scheduled-time pickers in the quick-add bar so those
-// controls take one tap to open instead of a permanently-visible row of chips.
+// A compact pill that opens a small choice dialog on tap, for a secondary
+// picker inside a row (e.g. where the rollover moves each task), so it takes
+// one tap to open instead of a permanently-visible row of chips.
 export function DropdownPill<T>({ label, options, value, onChange }: Props<T>) {
+  const { theme } = useTheme();
+  const styles = useStyles();
   const [open, setOpen] = useState(false);
 
   return (
@@ -65,7 +67,7 @@ export function DropdownPill<T>({ label, options, value, onChange }: Props<T>) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((theme) => ({
   pill: {
     flexDirection: "row",
     alignItems: "center",
@@ -83,7 +85,7 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: theme.colors.overlay,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -108,4 +110,4 @@ const styles = StyleSheet.create({
     color: theme.colors.accent,
     fontWeight: "700",
   },
-});
+}));

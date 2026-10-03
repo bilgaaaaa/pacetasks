@@ -102,12 +102,17 @@ export function useTasks(userId: string | undefined) {
     }
   }, []);
 
+  // Returns the created task (so the add sheet can offer Undo), or undefined when saving failed.
   const create = useCallback(
-    (draft: TaskDraft) =>
-      run("create task", async () => {
+    async (draft: TaskDraft): Promise<Task | undefined> => {
+      let created: Task | undefined;
+      await run("create task", async () => {
         const newTask = await tasksApi.createTask(draft);
         setTasks((prev) => upsertTask(prev, newTask));
-      }),
+        created = newTask;
+      });
+      return created;
+    },
     [run]
   );
 

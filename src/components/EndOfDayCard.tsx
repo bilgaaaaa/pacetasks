@@ -1,6 +1,6 @@
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
-import { theme } from "../lib/theme";
+import { Text, View } from "react-native";
+import { makeStyles } from "../hooks/useTheme";
 
 interface Props {
   tasksToday: number;
@@ -8,10 +8,11 @@ interface Props {
   streakDays: number;
 }
 
-// Green completion card appended to the bottom of the task list once every
+// Accent completion card appended to the bottom of the task list once every
 // task for the day is done. Purely presentational — the numbers come from
 // lib/stats.ts's computeStats, same source the Stats tab uses.
 export function EndOfDayCard({ tasksToday, minutesToday, streakDays }: Props) {
+  const styles = useStyles();
   return (
     <View style={styles.card}>
       <Text style={styles.eyebrow}>END OF DAY</Text>
@@ -34,7 +35,7 @@ export function EndOfDayCard({ tasksToday, minutesToday, streakDays }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((theme) => ({
   card: {
     backgroundColor: theme.colors.accentDark,
     borderRadius: theme.radius.xl,
@@ -42,16 +43,18 @@ const styles = StyleSheet.create({
     marginTop: theme.spacing.sm,
   },
   eyebrow: {
-    color: "rgba(255,255,255,0.75)",
+    color: theme.colors.onAccent,
+    opacity: 0.75,
     fontSize: theme.typography.eyebrow.fontSize,
     fontWeight: theme.typography.eyebrow.fontWeight,
     letterSpacing: theme.typography.eyebrow.letterSpacing,
     marginBottom: theme.spacing.xs,
   },
   title: {
-    color: "#FFFFFF",
+    color: theme.colors.onAccent,
     fontSize: theme.typography.title.fontSize,
     fontWeight: theme.typography.title.fontWeight,
+    fontFamily: theme.typography.title.fontFamily,
     marginBottom: theme.spacing.md,
   },
   statsRow: {
@@ -62,12 +65,13 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   statValue: {
-    color: "#FFFFFF",
+    color: theme.colors.onAccent,
     fontSize: theme.typography.headline.fontSize,
-    fontWeight: "800",
+    fontFamily: theme.fonts.mono,
   },
   statLabel: {
-    color: "rgba(255,255,255,0.75)",
+    color: theme.colors.onAccent,
+    opacity: 0.75,
     fontSize: theme.typography.footnote.fontSize,
   },
-});
+}));

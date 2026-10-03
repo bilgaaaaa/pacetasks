@@ -1,18 +1,17 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  FlatList,
   RefreshControl,
   SafeAreaView,
-  StyleSheet,
+  SectionList,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { theme } from "../lib/theme";
+import { makeStyles, useTheme } from "../hooks/useTheme";
 import { Task } from "../lib/types";
 import { useTasks } from "../hooks/useTasks";
 import { useSettings } from "../hooks/useSettings";
@@ -23,11 +22,14 @@ import { useRollover } from "../hooks/useRollover";
 import { useWeeklyReset } from "../hooks/useWeeklyReset";
 import { DEFAULT_SETTINGS } from "../lib/settingsApi";
 import { computeStats } from "../lib/stats";
+import { GROUP_BY_LABELS, GROUP_BY_OPTIONS } from "../lib/appearance";
+import { groupTodayTasks, summarizePending } from "../lib/taskSections";
+import { selectUsuals } from "../lib/taskRhythm";
 import { buildTaskHistory, findExactMatch } from "@domain/taskHistory";
 import { selectSomedayTasks, selectTodayTasks } from "@domain/todayTasks";
 import { PARK_PATCH, UNPARK_PATCH } from "@domain/taskPatch";
 import { toLocalDateKey } from "@domain/dates";
-import { QuickAddBar } from "../components/QuickAddBar";
+import { AddTaskSheet } from "../components/AddTaskSheet";
 import { TaskItem } from "../components/TaskItem";
 import { FocusSessionModal } from "../components/FocusSessionModal";
 import { EndOfDayCard } from "../components/EndOfDayCard";
@@ -42,6 +44,16 @@ interface Props {
   userId: string | undefined;
 }
 
+interface ListSection {
+  key: string;
+  title: string;
+  totalMinutes: number;
+  data: Task[];
+}
+
+// iOS can't present a new Modal while the previous one is still animating away.
+const MODAL_SWITCH_DELAY_MS = 350;
+
 function greetingEyebrow(): string {
   const now = new Date();
   const day = now.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
@@ -50,23 +62,24 @@ function greetingEyebrow(): string {
   return `${day} · ${part}`;
 }
 
-// Home screen: quick capture (plus Brain Dump for many tasks at once), then today's tasks in one calm list (ordered by
-// timing, completed ones sink to the bottom, future-dated ones stay hidden).
-// Each task can be timed one of two ways: a lightweight range timer (tap its
-// minutes pill — counts down from the task's suggested max, learned from
-// history) or, for tasks with a fixed scheduled time, the full-screen
-// Focus/Pomodoro modal via its FOCUS badge. "What can I do now?" narrows the
-// list to what fits the time and energy the user has, and "Tell me what to do"
-// (One Thing mode) shows a single task. When tasks were left unfinished, a
-// rollover card on top proposes where each one goes. The foot of the list links
-// to Weekly Reset (decide, one by one, what happens to neglected tasks) and to
-// the Someday sheet (parked tasks). An end-of-day card appears once nothing is
-// left pending.
+// Home screen: today's tasks split into the sections the user picked (all in
+// one list, or by size, place, category, time of day), with a summary of how small the
+// day really is, and an always-visible capture bar that opens the add sheet
+// (plus Brain Dump for many tasks at once). Each task can be timed with a
+// lightweight range timer or, for fixed-time tasks, the Focus/Pomodoro modal.
+// "What can I do now?" narrows the list to what fits the time and energy the
+// user has, and "Tell me what to do" (One Thing mode) shows a single task. When
+// tasks were left unfinished, a rollover card on top proposes where each one
+// goes. The foot of the list links to Weekly Reset and to the Someday sheet
+// (parked tasks). An end-of-day card appears once nothing is left pending.
 export function TaskListScreen({ userId }: Props) {
+  const { theme, appearance, updateAppearance } = useTheme();
+  const styles = useStyles();
   const { tasks, loading, error, refresh, create, applyCreated, complete, update, updateMany, remove, clearCompleted } =
     useTasks(userId);
   const { settings } = useSettings(userId);
   const [focusTask, setFocusTask] = useState<Task | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
   const [brainDumpOpen, setBrainDumpOpen] = useState(false);
   const [doNowOpen, setDoNowOpen] = useState(false);
   const [oneThingOpen, setOneThingOpen] = useState(false);
@@ -79,6 +92,13 @@ export function TaskListScreen({ userId }: Props) {
   const oneThing = useOneThing({ tasks, energy: doNow.energy, workStartHour, workEndHour, onComplete: complete });
   const rollover = useRollover({ tasks, onApply: updateMany });
   const weeklyReset = useWeeklyReset({ tasks, onUpdate: update, onRemove: remove });
+  const switchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (switchTimer.current) clearTimeout(switchTimer.current);
+    };
+  }, []);
 
   const closeWeeklyReset = () => {
     weeklyReset.reset();
@@ -95,29 +115,56 @@ export function TaskListScreen({ userId }: Props) {
     setBrainDumpOpen(false);
   };
 
+  const openBrainDumpFromAdd = () => {
+    setAddOpen(false);
+    if (switchTimer.current) clearTimeout(switchTimer.current);
+    switchTimer.current = setTimeout(() => setBrainDumpOpen(true), MODAL_SWITCH_DELAY_MS);
+  };
+
   const history = useMemo(() => buildTaskHistory(tasks), [tasks]);
   const stats = useMemo(() => computeStats(tasks), [tasks]);
 
   // "Today" is the phone's local calendar day; recomputed on every render so a
   // list left open past midnight updates on the next foreground reload.
   const todayKey = toLocalDateKey(new Date());
-  const { pending, done } = useMemo(
+  const usuals = useMemo(() => selectUsuals(tasks, todayKey), [tasks, todayKey]);
+  const { pending, done: completedTasks } = useMemo(
     () => selectTodayTasks(tasks, todayKey),
     [tasks, todayKey]
   );
-  const orderedTasks = useMemo(() => [...pending, ...done], [pending, done]);
+  // The Done section only shows what was finished today; older history lives on the Pace tab.
+  const done = useMemo(
+    () => completedTasks.filter((t) => t.completed_at && toLocalDateKey(new Date(t.completed_at)) === todayKey),
+    [completedTasks, todayKey]
+  );
   const somedayTasks = useMemo(() => selectSomedayTasks(tasks), [tasks]);
-  const hasCompleted = done.length > 0;
-  const allDone = orderedTasks.length > 0 && pending.length === 0;
+  const hasCompleted = completedTasks.length > 0;
+  const allDone = pending.length + done.length > 0 && pending.length === 0;
+  const summary = summarizePending(pending, appearance.quickWinMinutes);
+
+  const sections: ListSection[] = useMemo(() => {
+    const grouped = groupTodayTasks(pending, appearance.groupBy, appearance.quickWinMinutes).map(
+      ({ key, title, totalMinutes, tasks: sectionTasks }) => ({ key, title, totalMinutes, data: sectionTasks })
+    );
+    if (done.length > 0) {
+      grouped.push({
+        key: "done",
+        title: "Done",
+        totalMinutes: done.reduce((total, t) => total + (t.actual_minutes ?? t.estimated_minutes), 0),
+        data: done,
+      });
+    }
+    return grouped;
+  }, [pending, done, appearance.groupBy, appearance.quickWinMinutes]);
 
   // Today's Focus tasks (any task with a fixed start time) ordered by that time —
   // this is what "SESSION X OF Y" in the Focus modal counts against.
   const focusTasksToday = useMemo(
     () =>
-      orderedTasks
+      [...pending, ...done]
         .filter((t) => t.scheduled_time)
         .sort((a, b) => (a.scheduled_time! < b.scheduled_time! ? -1 : 1)),
-    [orderedTasks]
+    [pending, done]
   );
   const focusSessionIndex = focusTask
     ? focusTasksToday.findIndex((t) => t.id === focusTask.id) + 1
@@ -137,6 +184,7 @@ export function TaskListScreen({ userId }: Props) {
         pomodoroBreakMinutes={settings?.pomodoro_break_minutes ?? DEFAULT_SETTINGS.pomodoro_break_minutes}
         suggestedMin={Math.min(suggestedMin, suggestedMax)}
         suggestedMax={Math.max(suggestedMin, suggestedMax)}
+        quickWinMinutes={appearance.quickWinMinutes}
         chimeEnabled={settings?.timer_chime_enabled ?? DEFAULT_SETTINGS.timer_chime_enabled}
         onComplete={complete}
         onDelete={remove}
@@ -159,6 +207,13 @@ export function TaskListScreen({ userId }: Props) {
     Alert.alert("Options", hasCompleted ? undefined : "No completed tasks yet.", options);
   };
 
+  const summaryText =
+    summary.count === 0
+      ? allDone
+        ? "Everything's done. Enjoy the rest of your day."
+        : "Nothing yet. Add whatever's on your mind."
+      : `${summary.count} left, about ${summary.totalMinutes} min.`;
+
   return (
     <LinearGradient
       colors={[theme.colors.background, theme.colors.backgroundEnd]}
@@ -166,44 +221,47 @@ export function TaskListScreen({ userId }: Props) {
     >
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <View>
+          <View style={styles.headerTop}>
             <Text style={styles.eyebrow}>{greetingEyebrow()}</Text>
-            <Text style={styles.title}>Today</Text>
-          </View>
-          <View style={styles.headerActions}>
-            <TouchableOpacity
-              onPress={() => setBrainDumpOpen(true)}
-              style={styles.brainDumpButton}
-              accessibilityLabel="Open Brain Dump"
-            >
-              <Text style={styles.brainDumpButtonText}>Brain dump</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={openMenu} hitSlop={8} style={styles.menuButton}>
+            <TouchableOpacity onPress={openMenu} style={styles.menuButton} accessibilityLabel="List options">
               <Ionicons name="ellipsis-horizontal" size={18} color={theme.colors.textSecondary} />
             </TouchableOpacity>
           </View>
-        </View>
+          <Text style={styles.title}>Today</Text>
+          <Text style={styles.summary}>
+            <Text style={styles.summaryStrong}>{summaryText}</Text>
+            {summary.quickWinCount > 0 &&
+              ` ${summary.quickWinCount} ${summary.quickWinCount === 1 ? "takes" : "take"} ${
+                appearance.quickWinMinutes
+              } minutes or less.`}
+          </Text>
 
-        <View style={styles.quickAddWrapper}>
-          <QuickAddBar
-            history={history}
-            onAdd={(draft) => create({ ...draft, source: "app" })}
-          />
           <View style={styles.helpRow}>
-            <TouchableOpacity
-              onPress={() => setDoNowOpen(true)}
-              style={styles.helpButton}
-              accessibilityRole="button"
-            >
+            <TouchableOpacity onPress={() => setDoNowOpen(true)} style={styles.helpButton} accessibilityRole="button">
               <Text style={styles.helpButtonText}>What can I do now?</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => setOneThingOpen(true)}
-              style={styles.helpButton}
-              accessibilityRole="button"
-            >
+            <TouchableOpacity onPress={() => setOneThingOpen(true)} style={styles.helpButton} accessibilityRole="button">
               <Text style={styles.helpButtonText}>Tell me what to do</Text>
             </TouchableOpacity>
+          </View>
+
+          <View style={styles.groupSwitch} accessibilityRole="radiogroup" accessibilityLabel="Group tasks by">
+            {GROUP_BY_OPTIONS.map((option) => {
+              const isActive = appearance.groupBy === option;
+              return (
+                <TouchableOpacity
+                  key={option}
+                  style={[styles.groupOption, isActive && styles.groupOptionActive]}
+                  onPress={() => updateAppearance({ groupBy: option })}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: isActive }}
+                >
+                  <Text style={[styles.groupOptionText, isActive && styles.groupOptionTextActive]}>
+                    {GROUP_BY_LABELS[option].short}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
 
@@ -212,9 +270,18 @@ export function TaskListScreen({ userId }: Props) {
         {loading && tasks.length === 0 ? (
           <ActivityIndicator color={theme.colors.accent} style={styles.loader} />
         ) : (
-          <FlatList
-            data={orderedTasks}
+          <SectionList
+            sections={sections}
             keyExtractor={(item) => item.id}
+            stickySectionHeadersEnabled={false}
+            renderSectionHeader={({ section }) => (
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>
+                  {section.title.toUpperCase()} · {section.data.length}
+                </Text>
+                <Text style={styles.sectionMinutes}>{section.totalMinutes} min</Text>
+              </View>
+            )}
             renderItem={({ item }) => renderTaskItem(item)}
             contentContainerStyle={styles.listContent}
             refreshControl={
@@ -227,7 +294,7 @@ export function TaskListScreen({ userId }: Props) {
             ListEmptyComponent={
               <View style={styles.emptyState}>
                 <Text style={styles.emptyText}>
-                  Nothing here yet — add your first task above.
+                  Tap “Add a task” below the moment something pops into your head.
                 </Text>
               </View>
             }
@@ -273,6 +340,37 @@ export function TaskListScreen({ userId }: Props) {
             }
           />
         )}
+
+        <View style={styles.captureBar}>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => setAddOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Add a task"
+          >
+            <Text style={styles.addButtonText}>Add a task…</Text>
+            <View style={styles.addButtonIcon}>
+              <Ionicons name="add" size={24} color={theme.colors.onAccent} />
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.micButton}
+            onPress={() => setBrainDumpOpen(true)}
+            accessibilityLabel="Brain dump: say everything at once"
+          >
+            <Ionicons name="mic-outline" size={22} color={theme.colors.textPrimary} />
+          </TouchableOpacity>
+        </View>
+
+        <AddTaskSheet
+          visible={addOpen}
+          history={history}
+          usuals={usuals}
+          onAdd={create}
+          onUndo={remove}
+          onOpenBrainDump={openBrainDumpFromAdd}
+          onClose={() => setAddOpen(false)}
+        />
 
         <BrainDumpSheet
           visible={brainDumpOpen}
@@ -363,7 +461,7 @@ export function TaskListScreen({ userId }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((theme) => ({
   gradient: {
     flex: 1,
   },
@@ -371,53 +469,43 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
     paddingHorizontal: theme.spacing.lg,
     paddingTop: theme.spacing.md,
-    paddingBottom: theme.spacing.sm,
+    paddingBottom: theme.spacing.xs,
+    gap: 10,
+  },
+  headerTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   eyebrow: {
-    color: theme.colors.accentDark,
+    color: theme.colors.textSecondary,
     fontSize: theme.typography.eyebrow.fontSize,
     fontWeight: theme.typography.eyebrow.fontWeight,
     letterSpacing: theme.typography.eyebrow.letterSpacing,
+  },
+  menuButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
   },
   title: {
     color: theme.colors.textPrimary,
     fontSize: theme.typography.largeTitle.fontSize,
     fontWeight: theme.typography.largeTitle.fontWeight,
+    fontFamily: theme.typography.largeTitle.fontFamily,
+    letterSpacing: theme.typography.largeTitle.letterSpacing,
   },
-  headerActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: theme.spacing.sm,
+  summary: {
+    color: theme.colors.textSecondary,
+    fontSize: theme.typography.body.fontSize,
+    lineHeight: 22,
   },
-  brainDumpButton: {
-    backgroundColor: theme.colors.accentDark,
-    borderRadius: theme.radius.pill,
-    paddingHorizontal: theme.spacing.md,
-    height: 36,
-    justifyContent: "center",
-  },
-  brainDumpButtonText: {
-    color: "#FFFFFF",
-    fontSize: theme.typography.footnote.fontSize,
-    fontWeight: "700",
-  },
-  menuButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: theme.colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  quickAddWrapper: {
-    paddingHorizontal: theme.spacing.lg,
-    marginBottom: theme.spacing.md,
-    gap: theme.spacing.sm,
+  summaryStrong: {
+    color: theme.colors.textPrimary,
   },
   helpRow: {
     flexDirection: "row",
@@ -430,11 +518,39 @@ const styles = StyleSheet.create({
     minHeight: 44,
     backgroundColor: theme.colors.surface,
     borderRadius: theme.radius.pill,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   helpButtonText: {
     color: theme.colors.accentDark,
     fontSize: theme.typography.footnote.fontSize,
     fontWeight: "700",
+  },
+  groupSwitch: {
+    flexDirection: "row",
+    gap: 4,
+    padding: 4,
+    borderRadius: theme.radius.pill,
+    backgroundColor: theme.colors.surfaceAlt,
+    marginTop: theme.spacing.xs,
+  },
+  groupOption: {
+    flex: 1,
+    height: 36,
+    borderRadius: theme.radius.pill,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  groupOptionActive: {
+    backgroundColor: theme.colors.surface,
+  },
+  groupOptionText: {
+    color: theme.colors.textSecondary,
+    fontSize: theme.typography.footnote.fontSize,
+    fontWeight: "600",
+  },
+  groupOptionTextActive: {
+    color: theme.colors.textPrimary,
   },
   errorText: {
     color: theme.colors.danger,
@@ -445,8 +561,27 @@ const styles = StyleSheet.create({
     marginTop: theme.spacing.xl,
   },
   listContent: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingBottom: theme.spacing.xl,
+    paddingHorizontal: theme.spacing.md,
+    paddingBottom: theme.spacing.lg,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "baseline",
+    paddingHorizontal: theme.spacing.sm,
+    paddingTop: theme.spacing.md,
+    paddingBottom: theme.spacing.sm,
+  },
+  sectionTitle: {
+    color: theme.colors.textSecondary,
+    fontSize: theme.typography.eyebrow.fontSize,
+    fontWeight: theme.typography.eyebrow.fontWeight,
+    letterSpacing: theme.typography.eyebrow.letterSpacing,
+  },
+  sectionMinutes: {
+    color: theme.colors.textSecondary,
+    fontSize: theme.typography.eyebrow.fontSize,
+    fontFamily: theme.fonts.mono,
   },
   footerLink: {
     alignItems: "center",
@@ -467,4 +602,55 @@ const styles = StyleSheet.create({
     textAlign: "center",
     paddingHorizontal: theme.spacing.lg,
   },
-});
+  captureBar: {
+    flexDirection: "row",
+    gap: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    paddingTop: theme.spacing.sm,
+  },
+  addButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    height: 60,
+    paddingLeft: 20,
+    paddingRight: 8,
+    borderRadius: theme.radius.pill,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    shadowColor: theme.colors.shadow,
+    shadowOpacity: 1,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
+  },
+  addButtonText: {
+    color: theme.colors.textSecondary,
+    fontSize: theme.typography.body.fontSize,
+  },
+  addButtonIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: theme.colors.accentDark,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  micButton: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: theme.colors.shadow,
+    shadowOpacity: 1,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
+  },
+}));

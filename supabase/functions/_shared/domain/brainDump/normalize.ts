@@ -144,7 +144,7 @@ function normalizeCandidate(
 }
 
 // The user's own history beats the AI's guess: a task they've done before
-// keeps its usual time, exactly like quick-add does.
+// keeps its usual time, exactly like the add sheet does.
 function estimatedMinutesFor(aiMinutes: number | null, historyEntry: TaskHistoryEntry | undefined): number {
   const minutes = historyEntry?.lastMinutes ?? aiMinutes ?? TASK_LIMITS.defaultEstimatedMinutes;
   return clamp(Math.round(minutes), TASK_LIMITS.minEstimatedMinutes, TASK_LIMITS.maxEstimatedMinutes);

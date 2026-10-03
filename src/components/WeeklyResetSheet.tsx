@@ -1,8 +1,8 @@
 import React from "react";
-import { Modal, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Modal, SafeAreaView, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { ResetAction, ResetItem, ResetOutcome, ResetReason } from "@domain/weeklyReset";
-import { theme } from "../lib/theme";
+import { makeStyles, useTheme } from "../hooks/useTheme";
 import { actionLabel, introLines, itemReason, progressLabel, summaryLine } from "../lib/weeklyResetCopy";
 import { WeeklyResetPhase } from "../lib/weeklyResetState";
 import { Button } from "./Button";
@@ -50,6 +50,8 @@ export function WeeklyResetSheet({
   onDecide,
   onClose,
 }: Props) {
+  const { theme } = useTheme();
+  const styles = useStyles();
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <SafeAreaView style={styles.safeArea}>
@@ -152,7 +154,7 @@ export function WeeklyResetSheet({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((theme) => ({
   safeArea: {
     flex: 1,
     backgroundColor: theme.colors.background,
@@ -193,6 +195,7 @@ const styles = StyleSheet.create({
     color: theme.colors.textPrimary,
     fontSize: theme.typography.largeTitle.fontSize,
     fontWeight: theme.typography.largeTitle.fontWeight,
+    fontFamily: theme.typography.largeTitle.fontFamily,
     textAlign: "center",
   },
   meta: {
@@ -219,4 +222,4 @@ const styles = StyleSheet.create({
   action: {
     flex: 1,
   },
-});
+}));

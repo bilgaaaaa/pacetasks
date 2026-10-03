@@ -1,6 +1,6 @@
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { theme } from "../lib/theme";
+import { Text, TouchableOpacity, View } from "react-native";
+import { makeStyles } from "../hooks/useTheme";
 
 interface Option<T> {
   value: T;
@@ -16,8 +16,9 @@ interface Props<T> {
 
 // A row of always-visible chips for picking one option in a single tap. Use it
 // where the choice is the screen's main question (time and energy in "What can
-// I do now?"); DropdownPill stays the control for compact, secondary pickers.
+// I do now?"); DropdownPill is the control for compact, secondary pickers.
 export function ChoiceChips<T>({ options, value, onChange, accessibilityLabel }: Props<T>) {
+  const styles = useStyles();
   return (
     <View style={styles.row} accessibilityRole="radiogroup" accessibilityLabel={accessibilityLabel}>
       {options.map((option) => {
@@ -38,7 +39,7 @@ export function ChoiceChips<T>({ options, value, onChange, accessibilityLabel }:
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((theme) => ({
   row: {
     flexDirection: "row",
     gap: theme.spacing.sm,
@@ -64,4 +65,4 @@ const styles = StyleSheet.create({
     color: theme.colors.onAccent,
     fontWeight: "700",
   },
-});
+}));

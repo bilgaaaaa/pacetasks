@@ -2,7 +2,7 @@ import { ENERGY_LEVELS } from "@domain/task";
 import { EnergyLevel } from "./types";
 
 // Wording for energy levels, shared by "the energy I have right now" (What can
-// I do now?) and "the energy a task needs" (quick add), so both read the same.
+// I do now?) and "the energy a task needs" (the add sheet), so both read the same.
 const ENERGY_NAMES: Record<EnergyLevel, string> = {
   low: "Low",
   medium: "Normal",

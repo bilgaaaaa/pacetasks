@@ -1,25 +1,30 @@
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
-import { theme } from "../lib/theme";
+import { Text, View } from "react-native";
+import { makeStyles, useTheme } from "../hooks/useTheme";
+import { AppTheme } from "../lib/theme";
 import { Heatmap } from "../lib/stats";
 
 interface Props {
   heatmap: Heatmap;
 }
 
-// Level 0-4 -> color, from empty (theme border) to most productive (accentDark).
-const LEVEL_COLORS = [
-  theme.colors.border,
-  theme.colors.accentLight,
-  theme.colors.accent,
-  theme.colors.accentDark,
-  theme.colors.accentDark,
-];
+// Level 0-4 -> color, from empty (theme border) to most productive. In dark
+// mode the bright accent reads as "more", so the two strongest steps swap.
+function levelColors(theme: AppTheme): string[] {
+  const { border, accentLight, accent, accentDark } = theme.colors;
+  return theme.isDark
+    ? [border, accentLight, accentDark, accent, accent]
+    : [border, accentLight, accent, accentDark, accentDark];
+}
 
 // Weekday-only (Mon-Fri) contribution grid, rendered one row per weekday
 // so it reads left-to-right as "oldest week -> this week", matching the
 // design's "LAST 13 WEEKS" card.
 export function WeekHeatmap({ heatmap }: Props) {
+  const { theme } = useTheme();
+  const styles = useStyles();
+  const colors = levelColors(theme);
+
   return (
     <View style={styles.card}>
       <View style={styles.headerRow}>
@@ -34,7 +39,7 @@ export function WeekHeatmap({ heatmap }: Props) {
               return (
                 <View
                   key={cell.date}
-                  style={[styles.cell, { backgroundColor: LEVEL_COLORS[cell.level] }]}
+                  style={[styles.cell, { backgroundColor: colors[cell.level] }]}
                 />
               );
             })}
@@ -45,7 +50,7 @@ export function WeekHeatmap({ heatmap }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((theme) => ({
   card: {
     backgroundColor: theme.colors.surface,
     borderRadius: theme.radius.xl,
@@ -64,8 +69,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   rangeLabel: {
-    color: theme.colors.textTertiary,
+    color: theme.colors.textSecondary,
     fontSize: theme.typography.caption.fontSize,
+    fontWeight: "400",
   },
   grid: {
     gap: 4,
@@ -79,4 +85,4 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     borderRadius: 3,
   },
-});
+}));

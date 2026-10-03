@@ -1,6 +1,6 @@
 import React from "react";
-import { StyleSheet, Text, TextInput, TextInputProps, View } from "react-native";
-import { theme } from "../lib/theme";
+import { Text, TextInput, TextInputProps, View } from "react-native";
+import { makeStyles, useTheme } from "../hooks/useTheme";
 
 interface Props extends Omit<TextInputProps, "style" | "placeholderTextColor"> {
   label: string;
@@ -10,6 +10,8 @@ interface Props extends Omit<TextInputProps, "style" | "placeholderTextColor"> {
 // A labelled single-line input with room for its error, for forms. The label
 // is also the accessibility label, so screen readers announce what the field is.
 export function TextField({ label, error, ...inputProps }: Props) {
+  const { theme } = useTheme();
+  const styles = useStyles();
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
@@ -24,7 +26,7 @@ export function TextField({ label, error, ...inputProps }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((theme) => ({
   field: {
     gap: theme.spacing.xs,
   },
@@ -50,4 +52,4 @@ const styles = StyleSheet.create({
     color: theme.colors.danger,
     fontSize: theme.typography.footnote.fontSize,
   },
-});
+}));

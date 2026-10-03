@@ -5,7 +5,6 @@ import {
   Platform,
   SafeAreaView,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
@@ -14,7 +13,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { BRAIN_DUMP_MAX_TEXT_LENGTH } from "@domain/brainDump/limits";
 import { toLocalDateKey } from "@domain/dates";
-import { theme } from "../lib/theme";
+import { makeStyles, useTheme } from "../hooks/useTheme";
 import { addButtonLabel, doneMessage, reviewSummary } from "../lib/brainDumpCopy";
 import { BrainDumpState, selectedDrafts } from "../lib/brainDumpState";
 import { BrainDumpCandidateRow } from "./BrainDumpCandidateRow";
@@ -45,6 +44,8 @@ export function BrainDumpSheet({
   onCommit,
   onClose,
 }: Props) {
+  const { theme } = useTheme();
+  const styles = useStyles();
   const { phase, proposal } = state;
   const isInputPhase = phase === "input" || phase === "interpreting";
   const isReviewPhase = phase === "review" || phase === "committing";
@@ -142,7 +143,7 @@ export function BrainDumpSheet({
           {phase === "done" && (
             <View style={styles.done}>
               <View style={styles.doneIcon}>
-                <Ionicons name="checkmark" size={32} color="#FFFFFF" />
+                <Ionicons name="checkmark" size={32} color={theme.colors.onAccent} />
               </View>
               <Text style={styles.doneText}>{doneMessage(state.createdTasks.length)}</Text>
               <Button style={styles.action} label="Done" onPress={onClose} />
@@ -154,7 +155,7 @@ export function BrainDumpSheet({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((theme) => ({
   safeArea: {
     flex: 1,
     backgroundColor: theme.colors.background,
@@ -179,12 +180,13 @@ const styles = StyleSheet.create({
     color: theme.colors.textPrimary,
     fontSize: theme.typography.title.fontSize,
     fontWeight: theme.typography.title.fontWeight,
+    fontFamily: theme.typography.title.fontFamily,
     marginTop: 2,
   },
   closeButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: theme.colors.surface,
     alignItems: "center",
     justifyContent: "center",
@@ -258,5 +260,6 @@ const styles = StyleSheet.create({
     color: theme.colors.textPrimary,
     fontSize: theme.typography.title.fontSize,
     fontWeight: theme.typography.title.fontWeight,
+    fontFamily: theme.typography.title.fontFamily,
   },
-});
+}));

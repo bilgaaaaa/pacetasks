@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Modal, SafeAreaView, Text, TouchableOpacity, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { theme } from "../lib/theme";
+import { makeStyles, useTheme } from "../hooks/useTheme";
 import { Task } from "../lib/types";
 
 interface Props {
@@ -21,7 +22,7 @@ function formatClock(totalSeconds: number): string {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-// Full-screen Pomodoro countdown, opened by tapping a task's FOCUS badge.
+// Full-screen Pomodoro countdown, opened by tapping a task's Focus pill.
 // Counts down from `workMinutes`; reaching zero auto-completes the task
 // (actual_minutes = workMinutes) so the "estimate accuracy" stat still gets
 // a real data point for Focus tasks, same as manually confirmed ones.
@@ -35,6 +36,8 @@ export function FocusSessionModal({
   onClose,
   onComplete,
 }: Props) {
+  const { theme } = useTheme();
+  const styles = useStyles();
   const [remainingSeconds, setRemainingSeconds] = useState(workMinutes * 60);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -69,6 +72,7 @@ export function FocusSessionModal({
 
   const totalSeconds = workMinutes * 60;
   const elapsedFraction = 1 - remainingSeconds / totalSeconds;
+  const elapsedMinutes = Math.floor((totalSeconds - remainingSeconds) / 60);
 
   const handleClose = () => {
     if (intervalRef.current) clearInterval(intervalRef.current);
@@ -77,21 +81,27 @@ export function FocusSessionModal({
 
   return (
     <Modal visible={!!task} animationType="slide" onRequestClose={handleClose}>
-      <View style={styles.screen}>
-        <View style={styles.header}>
-          <Text style={styles.eyebrow}>
-            FOCUS · SESSION {sessionIndex} OF {sessionTotal}
-          </Text>
-          <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
-            <Text style={styles.closeButtonText}>Close</Text>
-          </TouchableOpacity>
-        </View>
+      <SafeAreaView style={styles.screen}>
+        <View style={styles.content}>
+          <View style={styles.header}>
+            <TouchableOpacity style={styles.closeButton} onPress={handleClose} accessibilityLabel="Close focus session">
+              <Ionicons name="chevron-down" size={20} color={theme.colors.textPrimary} />
+            </TouchableOpacity>
+            <Text style={styles.eyebrow}>
+              FOCUS · SESSION {sessionIndex} OF {sessionTotal}
+            </Text>
+            <View style={styles.headerSpacer} />
+          </View>
 
-        <Text style={styles.fixedTime}>{task.scheduled_time} · fixed time</Text>
-        <Text style={styles.taskTitle}>{task.title}</Text>
+          <Text style={styles.fixedTime}>{task.scheduled_time} · fixed time</Text>
+          <Text style={styles.taskTitle}>{task.title}</Text>
 
-        <View style={styles.timerCard}>
-          <Text style={styles.countdown}>{formatClock(remainingSeconds)}</Text>
+          <View style={styles.clockArea}>
+            <Text style={styles.countdown}>{formatClock(remainingSeconds)}</Text>
+            <Text style={styles.caption}>
+              {elapsedMinutes} min in · a {breakMinutes} minute break follows
+            </Text>
+          </View>
 
           <View style={styles.progressTrack}>
             <View style={[styles.progressFill, { flex: elapsedFraction || 0.0001 }]} />
@@ -118,27 +128,36 @@ export function FocusSessionModal({
             })}
           </View>
 
-          <Text style={styles.caption}>
-            A {breakMinutes} minute break follows this session.
-          </Text>
+          <TouchableOpacity
+            style={styles.doneButton}
+            onPress={() => onComplete(task.id, Math.max(1, Math.round((totalSeconds - remainingSeconds) / 60)))}
+          >
+            <Ionicons name="checkmark" size={20} color={theme.colors.onAccent} />
+            <Text style={styles.doneButtonText}>Done early</Text>
+          </TouchableOpacity>
         </View>
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((theme) => ({
   screen: {
     flex: 1,
     backgroundColor: theme.colors.background,
+  },
+  content: {
+    flex: 1,
     padding: theme.spacing.lg,
-    paddingTop: theme.spacing.xl,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: theme.spacing.lg,
+    marginBottom: theme.spacing.xl,
+  },
+  headerSpacer: {
+    width: 44,
   },
   eyebrow: {
     color: theme.colors.textSecondary,
@@ -147,15 +166,13 @@ const styles = StyleSheet.create({
     letterSpacing: theme.typography.eyebrow.letterSpacing,
   },
   closeButton: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.pill,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: 8,
-  },
-  closeButtonText: {
-    color: theme.colors.textPrimary,
-    fontWeight: "700",
-    fontSize: theme.typography.footnote.fontSize,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    alignItems: "center",
+    justifyContent: "center",
   },
   fixedTime: {
     color: theme.colors.textSecondary,
@@ -164,26 +181,31 @@ const styles = StyleSheet.create({
   },
   taskTitle: {
     color: theme.colors.textPrimary,
-    fontSize: theme.typography.title.fontSize,
+    fontSize: 32,
     fontWeight: theme.typography.title.fontWeight,
-    marginBottom: theme.spacing.lg,
+    fontFamily: theme.typography.title.fontFamily,
   },
-  timerCard: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.xl,
-    padding: theme.spacing.lg,
+  clockArea: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: theme.spacing.md,
   },
   countdown: {
     color: theme.colors.textPrimary,
-    fontSize: 64,
-    fontWeight: "800",
+    fontSize: 88,
+    fontFamily: theme.fonts.mono,
     fontVariant: ["tabular-nums"],
-    marginBottom: theme.spacing.md,
+    letterSpacing: -2,
+  },
+  caption: {
+    color: theme.colors.textSecondary,
+    fontSize: 15,
   },
   progressTrack: {
     flexDirection: "row",
-    height: 8,
-    borderRadius: 4,
+    height: 6,
+    borderRadius: 3,
     overflow: "hidden",
     backgroundColor: theme.colors.border,
     marginBottom: theme.spacing.sm,
@@ -194,12 +216,12 @@ const styles = StyleSheet.create({
   segmentRow: {
     flexDirection: "row",
     gap: theme.spacing.xs,
-    marginBottom: theme.spacing.md,
+    marginBottom: theme.spacing.lg,
   },
   segment: {
     flex: 1,
-    height: 6,
-    borderRadius: 3,
+    height: 4,
+    borderRadius: 2,
     overflow: "hidden",
     flexDirection: "row",
   },
@@ -215,8 +237,18 @@ const styles = StyleSheet.create({
   segmentFill: {
     backgroundColor: theme.colors.accentLight,
   },
-  caption: {
-    color: theme.colors.textSecondary,
-    fontSize: theme.typography.footnote.fontSize,
+  doneButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: theme.spacing.sm,
+    height: 56,
+    borderRadius: theme.radius.pill,
+    backgroundColor: theme.colors.accentDark,
   },
-});
+  doneButtonText: {
+    color: theme.colors.onAccent,
+    fontSize: theme.typography.headline.fontSize,
+    fontWeight: "600",
+  },
+}));

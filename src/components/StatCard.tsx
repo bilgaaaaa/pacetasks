@@ -1,7 +1,7 @@
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { theme } from "../lib/theme";
+import { makeStyles } from "../hooks/useTheme";
 
 interface Props {
   icon?: keyof typeof Ionicons.glyphMap;
@@ -17,6 +17,7 @@ interface Props {
 // `icon`/`color` are optional so plain uppercase-label cards (no icon, no
 // colored border) can reuse this same component.
 export function StatCard({ icon, color, valueColor, label, value, hint }: Props) {
+  const styles = useStyles();
   return (
     <View style={[styles.card, color ? { borderTopColor: color, borderTopWidth: 3 } : null]}>
       {icon && color && <Ionicons name={icon} size={20} color={color} />}
@@ -27,7 +28,7 @@ export function StatCard({ icon, color, valueColor, label, value, hint }: Props)
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((theme) => ({
   card: {
     flexBasis: "48%",
     backgroundColor: theme.colors.surface,
@@ -39,7 +40,7 @@ const styles = StyleSheet.create({
   value: {
     color: theme.colors.textPrimary,
     fontSize: 28,
-    fontWeight: "800",
+    fontFamily: theme.fonts.mono,
     marginTop: theme.spacing.xs,
   },
   label: {
@@ -50,7 +51,8 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   hint: {
-    color: theme.colors.textTertiary,
+    color: theme.colors.textSecondary,
     fontSize: theme.typography.caption.fontSize,
+    fontWeight: "400",
   },
-});
+}));
