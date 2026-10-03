@@ -22,10 +22,21 @@ export function newDemoId(): string {
 // Fills the columns Postgres would default, for inserts made through .from().insert().
 export function withTableDefaults(table: string, row: Row): Row {
   const now = new Date().toISOString();
-  if (table === "tasks") return { ...taskFromDraft({ title: row.title ?? "" }), ...row };
+  if (table === "tasks") return { ...taskFromDraft({ title: row.title ?? "" }), ...row, postponed_count: 0 };
   if (table === "user_settings") return { brain_dump_auto_create: false, updated_at: now, ...row };
   if (table === "brain_dump_sessions") return { id: newDemoId(), status: "proposed", created_at: now, ...row };
   return row;
+}
+
+// Mirror of the tasks_track_postponement trigger: the store owns postponed_count,
+// adding one whenever an unfinished task's due date moves to a later day.
+export function withUpdateRules(table: string, row: Row, patch: Row): Row {
+  if (table !== "tasks") return patch;
+  const nextStatus = patch.status ?? row.status;
+  const nextDueDate = "due_date" in patch ? patch.due_date : row.due_date;
+  const postponed =
+    row.status !== "done" && nextStatus !== "done" && row.due_date !== null && nextDueDate > row.due_date;
+  return { ...patch, postponed_count: row.postponed_count + (postponed ? 1 : 0) };
 }
 
 // Mirror of public.create_task: validates the draft, applies its defaults and
@@ -63,11 +74,13 @@ function taskFromDraft(draft: TaskDraft): Task {
     source: draft.source ?? "app",
     source_language: draft.source_language ?? null,
     ai_confidence: draft.ai_confidence ?? null,
+    postponed_count: 0,
   };
 }
 
 // Seeds ~6 weeks of weekday history plus today's list, so Stats, streaks,
-// range-timer bounds and Brain Dump's history-based durations have real input.
+// range-timer bounds, Brain Dump's history-based durations and "What can I do
+// now?" (durations and energy levels of different sizes) have real input.
 function buildSeedTasks(): Task[] {
   const recurring: Array<[string, number, TaskTiming, string | null]> = [
     ["Morning run", 30, "before_work", "health"],
@@ -101,11 +114,14 @@ function buildSeedTasks(): Task[] {
   }
 
   const today: TaskDraft[] = [
-    { title: "Morning run", estimated_minutes: 30, timing: "before_work", category: "health" },
-    { title: "Call the dentist", estimated_minutes: 5, category: "health", due_date: todayKey, due_kind: "on" },
-    { title: "Deep work: PaceTasks AI layer", estimated_minutes: 50, category: "personal", scheduled_time: "20:00" },
+    { title: "Morning run", estimated_minutes: 30, timing: "before_work", category: "health", energy_level: "high" },
+    { title: "Call the dentist", estimated_minutes: 5, category: "health", due_date: todayKey, due_kind: "on", energy_level: "low" },
+    { title: "Deep work: PaceTasks AI layer", estimated_minutes: 50, category: "personal", scheduled_time: "20:00", energy_level: "high" },
     { title: "Renew bike insurance", estimated_minutes: 15, category: "personal", due_date: addDays(todayKey, 3), due_kind: "by" },
-    { title: "Groceries", estimated_minutes: 25, timing: "after_work", category: "shopping" },
+    { title: "Groceries", estimated_minutes: 25, timing: "after_work", category: "shopping", energy_level: "medium" },
+    { title: "Pay the phone bill", estimated_minutes: 3, category: "home", energy_level: "low" },
+    { title: "Reply to Marco", estimated_minutes: 10, category: "work", energy_level: "low" },
+    { title: "Plan the weekend trip", estimated_minutes: 30, category: "personal", flexible: true, energy_level: "medium" },
   ];
   today.forEach((draft, i) => {
     tasks.push({ ...taskFromDraft(draft), created_at: new Date(Date.now() - i * 60_000).toISOString() });

@@ -9,8 +9,9 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { theme } from "../lib/theme";
-import { TaskTiming } from "../lib/types";
+import { EnergyLevel, TaskDraft, TaskTiming } from "../lib/types";
 import { CATEGORIES, NO_CATEGORY, getCategory } from "../lib/categories";
+import { ANY_ENERGY_LABEL, ENERGY_OPTIONS, energyLabel } from "../lib/energy";
 import {
   TaskHistoryEntry,
   findExactMatch,
@@ -29,6 +30,11 @@ const CATEGORY_OPTIONS: { value: string | null; label: string }[] = [
   { value: null, label: NO_CATEGORY.label },
   ...CATEGORIES.map((c) => ({ value: c.id, label: c.label })),
 ];
+// "Any energy" (null) first: energy is what "What can I do now?" matches tasks against.
+const ENERGY_LEVEL_OPTIONS: { value: EnergyLevel | null; label: string }[] = [
+  { value: null, label: ANY_ENERGY_LABEL },
+  ...ENERGY_OPTIONS.map((o) => ({ value: o.value, label: energyLabel(o.value) })),
+];
 // Half-hour presets from 6am to 10pm, formatted like the design's "09:30".
 // A fixed time is what enables Focus/Pomodoro mode for a task.
 const SCHEDULED_TIME_OPTIONS: { value: string | null; label: string }[] = [
@@ -42,29 +48,25 @@ const SCHEDULED_TIME_OPTIONS: { value: string | null; label: string }[] = [
 ];
 
 interface Props {
-  onAdd: (
-    title: string,
-    estimatedMinutes: number,
-    timing: TaskTiming,
-    category: string | null,
-    scheduledTime: string | null
-  ) => void;
+  onAdd: (draft: TaskDraft) => void; // the caller adds the source and creates the task
   history: Map<string, TaskHistoryEntry>;
 }
 
 // The core "moment I think of it, I write it" capture bar: a name field with
 // autocomplete over past task names, plus one-tap dropdown pills for timing,
-// time estimate, category, and an optional fixed start time — all optional
-// so nothing blocks a quick add. Pills sit in a horizontal scroller so all
-// four fit regardless of screen width.
+// time estimate, category, energy, and an optional fixed start time — all
+// optional so nothing blocks a quick add. Pills sit in a horizontal scroller
+// so all five fit regardless of screen width.
 export function QuickAddBar({ onAdd, history }: Props) {
   const [title, setTitle] = useState("");
   const [minutes, setMinutes] = useState(5);
   const [timing, setTiming] = useState<TaskTiming>("anytime");
   const [category, setCategory] = useState<string | null>(null);
+  const [energyLevel, setEnergyLevel] = useState<EnergyLevel | null>(null);
   const [scheduledTime, setScheduledTime] = useState<string | null>(null);
   const [timingTouched, setTimingTouched] = useState(false);
   const [minutesTouched, setMinutesTouched] = useState(false);
+  const [energyTouched, setEnergyTouched] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
   const exactMatch = findExactMatch(history, title);
@@ -77,6 +79,7 @@ export function QuickAddBar({ onAdd, history }: Props) {
     if (match) {
       if (!timingTouched) setTiming(match.timing);
       if (!minutesTouched) setMinutes(match.lastMinutes);
+      if (!energyTouched) setEnergyLevel(match.energyLevel);
     }
   };
 
@@ -84,17 +87,28 @@ export function QuickAddBar({ onAdd, history }: Props) {
     setTitle(entry.title);
     setTiming(entry.timing);
     setMinutes(entry.lastMinutes);
+    setEnergyLevel(entry.energyLevel);
     setTimingTouched(false);
     setMinutesTouched(false);
+    setEnergyTouched(false);
   };
 
   const submit = () => {
     if (!canSubmit) return;
-    onAdd(title.trim(), minutes, timing, category, scheduledTime);
+    onAdd({
+      title: title.trim(),
+      estimated_minutes: minutes,
+      timing,
+      category,
+      energy_level: energyLevel,
+      scheduled_time: scheduledTime,
+    });
     setTitle("");
     setTimingTouched(false);
     setMinutesTouched(false);
+    setEnergyTouched(false);
     setCategory(null);
+    setEnergyLevel(null);
     setScheduledTime(null);
     // Keeps the field ready for the next task without re-tapping it.
     inputRef.current?.focus();
@@ -199,6 +213,15 @@ export function QuickAddBar({ onAdd, history }: Props) {
           options={CATEGORY_OPTIONS}
           value={category}
           onChange={setCategory}
+        />
+        <DropdownPill
+          label={energyLabel(energyLevel)}
+          options={ENERGY_LEVEL_OPTIONS}
+          value={energyLevel}
+          onChange={(v) => {
+            setEnergyLevel(v);
+            setEnergyTouched(true);
+          }}
         />
         <DropdownPill
           label={scheduledTimeLabel}

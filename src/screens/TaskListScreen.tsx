@@ -17,6 +17,8 @@ import { Task } from "../lib/types";
 import { useTasks } from "../hooks/useTasks";
 import { useSettings } from "../hooks/useSettings";
 import { useBrainDump } from "../hooks/useBrainDump";
+import { useDoNow } from "../hooks/useDoNow";
+import { DEFAULT_SETTINGS } from "../lib/settingsApi";
 import { computeStats } from "../lib/stats";
 import { buildTaskHistory, findExactMatch } from "@domain/taskHistory";
 import { selectTodayTasks } from "@domain/todayTasks";
@@ -26,6 +28,7 @@ import { TaskItem } from "../components/TaskItem";
 import { FocusSessionModal } from "../components/FocusSessionModal";
 import { EndOfDayCard } from "../components/EndOfDayCard";
 import { BrainDumpSheet } from "../components/BrainDumpSheet";
+import { DoNowSheet } from "../components/DoNowSheet";
 
 interface Props {
   userId: string | undefined;
@@ -44,15 +47,22 @@ function greetingEyebrow(): string {
 // Each task can be timed one of two ways: a lightweight range timer (tap its
 // minutes pill — counts down from the task's suggested max, learned from
 // history) or, for tasks with a fixed scheduled time, the full-screen
-// Focus/Pomodoro modal via its FOCUS badge. An end-of-day card appears once
-// nothing is left pending.
+// Focus/Pomodoro modal via its FOCUS badge. "What can I do now?" narrows the
+// list to what fits the time and energy the user has. An end-of-day card
+// appears once nothing is left pending.
 export function TaskListScreen({ userId }: Props) {
   const { tasks, loading, error, refresh, create, applyCreated, complete, remove, clearCompleted } =
     useTasks(userId);
   const { settings } = useSettings(userId);
   const [focusTask, setFocusTask] = useState<Task | null>(null);
   const [brainDumpOpen, setBrainDumpOpen] = useState(false);
+  const [doNowOpen, setDoNowOpen] = useState(false);
   const brainDump = useBrainDump({ onTasksCreated: applyCreated });
+  const doNow = useDoNow(
+    tasks,
+    settings?.work_start_hour ?? DEFAULT_SETTINGS.work_start_hour,
+    settings?.work_end_hour ?? DEFAULT_SETTINGS.work_end_hour
+  );
 
   const closeBrainDump = () => {
     brainDump.close();
@@ -85,6 +95,28 @@ export function TaskListScreen({ userId }: Props) {
   const focusSessionIndex = focusTask
     ? focusTasksToday.findIndex((t) => t.id === focusTask.id) + 1
     : 0;
+
+  // One task row for both the Today list and the "What can I do now?" sheet.
+  // The range timer's suggested min/max come from this task's own history
+  // (see taskHistory.ts); with no completed history yet, both ends are its estimate.
+  const renderTaskItem = (task: Task) => {
+    const historyEntry = findExactMatch(history, task.title);
+    const suggestedMin = historyEntry?.minMinutes ?? task.estimated_minutes;
+    const suggestedMax = historyEntry?.maxMinutes ?? task.estimated_minutes;
+    return (
+      <TaskItem
+        task={task}
+        pomodoroWorkMinutes={settings?.pomodoro_work_minutes ?? DEFAULT_SETTINGS.pomodoro_work_minutes}
+        pomodoroBreakMinutes={settings?.pomodoro_break_minutes ?? DEFAULT_SETTINGS.pomodoro_break_minutes}
+        suggestedMin={Math.min(suggestedMin, suggestedMax)}
+        suggestedMax={Math.max(suggestedMin, suggestedMax)}
+        chimeEnabled={settings?.timer_chime_enabled ?? DEFAULT_SETTINGS.timer_chime_enabled}
+        onComplete={complete}
+        onDelete={remove}
+        onStartFocus={setFocusTask}
+      />
+    );
+  };
 
   const openMenu = () => {
     const options: any[] = [];
@@ -127,17 +159,15 @@ export function TaskListScreen({ userId }: Props) {
         <View style={styles.quickAddWrapper}>
           <QuickAddBar
             history={history}
-            onAdd={(title, minutes, timing, category, scheduledTime) =>
-              create({
-                title,
-                estimated_minutes: minutes,
-                timing,
-                category,
-                scheduled_time: scheduledTime,
-                source: "app",
-              })
-            }
+            onAdd={(draft) => create({ ...draft, source: "app" })}
           />
+          <TouchableOpacity
+            onPress={() => setDoNowOpen(true)}
+            style={styles.doNowButton}
+            accessibilityRole="button"
+          >
+            <Text style={styles.doNowButtonText}>What can I do now?</Text>
+          </TouchableOpacity>
         </View>
 
         {error && <Text style={styles.errorText}>{error}</Text>}
@@ -148,27 +178,7 @@ export function TaskListScreen({ userId }: Props) {
           <FlatList
             data={orderedTasks}
             keyExtractor={(item) => item.id}
-            renderItem={({ item }) => {
-              // The range timer's suggested min/max come from this task's own
-              // history (see taskHistory.ts); a task with no completed history
-              // yet just gets its single estimate as both ends of the range.
-              const historyEntry = findExactMatch(history, item.title);
-              const suggestedMin = historyEntry?.minMinutes ?? item.estimated_minutes;
-              const suggestedMax = historyEntry?.maxMinutes ?? item.estimated_minutes;
-              return (
-                <TaskItem
-                  task={item}
-                  pomodoroWorkMinutes={settings?.pomodoro_work_minutes ?? 25}
-                  pomodoroBreakMinutes={settings?.pomodoro_break_minutes ?? 5}
-                  suggestedMin={Math.min(suggestedMin, suggestedMax)}
-                  suggestedMax={Math.max(suggestedMin, suggestedMax)}
-                  chimeEnabled={settings?.timer_chime_enabled ?? true}
-                  onComplete={complete}
-                  onDelete={remove}
-                  onStartFocus={setFocusTask}
-                />
-              );
-            }}
+            renderItem={({ item }) => renderTaskItem(item)}
             contentContainerStyle={styles.listContent}
             refreshControl={
               <RefreshControl
@@ -207,13 +217,25 @@ export function TaskListScreen({ userId }: Props) {
           onClose={closeBrainDump}
         />
 
+        <DoNowSheet
+          visible={doNowOpen}
+          availableMinutes={doNow.availableMinutes}
+          energy={doNow.energy}
+          selection={doNow.selection}
+          hasPendingToday={doNow.hasPendingToday}
+          onChangeMinutes={doNow.setAvailableMinutes}
+          onChangeEnergy={doNow.setEnergy}
+          renderTask={renderTaskItem}
+          onClose={() => setDoNowOpen(false)}
+        />
+
         <FocusSessionModal
           task={focusTask}
           sessionIndex={focusSessionIndex}
           sessionTotal={focusTasksToday.length}
-          workMinutes={settings?.pomodoro_work_minutes ?? 25}
-          breakMinutes={settings?.pomodoro_break_minutes ?? 5}
-          chimeEnabled={settings?.timer_chime_enabled ?? true}
+          workMinutes={settings?.pomodoro_work_minutes ?? DEFAULT_SETTINGS.pomodoro_work_minutes}
+          breakMinutes={settings?.pomodoro_break_minutes ?? DEFAULT_SETTINGS.pomodoro_break_minutes}
+          chimeEnabled={settings?.timer_chime_enabled ?? DEFAULT_SETTINGS.timer_chime_enabled}
           onClose={() => setFocusTask(null)}
           onComplete={(taskId, actualMinutes) => {
             complete(taskId, actualMinutes);
@@ -279,6 +301,19 @@ const styles = StyleSheet.create({
   quickAddWrapper: {
     paddingHorizontal: theme.spacing.lg,
     marginBottom: theme.spacing.md,
+    gap: theme.spacing.sm,
+  },
+  doNowButton: {
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 44,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.pill,
+  },
+  doNowButtonText: {
+    color: theme.colors.accentDark,
+    fontSize: theme.typography.footnote.fontSize,
+    fontWeight: "700",
   },
   errorText: {
     color: theme.colors.danger,

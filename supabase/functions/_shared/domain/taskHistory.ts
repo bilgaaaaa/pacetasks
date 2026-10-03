@@ -1,8 +1,9 @@
-import type { Task, TaskTiming } from "./task.ts";
+import type { EnergyLevel, Task, TaskTiming } from "./task.ts";
 
 export interface TaskHistoryEntry {
   title: string; // most recent casing used for this task name
   timing: TaskTiming; // most recently used category for this task
+  energyLevel: EnergyLevel | null; // most recent energy this task was given, if ever
   lastMinutes: number; // last actual time if ever completed, else last estimate
   minMinutes: number | null; // only meaningful once completed at least once
   maxMinutes: number | null;
@@ -30,12 +31,17 @@ export function buildTaskHistory(tasks: Task[]): Map<string, TaskHistoryEntry> {
       history.set(key, {
         title: task.title.trim(),
         timing: task.timing,
+        energyLevel: task.energy_level,
         lastMinutes: task.actual_minutes ?? task.estimated_minutes,
         minMinutes: task.actual_minutes,
         maxMinutes: task.actual_minutes,
         timesCompleted: task.actual_minutes !== null ? 1 : 0,
       });
-    } else if (task.actual_minutes !== null) {
+      continue;
+    }
+
+    entry.energyLevel ??= task.energy_level;
+    if (task.actual_minutes !== null) {
       entry.minMinutes =
         entry.minMinutes === null
           ? task.actual_minutes
