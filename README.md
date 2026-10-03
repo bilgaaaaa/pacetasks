@@ -29,6 +29,7 @@ with a forest-green accent, plain white cards, and a text-only pill tab bar.
 - **Work schedule** — set your work start/end hour once in Settings; used for the before/after-work timing labels.
 - **Evening review** — a single configurable local notification (renamed from "daily reminder", same mechanism).
 - **Timer chime / Haptics** — toggle a haptic pulse when a Focus session or range timer ends, or when you complete a task (no audio asset pipeline in this build — "chime" is a haptic, not a sound).
+- **Account (optional)** — the app works the moment it is installed, with no login. In Settings, **Create account** asks for first name, last name and email, then for the six-digit code emailed to that address: no password. The account is attached to the user the phone already has, so every task made before signing up stays. **I already have an account** signs in on another phone the same way. Email tips are a separate switch that starts off.
 - **My Pace** — a card on the Stats tab that reads your own history in plain sentences: the three hours in which you finish most tasks, your strongest weekday, and whether tasks take longer or shorter than you estimate. It stays quiet until you have completed 10 tasks (and logged a duration on 5 for the estimate line). No AI involved.
 - **Compete with yourself ("Your pace")** — done today, minutes today, current/best streak, best day, estimate accuracy, a Mon–Fri × 13-week completion heatmap, and a per-day history list with a relative progress bar.
 
@@ -40,9 +41,10 @@ src/screens/              TaskListScreen, SettingsScreen, StatsScreen
 src/components/           QuickAddBar, TaskItem, FocusSessionModal, EndOfDayCard,
                           WeekHeatmap, DropdownPill, ChoiceChips, Stepper, StatCard,
                           BrainDumpSheet, DoNowSheet, OneThingSheet, RolloverCard,
-                          SomedaySheet, WeeklyResetSheet, Button
+                          SomedaySheet, WeeklyResetSheet, AccountCard, AccountSheet,
+                          TextField, ErrorBanner, Button
 src/hooks/                useSession, useTasks, useSettings, useBrainDump, useDoNow,
-                          useOneThing, useRollover, useWeeklyReset
+                          useOneThing, useRollover, useWeeklyReset, useAccount
 src/lib/                  supabase client, tasksApi, settingsApi, notifications,
                           stats, categories, energy, theme, types
 supabase/migrations/       Database schema, RLS policies and the create_task RPC
@@ -87,6 +89,19 @@ The CLI is a dev dependency, so `npx supabase` works after `npm install`.
 4. Go to **Settings → API Keys** and copy the **Project URL** (bare domain,
    no `/rest/v1/` suffix) and the **Publishable key** (`sb_publishable_...`,
    NOT the secret key — the secret key must never go into a mobile app).
+
+### Accounts (sign-up by email code)
+
+1. Apply the `profiles` migration: `npx supabase db push`.
+2. In the Supabase dashboard, **Authentication → Sign In / Providers → Email**: keep
+   the Email provider and **Confirm email** on.
+3. **Authentication → Email Templates**: PaceTasks asks for a six-digit code, so
+   the code must be in the email. In both **Change Email Address** (used when an
+   anonymous user signs up) and **Magic Link** (used to sign in), put
+   `{{ .Token }}` in the body, e.g. `Your PaceTasks code: {{ .Token }}`.
+4. Supabase's built-in email sender is for testing only (very few emails per
+   hour, and as far as we know only to addresses of the project's own team).
+   Before real users, set **Authentication → SMTP Settings** to a mail service.
 
 ## 2. Configure the app
 

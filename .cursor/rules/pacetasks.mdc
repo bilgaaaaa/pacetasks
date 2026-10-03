@@ -6,8 +6,9 @@ alwaysApply: true
 # PaceTasks
 
 Expo (React Native) + TypeScript task app backed by Supabase. Anonymous
-auth — no login screen, each device gets a stable Supabase user id via
-`ensureSession()` in `src/lib/supabase.ts`. UI matches the "PaceTasks Film"
+auth first — no login wall, each device gets a stable Supabase user id via
+`ensureSession()` in `src/lib/supabase.ts`; an optional account (Settings)
+attaches an email to that same user. UI matches the "PaceTasks Film"
 Claude Design: a light sage/cream theme with a forest-green accent (see
 `src/lib/theme.ts`), plain white cards with no per-timing color coding, and
 a text-only pill tab bar (see `App.tsx`'s `PillTabBar`).
@@ -25,6 +26,9 @@ a text-only pill tab bar (see `App.tsx`'s `PillTabBar`).
 - Weekly Reset: `useWeeklyReset` (hook) drives `WeeklyResetSheet` (presentational). Which tasks qualify and what each decision does live in the pure `@domain/weeklyReset` (`selectResetItems`, `resetPatch`, `resetOutcome`, thresholds in `WEEKLY_RESET_POLICY`); the intro → reviewing → summary transitions in the pure `src/lib/weeklyResetState.ts` (unit-tested — the items are a snapshot taken at the start, so decisions never reshuffle the run); wording in `src/lib/weeklyResetCopy.ts`. Move decisions reuse the rollover destinations.
 - Moving and parking tasks: never build an update object inline. Use the patches in `@domain/taskPatch` (`PARK_PATCH`, `UNPARK_PATCH`, `reschedulePatch`) with `useTasks().update` / `updateMany` → `tasksApi.updateTask`. Parking clears the due date, so a task brought back is never instantly overdue.
 - Someday: `selectSomedayTasks` (`@domain/todayTasks`) feeds `SomedaySheet`; tasks are parked from `TaskItem`'s menu (`onPark`).
+- Accounts are passwordless and optional. `useAccount(session)` drives `AccountCard` (in Settings) and `AccountSheet`; transitions live in the pure reducer `src/lib/accountState.ts` (unit-tested), validation in `@domain/account`, wording in `src/lib/accountCopy.ts`. `src/lib/accountApi.ts` is the only caller of `supabase.auth.updateUser / signInWithOtp / verifyOtp / signOut` and of the `profiles` table. Sign-up = `updateUser({ email, data })` on the anonymous user + `verifyOtp(type "email_change")`, so the user id (and every task) is kept; never create a second user for sign-up. Sign-up details ride in `user_metadata` so `useAccount` can create the missing `profiles` row on a later start.
+- `profiles` holds first name, last name and marketing consent only; the email lives in `auth.users`. `marketing_opt_in` must never default to or be pre-set to true, and `marketing_opt_in_at` is owned by the `profiles_stamp` trigger.
+- `src/components/TextField.tsx` — the labelled form input with its error line; use it for any new form field.
 - `src/components/Button.tsx` — the full-width pill button for every sheet (`variant="primary"` for the one main action, `"secondary"` for the calmer alternatives, `"destructive"` for deleting). Don't hand-roll another button style in a sheet.
 - `useTasks` mutations (`create`, `complete`, `update`, `updateMany`, `remove`, `clearCompleted`) never throw: they go through its `run` helper, which reports a failure through `error` and resolves `false`. Add new mutations the same way.
 - `src/lib/tasksApi.ts` / `src/lib/settingsApi.ts` — the only files that call Supabase directly (besides `brainDumpApi.ts` for Brain Dump). Tasks are created only via `createTask(draft)` → `rpc("create_task")`; never insert into `tasks` directly, since Brain Dump and Siri share that one creation path.

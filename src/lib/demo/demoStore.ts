@@ -13,6 +13,7 @@ export const demoTables: Record<string, Row[]> = {
   tasks: buildSeedTasks(),
   user_settings: [],
   brain_dump_sessions: [],
+  profiles: [],
 };
 
 export function newDemoId(): string {
@@ -25,6 +26,15 @@ export function withTableDefaults(table: string, row: Row): Row {
   if (table === "tasks") return { ...taskFromDraft({ title: row.title ?? "" }), ...row, postponed_count: 0 };
   if (table === "user_settings") return { brain_dump_auto_create: false, updated_at: now, ...row };
   if (table === "brain_dump_sessions") return { id: newDemoId(), status: "proposed", created_at: now, ...row };
+  if (table === "profiles") {
+    return {
+      marketing_opt_in: false,
+      created_at: now,
+      updated_at: now,
+      ...row,
+      marketing_opt_in_at: row.marketing_opt_in ? now : null,
+    };
+  }
   return row;
 }
 
@@ -32,6 +42,7 @@ export function withTableDefaults(table: string, row: Row): Row {
 // adding one whenever an unfinished task's due date moves to a later day and
 // clearing it when a task comes back from someday.
 export function withUpdateRules(table: string, row: Row, patch: Row): Row {
+  if (table === "profiles") return withProfileStamp(row, patch);
   if (table !== "tasks") return patch;
   const nextStatus = patch.status ?? row.status;
   const nextDueDate = "due_date" in patch ? patch.due_date : row.due_date;
@@ -39,6 +50,15 @@ export function withUpdateRules(table: string, row: Row, patch: Row): Row {
   const postponed =
     row.status !== "done" && nextStatus !== "done" && row.due_date !== null && nextDueDate > row.due_date;
   return { ...patch, postponed_count: row.postponed_count + (postponed ? 1 : 0) };
+}
+
+// Mirror of the profiles_stamp trigger: the consent date is set when consent is
+// given, cleared when it is withdrawn, and never taken from the caller.
+function withProfileStamp(row: Row, patch: Row): Row {
+  const now = new Date().toISOString();
+  const optIn = patch.marketing_opt_in ?? row.marketing_opt_in;
+  const marketing_opt_in_at = !optIn ? null : row.marketing_opt_in ? row.marketing_opt_in_at : now;
+  return { ...patch, marketing_opt_in_at, updated_at: now };
 }
 
 // Mirror of public.create_task: validates the draft, applies its defaults and

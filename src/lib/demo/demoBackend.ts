@@ -14,7 +14,7 @@ type QueryResult = { data: any; error: DemoError | null };
 // Chainable, awaitable query mirroring supabase-js's builder: filters collect
 // lazily and the operation runs once the chain is awaited.
 class DemoQuery implements PromiseLike<QueryResult> {
-  private operation: "select" | "insert" | "update" | "delete" = "select";
+  private operation: "select" | "insert" | "upsert" | "update" | "delete" = "select";
   private payload: Row | null = null;
   private filters: Filter[] = [];
   private orderBy: { column: string; ascending: boolean } | null = null;
@@ -29,6 +29,13 @@ class DemoQuery implements PromiseLike<QueryResult> {
 
   insert(row: Row) {
     this.operation = "insert";
+    this.payload = row;
+    return this;
+  }
+
+  // Insert, or update the row with the same primary key (only profiles uses it: keyed by user_id).
+  upsert(row: Row) {
+    this.operation = "upsert";
     this.payload = row;
     return this;
   }
@@ -86,6 +93,18 @@ class DemoQuery implements PromiseLike<QueryResult> {
         const created = withTableDefaults(this.table, { ...this.payload });
         rows.push(created);
         affected = [created];
+        break;
+      }
+      case "upsert": {
+        const existing = rows.find((r) => r.user_id === this.payload?.user_id);
+        if (existing) {
+          Object.assign(existing, withUpdateRules(this.table, existing, { ...this.payload }));
+          affected = [existing];
+        } else {
+          const created = withTableDefaults(this.table, { ...this.payload });
+          rows.push(created);
+          affected = [created];
+        }
         break;
       }
       case "update": {
@@ -157,13 +176,87 @@ function createDemoChannel(name: string) {
   return channel;
 }
 
-const demoSession = {
-  access_token: "demo",
-  refresh_token: "demo",
-  token_type: "bearer",
-  expires_in: 3600,
-  user: { id: DEMO_USER_ID, aud: "authenticated", is_anonymous: true },
-};
+// Auth stand-in. The demo user starts anonymous, like a fresh install; signing up
+// "verifies" the email with any six-digit code except DEMO_WRONG_CODE, so both
+// the happy path and the error message can be seen without a mail server.
+const DEMO_WRONG_CODE = "000000";
+
+type DemoAuthListener = (event: string, session: unknown) => void;
+type DemoAuthResult = { data: Record<string, unknown>; error: { message: string; code?: string } | null };
+
+function createDemoAuth() {
+  const listeners = new Set<DemoAuthListener>();
+  let pendingEmail: string | null = null;
+  let session = buildSession({ email: null, isAnonymous: true, metadata: {} });
+
+  function buildSession(user: { email: string | null; isAnonymous: boolean; metadata: Row }) {
+    return {
+      access_token: "demo",
+      refresh_token: "demo",
+      token_type: "bearer",
+      expires_in: 3600,
+      user: {
+        id: DEMO_USER_ID,
+        aud: "authenticated",
+        email: user.email ?? undefined,
+        is_anonymous: user.isAnonymous,
+        user_metadata: user.metadata,
+      },
+    };
+  }
+
+  const emit = (event: string) => listeners.forEach((listener) => listener(event, session));
+  const ok = (data: Record<string, unknown> = {}): DemoAuthResult => ({ data, error: null });
+
+  return {
+    getSession: async () => ok({ session }),
+    signInAnonymously: async () => ok({ session }),
+    onAuthStateChange: (listener: DemoAuthListener) => {
+      listeners.add(listener);
+      return { data: { subscription: { unsubscribe: () => listeners.delete(listener) } } };
+    },
+    // Sign-up step 1: remembers the email to confirm and stores the details on the user.
+    updateUser: async (attributes: { email?: string; data?: Row }): Promise<DemoAuthResult> => {
+      console.log("[demoBackend] auth.updateUser");
+      pendingEmail = attributes.email ?? pendingEmail;
+      session = buildSession({
+        email: session.user.email ?? null,
+        isAnonymous: session.user.is_anonymous,
+        metadata: { ...session.user.user_metadata, ...attributes.data },
+      });
+      emit("USER_UPDATED");
+      return ok({ user: session.user });
+    },
+    // The demo has one user, so signing in only works for the email that signed up.
+    signInWithOtp: async ({ email }: { email: string }): Promise<DemoAuthResult> => {
+      console.log("[demoBackend] auth.signInWithOtp");
+      if (session.user.is_anonymous || session.user.email !== email) {
+        return { data: {}, error: { message: "Signups not allowed for otp", code: "otp_disabled" } };
+      }
+      pendingEmail = email;
+      return ok();
+    },
+    verifyOtp: async ({ email, token }: { email: string; token: string }): Promise<DemoAuthResult> => {
+      console.log("[demoBackend] auth.verifyOtp");
+      if (token === DEMO_WRONG_CODE || email !== pendingEmail) {
+        return { data: {}, error: { message: "Token has expired or is invalid", code: "otp_expired" } };
+      }
+      pendingEmail = null;
+      session = buildSession({ email, isAnonymous: false, metadata: session.user.user_metadata });
+      emit("USER_UPDATED");
+      return ok({ session, user: session.user });
+    },
+    // Signing out of the demo account starts over as an anonymous user (the demo data stays).
+    signOut: async (): Promise<DemoAuthResult> => {
+      console.log("[demoBackend] auth.signOut");
+      demoTables.profiles = [];
+      session = buildSession({ email: null, isAnonymous: true, metadata: {} });
+      emit("SIGNED_OUT");
+      emit("SIGNED_IN");
+      return ok();
+    },
+  };
+}
 
 // Builds the client object with the same surface our code touches on supabase-js.
 export function createDemoClient() {
@@ -179,12 +272,6 @@ export function createDemoClient() {
     },
     channel: (name: string) => createDemoChannel(name),
     removeChannel: async (_channel: unknown) => "ok",
-    auth: {
-      getSession: async () => ({ data: { session: demoSession }, error: null }),
-      signInAnonymously: async () => ({ data: { session: demoSession }, error: null }),
-      onAuthStateChange: (_callback: unknown) => ({
-        data: { subscription: { unsubscribe: () => undefined } },
-      }),
-    },
+    auth: createDemoAuth(),
   };
 }
