@@ -87,6 +87,9 @@ export function deletionConsequences(hasAccount: boolean): string[] {
 }
 
 export const DELETION_WARNING = "This can't be undone. This phone starts again empty.";
+export const DATA_SECTION_LABEL = "YOUR DATA";
+export const DELETION_CANCEL_LABEL = "Keep everything";
+export const DELETION_BUSY_LABEL = "Deleting…";
 
 export function deletionConfirmLabel(hasAccount: boolean): string {
   return hasAccount ? "Delete my account" : "Delete my data";

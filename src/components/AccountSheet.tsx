@@ -159,12 +159,12 @@ export function AccountSheet({
               )}
 
               {isSignUp && (
-                <Text style={styles.hint}>
-                  {SIGN_UP_PRIVACY_NOTE}{" "}
-                  <Text style={styles.link} onPress={onOpenPrivacyPolicy} accessibilityRole="link">
-                    {PRIVACY_POLICY_LABEL}
-                  </Text>
-                </Text>
+                <View style={styles.privacyNote}>
+                  <Text style={styles.hint}>{SIGN_UP_PRIVACY_NOTE}</Text>
+                  <TouchableOpacity onPress={onOpenPrivacyPolicy} hitSlop={12} accessibilityRole="link">
+                    <Text style={styles.link}>{PRIVACY_POLICY_LABEL}</Text>
+                  </TouchableOpacity>
+                </View>
               )}
 
               {state.error && <ErrorBanner message={state.error} />}
@@ -308,9 +308,14 @@ const useStyles = makeStyles((theme) => ({
     fontSize: theme.typography.footnote.fontSize,
     fontWeight: "400",
   },
+  privacyNote: {
+    gap: theme.spacing.xs,
+    alignItems: "flex-start",
+  },
   link: {
     color: theme.colors.accentDark,
-    fontWeight: "600",
+    fontSize: theme.typography.footnote.fontSize,
+    fontWeight: theme.typography.footnote.fontWeight,
     textDecorationLine: "underline",
   },
   done: {

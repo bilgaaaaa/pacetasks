@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { AppState } from "react-native";
 import { Session } from "@supabase/supabase-js";
-import { ensureSession, refreshAnonymousSession, supabase } from "../lib/supabase";
+import { ensureSession, refreshAnonymousSession, reviveSession, supabase } from "../lib/supabase";
 
 export function useSession() {
   const [session, setSession] = useState<Session | null>(null);
@@ -27,9 +27,10 @@ export function useSession() {
       setSession(s);
     });
 
-    // Coming back from the mail app: an email confirmed by link shows up here.
+    // Coming back to the app: an email confirmed by link shows up here, and a
+    // session that could not be started earlier (no connection) gets another try.
     const appState = AppState.addEventListener("change", (state) => {
-      if (state === "active") refreshAnonymousSession();
+      if (state === "active") reviveSession();
     });
 
     return () => {

@@ -2,6 +2,9 @@ import React from "react";
 import { Modal, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
+  DATA_SECTION_LABEL,
+  DELETION_BUSY_LABEL,
+  DELETION_CANCEL_LABEL,
   DELETION_WARNING,
   deletionConfirmLabel,
   deletionConsequences,
@@ -20,9 +23,8 @@ interface Props {
   onClose: () => void;
 }
 
-// Full-screen sheet that asks before deleting the account (or, before sign-up,
-// this phone's data): it lists what goes, then confirms that it is gone. Purely
-// presentational — every transition comes from useAccount.
+// Full-screen sheet that asks before deleting the account (or, before sign-up, this
+// phone's data): lists what goes, then confirms it is gone. Presentational only.
 export function DeleteAccountSheet({ state, onConfirm, onClose }: Props) {
   const { theme } = useTheme();
   const styles = useStyles();
@@ -34,11 +36,17 @@ export function DeleteAccountSheet({ state, onConfirm, onClose }: Props) {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <View style={styles.flex}>
-            <Text style={styles.eyebrow}>YOUR DATA</Text>
+            <Text style={styles.eyebrow}>{DATA_SECTION_LABEL}</Text>
             <Text style={styles.title}>{phase === "deleted" ? "Done" : deletionTitle(hasAccount)}</Text>
           </View>
           {!isDeleting && (
-            <TouchableOpacity onPress={onClose} hitSlop={8} style={styles.closeButton} accessibilityLabel="Close">
+            <TouchableOpacity
+              onPress={onClose}
+              hitSlop={8}
+              style={styles.closeButton}
+              accessibilityRole="button"
+              accessibilityLabel="Close"
+            >
               <Ionicons name="close" size={18} color={theme.colors.textSecondary} />
             </TouchableOpacity>
           )}
@@ -49,7 +57,9 @@ export function DeleteAccountSheet({ state, onConfirm, onClose }: Props) {
             <View style={styles.doneIcon}>
               <Ionicons name="checkmark" size={32} color={theme.colors.onAccent} />
             </View>
-            <Text style={styles.doneText}>{deletionDoneMessage(hasAccount)}</Text>
+            <Text style={styles.doneText} accessibilityRole="alert">
+              {deletionDoneMessage(hasAccount)}
+            </Text>
             <Button style={styles.doneButton} label="Close" onPress={onClose} />
           </View>
         ) : (
@@ -69,12 +79,12 @@ export function DeleteAccountSheet({ state, onConfirm, onClose }: Props) {
 
             <Button
               style={styles.onSurface}
-              label={isDeleting ? "Deleting…" : deletionConfirmLabel(hasAccount)}
+              label={isDeleting ? DELETION_BUSY_LABEL : deletionConfirmLabel(hasAccount)}
               variant="destructive"
               loading={isDeleting}
               onPress={onConfirm}
             />
-            <Button label="Keep everything" disabled={isDeleting} onPress={onClose} />
+            <Button label={DELETION_CANCEL_LABEL} disabled={isDeleting} onPress={onClose} />
           </ScrollView>
         )}
       </SafeAreaView>

@@ -18,7 +18,10 @@ export function useTasks(userId: string | undefined) {
   // `silent` skips the loading state so background reloads don't flash the spinner.
   const load = useCallback(
     async (silent: boolean) => {
-      if (!userId) return;
+      if (!userId) {
+        setTasks([]); // no user (between sign-out and the next session): nothing of the previous one may stay on screen
+        return;
+      }
       try {
         if (!silent) setLoading(true);
         const data = await tasksApi.fetchTasks(userId);

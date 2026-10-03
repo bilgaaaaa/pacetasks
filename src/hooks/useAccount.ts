@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { Session } from "@supabase/supabase-js";
 import { isCompleteCode } from "@domain/account";
 import type { AccountField } from "@domain/account";
@@ -145,12 +145,22 @@ export function useAccount(session: Session | null) {
 
   const signOut = useCallback(() => runOnCard(accountApi.signOut), [runOnCard]);
 
-  const openDeletion = useCallback(() => dispatchDeletion({ type: "opened", hasAccount: isSignedUp }), [isSignedUp]);
+  const openDeletion = useCallback(() => {
+    if (userId) dispatchDeletion({ type: "opened", userId, hasAccount: isSignedUp });
+  }, [userId, isSignedUp]);
   const closeDeletion = useCallback(() => dispatchDeletion({ type: "closed" }), []);
 
+  // The question was asked about one user: if the session changes underneath it
+  // (a sign-out finishing), the sheet closes instead of deleting someone else.
+  useEffect(() => {
+    if (deletion.phase === "confirming" && deletion.userId !== (userId ?? null)) dispatchDeletion({ type: "closed" });
+  }, [deletion.phase, deletion.userId, userId]);
+
   // On success the session becomes a fresh anonymous user, which empties every screen.
+  const deletionInFlight = useRef(false); // state updates are async, so a double tap needs its own guard
   const confirmDeletion = useCallback(async () => {
-    if (deletion.phase !== "confirming") return;
+    if (deletion.phase !== "confirming" || deletion.userId !== userId || deletionInFlight.current) return;
+    deletionInFlight.current = true;
     dispatchDeletion({ type: "deleteStarted" });
     try {
       await accountApi.deleteAccount();
@@ -158,8 +168,10 @@ export function useAccount(session: Session | null) {
       dispatchDeletion({ type: "deleted" });
     } catch (e) {
       dispatchDeletion({ type: "failed", message: toMessage(e) });
+    } finally {
+      deletionInFlight.current = false;
     }
-  }, [deletion.phase]);
+  }, [deletion.phase, deletion.userId, userId]);
 
   return {
     state,

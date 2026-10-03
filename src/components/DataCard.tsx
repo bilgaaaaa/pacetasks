@@ -7,15 +7,15 @@ import { Button } from "./Button";
 
 interface Props {
   hasAccount: boolean; // a signed-up account, or only this phone's anonymous data
+  busy: boolean; // an account change (sign-out, consent) is in flight, so deleting must wait
   onOpenPrivacyPolicy: () => void;
   onOpenSupport: () => void;
   onDelete: () => void;
 }
 
-// Settings card about the user's own data: what PaceTasks does with it (privacy
-// policy), where to get help, and the way to delete the account (or, before
-// sign-up, everything this phone has stored). Purely presentational.
-export function DataCard({ hasAccount, onOpenPrivacyPolicy, onOpenSupport, onDelete }: Props) {
+// Settings card about the user's own data: the privacy policy, where to get help,
+// and the way to delete the account (or, before sign-up, this phone's data).
+export function DataCard({ hasAccount, busy, onOpenPrivacyPolicy, onOpenSupport, onDelete }: Props) {
   const { theme } = useTheme();
   const styles = useStyles();
   const links = [
@@ -31,9 +31,10 @@ export function DataCard({ hasAccount, onOpenPrivacyPolicy, onOpenSupport, onDel
         </TouchableOpacity>
       ))}
       <Button
-        style={styles.secondaryOnCard}
+        style={styles.buttonOnCard}
         label={deletionEntryLabel(hasAccount)}
         variant="destructive"
+        disabled={busy}
         onPress={onDelete}
       />
       <Text style={styles.hint}>{deletionEntryHint(hasAccount)}</Text>
@@ -62,8 +63,8 @@ const useStyles = makeStyles((theme) => ({
     color: theme.colors.textPrimary,
     fontSize: theme.typography.body.fontSize,
   },
-  // The secondary button's own fill is the card's color, so on a card it uses the nested fill.
-  secondaryOnCard: {
+  // The button's own fill is the card's color, so on a card it uses the nested fill.
+  buttonOnCard: {
     backgroundColor: theme.colors.surfaceAlt,
     marginTop: theme.spacing.xs,
   },

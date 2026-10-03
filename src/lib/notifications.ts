@@ -20,9 +20,12 @@ export async function requestNotificationPermission(): Promise<boolean> {
   return requested.granted;
 }
 
+// Makes the phone's scheduled reminder match the settings. `askPermission: false`
+// is for background re-syncs: it schedules only if notifications are already allowed.
 export async function syncDailyReminder(
   enabled: boolean,
-  time: string
+  time: string,
+  { askPermission = true }: { askPermission?: boolean } = {}
 ): Promise<void> {
   await Notifications.cancelScheduledNotificationAsync(REMINDER_IDENTIFIER).catch(
     () => {
@@ -37,7 +40,9 @@ export async function syncDailyReminder(
   const minute = Number(minuteStr);
   if (Number.isNaN(hour) || Number.isNaN(minute)) return;
 
-  const granted = await requestNotificationPermission();
+  const granted = askPermission
+    ? await requestNotificationPermission()
+    : (await Notifications.getPermissionsAsync()).granted;
   if (!granted) return;
 
   await Notifications.scheduleNotificationAsync({

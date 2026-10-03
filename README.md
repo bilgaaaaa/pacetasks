@@ -280,7 +280,9 @@ served for free by GitHub Pages.
    The app's links (`src/lib/links.ts`) already point there.
 
 When what the app stores changes (a new table, an AI provider, analytics),
-update `docs/privacy.html` in the same pull request.
+update `docs/privacy.html` in the same pull request. The policy says Brain Dump
+text is not sent to an AI company: that is true only while the `AI_PROVIDER`
+secret is `rules`, so change the policy before changing that secret.
 
 ## 7. Publish to GitHub
 

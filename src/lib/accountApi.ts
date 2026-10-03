@@ -1,4 +1,5 @@
 import { normalizeEmail } from "@domain/account";
+import { clearRolloverDismissedDay } from "./rolloverStorage";
 import { ensureSession, supabase } from "./supabase";
 
 // The only file that talks to Supabase about accounts. PaceTasks is
@@ -146,9 +147,8 @@ export async function signOut(): Promise<void> {
   await ensureSession();
 }
 
-// Erases the current user and everything they own (tasks, settings, profile,
-// brain dumps) on the server, then starts this phone again as a fresh anonymous
-// user. Works with or without a signed-up account. Cannot be undone.
+// Erases the current user and everything they own on the server, then starts this
+// phone again as a fresh anonymous user. Works with or without an account; cannot be undone.
 export async function deleteAccount(): Promise<void> {
   const { error } = await supabase.rpc("delete_account");
   if (error) throw toAccountError("delete account", error);
@@ -158,9 +158,10 @@ export async function deleteAccount(): Promise<void> {
   // The user no longer exists on the server: only this phone's copy of the session is cleared.
   const { error: signOutError } = await supabase.auth.signOut({ scope: "local" });
   if (signOutError) console.warn("[accountApi] clearing the session after deletion failed", signOutError);
+  await clearRolloverDismissedDay();
   try {
     await ensureSession();
   } catch (e) {
-    console.warn("[accountApi] starting a fresh session after deletion failed; the next launch retries", e);
+    console.warn("[accountApi] starting a fresh session after deletion failed; retried when the app is next opened", e);
   }
 }

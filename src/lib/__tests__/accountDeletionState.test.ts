@@ -4,13 +4,15 @@ import {
   INITIAL_ACCOUNT_DELETION_STATE,
 } from "../accountDeletionState";
 
-const confirming: AccountDeletionState = { phase: "confirming", hasAccount: true, error: null };
+const confirming: AccountDeletionState = { phase: "confirming", userId: "user-1", hasAccount: true, error: null };
 const deleting: AccountDeletionState = { ...confirming, phase: "deleting" };
 
 describe("accountDeletionState", () => {
   it("starts closed and opens on the question, remembering what is being deleted", () => {
     expect(INITIAL_ACCOUNT_DELETION_STATE.phase).toBe("closed");
-    expect(accountDeletionReducer(INITIAL_ACCOUNT_DELETION_STATE, { type: "opened", hasAccount: true })).toEqual(confirming);
+    expect(
+      accountDeletionReducer(INITIAL_ACCOUNT_DELETION_STATE, { type: "opened", userId: "user-1", hasAccount: true })
+    ).toEqual(confirming);
   });
 
   it("walks from the question to deleting to deleted", () => {
@@ -29,7 +31,7 @@ describe("accountDeletionState", () => {
   it("clears an earlier error when opened or retried", () => {
     const failed = { ...confirming, error: "No connection" };
     expect(accountDeletionReducer(failed, { type: "deleteStarted" }).error).toBeNull();
-    expect(accountDeletionReducer(failed, { type: "opened", hasAccount: false }).error).toBeNull();
+    expect(accountDeletionReducer(failed, { type: "opened", userId: "user-1", hasAccount: false }).error).toBeNull();
   });
 
   it("cannot be closed or restarted while the deletion is running", () => {
@@ -43,7 +45,12 @@ describe("accountDeletionState", () => {
   });
 
   it("closes from the question and from the result, keeping the wording stable while the sheet slides away", () => {
-    expect(accountDeletionReducer(confirming, { type: "closed" })).toEqual({ phase: "closed", hasAccount: true, error: null });
+    expect(accountDeletionReducer(confirming, { type: "closed" })).toEqual({
+      phase: "closed",
+      userId: null,
+      hasAccount: true,
+      error: null,
+    });
     expect(accountDeletionReducer({ ...confirming, phase: "deleted" }, { type: "closed" }).phase).toBe("closed");
   });
 });
