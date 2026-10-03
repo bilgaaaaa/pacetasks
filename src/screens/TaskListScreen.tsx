@@ -20,6 +20,7 @@ import { useBrainDump } from "../hooks/useBrainDump";
 import { useDoNow } from "../hooks/useDoNow";
 import { useOneThing } from "../hooks/useOneThing";
 import { useRollover } from "../hooks/useRollover";
+import { useWeeklyReset } from "../hooks/useWeeklyReset";
 import { DEFAULT_SETTINGS } from "../lib/settingsApi";
 import { computeStats } from "../lib/stats";
 import { buildTaskHistory, findExactMatch } from "@domain/taskHistory";
@@ -35,6 +36,7 @@ import { DoNowSheet } from "../components/DoNowSheet";
 import { OneThingSheet } from "../components/OneThingSheet";
 import { RolloverCard } from "../components/RolloverCard";
 import { SomedaySheet } from "../components/SomedaySheet";
+import { WeeklyResetSheet } from "../components/WeeklyResetSheet";
 
 interface Props {
   userId: string | undefined;
@@ -56,9 +58,10 @@ function greetingEyebrow(): string {
 // Focus/Pomodoro modal via its FOCUS badge. "What can I do now?" narrows the
 // list to what fits the time and energy the user has, and "Tell me what to do"
 // (One Thing mode) shows a single task. When tasks were left unfinished, a
-// rollover card on top proposes where each one goes; parked tasks live in the
-// Someday sheet, opened from the foot of the list. An end-of-day card appears
-// once nothing is left pending.
+// rollover card on top proposes where each one goes. The foot of the list links
+// to Weekly Reset (decide, one by one, what happens to neglected tasks) and to
+// the Someday sheet (parked tasks). An end-of-day card appears once nothing is
+// left pending.
 export function TaskListScreen({ userId }: Props) {
   const { tasks, loading, error, refresh, create, applyCreated, complete, update, updateMany, remove, clearCompleted } =
     useTasks(userId);
@@ -68,12 +71,19 @@ export function TaskListScreen({ userId }: Props) {
   const [doNowOpen, setDoNowOpen] = useState(false);
   const [oneThingOpen, setOneThingOpen] = useState(false);
   const [somedayOpen, setSomedayOpen] = useState(false);
+  const [weeklyResetOpen, setWeeklyResetOpen] = useState(false);
   const brainDump = useBrainDump({ onTasksCreated: applyCreated });
   const workStartHour = settings?.work_start_hour ?? DEFAULT_SETTINGS.work_start_hour;
   const workEndHour = settings?.work_end_hour ?? DEFAULT_SETTINGS.work_end_hour;
   const doNow = useDoNow(tasks, workStartHour, workEndHour);
   const oneThing = useOneThing({ tasks, energy: doNow.energy, workStartHour, workEndHour, onComplete: complete });
   const rollover = useRollover({ tasks, onApply: updateMany });
+  const weeklyReset = useWeeklyReset({ tasks, onUpdate: update, onRemove: remove });
+
+  const closeWeeklyReset = () => {
+    weeklyReset.reset();
+    setWeeklyResetOpen(false);
+  };
 
   const closeOneThing = () => {
     oneThing.reset();
@@ -241,13 +251,22 @@ export function TaskListScreen({ userId }: Props) {
                     streakDays={stats.currentStreakDays}
                   />
                 )}
+                {weeklyReset.pendingCount > 0 && (
+                  <TouchableOpacity
+                    onPress={() => setWeeklyResetOpen(true)}
+                    style={styles.footerLink}
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.footerLinkText}>Weekly reset · {weeklyReset.pendingCount} to review</Text>
+                  </TouchableOpacity>
+                )}
                 {somedayTasks.length > 0 && (
                   <TouchableOpacity
                     onPress={() => setSomedayOpen(true)}
-                    style={styles.somedayLink}
+                    style={styles.footerLink}
                     accessibilityRole="button"
                   >
-                    <Text style={styles.somedayLinkText}>Someday · {somedayTasks.length} parked</Text>
+                    <Text style={styles.footerLinkText}>Someday · {somedayTasks.length} parked</Text>
                   </TouchableOpacity>
                 )}
               </>
@@ -304,6 +323,22 @@ export function TaskListScreen({ userId }: Props) {
           onBringBack={(taskId) => update(taskId, UNPARK_PATCH)}
           onDelete={remove}
           onClose={() => setSomedayOpen(false)}
+        />
+
+        <WeeklyResetSheet
+          visible={weeklyResetOpen}
+          phase={weeklyReset.phase}
+          pendingCount={weeklyReset.pendingCount}
+          reasonCounts={weeklyReset.reasonCounts}
+          item={weeklyReset.item}
+          index={weeklyReset.index}
+          total={weeklyReset.total}
+          tally={weeklyReset.tally}
+          saving={weeklyReset.saving}
+          todayKey={weeklyReset.todayKey}
+          onStart={weeklyReset.start}
+          onDecide={weeklyReset.decide}
+          onClose={closeWeeklyReset}
         />
 
         <FocusSessionModal
@@ -409,13 +444,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.lg,
     paddingBottom: theme.spacing.xl,
   },
-  somedayLink: {
+  footerLink: {
     alignItems: "center",
     justifyContent: "center",
     minHeight: 44,
-    marginTop: theme.spacing.sm,
   },
-  somedayLinkText: {
+  footerLinkText: {
     color: theme.colors.textSecondary,
     fontSize: theme.typography.footnote.fontSize,
     fontWeight: theme.typography.footnote.fontWeight,

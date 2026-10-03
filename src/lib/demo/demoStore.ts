@@ -143,6 +143,15 @@ function buildSeedTasks(): Task[] {
     });
   });
 
+  // Undated tasks that have sat on the list for weeks, for Weekly Reset.
+  const stale: TaskDraft[] = [
+    { title: "Sort the photo backup", estimated_minutes: 40, category: "personal" },
+    { title: "Fix the squeaky door", estimated_minutes: 15, category: "home" },
+  ];
+  stale.forEach((draft, i) => {
+    tasks.push({ ...taskFromDraft(draft), created_at: new Date(Date.now() - (i + 20) * 86_400_000).toISOString() });
+  });
+
   // Parked "someday" tasks for the Someday sheet.
   const someday: TaskDraft[] = [
     { title: "Learn Spanish", estimated_minutes: 30, category: "personal" },

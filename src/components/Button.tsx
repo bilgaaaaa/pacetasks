@@ -5,27 +5,39 @@ import { theme } from "../lib/theme";
 interface Props {
   label: string;
   onPress: () => void;
-  variant?: "primary" | "secondary"; // primary = the one main action of a sheet; secondary = the calmer alternatives
+  variant?: "primary" | "secondary" | "destructive"; // primary = the one main action; secondary = calmer alternatives; destructive = deletes something
   loading?: boolean;
   disabled?: boolean;
   style?: StyleProp<ViewStyle>; // outer layout; the look comes from the variant (a card may swap the secondary fill so it stays visible)
 }
 
-// The app's full-width pill button, shared by every sheet so main and secondary
-// actions look the same everywhere. Shows a spinner and ignores taps while loading.
+// The app's full-width pill button, shared by every sheet so main, secondary and
+// destructive actions look the same everywhere. Shows a spinner and ignores taps while loading.
 export function Button({ label, onPress, variant = "primary", loading = false, disabled = false, style }: Props) {
   const inactive = disabled || loading;
   const isPrimary = variant === "primary";
   return (
     <TouchableOpacity
-      style={[styles.button, isPrimary ? styles.primary : styles.secondary, isPrimary && inactive && styles.primaryInactive, style]}
+      style={[
+        styles.button,
+        isPrimary ? styles.primary : styles.secondary,
+        isPrimary && inactive && styles.primaryInactive,
+        style,
+      ]}
       onPress={onPress}
       disabled={inactive}
       accessibilityRole="button"
       accessibilityState={{ disabled: inactive, busy: loading }}
     >
       {loading && <ActivityIndicator color={isPrimary ? theme.colors.onAccent : theme.colors.accentDark} />}
-      <Text style={[styles.label, isPrimary ? styles.primaryLabel : styles.secondaryLabel, !isPrimary && inactive && styles.secondaryLabelInactive]}>
+      <Text
+        style={[
+          styles.label,
+          isPrimary ? styles.primaryLabel : styles.secondaryLabel,
+          variant === "destructive" && styles.destructiveLabel,
+          !isPrimary && inactive && styles.secondaryLabelInactive,
+        ]}
+      >
         {label}
       </Text>
     </TouchableOpacity>
@@ -60,6 +72,9 @@ const styles = StyleSheet.create({
   },
   secondaryLabel: {
     color: theme.colors.textPrimary,
+  },
+  destructiveLabel: {
+    color: theme.colors.danger,
   },
   secondaryLabelInactive: {
     color: theme.colors.textTertiary,
