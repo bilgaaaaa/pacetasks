@@ -88,13 +88,27 @@ export function useTasks(userId: string | undefined) {
     };
   }, [userId]);
 
+  // Runs a mutation and reports a failure through `error` instead of throwing,
+  // so a tap that fails (offline, database behind the app) is shown, not lost.
+  const run = useCallback(async (label: string, action: () => Promise<void>): Promise<boolean> => {
+    try {
+      await action();
+      setError(null);
+      return true;
+    } catch (e: any) {
+      console.warn(`[useTasks] ${label} failed`, e);
+      setError(e.message ?? `Couldn't ${label}`);
+      return false;
+    }
+  }, []);
+
   const create = useCallback(
-    async (draft: TaskDraft) => {
-      if (!userId) return;
-      const newTask = await tasksApi.createTask(draft);
-      setTasks((prev) => upsertTask(prev, newTask));
-    },
-    [userId]
+    (draft: TaskDraft) =>
+      run("create task", async () => {
+        const newTask = await tasksApi.createTask(draft);
+        setTasks((prev) => upsertTask(prev, newTask));
+      }),
+    [run]
   );
 
   // Merges tasks created elsewhere (Brain Dump) without waiting for Realtime.
@@ -102,21 +116,33 @@ export function useTasks(userId: string | undefined) {
     setTasks((prev) => created.reduce((list, task) => upsertTask(list, task), prev));
   }, []);
 
-  const complete = useCallback(async (taskId: string, actualMinutes: number | null) => {
-    const updated = await tasksApi.completeTask(taskId, actualMinutes);
-    setTasks((prev) => upsertTask(prev, updated));
-  }, []);
+  const complete = useCallback(
+    (taskId: string, actualMinutes: number | null) =>
+      run("complete task", async () => {
+        const updated = await tasksApi.completeTask(taskId, actualMinutes);
+        setTasks((prev) => upsertTask(prev, updated));
+      }),
+    [run]
+  );
 
-  const remove = useCallback(async (taskId: string) => {
-    await tasksApi.deleteTask(taskId);
-    setTasks((prev) => removeTask(prev, taskId));
-  }, []);
+  const remove = useCallback(
+    (taskId: string) =>
+      run("delete task", async () => {
+        await tasksApi.deleteTask(taskId);
+        setTasks((prev) => removeTask(prev, taskId));
+      }),
+    [run]
+  );
 
-  const clearCompleted = useCallback(async () => {
-    if (!userId) return;
-    await tasksApi.clearCompletedTasks(userId);
-    setTasks((prev) => prev.filter((t) => t.status !== "done"));
-  }, [userId]);
+  const clearCompleted = useCallback(
+    () =>
+      run("clear completed tasks", async () => {
+        if (!userId) return;
+        await tasksApi.clearCompletedTasks(userId);
+        setTasks((prev) => prev.filter((t) => t.status !== "done"));
+      }),
+    [run, userId]
+  );
 
   return { tasks, loading, error, refresh, create, applyCreated, complete, remove, clearCompleted };
 }

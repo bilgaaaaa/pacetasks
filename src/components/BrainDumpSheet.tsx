@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -19,6 +18,7 @@ import { theme } from "../lib/theme";
 import { addButtonLabel, doneMessage, reviewSummary } from "../lib/brainDumpCopy";
 import { BrainDumpState, selectedDrafts } from "../lib/brainDumpState";
 import { BrainDumpCandidateRow } from "./BrainDumpCandidateRow";
+import { Button } from "./Button";
 
 interface Props {
   visible: boolean;
@@ -87,7 +87,8 @@ export function BrainDumpSheet({
                 {state.text.length}/{BRAIN_DUMP_MAX_TEXT_LENGTH}
               </Text>
               {state.error && <ErrorBanner message={state.error.message} />}
-              <PrimaryButton
+              <Button
+                style={styles.action}
                 label={phase === "interpreting" ? "Reading your brain dump…" : state.error?.retryable ? "Try again" : "Sort it out"}
                 loading={phase === "interpreting"}
                 disabled={state.text.trim().length === 0}
@@ -124,14 +125,15 @@ export function BrainDumpSheet({
               </ScrollView>
               {state.error && <ErrorBanner message={state.error.message} />}
               {proposal.candidates.length > 0 ? (
-                <PrimaryButton
+                <Button
+                  style={styles.action}
                   label={phase === "committing" ? "Adding…" : addButtonLabel(selectedCount)}
                   loading={phase === "committing"}
                   disabled={selectedCount === 0}
                   onPress={onCommit}
                 />
               ) : (
-                <PrimaryButton label="Close" onPress={onClose} />
+                <Button style={styles.action} label="Close" onPress={onClose} />
               )}
             </View>
           )}
@@ -142,36 +144,12 @@ export function BrainDumpSheet({
                 <Ionicons name="checkmark" size={32} color="#FFFFFF" />
               </View>
               <Text style={styles.doneText}>{doneMessage(state.createdTasks.length)}</Text>
-              <PrimaryButton label="Done" onPress={onClose} />
+              <Button style={styles.action} label="Done" onPress={onClose} />
             </View>
           )}
         </KeyboardAvoidingView>
       </SafeAreaView>
     </Modal>
-  );
-}
-
-function PrimaryButton({
-  label,
-  onPress,
-  loading = false,
-  disabled = false,
-}: {
-  label: string;
-  onPress: () => void;
-  loading?: boolean;
-  disabled?: boolean;
-}) {
-  const inactive = disabled || loading;
-  return (
-    <TouchableOpacity
-      style={[styles.primaryButton, inactive && styles.primaryButtonInactive]}
-      onPress={onPress}
-      disabled={inactive}
-    >
-      {loading && <ActivityIndicator color="#FFFFFF" />}
-      <Text style={styles.primaryButtonText}>{label}</Text>
-    </TouchableOpacity>
   );
 }
 
@@ -262,25 +240,9 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.footnote.fontSize,
     fontStyle: "italic",
   },
-  primaryButton: {
-    alignSelf: "stretch", // full width even inside the centered "done" layout
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: theme.spacing.sm,
-    backgroundColor: theme.colors.accentDark,
-    borderRadius: theme.radius.pill,
-    paddingVertical: theme.spacing.md,
+  action: {
     marginHorizontal: theme.spacing.lg,
     marginVertical: theme.spacing.md,
-  },
-  primaryButtonInactive: {
-    backgroundColor: theme.colors.textTertiary,
-  },
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: theme.typography.headline.fontSize,
-    fontWeight: "700",
   },
   errorBanner: {
     flexDirection: "row",

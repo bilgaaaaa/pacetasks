@@ -18,6 +18,7 @@ import { useTasks } from "../hooks/useTasks";
 import { useSettings } from "../hooks/useSettings";
 import { useBrainDump } from "../hooks/useBrainDump";
 import { useDoNow } from "../hooks/useDoNow";
+import { useOneThing } from "../hooks/useOneThing";
 import { DEFAULT_SETTINGS } from "../lib/settingsApi";
 import { computeStats } from "../lib/stats";
 import { buildTaskHistory, findExactMatch } from "@domain/taskHistory";
@@ -29,6 +30,7 @@ import { FocusSessionModal } from "../components/FocusSessionModal";
 import { EndOfDayCard } from "../components/EndOfDayCard";
 import { BrainDumpSheet } from "../components/BrainDumpSheet";
 import { DoNowSheet } from "../components/DoNowSheet";
+import { OneThingSheet } from "../components/OneThingSheet";
 
 interface Props {
   userId: string | undefined;
@@ -48,8 +50,9 @@ function greetingEyebrow(): string {
 // minutes pill — counts down from the task's suggested max, learned from
 // history) or, for tasks with a fixed scheduled time, the full-screen
 // Focus/Pomodoro modal via its FOCUS badge. "What can I do now?" narrows the
-// list to what fits the time and energy the user has. An end-of-day card
-// appears once nothing is left pending.
+// list to what fits the time and energy the user has, and "Tell me what to do"
+// (One Thing mode) shows a single task. An end-of-day card appears once
+// nothing is left pending.
 export function TaskListScreen({ userId }: Props) {
   const { tasks, loading, error, refresh, create, applyCreated, complete, remove, clearCompleted } =
     useTasks(userId);
@@ -57,12 +60,17 @@ export function TaskListScreen({ userId }: Props) {
   const [focusTask, setFocusTask] = useState<Task | null>(null);
   const [brainDumpOpen, setBrainDumpOpen] = useState(false);
   const [doNowOpen, setDoNowOpen] = useState(false);
+  const [oneThingOpen, setOneThingOpen] = useState(false);
   const brainDump = useBrainDump({ onTasksCreated: applyCreated });
-  const doNow = useDoNow(
-    tasks,
-    settings?.work_start_hour ?? DEFAULT_SETTINGS.work_start_hour,
-    settings?.work_end_hour ?? DEFAULT_SETTINGS.work_end_hour
-  );
+  const workStartHour = settings?.work_start_hour ?? DEFAULT_SETTINGS.work_start_hour;
+  const workEndHour = settings?.work_end_hour ?? DEFAULT_SETTINGS.work_end_hour;
+  const doNow = useDoNow(tasks, workStartHour, workEndHour);
+  const oneThing = useOneThing({ tasks, energy: doNow.energy, workStartHour, workEndHour, onComplete: complete });
+
+  const closeOneThing = () => {
+    oneThing.reset();
+    setOneThingOpen(false);
+  };
 
   const closeBrainDump = () => {
     brainDump.close();
@@ -161,13 +169,22 @@ export function TaskListScreen({ userId }: Props) {
             history={history}
             onAdd={(draft) => create({ ...draft, source: "app" })}
           />
-          <TouchableOpacity
-            onPress={() => setDoNowOpen(true)}
-            style={styles.doNowButton}
-            accessibilityRole="button"
-          >
-            <Text style={styles.doNowButtonText}>What can I do now?</Text>
-          </TouchableOpacity>
+          <View style={styles.helpRow}>
+            <TouchableOpacity
+              onPress={() => setDoNowOpen(true)}
+              style={styles.helpButton}
+              accessibilityRole="button"
+            >
+              <Text style={styles.helpButtonText}>What can I do now?</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setOneThingOpen(true)}
+              style={styles.helpButton}
+              accessibilityRole="button"
+            >
+              <Text style={styles.helpButtonText}>Tell me what to do</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {error && <Text style={styles.errorText}>{error}</Text>}
@@ -227,6 +244,26 @@ export function TaskListScreen({ userId }: Props) {
           onChangeEnergy={doNow.setEnergy}
           renderTask={renderTaskItem}
           onClose={() => setDoNowOpen(false)}
+        />
+
+        <OneThingSheet
+          visible={oneThingOpen}
+          phase={oneThing.phase}
+          task={oneThing.task}
+          remainingCount={oneThing.remainingCount}
+          skippedCount={oneThing.skippedCount}
+          minutes={oneThing.minutes}
+          saving={oneThing.saving}
+          completedTitle={oneThing.completedTitle}
+          todayKey={oneThing.todayKey}
+          onChangeMinutes={oneThing.setMinutes}
+          onSkip={oneThing.skip}
+          onResetSkipped={oneThing.resetSkipped}
+          onStartConfirm={oneThing.startConfirm}
+          onCancelConfirm={oneThing.cancelConfirm}
+          onConfirm={oneThing.confirm}
+          onNext={oneThing.next}
+          onClose={closeOneThing}
         />
 
         <FocusSessionModal
@@ -303,14 +340,19 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.md,
     gap: theme.spacing.sm,
   },
-  doNowButton: {
+  helpRow: {
+    flexDirection: "row",
+    gap: theme.spacing.sm,
+  },
+  helpButton: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
     minHeight: 44,
     backgroundColor: theme.colors.surface,
     borderRadius: theme.radius.pill,
   },
-  doNowButtonText: {
+  helpButtonText: {
     color: theme.colors.accentDark,
     fontSize: theme.typography.footnote.fontSize,
     fontWeight: "700",
