@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
+import { AppState } from "react-native";
 import { Session } from "@supabase/supabase-js";
-import { ensureSession, supabase } from "../lib/supabase";
+import { ensureSession, refreshAnonymousSession, supabase } from "../lib/supabase";
 
 export function useSession() {
   const [session, setSession] = useState<Session | null>(null);
@@ -13,6 +14,7 @@ export function useSession() {
     ensureSession()
       .then((s) => {
         if (isMounted) setSession(s);
+        refreshAnonymousSession(); // not awaited: the app must not wait on the network to start
       })
       .catch((e) => {
         if (isMounted) setError(e.message ?? "Failed to start session");
@@ -25,9 +27,15 @@ export function useSession() {
       setSession(s);
     });
 
+    // Coming back from the mail app: an email confirmed by link shows up here.
+    const appState = AppState.addEventListener("change", (state) => {
+      if (state === "active") refreshAnonymousSession();
+    });
+
     return () => {
       isMounted = false;
       listener.subscription.unsubscribe();
+      appState.remove();
     };
   }, []);
 
