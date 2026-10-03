@@ -61,13 +61,21 @@ const SUPABASE_ERROR_CODES: Record<string, AccountErrorCode> = {
   over_request_rate_limit: "too_many_requests",
 };
 const HTTP_TOO_MANY_REQUESTS = 429;
+const NETWORK_FAILURE_PATTERN = /network request failed|failed to fetch|load failed/i;
 
 function toAccountError(action: string, error: unknown): AccountError {
   console.warn(`[accountApi] ${action} failed`, error);
-  const { code, status, name } = (error ?? {}) as { code?: string; status?: number; name?: string };
+  const { code, status, name, message } = (error ?? {}) as {
+    code?: string;
+    status?: number;
+    name?: string;
+    message?: string;
+  };
+  // Auth calls name a dropped connection; database calls only carry fetch's own message.
+  const isNetworkFailure = name === "AuthRetryableFetchError" || NETWORK_FAILURE_PATTERN.test(message ?? "");
   const mapped: AccountErrorCode =
     (code && SUPABASE_ERROR_CODES[code]) ||
-    (status === HTTP_TOO_MANY_REQUESTS ? "too_many_requests" : name === "AuthRetryableFetchError" ? "network" : "unknown");
+    (status === HTTP_TOO_MANY_REQUESTS ? "too_many_requests" : isNetworkFailure ? "network" : "unknown");
   return new AccountError(mapped, ERROR_MESSAGES[mapped]);
 }
 
@@ -136,4 +144,23 @@ export async function signOut(): Promise<void> {
   const { error } = await supabase.auth.signOut();
   if (error) throw toAccountError("sign out", error);
   await ensureSession();
+}
+
+// Erases the current user and everything they own (tasks, settings, profile,
+// brain dumps) on the server, then starts this phone again as a fresh anonymous
+// user. Works with or without a signed-up account. Cannot be undone.
+export async function deleteAccount(): Promise<void> {
+  const { error } = await supabase.rpc("delete_account");
+  if (error) throw toAccountError("delete account", error);
+  console.log("[accountApi] account deleted");
+
+  // From here the deletion has happened, so nothing below may report it as failed.
+  // The user no longer exists on the server: only this phone's copy of the session is cleared.
+  const { error: signOutError } = await supabase.auth.signOut({ scope: "local" });
+  if (signOutError) console.warn("[accountApi] clearing the session after deletion failed", signOutError);
+  try {
+    await ensureSession();
+  } catch (e) {
+    console.warn("[accountApi] starting a fresh session after deletion failed; the next launch retries", e);
+  }
 }

@@ -1,6 +1,14 @@
 import type { TaskDraft } from "@domain/task";
 import { commitDemoBrainDump, discardDemoBrainDump, invokeDemoBrainDump } from "./demoBrainDump";
-import { createDemoTask, DEMO_USER_ID, demoTables, Row, withTableDefaults, withUpdateRules } from "./demoStore";
+import {
+  createDemoTask,
+  deleteDemoAccount,
+  demoTables,
+  getDemoUserId,
+  Row,
+  withTableDefaults,
+  withUpdateRules,
+} from "./demoStore";
 
 // In-memory stand-in for the Supabase client, used only when EXPO_PUBLIC_DEMO_MODE=1
 // so the web preview runs without real keys. It covers exactly the surface the app
@@ -153,6 +161,9 @@ async function callRpc(name: string, args: Record<string, any>): Promise<QueryRe
       case "discard_brain_dump":
         discardDemoBrainDump(args.session_id);
         return { data: null, error: null };
+      case "delete_account":
+        deleteDemoAccount();
+        return { data: null, error: null };
       default:
         return { data: null, error: { message: `Demo mode has no RPC named ${name}` } };
     }
@@ -196,7 +207,7 @@ function createDemoAuth() {
       token_type: "bearer",
       expires_in: 3600,
       user: {
-        id: DEMO_USER_ID,
+        id: getDemoUserId(),
         aud: "authenticated",
         email: user.email ?? undefined,
         is_anonymous: user.isAnonymous,
@@ -248,7 +259,7 @@ function createDemoAuth() {
       return ok({ session, user: session.user });
     },
     // Signing out of the demo account starts over as an anonymous user (the demo data stays).
-    signOut: async (): Promise<DemoAuthResult> => {
+    signOut: async (_options?: { scope?: string }): Promise<DemoAuthResult> => {
       console.log("[demoBackend] auth.signOut");
       demoTables.profiles = [];
       session = buildSession({ email: null, isAnonymous: true, metadata: {} });

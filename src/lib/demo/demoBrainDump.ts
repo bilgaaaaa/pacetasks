@@ -6,7 +6,7 @@ import { brainDumpRequestSchema } from "@server/brainDump/brainDumpRequest";
 import type { BrainDumpRepository } from "@server/brainDump/brainDumpRepository";
 import { createRulesAIProvider } from "@server/ai/rulesAIProvider";
 import { ApiError } from "@server/http/apiError";
-import { createDemoTask, DEMO_USER_ID, demoTables, newDemoId } from "./demoStore";
+import { createDemoTask, demoTables, getDemoUserId, newDemoId } from "./demoStore";
 
 // Demo-mode replacements for the brain-dump Edge Function and its RPCs. The
 // Edge Function's own service (runBrainDump) runs here with an in-memory
@@ -19,7 +19,7 @@ let usageToday = 0;
 // Same contract as supabaseBrainDumpRepository, backed by demoStore.
 const demoRepository: BrainDumpRepository = {
   async getUserId() {
-    return DEMO_USER_ID;
+    return getDemoUserId();
   },
 
   async incrementUsage() {
@@ -28,7 +28,7 @@ const demoRepository: BrainDumpRepository = {
   },
 
   async loadUserContext() {
-    const settings = demoTables.user_settings.find((s) => s.user_id === DEMO_USER_ID);
+    const settings = demoTables.user_settings.find((s) => s.user_id === getDemoUserId());
     const tasks = [...(demoTables.tasks as Task[])].sort((a, b) => b.created_at.localeCompare(a.created_at));
     return {
       workStartHour: settings?.work_start_hour ?? 9,
@@ -42,7 +42,7 @@ const demoRepository: BrainDumpRepository = {
     const id = newDemoId();
     demoTables.brain_dump_sessions.push({
       id,
-      user_id: DEMO_USER_ID,
+      user_id: getDemoUserId(),
       status: "proposed",
       channel: session.channel,
       raw_text: session.rawText,

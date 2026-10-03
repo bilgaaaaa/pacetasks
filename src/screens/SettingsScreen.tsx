@@ -15,6 +15,8 @@ import { useSettings } from "../hooks/useSettings";
 import { useAccount } from "../hooks/useAccount";
 import { AccountCard } from "../components/AccountCard";
 import { AccountSheet } from "../components/AccountSheet";
+import { DataCard } from "../components/DataCard";
+import { DeleteAccountSheet } from "../components/DeleteAccountSheet";
 import { Stepper } from "../components/Stepper";
 import { syncDailyReminder } from "../lib/notifications";
 import { ACCENT_OPTIONS, buildTheme } from "../lib/theme";
@@ -65,12 +67,12 @@ function formatTime(hour: number, minute: number): string {
 // The account (create one, sign in, email consent, sign out), then "Make it
 // yours" (theme, accent, Today's sections, quick-win size — saved on this
 // phone), the work schedule (feeds the before/after-work labels), the evening
-// reminder, Brain Dump auto-create, and the settings the Focus timer + range
-// timer read (chime + Pomodoro length).
+// reminder, Brain Dump auto-create, the settings the Focus timer + range
+// timer read (chime + Pomodoro length), and "Your data" (delete the account).
 export function SettingsScreen({ userId, session }: Props) {
   const { theme, appearance, updateAppearance } = useTheme();
   const styles = useStyles();
-  const { settings, loading, error, save } = useSettings(userId);
+  const { settings, error, save } = useSettings(userId);
   const account = useAccount(session);
   const [accountSheetOpen, setAccountSheetOpen] = useState(false);
   const [reminderHour, setReminderHour] = useState(18);
@@ -89,7 +91,10 @@ export function SettingsScreen({ userId, session }: Props) {
     thumbColor: theme.colors.surface,
   };
 
-  if (loading || !settings) {
+  // Only the first load shows the spinner. When the user changes (sign-in, account
+  // deletion) the previous settings stay up while the new ones load, so the open
+  // account sheet is not torn down before it can show its result.
+  if (!settings) {
     return (
       <LinearGradient
         colors={[theme.colors.background, theme.colors.backgroundEnd]}
@@ -360,6 +365,9 @@ export function SettingsScreen({ userId, session }: Props) {
               })}
             </View>
           </View>
+
+          <Text style={styles.sectionLabel}>YOUR DATA</Text>
+          <DataCard hasAccount={account.isSignedUp} onDelete={account.openDeletion} />
         </ScrollView>
 
         <AccountSheet
@@ -376,6 +384,11 @@ export function SettingsScreen({ userId, session }: Props) {
           onResendCode={account.resendCode}
           onEditEmail={account.editEmail}
           onClose={() => setAccountSheetOpen(false)}
+        />
+        <DeleteAccountSheet
+          state={account.deletion}
+          onConfirm={account.confirmDeletion}
+          onClose={account.closeDeletion}
         />
       </SafeAreaView>
     </LinearGradient>

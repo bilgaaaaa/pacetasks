@@ -5,7 +5,14 @@ import { addDays, toLocalDateKey } from "@domain/dates";
 // In-memory tables behind demo mode. Shapes and defaults mirror supabase/migrations
 // so demo data behaves like the real database; it resets on every reload.
 
-export const DEMO_USER_ID = "00000000-0000-4000-8000-000000000001";
+const INITIAL_DEMO_USER_ID = "00000000-0000-4000-8000-000000000001";
+let demoUserId = INITIAL_DEMO_USER_ID;
+
+// The demo's single user. The id changes when the account is deleted, exactly as
+// a real phone gets a new anonymous user afterwards, so every screen reloads empty.
+export function getDemoUserId(): string {
+  return demoUserId;
+}
 
 export type Row = Record<string, any>;
 
@@ -15,6 +22,15 @@ export const demoTables: Record<string, Row[]> = {
   brain_dump_sessions: [],
   profiles: [],
 };
+
+// Mirror of public.delete_account: every table loses the demo user's rows, and
+// the next session belongs to a brand-new user.
+export function deleteDemoAccount(): void {
+  Object.keys(demoTables).forEach((table) => {
+    demoTables[table] = [];
+  });
+  demoUserId = newDemoId();
+}
 
 export function newDemoId(): string {
   return `demo-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
@@ -76,7 +92,7 @@ function taskFromDraft(draft: TaskDraft): Task {
   const tags = [...new Set((draft.tags ?? []).map((t) => t.trim()).filter(Boolean))];
   return {
     id: newDemoId(),
-    user_id: DEMO_USER_ID,
+    user_id: getDemoUserId(),
     title: draft.title,
     estimated_minutes: draft.estimated_minutes ?? TASK_LIMITS.defaultEstimatedMinutes,
     actual_minutes: null,

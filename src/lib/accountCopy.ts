@@ -49,3 +49,44 @@ export function doneMessage(mode: AccountMode, firstName: string | null): string
 
 export const MARKETING_CONSENT_LABEL = "Send me tips and product news by email";
 export const MARKETING_CONSENT_HINT = "Optional. You can change this any time in Settings.";
+
+// --- Deleting the account (or, before sign-up, this phone's data) ---
+
+export function deletionEntryLabel(hasAccount: boolean): string {
+  return hasAccount ? "Delete account" : "Delete my data";
+}
+
+export function deletionEntryHint(hasAccount: boolean): string {
+  return hasAccount
+    ? "Removes your account and everything in it from PaceTasks, for good."
+    : "Removes every task and setting PaceTasks holds for this phone, for good.";
+}
+
+export function deletionTitle(hasAccount: boolean): string {
+  return hasAccount ? "Delete your account?" : "Delete your data?";
+}
+
+// An account lives on every phone signed in to it; without one, the data belongs to this phone only.
+export function deletionIntro(hasAccount: boolean): string {
+  return hasAccount ? "This deletes, on every phone you use:" : "This deletes, from this phone and from PaceTasks:";
+}
+
+// What goes, one line each, so nothing about the deletion is a surprise.
+export function deletionConsequences(hasAccount: boolean): string[] {
+  const everything = [
+    "Every task, including the ones you finished",
+    "Your statistics, streaks and pace history",
+    "Your settings and anything you typed into Brain Dump",
+  ];
+  return hasAccount ? ["Your account, with your name and email", ...everything] : everything;
+}
+
+export const DELETION_WARNING = "This can't be undone. This phone starts again empty.";
+
+export function deletionConfirmLabel(hasAccount: boolean): string {
+  return hasAccount ? "Delete my account" : "Delete my data";
+}
+
+export function deletionDoneMessage(hasAccount: boolean): string {
+  return hasAccount ? "Your account is deleted." : "Your data is deleted.";
+}

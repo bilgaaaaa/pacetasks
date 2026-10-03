@@ -4,13 +4,16 @@ import { isCompleteCode } from "@domain/account";
 import type { AccountField } from "@domain/account";
 import * as accountApi from "../lib/accountApi";
 import { AccountError, AccountMode, Profile } from "../lib/accountApi";
+import { accountDeletionReducer, INITIAL_ACCOUNT_DELETION_STATE } from "../lib/accountDeletionState";
 import { accountReducer, formErrors, INITIAL_ACCOUNT_STATE } from "../lib/accountState";
 
-// Drives the account card and sheet: who is signed in, their profile, and the
-// passwordless flow (details → emailed code → verified). All transitions live in
-// accountReducer; this hook only performs the network calls around it.
+// Drives the account card and sheets: who is signed in, their profile, the
+// passwordless flow (details → emailed code → verified) and deleting the account.
+// All transitions live in accountReducer and accountDeletionReducer; this hook
+// only performs the network calls around them.
 export function useAccount(session: Session | null) {
   const [state, dispatch] = useReducer(accountReducer, INITIAL_ACCOUNT_STATE);
+  const [deletion, dispatchDeletion] = useReducer(accountDeletionReducer, INITIAL_ACCOUNT_DELETION_STATE);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [busy, setBusy] = useState(false); // a profile change, new code or sign-out is in flight
   const [cardError, setCardError] = useState<string | null>(null); // failures outside the sheet
@@ -142,6 +145,22 @@ export function useAccount(session: Session | null) {
 
   const signOut = useCallback(() => runOnCard(accountApi.signOut), [runOnCard]);
 
+  const openDeletion = useCallback(() => dispatchDeletion({ type: "opened", hasAccount: isSignedUp }), [isSignedUp]);
+  const closeDeletion = useCallback(() => dispatchDeletion({ type: "closed" }), []);
+
+  // On success the session becomes a fresh anonymous user, which empties every screen.
+  const confirmDeletion = useCallback(async () => {
+    if (deletion.phase !== "confirming") return;
+    dispatchDeletion({ type: "deleteStarted" });
+    try {
+      await accountApi.deleteAccount();
+      setCardError(null);
+      dispatchDeletion({ type: "deleted" });
+    } catch (e) {
+      dispatchDeletion({ type: "failed", message: toMessage(e) });
+    }
+  }, [deletion.phase]);
+
   return {
     state,
     isSignedUp,
@@ -160,6 +179,10 @@ export function useAccount(session: Session | null) {
     verify,
     changeMarketingOptIn,
     signOut,
+    deletion,
+    openDeletion,
+    closeDeletion,
+    confirmDeletion,
   };
 }
 

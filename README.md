@@ -33,6 +33,7 @@ pill tab bar.
 - **Evening review** — a single configurable local notification (renamed from "daily reminder", same mechanism).
 - **Timer chime / Haptics** — toggle a haptic pulse when a Focus session or range timer ends, or when you complete a task (no audio asset pipeline in this build — "chime" is a haptic, not a sound).
 - **Account (optional)** — the app works the moment it is installed, with no login. In Settings, **Create account** asks for first name, last name and email, then for the six-digit code emailed to that address: no password. The account is attached to the user the phone already has, so every task made before signing up stays. **I already have an account** signs in on another phone the same way. Email tips are a separate switch that starts off.
+- **Delete account** — at the bottom of Settings, under **Your data**. It lists what goes (the account, every task, statistics, settings, brain dumps), asks once, and erases all of it from the server; the phone starts again empty. Before sign-up the same button is **Delete my data** and clears what the phone's anonymous user has stored.
 - **My Pace** — a card on the Stats tab that reads your own history in plain sentences: the three hours in which you finish most tasks, your strongest weekday, and whether tasks take longer or shorter than you estimate. It stays quiet until you have completed 10 tasks (and logged a duration on 5 for the estimate line). No AI involved.
 - **Compete with yourself ("Your pace")** — done today, minutes today, current/best streak, best day, estimate accuracy, a Mon–Fri × 13-week completion heatmap, and a per-day history list with a relative progress bar.
 
@@ -45,7 +46,7 @@ src/components/           AddTaskSheet, TaskItem, FocusSessionModal, EndOfDayCar
                           WeekHeatmap, DropdownPill, ChoiceChips, Stepper, StatCard,
                           BrainDumpSheet, DoNowSheet, OneThingSheet, RolloverCard,
                           SomedaySheet, WeeklyResetSheet, AccountCard, AccountSheet,
-                          TextField, ErrorBanner, Button
+                          DataCard, DeleteAccountSheet, TextField, ErrorBanner, Button
 src/hooks/                useSession, useTasks, useSettings, useTheme (ThemeProvider,
                           makeStyles), useBrainDump, useDoNow, useOneThing,
                           useRollover, useWeeklyReset, useAccount
@@ -293,6 +294,8 @@ your Supabase keys are never committed.
 - **"Could not find the function public.create_task"** or a missing column
   such as `due_date` or `postponed_count` — the database is behind the app. Run
   `npx supabase db push` (see step 1).
+- **"Could not find the function public.delete_account"** when deleting an
+  account — the database is behind the app. Run `npx supabase db push`.
 - **Tasks added elsewhere don't appear live** — check that Realtime is enabled
   for the `tasks` table (Dashboard → Database → Publications →
   `supabase_realtime`); the task foundation migration adds it automatically.
