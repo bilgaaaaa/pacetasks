@@ -211,6 +211,7 @@ function createDemoAuth() {
   return {
     getSession: async () => ok({ session }),
     signInAnonymously: async () => ok({ session }),
+    refreshSession: async () => ok({ session }),
     onAuthStateChange: (listener: DemoAuthListener) => {
       listeners.add(listener);
       return { data: { subscription: { unsubscribe: () => listeners.delete(listener) } } };

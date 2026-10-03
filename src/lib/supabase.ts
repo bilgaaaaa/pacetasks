@@ -44,3 +44,13 @@ export async function ensureSession() {
   if (error) throw error;
   return signInData.session;
 }
+
+// Confirming the email through the emailed link (instead of typing the code)
+// changes the user on the server only. Refreshing a still-anonymous session
+// brings that into the app; onAuthStateChange then delivers the updated user.
+export async function refreshAnonymousSession(): Promise<void> {
+  const { data } = await supabase.auth.getSession();
+  if (!data.session?.user.is_anonymous) return;
+  const { error } = await supabase.auth.refreshSession();
+  if (error) console.warn("[supabase] session refresh failed", error.message);
+}

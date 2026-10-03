@@ -43,6 +43,11 @@ export function useAccount(session: Session | null) {
     };
   }, [userId, isSignedUp, metadata]);
 
+  // The email was confirmed through the emailed link while the sheet waited for a code.
+  useEffect(() => {
+    if (isSignedUp && state.mode === "sign_up" && state.phase === "code") dispatch({ type: "verified" });
+  }, [isSignedUp, state.mode, state.phase]);
+
   const open = useCallback((mode: AccountMode) => dispatch({ type: "opened", mode }), []);
   const setMode = useCallback((mode: AccountMode) => dispatch({ type: "setMode", mode }), []);
   const setField = useCallback(
