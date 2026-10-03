@@ -110,7 +110,7 @@ function AppContent() {
           {() => <StatsScreen userId={userId} />}
         </Tab.Screen>
         <Tab.Screen name="Settings" options={{ tabBarLabel: "Settings" }}>
-          {() => <SettingsScreen userId={userId} />}
+          {() => <SettingsScreen userId={userId} session={session} />}
         </Tab.Screen>
       </Tab.Navigator>
     </NavigationContainer>

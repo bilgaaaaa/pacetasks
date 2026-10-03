@@ -17,14 +17,17 @@ import { TASK_LIMITS } from "@domain/task";
 import { TaskHistoryEntry, findExactMatch, findMatches, normalizeTitle } from "@domain/taskHistory";
 import { addDays, toLocalDateKey } from "@domain/dates";
 import { makeStyles, useTheme } from "../hooks/useTheme";
-import { Task, TaskDraft, TaskTiming } from "../lib/types";
+import { EnergyLevel, Task, TaskDraft, TaskTiming } from "../lib/types";
 import { CATEGORIES, categoryColor, getCategory } from "../lib/categories";
 import { TIMING_LABELS } from "../lib/taskSections";
+import { ANY_ENERGY_LABEL, ENERGY_OPTIONS, energyLabel } from "../lib/energy";
 import { resolveDueOption } from "../lib/dueOptions";
 import { TaskRhythm, describeLastDone, isLate } from "../lib/taskRhythm";
 
 const MINUTE_PRESETS = [2, 5, 15, 30, 60];
 const TIMING_VALUES: TaskTiming[] = ["anytime", "before_work", "after_work"];
+// null = no energy set, so "What can I do now?" never hides the task.
+const ENERGY_VALUES: (EnergyLevel | null)[] = [null, ...ENERGY_OPTIONS.map((option) => option.value)];
 const WEEKDAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 // Half-hour presets from 6am to 10pm; a fixed time turns the task into a Focus session.
@@ -40,8 +43,8 @@ interface Props {
   visible: boolean;
   history: Map<string, TaskHistoryEntry>;
   usuals: TaskRhythm[]; // repeat tasks for one-tap adding, most overdue first
-  onAdd: (draft: TaskDraft) => Promise<Task | undefined>;
-  onUndo: (taskId: string) => Promise<void>;
+  onAdd: (draft: TaskDraft) => Promise<Task | undefined>; // undefined when saving failed
+  onUndo: (taskId: string) => Promise<boolean>; // false when the delete failed
   onOpenBrainDump: () => void;
   onClose: () => void;
 }
@@ -67,10 +70,11 @@ export function AddTaskSheet({ visible, history, usuals, onAdd, onUndo, onOpenBr
   const [timing, setTiming] = useState<TaskTiming>("anytime");
   const [tomorrow, setTomorrow] = useState(false);
   const [category, setCategory] = useState<string | null>(null);
+  const [energy, setEnergy] = useState<EnergyLevel | null>(null);
   const [scheduledTime, setScheduledTime] = useState<string | null>(null);
   const [showExtras, setShowExtras] = useState(false);
   // Fields the user set by hand are never overwritten by task memory.
-  const [touched, setTouched] = useState({ minutes: false, timing: false, category: false });
+  const [touched, setTouched] = useState({ minutes: false, timing: false, category: false, energy: false });
   // Snapshot taken on open: an added usual becomes pending and would otherwise vanish from the grid.
   const [shownUsuals, setShownUsuals] = useState<TaskRhythm[]>(usuals);
   const [addedKeys, setAddedKeys] = useState<string[]>([]);
@@ -84,9 +88,10 @@ export function AddTaskSheet({ visible, history, usuals, onAdd, onUndo, onOpenBr
     setTiming("anytime");
     setTomorrow(false);
     setCategory(null);
+    setEnergy(null);
     setScheduledTime(null);
     setShowExtras(false);
-    setTouched({ minutes: false, timing: false, category: false });
+    setTouched({ minutes: false, timing: false, category: false, energy: false });
   };
 
   // Every opening starts on the usuals with nothing left over from last time.
@@ -105,10 +110,14 @@ export function AddTaskSheet({ visible, history, usuals, onAdd, onUndo, onOpenBr
   const suggestions = mode === "new" && !exactMatch ? findMatches(history, title, 3) : [];
   const whenChoice: WhenChoice = tomorrow ? "tomorrow" : timing === "after_work" ? "after_work" : "today";
 
-  const applyMemory = (entry: Pick<TaskHistoryEntry, "lastMinutes" | "timing" | "category">, force: boolean) => {
+  const applyMemory = (
+    entry: Pick<TaskHistoryEntry, "lastMinutes" | "timing" | "category" | "energyLevel">,
+    force: boolean
+  ) => {
     if (force || !touched.minutes) setMinutes(entry.lastMinutes);
     if (force || !touched.timing) setTiming(entry.timing);
     if (force || !touched.category) setCategory(entry.category);
+    if (force || !touched.energy) setEnergy(entry.energyLevel);
   };
 
   const handleTitleChange = (text: string) => {
@@ -128,19 +137,17 @@ export function AddTaskSheet({ visible, history, usuals, onAdd, onUndo, onOpenBr
   const save = async (draft: TaskDraft): Promise<boolean> => {
     setSaving(true);
     setError(null);
-    try {
-      const created = await onAdd(draft);
-      const key = normalizeTitle(draft.title);
-      setAddedKeys((prev) => [...prev, key]);
-      setLastAdded(created ? { taskId: created.id, key, title: draft.title } : null);
-      return true;
-    } catch (e) {
-      console.warn("[AddTaskSheet] add failed", e);
+    const created = await onAdd(draft);
+    setSaving(false);
+    if (!created) {
+      console.warn("[AddTaskSheet] add failed", draft.title);
       setError("Couldn't add that task. Check your connection and try again.");
       return false;
-    } finally {
-      setSaving(false);
     }
+    const key = normalizeTitle(draft.title);
+    setAddedKeys((prev) => [...prev, key]);
+    setLastAdded({ taskId: created.id, key, title: draft.title });
+    return true;
   };
 
   const addUsual = (rhythm: TaskRhythm) => {
@@ -150,6 +157,7 @@ export function AddTaskSheet({ visible, history, usuals, onAdd, onUndo, onOpenBr
       estimated_minutes: rhythm.lastMinutes,
       timing: rhythm.timing,
       category: rhythm.category,
+      energy_level: findExactMatch(history, rhythm.title)?.energyLevel ?? null,
       source: "app",
     });
   };
@@ -157,7 +165,7 @@ export function AddTaskSheet({ visible, history, usuals, onAdd, onUndo, onOpenBr
   const adjustUsual = (rhythm: TaskRhythm) => {
     resetDraft();
     setTitle(rhythm.title);
-    applyMemory(rhythm, true);
+    applyMemory({ ...rhythm, energyLevel: findExactMatch(history, rhythm.title)?.energyLevel ?? null }, true);
     setMode("new");
   };
 
@@ -169,6 +177,7 @@ export function AddTaskSheet({ visible, history, usuals, onAdd, onUndo, onOpenBr
       estimated_minutes: Math.min(TASK_LIMITS.maxEstimatedMinutes, Math.max(TASK_LIMITS.minEstimatedMinutes, minutes)),
       timing,
       category,
+      energy_level: energy,
       scheduled_time: scheduledTime,
       ...resolveDueOption(tomorrow ? "tomorrow" : "any", todayKey),
       source: "app",
@@ -185,16 +194,16 @@ export function AddTaskSheet({ visible, history, usuals, onAdd, onUndo, onOpenBr
     if (!lastAdded) return;
     const { taskId, key } = lastAdded;
     setLastAdded(null);
-    try {
-      await onUndo(taskId);
-      setAddedKeys((prev) => {
-        const index = prev.lastIndexOf(key);
-        return index === -1 ? prev : [...prev.slice(0, index), ...prev.slice(index + 1)];
-      });
-    } catch (e) {
-      console.warn("[AddTaskSheet] undo failed", e);
+    const undone = await onUndo(taskId);
+    if (!undone) {
+      console.warn("[AddTaskSheet] undo failed", taskId);
       setError("Couldn't undo that one. You can delete it from the list.");
+      return;
     }
+    setAddedKeys((prev) => {
+      const index = prev.lastIndexOf(key);
+      return index === -1 ? prev : [...prev.slice(0, index), ...prev.slice(index + 1)];
+    });
   };
 
   const backToUsuals = () => {
@@ -409,7 +418,7 @@ export function AddTaskSheet({ visible, history, usuals, onAdd, onUndo, onOpenBr
 
                 <TouchableOpacity style={styles.extrasToggle} onPress={() => setShowExtras((v) => !v)}>
                   <Text style={styles.extrasToggleText}>
-                    {showExtras ? "− Fewer options" : "+ Category, time of day, fixed time"}
+                    {showExtras ? "− Fewer options" : "+ Category, energy, time of day, fixed time"}
                   </Text>
                 </TouchableOpacity>
 
@@ -423,6 +432,16 @@ export function AddTaskSheet({ visible, history, usuals, onAdd, onUndo, onOpenBr
                       (value) => {
                         setCategory(value);
                         setTouched((t) => ({ ...t, category: true }));
+                      }
+                    )}
+                    <Text style={styles.extrasLabel}>ENERGY IT NEEDS</Text>
+                    {renderChips(
+                      ENERGY_VALUES,
+                      energy,
+                      (value) => (value ? energyLabel(value) : ANY_ENERGY_LABEL),
+                      (value) => {
+                        setEnergy(value);
+                        setTouched((t) => ({ ...t, energy: true }));
                       }
                     )}
                     <Text style={styles.extrasLabel}>TIME OF DAY</Text>

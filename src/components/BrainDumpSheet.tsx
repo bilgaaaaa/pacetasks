@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -18,6 +17,8 @@ import { makeStyles, useTheme } from "../hooks/useTheme";
 import { addButtonLabel, doneMessage, reviewSummary } from "../lib/brainDumpCopy";
 import { BrainDumpState, selectedDrafts } from "../lib/brainDumpState";
 import { BrainDumpCandidateRow } from "./BrainDumpCandidateRow";
+import { Button } from "./Button";
+import { ErrorBanner } from "./ErrorBanner";
 
 interface Props {
   visible: boolean;
@@ -87,8 +88,9 @@ export function BrainDumpSheet({
               <Text style={styles.counter}>
                 {state.text.length}/{BRAIN_DUMP_MAX_TEXT_LENGTH}
               </Text>
-              {state.error && <ErrorBanner message={state.error.message} />}
-              <PrimaryButton
+              {state.error && <ErrorBanner style={styles.errorBanner} message={state.error.message} />}
+              <Button
+                style={styles.action}
                 label={phase === "interpreting" ? "Reading your brain dump…" : state.error?.retryable ? "Try again" : "Sort it out"}
                 loading={phase === "interpreting"}
                 disabled={state.text.trim().length === 0}
@@ -123,16 +125,17 @@ export function BrainDumpSheet({
                   </View>
                 )}
               </ScrollView>
-              {state.error && <ErrorBanner message={state.error.message} />}
+              {state.error && <ErrorBanner style={styles.errorBanner} message={state.error.message} />}
               {proposal.candidates.length > 0 ? (
-                <PrimaryButton
+                <Button
+                  style={styles.action}
                   label={phase === "committing" ? "Adding…" : addButtonLabel(selectedCount)}
                   loading={phase === "committing"}
                   disabled={selectedCount === 0}
                   onPress={onCommit}
                 />
               ) : (
-                <PrimaryButton label="Close" onPress={onClose} />
+                <Button style={styles.action} label="Close" onPress={onClose} />
               )}
             </View>
           )}
@@ -143,49 +146,12 @@ export function BrainDumpSheet({
                 <Ionicons name="checkmark" size={32} color={theme.colors.onAccent} />
               </View>
               <Text style={styles.doneText}>{doneMessage(state.createdTasks.length)}</Text>
-              <PrimaryButton label="Done" onPress={onClose} />
+              <Button style={styles.action} label="Done" onPress={onClose} />
             </View>
           )}
         </KeyboardAvoidingView>
       </SafeAreaView>
     </Modal>
-  );
-}
-
-function PrimaryButton({
-  label,
-  onPress,
-  loading = false,
-  disabled = false,
-}: {
-  label: string;
-  onPress: () => void;
-  loading?: boolean;
-  disabled?: boolean;
-}) {
-  const { theme } = useTheme();
-  const styles = useStyles();
-  const inactive = disabled || loading;
-  return (
-    <TouchableOpacity
-      style={[styles.primaryButton, inactive && styles.primaryButtonInactive]}
-      onPress={onPress}
-      disabled={inactive}
-    >
-      {loading && <ActivityIndicator color={theme.colors.onAccent} />}
-      <Text style={styles.primaryButtonText}>{label}</Text>
-    </TouchableOpacity>
-  );
-}
-
-function ErrorBanner({ message }: { message: string }) {
-  const { theme } = useTheme();
-  const styles = useStyles();
-  return (
-    <View style={styles.errorBanner}>
-      <Ionicons name="alert-circle-outline" size={16} color={theme.colors.danger} />
-      <Text style={styles.errorText}>{message}</Text>
-    </View>
   );
 }
 
@@ -268,38 +234,13 @@ const useStyles = makeStyles((theme) => ({
     fontSize: theme.typography.footnote.fontSize,
     fontStyle: "italic",
   },
-  primaryButton: {
-    alignSelf: "stretch", // full width even inside the centered "done" layout
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: theme.spacing.sm,
-    backgroundColor: theme.colors.accentDark,
-    borderRadius: theme.radius.pill,
-    paddingVertical: theme.spacing.md,
+  action: {
     marginHorizontal: theme.spacing.lg,
     marginVertical: theme.spacing.md,
   },
-  primaryButtonInactive: {
-    opacity: 0.4,
-  },
-  primaryButtonText: {
-    color: theme.colors.onAccent,
-    fontSize: theme.typography.headline.fontSize,
-    fontWeight: "700",
-  },
   errorBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: theme.spacing.xs,
     marginHorizontal: theme.spacing.lg,
     marginTop: theme.spacing.sm,
-  },
-  errorText: {
-    flex: 1,
-    color: theme.colors.danger,
-    fontSize: theme.typography.footnote.fontSize,
-    fontWeight: "600",
   },
   done: {
     flex: 1,

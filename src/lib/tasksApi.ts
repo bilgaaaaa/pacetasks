@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { Task, TaskDraft } from "./types";
+import { Task, TaskDraft, TaskPatch } from "./types";
 
 // Newest-first, which taskHistory and upsertTask both rely on.
 export async function fetchTasks(userId: string): Promise<Task[]> {
@@ -38,6 +38,15 @@ export async function completeTask(
     .eq("id", taskId)
     .select()
     .single();
+
+  if (error) throw error;
+  return data;
+}
+
+// Moves or parks a task. Patches come from @domain/taskPatch, so the same few
+// fields change the same way everywhere; postponed_count is kept by the database.
+export async function updateTask(taskId: string, patch: TaskPatch): Promise<Task> {
+  const { data, error } = await supabase.from("tasks").update(patch).eq("id", taskId).select().single();
 
   if (error) throw error;
   return data;

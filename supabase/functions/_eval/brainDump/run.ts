@@ -1,14 +1,17 @@
 import { normalizeBrainDump } from "../../_shared/domain/brainDump/normalize.ts";
-import { createLLMClient, readAIConfig } from "../../_shared/server/ai/clientFactory.ts";
+import { RULES_PROVIDER_NAME } from "../../_shared/server/ai/AIProvider.ts";
+import { readAIConfig } from "../../_shared/server/ai/clientFactory.ts";
 import { AIError } from "../../_shared/server/ai/errors.ts";
-import { createPaceAIProvider } from "../../_shared/server/ai/paceAIProvider.ts";
+import { createAIProvider, usesRulesProvider } from "../../_shared/server/ai/providerFactory.ts";
+import { RULES_PARSER_VERSION } from "../../_shared/domain/brainDump/rulesParser.ts";
 import { EVAL_CASES, EVAL_TIME_ZONE, EVAL_TODAY } from "./cases.ts";
 import { scoreCase } from "./score.ts";
 import type { CaseScore } from "./score.ts";
 
-// Runs the Brain Dump evaluation set against one real provider/model and prints
-// a scorecard, so the vendor choice is made on measured results.
+// Runs the Brain Dump evaluation set against one provider/model (or the free
+// rule-based parser) and prints a scorecard, so the choice is made on measured results.
 //
+//   deno task eval --provider rules
 //   ANTHROPIC_API_KEY=... deno task eval --provider anthropic --model <model> --price-in 1 --price-out 5
 //   OPENAI_API_KEY=...    deno task eval --provider openai --model <model> --only it-
 //
@@ -24,13 +27,14 @@ interface CaseRun {
 }
 
 const args = parseArgs(Deno.args);
-const config = readAIConfig(
-  (name) =>
-    ({ AI_PROVIDER: args.provider, AI_MODEL_BRAIN_DUMP: args.model } as Record<string, string | undefined>)[name] ??
-    Deno.env.get(name),
-  "BRAIN_DUMP"
-);
-const ai = createPaceAIProvider(createLLMClient(config));
+const env = (name: string) =>
+  ({ AI_PROVIDER: args.provider, AI_MODEL_BRAIN_DUMP: args.model } as Record<string, string | undefined>)[name] ??
+  Deno.env.get(name);
+// What is being evaluated, for the header and the report file name.
+const config = usesRulesProvider(env)
+  ? { provider: RULES_PROVIDER_NAME, model: RULES_PARSER_VERSION }
+  : readAIConfig(env, "BRAIN_DUMP");
+const ai = createAIProvider(env, "BRAIN_DUMP");
 const cases = EVAL_CASES.filter((c) => !args.only || c.id.startsWith(args.only));
 
 console.log(`Brain Dump eval · ${config.provider} · ${config.model} · ${cases.length} cases · today ${EVAL_TODAY}\n`);

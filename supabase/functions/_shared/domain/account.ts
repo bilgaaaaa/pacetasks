@@ -1,0 +1,57 @@
+// Account rules shared by the app and Edge Functions: what a valid sign-up looks
+// like. Limits mirror the profiles table's check constraints in supabase/migrations.
+
+export const ACCOUNT_LIMITS = {
+  nameMaxLength: 50,
+  emailMaxLength: 254,
+  codeLength: 6, // the one-time code Supabase emails
+} as const;
+
+// Deliberately loose: one "@", a dot in the domain, no spaces. The real proof an
+// address works is the code sent to it.
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export type AccountField = "firstName" | "lastName" | "email";
+export type AccountFieldIssue = "required" | "too_long" | "invalid";
+export type AccountFieldErrors = Partial<Record<AccountField, AccountFieldIssue>>;
+
+export interface SignUpInput {
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
+// Emails compare case-insensitively and people paste them with spaces around.
+export function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+function nameIssue(name: string): AccountFieldIssue | null {
+  const trimmed = name.trim();
+  if (trimmed.length === 0) return "required";
+  return trimmed.length > ACCOUNT_LIMITS.nameMaxLength ? "too_long" : null;
+}
+
+export function emailIssue(email: string): AccountFieldIssue | null {
+  const normalized = normalizeEmail(email);
+  if (normalized.length === 0) return "required";
+  if (normalized.length > ACCOUNT_LIMITS.emailMaxLength) return "too_long";
+  return EMAIL_PATTERN.test(normalized) ? null : "invalid";
+}
+
+// Every problem with a sign-up form, by field; an empty object means it can be sent.
+export function validateSignUp(input: SignUpInput): AccountFieldErrors {
+  const errors: AccountFieldErrors = {};
+  const firstName = nameIssue(input.firstName);
+  const lastName = nameIssue(input.lastName);
+  const email = emailIssue(input.email);
+  if (firstName) errors.firstName = firstName;
+  if (lastName) errors.lastName = lastName;
+  if (email) errors.email = email;
+  return errors;
+}
+
+// A code is exactly six digits; anything else is not worth a round trip.
+export function isCompleteCode(code: string): boolean {
+  return new RegExp(`^\\d{${ACCOUNT_LIMITS.codeLength}}$`).test(code);
+}

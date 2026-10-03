@@ -64,6 +64,7 @@ export class InMemoryBrainDumpRepository implements BrainDumpRepository {
       source: draft.source ?? "app",
       source_language: draft.source_language ?? null,
       ai_confidence: draft.ai_confidence ?? null,
+      postponed_count: 0,
     };
   }
 }

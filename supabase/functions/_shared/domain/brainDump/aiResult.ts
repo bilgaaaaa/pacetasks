@@ -10,7 +10,17 @@ export const TASK_CONTEXTS = ["home", "work", "outside", "computer", "phone", "e
 export const TIMES_OF_DAY = ["morning", "afternoon", "evening"] as const;
 export const DATE_RELATIONS = ["on", "by"] as const;
 
-const MAX_CANDIDATES = 25;
+// Most tasks one brain dump may produce; commit_brain_dump enforces the same limit.
+export const BRAIN_DUMP_MAX_CANDIDATES = 25;
+
+// Size limits of the contract, shared with the rule-based parser so it can never exceed them.
+export const AI_RESULT_LIMITS = {
+  titleMaxLength: 300,
+  sourceSpanMaxLength: 1000,
+  maxDurationMinutes: 1440,
+  maxUnparsedFragments: 20,
+  unparsedFragmentMaxLength: 1000,
+} as const;
 
 // The words that expressed the date, verbatim ("domani", "before Friday", "yarın").
 const dateText = z.string().min(1).max(100);
@@ -43,14 +53,14 @@ export const dateExpressionSchema = z.discriminatedUnion("kind", [
 ]);
 
 export const aiTaskCandidateSchema = z.object({
-  title: z.string().min(1).max(300),
-  sourceSpan: z.string().min(1).max(1000),
+  title: z.string().min(1).max(AI_RESULT_LIMITS.titleMaxLength),
+  sourceSpan: z.string().min(1).max(AI_RESULT_LIMITS.sourceSpanMaxLength),
   language: z.string().min(2).max(35),
   notes: z.string().max(2000).nullable(),
   when: dateExpressionSchema.nullable(),
   dueTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable(),
   timeOfDay: z.enum(TIMES_OF_DAY).nullable(),
-  estimatedDurationMinutes: z.number().int().min(1).max(1440).nullable(),
+  estimatedDurationMinutes: z.number().int().min(1).max(AI_RESULT_LIMITS.maxDurationMinutes).nullable(),
   priority: z.enum(TASK_PRIORITIES).nullable(),
   energyRequired: z.enum(ENERGY_LEVELS).nullable(),
   flexible: z.boolean(),
@@ -65,8 +75,10 @@ export const aiTaskCandidateSchema = z.object({
 export const brainDumpAiResultSchema = z.object({
   schemaVersion: z.literal(BRAIN_DUMP_SCHEMA_VERSION),
   detectedLanguages: z.array(z.string().min(2).max(35)).max(10),
-  candidates: z.array(aiTaskCandidateSchema).max(MAX_CANDIDATES),
-  unparsedFragments: z.array(z.string().max(1000)).max(20),
+  candidates: z.array(aiTaskCandidateSchema).max(BRAIN_DUMP_MAX_CANDIDATES),
+  unparsedFragments: z
+    .array(z.string().max(AI_RESULT_LIMITS.unparsedFragmentMaxLength))
+    .max(AI_RESULT_LIMITS.maxUnparsedFragments),
 });
 
 export type DateExpression = z.infer<typeof dateExpressionSchema>;

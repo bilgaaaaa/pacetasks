@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { AppState } from "react-native";
 import { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
-import { Task, TaskDraft } from "../lib/types";
+import { Task, TaskChange, TaskDraft, TaskPatch } from "../lib/types";
 import * as tasksApi from "../lib/tasksApi";
 import { supabase } from "../lib/supabase";
 import { removeTask, upsertTask } from "@domain/taskCollection";
@@ -88,15 +88,32 @@ export function useTasks(userId: string | undefined) {
     };
   }, [userId]);
 
-  // Returns the created task (e.g. so the add sheet can offer Undo).
+  // Runs a mutation and reports a failure through `error` instead of throwing,
+  // so a tap that fails (offline, database behind the app) is shown, not lost.
+  const run = useCallback(async (label: string, action: () => Promise<void>): Promise<boolean> => {
+    try {
+      await action();
+      setError(null);
+      return true;
+    } catch (e: any) {
+      console.warn(`[useTasks] ${label} failed`, e);
+      setError(e.message ?? `Couldn't ${label}`);
+      return false;
+    }
+  }, []);
+
+  // Returns the created task (so the add sheet can offer Undo), or undefined when saving failed.
   const create = useCallback(
     async (draft: TaskDraft): Promise<Task | undefined> => {
-      if (!userId) return undefined;
-      const newTask = await tasksApi.createTask(draft);
-      setTasks((prev) => upsertTask(prev, newTask));
-      return newTask;
+      let created: Task | undefined;
+      await run("create task", async () => {
+        const newTask = await tasksApi.createTask(draft);
+        setTasks((prev) => upsertTask(prev, newTask));
+        created = newTask;
+      });
+      return created;
     },
-    [userId]
+    [run]
   );
 
   // Merges tasks created elsewhere (Brain Dump) without waiting for Realtime.
@@ -104,21 +121,68 @@ export function useTasks(userId: string | undefined) {
     setTasks((prev) => created.reduce((list, task) => upsertTask(list, task), prev));
   }, []);
 
-  const complete = useCallback(async (taskId: string, actualMinutes: number | null) => {
-    const updated = await tasksApi.completeTask(taskId, actualMinutes);
-    setTasks((prev) => upsertTask(prev, updated));
-  }, []);
+  const complete = useCallback(
+    (taskId: string, actualMinutes: number | null) =>
+      run("complete task", async () => {
+        const updated = await tasksApi.completeTask(taskId, actualMinutes);
+        setTasks((prev) => upsertTask(prev, updated));
+      }),
+    [run]
+  );
 
-  const remove = useCallback(async (taskId: string) => {
-    await tasksApi.deleteTask(taskId);
-    setTasks((prev) => removeTask(prev, taskId));
-  }, []);
+  // Moves or parks one task (see @domain/taskPatch for the patches).
+  const update = useCallback(
+    (taskId: string, patch: TaskPatch) =>
+      run("update task", async () => {
+        const updated = await tasksApi.updateTask(taskId, patch);
+        setTasks((prev) => upsertTask(prev, updated));
+      }),
+    [run]
+  );
 
-  const clearCompleted = useCallback(async () => {
-    if (!userId) return;
-    await tasksApi.clearCompletedTasks(userId);
-    setTasks((prev) => prev.filter((t) => t.status !== "done"));
-  }, [userId]);
+  // Applies several changes in order (rollover, Weekly Reset). Stops at the first
+  // failure; the ones already applied stay applied and show in the list.
+  const updateMany = useCallback(
+    (changes: TaskChange[]) =>
+      run("update tasks", async () => {
+        for (const { taskId, patch } of changes) {
+          const updated = await tasksApi.updateTask(taskId, patch);
+          setTasks((prev) => upsertTask(prev, updated));
+        }
+      }),
+    [run]
+  );
 
-  return { tasks, loading, error, refresh, create, applyCreated, complete, remove, clearCompleted };
+  const remove = useCallback(
+    (taskId: string) =>
+      run("delete task", async () => {
+        await tasksApi.deleteTask(taskId);
+        setTasks((prev) => removeTask(prev, taskId));
+      }),
+    [run]
+  );
+
+  const clearCompleted = useCallback(
+    () =>
+      run("clear completed tasks", async () => {
+        if (!userId) return;
+        await tasksApi.clearCompletedTasks(userId);
+        setTasks((prev) => prev.filter((t) => t.status !== "done"));
+      }),
+    [run, userId]
+  );
+
+  return {
+    tasks,
+    loading,
+    error,
+    refresh,
+    create,
+    applyCreated,
+    complete,
+    update,
+    updateMany,
+    remove,
+    clearCompleted,
+  };
 }

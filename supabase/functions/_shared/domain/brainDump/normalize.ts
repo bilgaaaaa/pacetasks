@@ -3,6 +3,7 @@ import { TASK_LIMITS } from "../task.ts";
 import type { Task, TaskDraft, TaskSource, TaskTiming } from "../task.ts";
 import { buildTaskHistory, findExactMatch, normalizeTitle } from "../taskHistory.ts";
 import type { TaskHistoryEntry } from "../taskHistory.ts";
+import { timingForHour } from "../timing.ts";
 import type { AiTaskCandidate, BrainDumpAiResult, TimeOfDay } from "./aiResult.ts";
 import { resolveDate } from "./resolveDate.ts";
 import { BRAIN_DUMP_REVIEW_POLICY } from "./reviewPolicy.ts";
@@ -25,7 +26,7 @@ export interface NormalizedBrainDump {
 }
 
 // Converts a validated AI proposal into PaceTasks task drafts using the app's
-// own rules: dates from the phone's today, durations from the user's history,
+// own rules: dates from the phone's today, durations and energy from the user's history,
 // timing from their work hours, and flags for anything worth a second look.
 export function normalizeBrainDump(result: BrainDumpAiResult, context: NormalizeContext): NormalizedBrainDump {
   const history = buildTaskHistory(context.tasks);
@@ -123,7 +124,7 @@ function normalizeCandidate(
     due_kind: dueKind,
     notes,
     priority: ai.priority,
-    energy_level: ai.energyRequired,
+    energy_level: ai.energyRequired ?? historyEntry?.energyLevel ?? null,
     flexible: ai.flexible,
     tags: [...new Set(ai.context)].slice(0, TASK_LIMITS.maxTags),
     source: context.source,
@@ -143,7 +144,7 @@ function normalizeCandidate(
 }
 
 // The user's own history beats the AI's guess: a task they've done before
-// keeps its usual time, exactly like quick-add does.
+// keeps its usual time, exactly like the add sheet does.
 function estimatedMinutesFor(aiMinutes: number | null, historyEntry: TaskHistoryEntry | undefined): number {
   const minutes = historyEntry?.lastMinutes ?? aiMinutes ?? TASK_LIMITS.defaultEstimatedMinutes;
   return clamp(Math.round(minutes), TASK_LIMITS.minEstimatedMinutes, TASK_LIMITS.maxEstimatedMinutes);
@@ -158,10 +159,7 @@ function timingFor(
   context: NormalizeContext
 ): TaskTiming {
   if (scheduledTime) {
-    const hour = Number(scheduledTime.slice(0, 2));
-    if (hour < context.workStartHour) return "before_work";
-    if (hour >= context.workEndHour) return "after_work";
-    return "anytime";
+    return timingForHour(Number(scheduledTime.slice(0, 2)), context.workStartHour, context.workEndHour);
   }
   if (timeOfDay === "morning") return "before_work";
   if (timeOfDay === "evening") return "after_work";

@@ -16,18 +16,29 @@ import { Task } from "../lib/types";
 import { useTasks } from "../hooks/useTasks";
 import { useSettings } from "../hooks/useSettings";
 import { useBrainDump } from "../hooks/useBrainDump";
+import { useDoNow } from "../hooks/useDoNow";
+import { useOneThing } from "../hooks/useOneThing";
+import { useRollover } from "../hooks/useRollover";
+import { useWeeklyReset } from "../hooks/useWeeklyReset";
+import { DEFAULT_SETTINGS } from "../lib/settingsApi";
 import { computeStats } from "../lib/stats";
 import { GROUP_BY_LABELS, GROUP_BY_OPTIONS } from "../lib/appearance";
 import { groupTodayTasks, summarizePending } from "../lib/taskSections";
 import { selectUsuals } from "../lib/taskRhythm";
 import { buildTaskHistory, findExactMatch } from "@domain/taskHistory";
-import { selectTodayTasks } from "@domain/todayTasks";
+import { selectSomedayTasks, selectTodayTasks } from "@domain/todayTasks";
+import { PARK_PATCH, UNPARK_PATCH } from "@domain/taskPatch";
 import { toLocalDateKey } from "@domain/dates";
 import { AddTaskSheet } from "../components/AddTaskSheet";
 import { TaskItem } from "../components/TaskItem";
 import { FocusSessionModal } from "../components/FocusSessionModal";
 import { EndOfDayCard } from "../components/EndOfDayCard";
 import { BrainDumpSheet } from "../components/BrainDumpSheet";
+import { DoNowSheet } from "../components/DoNowSheet";
+import { OneThingSheet } from "../components/OneThingSheet";
+import { RolloverCard } from "../components/RolloverCard";
+import { SomedaySheet } from "../components/SomedaySheet";
+import { WeeklyResetSheet } from "../components/WeeklyResetSheet";
 
 interface Props {
   userId: string | undefined;
@@ -56,17 +67,31 @@ function greetingEyebrow(): string {
 // day really is, and an always-visible capture bar that opens the add sheet
 // (plus Brain Dump for many tasks at once). Each task can be timed with a
 // lightweight range timer or, for fixed-time tasks, the Focus/Pomodoro modal.
-// An end-of-day card appears once nothing is left pending.
+// "What can I do now?" narrows the list to what fits the time and energy the
+// user has, and "Tell me what to do" (One Thing mode) shows a single task. When
+// tasks were left unfinished, a rollover card on top proposes where each one
+// goes. The foot of the list links to Weekly Reset and to the Someday sheet
+// (parked tasks). An end-of-day card appears once nothing is left pending.
 export function TaskListScreen({ userId }: Props) {
   const { theme, appearance, updateAppearance } = useTheme();
   const styles = useStyles();
-  const { tasks, loading, error, refresh, create, applyCreated, complete, remove, clearCompleted } =
+  const { tasks, loading, error, refresh, create, applyCreated, complete, update, updateMany, remove, clearCompleted } =
     useTasks(userId);
   const { settings } = useSettings(userId);
   const [focusTask, setFocusTask] = useState<Task | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [brainDumpOpen, setBrainDumpOpen] = useState(false);
+  const [doNowOpen, setDoNowOpen] = useState(false);
+  const [oneThingOpen, setOneThingOpen] = useState(false);
+  const [somedayOpen, setSomedayOpen] = useState(false);
+  const [weeklyResetOpen, setWeeklyResetOpen] = useState(false);
   const brainDump = useBrainDump({ onTasksCreated: applyCreated });
+  const workStartHour = settings?.work_start_hour ?? DEFAULT_SETTINGS.work_start_hour;
+  const workEndHour = settings?.work_end_hour ?? DEFAULT_SETTINGS.work_end_hour;
+  const doNow = useDoNow(tasks, workStartHour, workEndHour);
+  const oneThing = useOneThing({ tasks, energy: doNow.energy, workStartHour, workEndHour, onComplete: complete });
+  const rollover = useRollover({ tasks, onApply: updateMany });
+  const weeklyReset = useWeeklyReset({ tasks, onUpdate: update, onRemove: remove });
   const switchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -74,6 +99,16 @@ export function TaskListScreen({ userId }: Props) {
       if (switchTimer.current) clearTimeout(switchTimer.current);
     };
   }, []);
+
+  const closeWeeklyReset = () => {
+    weeklyReset.reset();
+    setWeeklyResetOpen(false);
+  };
+
+  const closeOneThing = () => {
+    oneThing.reset();
+    setOneThingOpen(false);
+  };
 
   const closeBrainDump = () => {
     brainDump.close();
@@ -102,6 +137,7 @@ export function TaskListScreen({ userId }: Props) {
     () => completedTasks.filter((t) => t.completed_at && toLocalDateKey(new Date(t.completed_at)) === todayKey),
     [completedTasks, todayKey]
   );
+  const somedayTasks = useMemo(() => selectSomedayTasks(tasks), [tasks]);
   const hasCompleted = completedTasks.length > 0;
   const allDone = pending.length + done.length > 0 && pending.length === 0;
   const summary = summarizePending(pending, appearance.quickWinMinutes);
@@ -133,6 +169,30 @@ export function TaskListScreen({ userId }: Props) {
   const focusSessionIndex = focusTask
     ? focusTasksToday.findIndex((t) => t.id === focusTask.id) + 1
     : 0;
+
+  // One task row for both the Today list and the "What can I do now?" sheet.
+  // The range timer's suggested min/max come from this task's own history
+  // (see taskHistory.ts); with no completed history yet, both ends are its estimate.
+  const renderTaskItem = (task: Task) => {
+    const historyEntry = findExactMatch(history, task.title);
+    const suggestedMin = historyEntry?.minMinutes ?? task.estimated_minutes;
+    const suggestedMax = historyEntry?.maxMinutes ?? task.estimated_minutes;
+    return (
+      <TaskItem
+        task={task}
+        pomodoroWorkMinutes={settings?.pomodoro_work_minutes ?? DEFAULT_SETTINGS.pomodoro_work_minutes}
+        pomodoroBreakMinutes={settings?.pomodoro_break_minutes ?? DEFAULT_SETTINGS.pomodoro_break_minutes}
+        suggestedMin={Math.min(suggestedMin, suggestedMax)}
+        suggestedMax={Math.max(suggestedMin, suggestedMax)}
+        quickWinMinutes={appearance.quickWinMinutes}
+        chimeEnabled={settings?.timer_chime_enabled ?? DEFAULT_SETTINGS.timer_chime_enabled}
+        onComplete={complete}
+        onDelete={remove}
+        onPark={(taskId) => update(taskId, PARK_PATCH)}
+        onStartFocus={setFocusTask}
+      />
+    );
+  };
 
   const openMenu = () => {
     const options: any[] = [];
@@ -176,6 +236,15 @@ export function TaskListScreen({ userId }: Props) {
               } minutes or less.`}
           </Text>
 
+          <View style={styles.helpRow}>
+            <TouchableOpacity onPress={() => setDoNowOpen(true)} style={styles.helpButton} accessibilityRole="button">
+              <Text style={styles.helpButtonText}>What can I do now?</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setOneThingOpen(true)} style={styles.helpButton} accessibilityRole="button">
+              <Text style={styles.helpButtonText}>Tell me what to do</Text>
+            </TouchableOpacity>
+          </View>
+
           <View style={styles.groupSwitch} accessibilityRole="radiogroup" accessibilityLabel="Group tasks by">
             {GROUP_BY_OPTIONS.map((option) => {
               const isActive = appearance.groupBy === option;
@@ -213,28 +282,7 @@ export function TaskListScreen({ userId }: Props) {
                 <Text style={styles.sectionMinutes}>{section.totalMinutes} min</Text>
               </View>
             )}
-            renderItem={({ item }) => {
-              // The range timer's suggested min/max come from this task's own
-              // history (see taskHistory.ts); a task with no completed history
-              // yet just gets its single estimate as both ends of the range.
-              const historyEntry = findExactMatch(history, item.title);
-              const suggestedMin = historyEntry?.minMinutes ?? item.estimated_minutes;
-              const suggestedMax = historyEntry?.maxMinutes ?? item.estimated_minutes;
-              return (
-                <TaskItem
-                  task={item}
-                  pomodoroWorkMinutes={settings?.pomodoro_work_minutes ?? 25}
-                  pomodoroBreakMinutes={settings?.pomodoro_break_minutes ?? 5}
-                  suggestedMin={Math.min(suggestedMin, suggestedMax)}
-                  suggestedMax={Math.max(suggestedMin, suggestedMax)}
-                  quickWinMinutes={appearance.quickWinMinutes}
-                  chimeEnabled={settings?.timer_chime_enabled ?? true}
-                  onComplete={complete}
-                  onDelete={remove}
-                  onStartFocus={setFocusTask}
-                />
-              );
-            }}
+            renderItem={({ item }) => renderTaskItem(item)}
             contentContainerStyle={styles.listContent}
             refreshControl={
               <RefreshControl
@@ -250,14 +298,45 @@ export function TaskListScreen({ userId }: Props) {
                 </Text>
               </View>
             }
-            ListFooterComponent={
-              allDone ? (
-                <EndOfDayCard
-                  tasksToday={stats.todayCompleted}
-                  minutesToday={stats.todayActualMinutes}
-                  streakDays={stats.currentStreakDays}
+            ListHeaderComponent={
+              rollover.visible ? (
+                <RolloverCard
+                  choices={rollover.choices}
+                  saving={rollover.saving}
+                  onChangeDestination={rollover.setDestination}
+                  onApply={rollover.apply}
+                  onDismiss={rollover.dismiss}
                 />
               ) : null
+            }
+            ListFooterComponent={
+              <>
+                {allDone && (
+                  <EndOfDayCard
+                    tasksToday={stats.todayCompleted}
+                    minutesToday={stats.todayActualMinutes}
+                    streakDays={stats.currentStreakDays}
+                  />
+                )}
+                {weeklyReset.pendingCount > 0 && (
+                  <TouchableOpacity
+                    onPress={() => setWeeklyResetOpen(true)}
+                    style={styles.footerLink}
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.footerLinkText}>Weekly reset · {weeklyReset.pendingCount} to review</Text>
+                  </TouchableOpacity>
+                )}
+                {somedayTasks.length > 0 && (
+                  <TouchableOpacity
+                    onPress={() => setSomedayOpen(true)}
+                    style={styles.footerLink}
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.footerLinkText}>Someday · {somedayTasks.length} parked</Text>
+                  </TouchableOpacity>
+                )}
+              </>
             }
           />
         )}
@@ -304,13 +383,73 @@ export function TaskListScreen({ userId }: Props) {
           onClose={closeBrainDump}
         />
 
+        <DoNowSheet
+          visible={doNowOpen}
+          availableMinutes={doNow.availableMinutes}
+          energy={doNow.energy}
+          selection={doNow.selection}
+          hasPendingToday={doNow.hasPendingToday}
+          errorMessage={error}
+          onChangeMinutes={doNow.setAvailableMinutes}
+          onChangeEnergy={doNow.setEnergy}
+          renderTask={renderTaskItem}
+          onClose={() => setDoNowOpen(false)}
+        />
+
+        <OneThingSheet
+          visible={oneThingOpen}
+          phase={oneThing.phase}
+          task={oneThing.task}
+          remainingCount={oneThing.remainingCount}
+          skippedCount={oneThing.skippedCount}
+          minutes={oneThing.minutes}
+          saving={oneThing.saving}
+          completedTitle={oneThing.completedTitle}
+          todayKey={oneThing.todayKey}
+          errorMessage={error}
+          onChangeMinutes={oneThing.setMinutes}
+          onSkip={oneThing.skip}
+          onResetSkipped={oneThing.resetSkipped}
+          onStartConfirm={oneThing.startConfirm}
+          onCancelConfirm={oneThing.cancelConfirm}
+          onConfirm={oneThing.confirm}
+          onNext={oneThing.next}
+          onClose={closeOneThing}
+        />
+
+        <SomedaySheet
+          visible={somedayOpen}
+          tasks={somedayTasks}
+          errorMessage={error}
+          onBringBack={(taskId) => update(taskId, UNPARK_PATCH)}
+          onDelete={remove}
+          onClose={() => setSomedayOpen(false)}
+        />
+
+        <WeeklyResetSheet
+          visible={weeklyResetOpen}
+          phase={weeklyReset.phase}
+          pendingCount={weeklyReset.pendingCount}
+          reasonCounts={weeklyReset.reasonCounts}
+          item={weeklyReset.item}
+          index={weeklyReset.index}
+          total={weeklyReset.total}
+          tally={weeklyReset.tally}
+          saving={weeklyReset.saving}
+          todayKey={weeklyReset.todayKey}
+          errorMessage={error}
+          onStart={weeklyReset.start}
+          onDecide={weeklyReset.decide}
+          onClose={closeWeeklyReset}
+        />
+
         <FocusSessionModal
           task={focusTask}
           sessionIndex={focusSessionIndex}
           sessionTotal={focusTasksToday.length}
-          workMinutes={settings?.pomodoro_work_minutes ?? 25}
-          breakMinutes={settings?.pomodoro_break_minutes ?? 5}
-          chimeEnabled={settings?.timer_chime_enabled ?? true}
+          workMinutes={settings?.pomodoro_work_minutes ?? DEFAULT_SETTINGS.pomodoro_work_minutes}
+          breakMinutes={settings?.pomodoro_break_minutes ?? DEFAULT_SETTINGS.pomodoro_break_minutes}
+          chimeEnabled={settings?.timer_chime_enabled ?? DEFAULT_SETTINGS.timer_chime_enabled}
           onClose={() => setFocusTask(null)}
           onComplete={(taskId, actualMinutes) => {
             complete(taskId, actualMinutes);
@@ -368,6 +507,25 @@ const useStyles = makeStyles((theme) => ({
   summaryStrong: {
     color: theme.colors.textPrimary,
   },
+  helpRow: {
+    flexDirection: "row",
+    gap: theme.spacing.sm,
+  },
+  helpButton: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 44,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.pill,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  helpButtonText: {
+    color: theme.colors.accentDark,
+    fontSize: theme.typography.footnote.fontSize,
+    fontWeight: "700",
+  },
   groupSwitch: {
     flexDirection: "row",
     gap: 4,
@@ -424,6 +582,16 @@ const useStyles = makeStyles((theme) => ({
     color: theme.colors.textSecondary,
     fontSize: theme.typography.eyebrow.fontSize,
     fontFamily: theme.fonts.mono,
+  },
+  footerLink: {
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 44,
+  },
+  footerLinkText: {
+    color: theme.colors.textSecondary,
+    fontSize: theme.typography.footnote.fontSize,
+    fontWeight: theme.typography.footnote.fontWeight,
   },
   emptyState: {
     alignItems: "center",

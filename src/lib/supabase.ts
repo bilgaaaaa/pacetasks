@@ -1,7 +1,6 @@
 import "react-native-url-polyfill/auto";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { createDemoClient } from "./demo/demoBackend";
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? "";
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "";
@@ -17,8 +16,15 @@ if (!isDemoMode && (!supabaseUrl || !supabaseAnonKey)) {
   );
 }
 
+// Loaded only in demo mode, so a real build never runs the demo backend or the
+// rule-based parser it pulls in (whose patterns need a modern RegExp engine).
+function createDemoSupabaseClient(): SupabaseClient {
+  const { createDemoClient } = require("./demo/demoBackend") as typeof import("./demo/demoBackend");
+  return createDemoClient() as unknown as SupabaseClient;
+}
+
 export const supabase: SupabaseClient = isDemoMode
-  ? (createDemoClient() as unknown as SupabaseClient)
+  ? createDemoSupabaseClient()
   : createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         storage: AsyncStorage,

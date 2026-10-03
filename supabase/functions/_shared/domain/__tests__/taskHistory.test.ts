@@ -4,7 +4,7 @@ import { makeTask } from "../testing/makeTask";
 // Newest-first, as fetchTasks returns them.
 const tasks = [
   makeTask({ id: "3", title: "Walk Bruno", actual_minutes: null, estimated_minutes: 20, timing: "after_work", category: "home" }),
-  makeTask({ id: "2", title: "walk bruno ", actual_minutes: 35, category: "health" }),
+  makeTask({ id: "2", title: "walk bruno ", actual_minutes: 35, category: "health", energy_level: "medium" }),
   makeTask({ id: "1", title: "Walk Bruno", actual_minutes: 25 }),
   makeTask({ id: "0", title: "Call vet", actual_minutes: 8 }),
 ];
@@ -16,6 +16,7 @@ describe("taskHistory", () => {
       title: "Walk Bruno",
       timing: "after_work",
       category: "home",
+      energyLevel: "medium", // the newest entry has none, so the last known one is kept
       lastMinutes: 20,
       minMinutes: 25,
       maxMinutes: 35,

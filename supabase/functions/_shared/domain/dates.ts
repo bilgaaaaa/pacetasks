@@ -51,11 +51,24 @@ export function daysBetween(from: string, to: string): number {
   );
 }
 
+// Day of the week of a date key: 0 = Sunday … 6 = Saturday.
+export function weekdayIndex(dateKey: string): number {
+  return new Date(`${dateKey}T00:00:00Z`).getUTCDay();
+}
+
+// The first Saturday or Sunday strictly after `dateKey`: "this weekend" seen from
+// a weekday, tomorrow from a Saturday, next Saturday from a Sunday.
+export function nextWeekendDay(dateKey: string): string {
+  const SATURDAY = 6;
+  const daysUntilSaturday = (SATURDAY - weekdayIndex(dateKey) + 7) % 7;
+  return addDays(dateKey, daysUntilSaturday === 0 ? 1 : daysUntilSaturday);
+}
+
 const WEEKDAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 // English weekday name of a date key, e.g. "Monday"; used to anchor the AI's relative dates.
 export function weekdayName(dateKey: string): string {
-  return WEEKDAY_NAMES[new Date(`${dateKey}T00:00:00Z`).getUTCDay()];
+  return WEEKDAY_NAMES[weekdayIndex(dateKey)];
 }
 
 // True when `timeZone` is an IANA zone this runtime knows, e.g. "Europe/Rome".

@@ -12,14 +12,19 @@ pill tab bar.
 
 ## Features
 
-- **Add a task** — an always-visible **Add a task…** bar opens the add sheet on **your usuals**: tasks you've done more than once, each showing when you last did it ("9 days ago · usually 7"), the ones past their usual rhythm first. One tap adds a usual for today (with Undo); **⋯** adjusts it first. Typing something new in the big **What?** field switches to three calm questions — how long (big 2 / 5 / 15 / 30 / 60 buttons) and when (Today / After work / Tomorrow) — with category, time of day and a fixed start time tucked behind one link. A name you've used before is suggested and its usual time, timing and category are filled in ("Done 8× before · usually 15–23 min"). After each add you're back on the usuals.
+- **Add a task** — an always-visible **Add a task…** bar opens the add sheet on **your usuals**: tasks you've done more than once, each showing when you last did it ("9 days ago · usually 7"), the ones past their usual rhythm first. One tap adds a usual for today (with Undo); **⋯** adjusts it first. Typing something new in the big **What?** field switches to three calm questions — how long (big 2 / 5 / 15 / 30 / 60 buttons) and when (Today / After work / Tomorrow) — with category, energy, time of day and a fixed start time tucked behind one link. A name you've used before is suggested and its usual time, timing, category and energy are filled in ("Done 8× before · usually 15–23 min"). After each add you're back on the usuals.
 - **Range timer** — tap a task's minutes pill to start a simple countdown from its suggested max time (learned from your history for that task name); the countdown turns green once you cross the suggested min, so you can see you're in the acceptable window without checking off yet. Reaching zero opens the actual-minutes confirm step so you finish logging it yourself. Tasks with no history yet just use their single estimate as both ends of the range.
 - **Focus sessions (Pomodoro)** — give a task a fixed start time and it gets a **Focus HH:MM** pill instead of the range timer; tapping it opens a full-screen countdown (session X of Y, progress bar, session segments) using your Pomodoro length from Settings. Finishing a session auto-completes the task and logs the real minutes spent; **Done early** logs the minutes so far.
 - **Categories** — tag a task as Work / Personal / Shopping / Home / Health (or leave it uncategorized) from the add sheet; shown as a colored dot and label on each task row.
-- **Task memory** — every task name you've ever typed is remembered (grouped case-insensitively); a recognized name auto-fills its usual timing and time, and feeds the range timer's min/max, unless you manually override them for that entry.
+- **Task memory** — every task name you've ever typed is remembered (grouped case-insensitively); a recognized name auto-fills its usual timing, time, category and energy, and feeds the range timer's min/max, unless you manually override them for that entry.
 - **Today, in sections you choose** — today's pending tasks (undated, due today, or overdue), with a summary of how small the day really is ("4 left, about 62 min. 3 take 5 minutes or less."). See **All** in one list (the default), or group them **by size** (quick wins vs. longer), **by place** (At home / Out & about / At work / Anywhere, derived from the category), **by category**, or **by time of day** — switch right on Today or in Settings. Tasks finished today collect in a Done section. Future-dated tasks stay hidden until their day; "today" is always the phone's local day.
 - **Quick wins** — tasks at or under your quick-win limit (5 min by default, 1–15 in Settings) get a highlighted time pill, so the 2-minute jobs stand out.
 - **Make it yours** — theme (Match phone / Light / Dark) and accent (Sage, Ocean, Clay, Plum, Ink); "Match phone" follows the phone's light/dark setting live. These look & layout preferences are saved on the device.
+- **What can I do now?** — tap it on Today, pick how much time you have (5 min / 15 min / 30 min / 1 hour) and your energy (low / normal / high). PaceTasks answers with **Do these now**: the tasks that fit back to back in that time, ordered by what matters most (overdue and due today first, then priority, what suits this part of your day, and the best use of your energy), plus **Or instead** for other tasks that would also fit. Tasks never need more energy than you have; tasks with no energy set are never hidden. Completing a task there works exactly as on Today, and the next suggestion moves up. No AI involved.
+- **Tell me what to do (One Thing mode)** — for when the list is too long to choose from. One task fills the screen, picked with the same ranking as "What can I do now?" (time and energy never hide a task here; your last energy choice only shapes the order). **Done** asks how long it took, logs it and offers the next one; **Not now** passes on it until you close the sheet.
+- **"I didn't do it" rollover** — when tasks from earlier days are still open, a card on top of Today lists them with where PaceTasks would move each one: missed deadlines and high-priority tasks come to **Today**, tasks already moved three times go to **Someday**, "maybe" tasks to the **Weekend**, and the rest fill up to 60 minutes of today, with the remainder moving to **Tomorrow**. Change any destination, then accept everything with **Looks good**. **Not now** hides the card until tomorrow. No AI involved.
+- **Weekly Reset** — the **Weekly reset** link at the foot of Today appears when tasks need a decision: overdue ones, ones you have moved two or more times, and undated ones that have sat for two weeks. It shows them one at a time with the choices **Today / Tomorrow / Weekend / Someday / Delete / Keep as is**. Each choice is saved as you make it, and the run ends with a summary of what you did. No AI involved.
+- **Someday** — park a task from its menu (**Move to Someday**) to take it out of your daily lists without deleting it. The **Someday** link at the foot of Today opens the parked list, where each task can be brought back or deleted.
 - **Brain Dump** — tap the mic next to **Add a task…** (or in the add sheet), then type or dictate (keyboard mic) everything on your mind, in English, Italian, Turkish or a mix. PaceTasks shows what it understood (titles kept in your words, due days like "Tomorrow" / "by Fri", durations, "maybe" tasks) and highlights anything unclear or already on your list. Edit titles, untick what you don't want, then add. With **Add clear brain dumps directly** on in Settings, clear dumps skip the review.
 - **Due days on tasks** — tasks with a date show it first on their row ("Today", "by Fri", "Overdue"); "maybe" tasks are marked as such.
 - **Live sync** — changes made outside the list (another screen, device, or later Siri/Brain Dump) appear immediately via Supabase Realtime, and the list silently reloads whenever the app returns to the foreground.
@@ -27,6 +32,8 @@ pill tab bar.
 - **Work schedule** — set your work start/end hour once in Settings; used for the before/after-work timing labels.
 - **Evening review** — a single configurable local notification (renamed from "daily reminder", same mechanism).
 - **Timer chime / Haptics** — toggle a haptic pulse when a Focus session or range timer ends, or when you complete a task (no audio asset pipeline in this build — "chime" is a haptic, not a sound).
+- **Account (optional)** — the app works the moment it is installed, with no login. In Settings, **Create account** asks for first name, last name and email, then for the six-digit code emailed to that address: no password. The account is attached to the user the phone already has, so every task made before signing up stays. **I already have an account** signs in on another phone the same way. Email tips are a separate switch that starts off.
+- **My Pace** — a card on the Stats tab that reads your own history in plain sentences: the three hours in which you finish most tasks, your strongest weekday, and whether tasks take longer or shorter than you estimate. It stays quiet until you have completed 10 tasks (and logged a duration on 5 for the estimate line). No AI involved.
 - **Compete with yourself ("Your pace")** — done today, minutes today, current/best streak, best day, estimate accuracy, a Mon–Fri × 13-week completion heatmap, and a per-day history list with a relative progress bar.
 
 ## Project structure
@@ -35,19 +42,24 @@ pill tab bar.
 App.tsx                  Root component, ThemeProvider, pill tab bar, session bootstrap
 src/screens/              TaskListScreen, SettingsScreen, StatsScreen
 src/components/           AddTaskSheet, TaskItem, FocusSessionModal, EndOfDayCard,
-                          WeekHeatmap, Stepper, StatCard, BrainDumpSheet
+                          WeekHeatmap, DropdownPill, ChoiceChips, Stepper, StatCard,
+                          BrainDumpSheet, DoNowSheet, OneThingSheet, RolloverCard,
+                          SomedaySheet, WeeklyResetSheet, AccountCard, AccountSheet,
+                          TextField, ErrorBanner, Button
 src/hooks/                useSession, useTasks, useSettings, useTheme (ThemeProvider,
-                          makeStyles), useBrainDump
+                          makeStyles), useBrainDump, useDoNow, useOneThing,
+                          useRollover, useWeeklyReset, useAccount
 src/lib/                  supabase client, tasksApi, settingsApi, notifications,
-                          stats, categories, theme (light/dark palettes + accents),
-                          appearance (+ appearanceStorage), taskSections, taskRhythm,
-                          dueOptions, types
+                          stats, categories, energy, theme (light/dark palettes +
+                          accents), appearance (+ appearanceStorage), taskSections,
+                          taskRhythm, dueOptions, types
 supabase/migrations/       Database schema, RLS policies and the create_task RPC
 supabase/tests/database/   pgTAP tests for the database (`npm run db:test`)
 supabase/functions/_shared/domain/
                            Pure TypeScript domain logic shared by the app and
                            Edge Functions: task model, dates, Today selection,
-                           task history, Brain Dump schema/normalization.
+                           "What can I do now?", rollover and Weekly Reset rules, task
+                           patches, task history, Brain Dump schema/normalization.
                            Imported in the app as `@domain/...`.
 supabase/functions/_shared/server/
                            Deno-only server code: vendor-neutral AI layer,
@@ -83,6 +95,19 @@ The CLI is a dev dependency, so `npx supabase` works after `npm install`.
 4. Go to **Settings → API Keys** and copy the **Project URL** (bare domain,
    no `/rest/v1/` suffix) and the **Publishable key** (`sb_publishable_...`,
    NOT the secret key — the secret key must never go into a mobile app).
+
+### Accounts (sign-up by email code)
+
+1. Apply the `profiles` migration: `npx supabase db push`.
+2. In the Supabase dashboard, **Authentication → Sign In / Providers → Email**: keep
+   the Email provider and **Confirm email** on.
+3. **Authentication → Email Templates**: PaceTasks asks for a six-digit code, so
+   the code must be in the email. In both **Change Email Address** (used when an
+   anonymous user signs up) and **Magic Link** (used to sign in), put
+   `{{ .Token }}` in the body, e.g. `Your PaceTasks code: {{ .Token }}`.
+4. Supabase's built-in email sender is for testing only (very few emails per
+   hour, and as far as we know only to addresses of the project's own team).
+   Before real users, set **Authentication → SMTP Settings** to a mail service.
 
 ## 2. Configure the app
 
@@ -122,6 +147,16 @@ app / Siri / Shortcuts → POST /functions/v1/brain-dump
   → mode "auto" + auto-create on + nothing to review → commit_brain_dump → create_task
 ```
 
+**Free mode (no AI key).** Set `AI_PROVIDER=rules` and Brain Dump runs on
+PaceTasks' own rule-based parser (`_shared/domain/brainDump/rulesParser.ts`):
+no model, no API key, no cost, nothing leaves Supabase. It reads simple lists
+in English, Italian and Turkish (separators, days, deadlines, times, durations,
+"maybe" wording). It cannot judge meaning, so rambling text, reminders
+("remind me 1h before"), dates like "the 5th" and "next week Tuesday" are where
+a real model does better. Measure it with `deno task eval --provider rules`
+(29/30 on the evaluation set, but the rules were written against that set, so
+expect less on your own dumps).
+
 **Choose a model with the evaluation set** (30 English/Italian/Turkish/mixed
 cases, anchored to Monday 2026-09-28). Needs [Deno 2](https://deno.com) and an API key:
 ```bash
@@ -136,11 +171,12 @@ in `_eval/brainDump/results/` (git-ignored).
 **Deploy:**
 ```bash
 npx supabase db push                                  # brain_dump migration
+npx supabase secrets set AI_PROVIDER=rules            # free mode, or instead:
 npx supabase secrets set AI_PROVIDER=anthropic AI_MODEL_BRAIN_DUMP=<model> ANTHROPIC_API_KEY=<key>
 npx supabase secrets set BRAIN_DUMP_DAILY_LIMIT=30    # optional, default 30 per user per day
 npx supabase functions deploy brain-dump
 ```
-Switching vendor or model later is only a `secrets set` — no code change or
+Switching between free mode, a vendor or a model later is only a `secrets set` — no code change or
 redeploy. API keys live only in Supabase secrets, never in the app.
 
 **Try it** with a signed-in user's access token (e.g. log `session.access_token` once in the app):
@@ -188,8 +224,8 @@ npm run web:demo
 Runs the app in the browser with `EXPO_PUBLIC_DEMO_MODE=1`: `src/lib/demo/`
 replaces the Supabase client with in-memory tables seeded with six weeks of
 history. Brain Dump runs the real `runBrainDump` service and review policy;
-only the language model is swapped for a small rule-based parser
-(`demoBrainDumpAI.ts`), so no AI key or network call is involved. Data resets
+with the same rule-based parser as free mode (`AI_PROVIDER=rules`), so no AI
+key or network call is involved. Data resets
 on reload. To export a static build: `EXPO_PUBLIC_DEMO_MODE=1 npx expo export --platform web`.
 
 ## 5. Publish to GitHub
@@ -220,7 +256,7 @@ your Supabase keys are never committed.
   read when the dev server *starts*. After editing `.env`, fully stop the
   server (Ctrl+C) and run `npx expo start -c` again.
 - **"Could not find the function public.create_task"** or a missing column
-  such as `due_date` — the database is behind the app. Run
+  such as `due_date` or `postponed_count` — the database is behind the app. Run
   `npx supabase db push` (see step 1).
 - **Tasks added elsewhere don't appear live** — check that Realtime is enabled
   for the `tasks` table (Dashboard → Database → Publications →

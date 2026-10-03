@@ -25,6 +25,7 @@ interface Props {
   chimeEnabled: boolean;
   onComplete: (taskId: string, actualMinutes: number) => void;
   onDelete: (taskId: string) => void;
+  onPark: (taskId: string) => void; // "Move to Someday": parks the task out of the daily lists
   onStartFocus: (task: Task) => void;
 }
 
@@ -45,6 +46,7 @@ export function TaskItem({
   chimeEnabled,
   onComplete,
   onDelete,
+  onPark,
   onStartFocus,
 }: Props) {
   const { theme } = useTheme();
@@ -120,8 +122,9 @@ export function TaskItem({
 
   const showMenu = () => {
     Alert.alert(task.title, undefined, [
-      { text: "Delete", style: "destructive", onPress: () => onDelete(task.id) },
-      { text: "Cancel", style: "cancel" },
+      ...(isDone ? [] : [{ text: "Move to Someday", onPress: () => onPark(task.id) }]),
+      { text: "Delete", style: "destructive" as const, onPress: () => onDelete(task.id) },
+      { text: "Cancel", style: "cancel" as const },
     ]);
   };
 

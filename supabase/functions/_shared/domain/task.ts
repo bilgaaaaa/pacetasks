@@ -2,14 +2,14 @@
 // with the tasks table and its check constraints in supabase/migrations.
 
 export const TASK_TIMINGS = ["before_work", "after_work", "anytime"] as const;
-export const TASK_STATUSES = ["pending", "done"] as const;
+export const TASK_STATUSES = ["pending", "someday", "done"] as const;
 export const TASK_PRIORITIES = ["low", "medium", "high"] as const;
 export const ENERGY_LEVELS = ["low", "medium", "high"] as const;
 export const DUE_KINDS = ["on", "by"] as const;
 export const TASK_SOURCES = ["app", "brain_dump", "siri", "shortcut"] as const;
 
 export type TaskTiming = (typeof TASK_TIMINGS)[number];
-export type TaskStatus = (typeof TASK_STATUSES)[number];
+export type TaskStatus = (typeof TASK_STATUSES)[number]; // "someday" = parked, hidden from daily lists
 export type TaskPriority = (typeof TASK_PRIORITIES)[number];
 export type EnergyLevel = (typeof ENERGY_LEVELS)[number];
 export type DueKind = (typeof DUE_KINDS)[number]; // "on" = that day, "by" = deadline
@@ -47,6 +47,7 @@ export interface Task {
   source: TaskSource;
   source_language: string | null; // BCP-47 language the task was written in, e.g. "it"
   ai_confidence: number | null; // 0–1, only set for AI-interpreted tasks
+  postponed_count: number; // times the due date moved later; kept by a database trigger, never written by callers
 }
 
 // Input for public.create_task — the one creation path for app, Brain Dump and Siri.
