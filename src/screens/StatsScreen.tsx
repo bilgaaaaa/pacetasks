@@ -11,6 +11,9 @@ import { LinearGradient } from "expo-linear-gradient";
 import { theme } from "../lib/theme";
 import { useTasks } from "../hooks/useTasks";
 import { computeStats, buildWeekdayHeatmap } from "../lib/stats";
+import { computePaceInsights } from "../lib/paceInsights";
+import { paceInsightLines } from "../lib/paceInsightsCopy";
+import { PaceInsightsCard } from "../components/PaceInsightsCard";
 import { StatCard } from "../components/StatCard";
 import { WeekHeatmap } from "../components/WeekHeatmap";
 
@@ -18,13 +21,15 @@ interface Props {
   userId: string | undefined;
 }
 
-// "Compete with yourself" ("Your pace"): a 2-column stat grid, a weekday
+// "Compete with yourself" ("Your pace"): a 2-column stat grid, the "My Pace"
+// insights (best hours, strongest day, estimates vs reality), a weekday
 // contribution heatmap, and a per-day history list with a relative progress
 // bar — no comparisons to anyone else's numbers, only your own history.
 export function StatsScreen({ userId }: Props) {
   const { tasks, loading } = useTasks(userId);
   const stats = useMemo(() => computeStats(tasks), [tasks]);
   const heatmap = useMemo(() => buildWeekdayHeatmap(stats.dailyBreakdown), [stats]);
+  const paceLines = useMemo(() => paceInsightLines(computePaceInsights(tasks)), [tasks]);
 
   return (
     <LinearGradient
@@ -73,6 +78,8 @@ export function StatsScreen({ userId }: Props) {
                     hint="estimates vs reality"
                   />
                 </View>
+
+                <PaceInsightsCard lines={paceLines} />
 
                 <WeekHeatmap heatmap={heatmap} />
 
