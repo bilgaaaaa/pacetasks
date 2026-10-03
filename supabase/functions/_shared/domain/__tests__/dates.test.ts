@@ -1,4 +1,12 @@
-import { addDays, daysBetween, isValidDateKey, isValidTimeOfDay, toLocalDateKey } from "../dates";
+import {
+  addDays,
+  daysBetween,
+  isValidDateKey,
+  isValidTimeOfDay,
+  nextWeekendDay,
+  toLocalDateKey,
+  weekdayIndex,
+} from "../dates";
 
 describe("toLocalDateKey", () => {
   it("uses the device's local day, not UTC (tests run in Europe/Rome)", () => {
@@ -44,5 +52,19 @@ describe("addDays / daysBetween", () => {
   it("counts whole days in either direction", () => {
     expect(daysBetween("2026-10-24", "2026-10-26")).toBe(2);
     expect(daysBetween("2026-10-26", "2026-10-24")).toBe(-2);
+  });
+});
+
+describe("weekend helpers", () => {
+  it("gives the day of the week, Sunday first", () => {
+    expect(weekdayIndex("2026-09-27")).toBe(0);
+    expect(weekdayIndex("2026-09-28")).toBe(1);
+  });
+
+  it("finds the first weekend day after a date", () => {
+    expect(nextWeekendDay("2026-09-28")).toBe("2026-10-03"); // Monday → Saturday
+    expect(nextWeekendDay("2026-10-02")).toBe("2026-10-03"); // Friday → Saturday
+    expect(nextWeekendDay("2026-10-03")).toBe("2026-10-04"); // Saturday → Sunday
+    expect(nextWeekendDay("2026-10-04")).toBe("2026-10-10"); // Sunday → next Saturday
   });
 });

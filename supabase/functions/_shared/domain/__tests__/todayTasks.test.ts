@@ -1,4 +1,4 @@
-import { isPendingToday, selectTodayTasks } from "../todayTasks";
+import { isPendingToday, selectSomedayTasks, selectTodayTasks } from "../todayTasks";
 import { makeTask } from "../testing/makeTask";
 
 const TODAY = "2026-09-28";
@@ -10,9 +10,10 @@ describe("isPendingToday", () => {
     expect(isPendingToday(makeTask({ due_date: "2026-09-20" }), TODAY)).toBe(true);
   });
 
-  it("hides future-dated and completed tasks", () => {
+  it("hides future-dated, completed and parked tasks", () => {
     expect(isPendingToday(makeTask({ due_date: "2026-09-29" }), TODAY)).toBe(false);
     expect(isPendingToday(makeTask({ status: "done" }), TODAY)).toBe(false);
+    expect(isPendingToday(makeTask({ status: "someday" }), TODAY)).toBe(false);
   });
 });
 
@@ -30,5 +31,13 @@ describe("selectTodayTasks", () => {
 
     expect(pending.map((t) => t.id)).toEqual(["before", "anytime", "after"]);
     expect(done.map((t) => t.id)).toEqual(["done"]);
+  });
+});
+
+describe("selectSomedayTasks", () => {
+  it("returns only parked tasks", () => {
+    const tasks = [makeTask({ id: "parked", status: "someday" }), makeTask({ id: "pending" }), makeTask({ id: "done", status: "done" })];
+
+    expect(selectSomedayTasks(tasks).map((t) => t.id)).toEqual(["parked"]);
   });
 });

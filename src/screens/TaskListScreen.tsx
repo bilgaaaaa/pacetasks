@@ -19,10 +19,12 @@ import { useSettings } from "../hooks/useSettings";
 import { useBrainDump } from "../hooks/useBrainDump";
 import { useDoNow } from "../hooks/useDoNow";
 import { useOneThing } from "../hooks/useOneThing";
+import { useRollover } from "../hooks/useRollover";
 import { DEFAULT_SETTINGS } from "../lib/settingsApi";
 import { computeStats } from "../lib/stats";
 import { buildTaskHistory, findExactMatch } from "@domain/taskHistory";
-import { selectTodayTasks } from "@domain/todayTasks";
+import { selectSomedayTasks, selectTodayTasks } from "@domain/todayTasks";
+import { PARK_PATCH, UNPARK_PATCH } from "@domain/taskPatch";
 import { toLocalDateKey } from "@domain/dates";
 import { QuickAddBar } from "../components/QuickAddBar";
 import { TaskItem } from "../components/TaskItem";
@@ -31,6 +33,8 @@ import { EndOfDayCard } from "../components/EndOfDayCard";
 import { BrainDumpSheet } from "../components/BrainDumpSheet";
 import { DoNowSheet } from "../components/DoNowSheet";
 import { OneThingSheet } from "../components/OneThingSheet";
+import { RolloverCard } from "../components/RolloverCard";
+import { SomedaySheet } from "../components/SomedaySheet";
 
 interface Props {
   userId: string | undefined;
@@ -51,21 +55,25 @@ function greetingEyebrow(): string {
 // history) or, for tasks with a fixed scheduled time, the full-screen
 // Focus/Pomodoro modal via its FOCUS badge. "What can I do now?" narrows the
 // list to what fits the time and energy the user has, and "Tell me what to do"
-// (One Thing mode) shows a single task. An end-of-day card appears once
-// nothing is left pending.
+// (One Thing mode) shows a single task. When tasks were left unfinished, a
+// rollover card on top proposes where each one goes; parked tasks live in the
+// Someday sheet, opened from the foot of the list. An end-of-day card appears
+// once nothing is left pending.
 export function TaskListScreen({ userId }: Props) {
-  const { tasks, loading, error, refresh, create, applyCreated, complete, remove, clearCompleted } =
+  const { tasks, loading, error, refresh, create, applyCreated, complete, update, updateMany, remove, clearCompleted } =
     useTasks(userId);
   const { settings } = useSettings(userId);
   const [focusTask, setFocusTask] = useState<Task | null>(null);
   const [brainDumpOpen, setBrainDumpOpen] = useState(false);
   const [doNowOpen, setDoNowOpen] = useState(false);
   const [oneThingOpen, setOneThingOpen] = useState(false);
+  const [somedayOpen, setSomedayOpen] = useState(false);
   const brainDump = useBrainDump({ onTasksCreated: applyCreated });
   const workStartHour = settings?.work_start_hour ?? DEFAULT_SETTINGS.work_start_hour;
   const workEndHour = settings?.work_end_hour ?? DEFAULT_SETTINGS.work_end_hour;
   const doNow = useDoNow(tasks, workStartHour, workEndHour);
   const oneThing = useOneThing({ tasks, energy: doNow.energy, workStartHour, workEndHour, onComplete: complete });
+  const rollover = useRollover({ tasks, onApply: updateMany });
 
   const closeOneThing = () => {
     oneThing.reset();
@@ -88,6 +96,7 @@ export function TaskListScreen({ userId }: Props) {
     [tasks, todayKey]
   );
   const orderedTasks = useMemo(() => [...pending, ...done], [pending, done]);
+  const somedayTasks = useMemo(() => selectSomedayTasks(tasks), [tasks]);
   const hasCompleted = done.length > 0;
   const allDone = orderedTasks.length > 0 && pending.length === 0;
 
@@ -121,6 +130,7 @@ export function TaskListScreen({ userId }: Props) {
         chimeEnabled={settings?.timer_chime_enabled ?? DEFAULT_SETTINGS.timer_chime_enabled}
         onComplete={complete}
         onDelete={remove}
+        onPark={(taskId) => update(taskId, PARK_PATCH)}
         onStartFocus={setFocusTask}
       />
     );
@@ -211,14 +221,36 @@ export function TaskListScreen({ userId }: Props) {
                 </Text>
               </View>
             }
-            ListFooterComponent={
-              allDone ? (
-                <EndOfDayCard
-                  tasksToday={stats.todayCompleted}
-                  minutesToday={stats.todayActualMinutes}
-                  streakDays={stats.currentStreakDays}
+            ListHeaderComponent={
+              rollover.visible ? (
+                <RolloverCard
+                  choices={rollover.choices}
+                  saving={rollover.saving}
+                  onChangeDestination={rollover.setDestination}
+                  onApply={rollover.apply}
+                  onDismiss={rollover.dismiss}
                 />
               ) : null
+            }
+            ListFooterComponent={
+              <>
+                {allDone && (
+                  <EndOfDayCard
+                    tasksToday={stats.todayCompleted}
+                    minutesToday={stats.todayActualMinutes}
+                    streakDays={stats.currentStreakDays}
+                  />
+                )}
+                {somedayTasks.length > 0 && (
+                  <TouchableOpacity
+                    onPress={() => setSomedayOpen(true)}
+                    style={styles.somedayLink}
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.somedayLinkText}>Someday · {somedayTasks.length} parked</Text>
+                  </TouchableOpacity>
+                )}
+              </>
             }
           />
         )}
@@ -264,6 +296,14 @@ export function TaskListScreen({ userId }: Props) {
           onConfirm={oneThing.confirm}
           onNext={oneThing.next}
           onClose={closeOneThing}
+        />
+
+        <SomedaySheet
+          visible={somedayOpen}
+          tasks={somedayTasks}
+          onBringBack={(taskId) => update(taskId, UNPARK_PATCH)}
+          onDelete={remove}
+          onClose={() => setSomedayOpen(false)}
         />
 
         <FocusSessionModal
@@ -368,6 +408,17 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: theme.spacing.lg,
     paddingBottom: theme.spacing.xl,
+  },
+  somedayLink: {
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 44,
+    marginTop: theme.spacing.sm,
+  },
+  somedayLinkText: {
+    color: theme.colors.textSecondary,
+    fontSize: theme.typography.footnote.fontSize,
+    fontWeight: theme.typography.footnote.fontWeight,
   },
   emptyState: {
     alignItems: "center",
