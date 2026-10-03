@@ -33,7 +33,7 @@ pill tab bar.
 - **Evening review** — a single configurable local notification (renamed from "daily reminder", same mechanism).
 - **Timer chime / Haptics** — toggle a haptic pulse when a Focus session or range timer ends, or when you complete a task (no audio asset pipeline in this build — "chime" is a haptic, not a sound).
 - **Account (optional)** — the app works the moment it is installed, with no login. In Settings, **Create account** asks for first name, last name and email, then for the six-digit code emailed to that address: no password. The account is attached to the user the phone already has, so every task made before signing up stays. **I already have an account** signs in on another phone the same way. Email tips are a separate switch that starts off.
-- **Delete account** — at the bottom of Settings, under **Your data**. It lists what goes (the account, every task, statistics, settings, brain dumps), asks once, and erases all of it from the server; the phone starts again empty. Before sign-up the same button is **Delete my data** and clears what the phone's anonymous user has stored.
+- **Delete account** — at the bottom of Settings, under **Your data**, next to the links to the privacy policy and the support page. It lists what goes (the account, every task, statistics, settings, brain dumps), asks once, and erases all of it from the server; the phone starts again empty. Before sign-up the same button is **Delete my data** and clears what the phone's anonymous user has stored.
 - **My Pace** — a card on the Stats tab that reads your own history in plain sentences: the three hours in which you finish most tasks, your strongest weekday, and whether tasks take longer or shorter than you estimate. It stays quiet until you have completed 10 tasks (and logged a duration on 5 for the estimate line). No AI involved.
 - **Compete with yourself ("Your pace")** — done today, minutes today, current/best streak, best day, estimate accuracy, a Mon–Fri × 13-week completion heatmap, and a per-day history list with a relative progress bar.
 
@@ -51,6 +51,7 @@ src/hooks/                useSession, useTasks, useSettings, useTheme (ThemeProv
                           makeStyles), useBrainDump, useDoNow, useOneThing,
                           useRollover, useWeeklyReset, useAccount
 assets/                   App icon, splash images, notification icon, favicon
+docs/                     Public pages (privacy policy, support) served by GitHub Pages
 src/lib/                  supabase client, tasksApi, settingsApi, notifications,
                           stats, categories, energy, theme (light/dark palettes +
                           accents), appearance (+ appearanceStorage), taskSections,
@@ -264,7 +265,24 @@ eas submit --platform ios --profile production   # uploads the build to App Stor
   `design/icon/render_icon_pngs.py` (needs Python with Playwright); run both
   from `design/icon/`, then copy the PNGs into `assets/`.
 
-## 6. Publish to GitHub
+## 6. Privacy policy and support page
+
+`docs/` holds the public pages the app and the App Store listing link to:
+`privacy.html`, `support.html` and a small `index.html`. They are plain HTML,
+served for free by GitHub Pages.
+
+1. Before publishing, replace `[YOUR FULL NAME]` and `[CONTACT EMAIL]` in
+   `docs/privacy.html` and `docs/support.html`, and name the email service in
+   the privacy policy (search the files for `TO CONFIRM`).
+2. On GitHub: **Settings → Pages → Build and deployment → Deploy from a
+   branch**, branch `main`, folder `/docs`, **Save**.
+3. A minute later the pages are at `https://bilgaaaaa.github.io/pacetasks/`.
+   The app's links (`src/lib/links.ts`) already point there.
+
+When what the app stores changes (a new table, an AI provider, analytics),
+update `docs/privacy.html` in the same pull request.
+
+## 7. Publish to GitHub
 
 From inside the `pacetasks` folder:
 

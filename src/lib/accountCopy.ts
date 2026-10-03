@@ -50,6 +50,11 @@ export function doneMessage(mode: AccountMode, firstName: string | null): string
 export const MARKETING_CONSENT_LABEL = "Send me tips and product news by email";
 export const MARKETING_CONSENT_HINT = "Optional. You can change this any time in Settings.";
 
+export const PRIVACY_POLICY_LABEL = "Privacy policy";
+export const SUPPORT_LABEL = "Help and support";
+// Shown where name and email are collected, so the policy is one tap away before signing up.
+export const SIGN_UP_PRIVACY_NOTE = "Your name and email are used only for your account.";
+
 // --- Deleting the account (or, before sign-up, this phone's data) ---
 
 export function deletionEntryLabel(hasAccount: boolean): string {

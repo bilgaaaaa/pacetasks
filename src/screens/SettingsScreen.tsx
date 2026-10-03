@@ -18,6 +18,7 @@ import { AccountSheet } from "../components/AccountSheet";
 import { DataCard } from "../components/DataCard";
 import { DeleteAccountSheet } from "../components/DeleteAccountSheet";
 import { Stepper } from "../components/Stepper";
+import { openExternalLink, PRIVACY_POLICY_URL, SUPPORT_URL } from "../lib/links";
 import { syncDailyReminder } from "../lib/notifications";
 import { ACCENT_OPTIONS, buildTheme } from "../lib/theme";
 import {
@@ -68,7 +69,8 @@ function formatTime(hour: number, minute: number): string {
 // yours" (theme, accent, Today's sections, quick-win size — saved on this
 // phone), the work schedule (feeds the before/after-work labels), the evening
 // reminder, Brain Dump auto-create, the settings the Focus timer + range
-// timer read (chime + Pomodoro length), and "Your data" (delete the account).
+// timer read (chime + Pomodoro length), and "Your data" (privacy policy, help,
+// delete the account).
 export function SettingsScreen({ userId, session }: Props) {
   const { theme, appearance, updateAppearance } = useTheme();
   const styles = useStyles();
@@ -367,7 +369,12 @@ export function SettingsScreen({ userId, session }: Props) {
           </View>
 
           <Text style={styles.sectionLabel}>YOUR DATA</Text>
-          <DataCard hasAccount={account.isSignedUp} onDelete={account.openDeletion} />
+          <DataCard
+            hasAccount={account.isSignedUp}
+            onOpenPrivacyPolicy={() => openExternalLink(PRIVACY_POLICY_URL)}
+            onOpenSupport={() => openExternalLink(SUPPORT_URL)}
+            onDelete={account.openDeletion}
+          />
         </ScrollView>
 
         <AccountSheet
@@ -383,6 +390,7 @@ export function SettingsScreen({ userId, session }: Props) {
           onVerify={account.verify}
           onResendCode={account.resendCode}
           onEditEmail={account.editEmail}
+          onOpenPrivacyPolicy={() => openExternalLink(PRIVACY_POLICY_URL)}
           onClose={() => setAccountSheetOpen(false)}
         />
         <DeleteAccountSheet
