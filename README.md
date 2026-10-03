@@ -49,6 +49,7 @@ src/components/           AddTaskSheet, TaskItem, FocusSessionModal, EndOfDayCar
 src/hooks/                useSession, useTasks, useSettings, useTheme (ThemeProvider,
                           makeStyles), useBrainDump, useDoNow, useOneThing,
                           useRollover, useWeeklyReset, useAccount
+assets/                   App icon, splash images, notification icon, favicon
 src/lib/                  supabase client, tasksApi, settingsApi, notifications,
                           stats, categories, energy, theme (light/dark palettes +
                           accents), appearance (+ appearanceStorage), taskSections,
@@ -228,7 +229,41 @@ with the same rule-based parser as free mode (`AI_PROVIDER=rules`), so no AI
 key or network call is involved. Data resets
 on reload. To export a static build: `EXPO_PUBLIC_DEMO_MODE=1 npx expo export --platform web`.
 
-## 5. Publish to GitHub
+## 5. Build for TestFlight and the App Store
+
+Builds run on Expo's servers (EAS), so no Mac setup is needed beyond the
+terminal. Needs an Apple Developer Program membership and a free Expo account.
+
+One-time setup:
+```bash
+npm install -g eas-cli
+eas login
+eas init                       # links this folder to an Expo project (adds its id to app.json)
+# The app's Supabase address and publishable key, for builds made on EAS (.env is not uploaded):
+eas env:create --environment production --name EXPO_PUBLIC_SUPABASE_URL --value https://<your-project-ref>.supabase.co --visibility plaintext
+eas env:create --environment production --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value sb_publishable_... --visibility plaintext
+```
+Repeat the two `eas env:create` lines with `--environment preview` if you use the `preview` profile.
+
+Every release:
+```bash
+eas build --platform ios --profile production    # asks for your Apple login the first time; build number goes up by itself
+eas submit --platform ios --profile production   # uploads the build to App Store Connect / TestFlight
+```
+
+- `eas.json` holds the two build profiles: `production` (App Store / TestFlight)
+  and `preview` (installs directly on registered test phones).
+- The version shown in the store is `version` in `app.json`; raise it for each
+  new release. Build numbers are kept by EAS (`appVersionSource: remote`).
+- The app is iPhone-only for now (`supportsTablet: false`): an iPad layout has
+  not been designed or tested, and once an app ships with iPad support Apple
+  does not let it be removed.
+- Icon and splash screen live in `assets/` and are wired up in `app.json`. They
+  are drawn by `design/icon/build_icon_svgs.py` and turned into PNGs by
+  `design/icon/render_icon_pngs.py` (needs Python with Playwright); run both
+  from `design/icon/`, then copy the PNGs into `assets/`.
+
+## 6. Publish to GitHub
 
 From inside the `pacetasks` folder:
 
