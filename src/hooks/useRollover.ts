@@ -62,9 +62,10 @@ export function useRollover({ tasks, onApply }: Options) {
       taskId: choice.task.id,
       patch: rolloverPatch(choice.task, choice.destination, todayKey),
     }));
-    await onApply(changes); // on failure the list shows the error and the unmoved tasks stay on the card
+    const saved = await onApply(changes);
     setSaving(false);
-    setOverrides({});
+    // On failure the unmoved tasks stay on the card with the destinations the user chose, ready to retry.
+    if (saved) setOverrides({});
   }, [saving, choices, todayKey, onApply]);
 
   const dismiss = useCallback(() => {

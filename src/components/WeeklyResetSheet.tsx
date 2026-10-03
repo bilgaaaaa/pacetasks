@@ -6,6 +6,7 @@ import { theme } from "../lib/theme";
 import { actionLabel, introLines, itemReason, progressLabel, summaryLine } from "../lib/weeklyResetCopy";
 import { WeeklyResetPhase } from "../lib/weeklyResetState";
 import { Button } from "./Button";
+import { ErrorBanner } from "./ErrorBanner";
 
 // Move decisions, laid out two per row; delete and keep sit below them.
 const MOVE_ACTION_ROWS: ResetAction[][] = [
@@ -24,6 +25,7 @@ interface Props {
   tally: Record<ResetOutcome, number> | null;
   saving: boolean;
   todayKey: string;
+  errorMessage: string | null; // a failed save from the task list, which this sheet covers
   onStart: () => void;
   onDecide: (action: ResetAction) => void;
   onClose: () => void;
@@ -43,6 +45,7 @@ export function WeeklyResetSheet({
   tally,
   saving,
   todayKey,
+  errorMessage,
   onStart,
   onDecide,
   onClose,
@@ -95,6 +98,7 @@ export function WeeklyResetSheet({
               <Text style={styles.meta}>{itemReason(item, todayKey)}</Text>
             </View>
             <View style={styles.actions}>
+              {errorMessage && <ErrorBanner message={errorMessage} />}
               {MOVE_ACTION_ROWS.map((row) => (
                 <View key={row.join("-")} style={styles.actionRow}>
                   {row.map((action) => (

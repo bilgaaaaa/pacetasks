@@ -8,6 +8,7 @@ import { emptyMessage, minutesLabel, planSummary } from "../lib/doNowCopy";
 import { ENERGY_OPTIONS } from "../lib/energy";
 import { EnergyLevel, Task } from "../lib/types";
 import { ChoiceChips } from "./ChoiceChips";
+import { ErrorBanner } from "./ErrorBanner";
 
 const MINUTE_OPTIONS = DO_NOW_MINUTE_OPTIONS.map((minutes) => ({ value: minutes as number, label: minutesLabel(minutes) }));
 // Enough to offer a real choice without turning the sheet back into the full list.
@@ -19,6 +20,7 @@ interface Props {
   energy: EnergyLevel;
   selection: DoNowSelection;
   hasPendingToday: boolean;
+  errorMessage: string | null; // a failed save from the task list, which this sheet covers
   onChangeMinutes: (minutes: number) => void;
   onChangeEnergy: (energy: EnergyLevel) => void;
   renderTask: (task: Task) => React.ReactElement; // the screen's own task row, so timers and completion work as on Today
@@ -34,6 +36,7 @@ export function DoNowSheet({
   energy,
   selection,
   hasPendingToday,
+  errorMessage,
   onChangeMinutes,
   onChangeEnergy,
   renderTask,
@@ -71,6 +74,8 @@ export function DoNowSheet({
             onChange={onChangeEnergy}
             accessibilityLabel="Energy level"
           />
+
+          {errorMessage && <ErrorBanner style={styles.error} message={errorMessage} />}
 
           {plan.length === 0 ? (
             <View style={styles.empty}>
@@ -150,6 +155,9 @@ const styles = StyleSheet.create({
     letterSpacing: theme.typography.eyebrow.letterSpacing,
     marginTop: theme.spacing.md,
     marginBottom: theme.spacing.sm,
+  },
+  error: {
+    marginTop: theme.spacing.md,
   },
   sectionHeader: {
     flexDirection: "row",

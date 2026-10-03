@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { toLocalDateKey } from "@domain/dates";
 import { selectOneThingQueue } from "@domain/doNow";
 import { getCurrentTiming } from "../lib/deviceContext";
@@ -23,6 +23,7 @@ export function useOneThing({ tasks, energy, workStartHour, workEndHour, onCompl
   const [minutes, setMinutes] = useState(0);
   const [saving, setSaving] = useState(false);
   const [completedTitle, setCompletedTitle] = useState<string | null>(null);
+  const visitRef = useRef(0); // bumped on reset, so a save that finishes after the sheet closed is ignored
 
   const todayKey = toLocalDateKey(new Date());
   const currentTiming = getCurrentTiming(workStartHour, workEndHour);
@@ -49,10 +50,11 @@ export function useOneThing({ tasks, energy, workStartHour, workEndHour, onCompl
 
   const confirm = useCallback(async () => {
     if (!confirmingTask || saving) return;
+    const visit = visitRef.current;
     setSaving(true);
     const saved = await onComplete(confirmingTask.id, minutes);
     setSaving(false);
-    if (!saved) return; // the task list shows the error; stay here so the user can retry
+    if (!saved || visit !== visitRef.current) return; // on failure the sheet shows the error; stay here to retry
     setCompletedTitle(confirmingTask.title);
     setConfirmingTask(null);
   }, [confirmingTask, minutes, saving, onComplete]);
@@ -61,6 +63,7 @@ export function useOneThing({ tasks, energy, workStartHour, workEndHour, onCompl
 
   // Closing the sheet starts the next visit fresh: nothing skipped, nothing half-confirmed.
   const reset = useCallback(() => {
+    visitRef.current += 1;
     setSkippedTaskIds(new Set());
     setConfirmingTask(null);
     setCompletedTitle(null);

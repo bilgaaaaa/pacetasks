@@ -291,6 +291,7 @@ export function TaskListScreen({ userId }: Props) {
           energy={doNow.energy}
           selection={doNow.selection}
           hasPendingToday={doNow.hasPendingToday}
+          errorMessage={error}
           onChangeMinutes={doNow.setAvailableMinutes}
           onChangeEnergy={doNow.setEnergy}
           renderTask={renderTaskItem}
@@ -307,6 +308,7 @@ export function TaskListScreen({ userId }: Props) {
           saving={oneThing.saving}
           completedTitle={oneThing.completedTitle}
           todayKey={oneThing.todayKey}
+          errorMessage={error}
           onChangeMinutes={oneThing.setMinutes}
           onSkip={oneThing.skip}
           onResetSkipped={oneThing.resetSkipped}
@@ -320,6 +322,7 @@ export function TaskListScreen({ userId }: Props) {
         <SomedaySheet
           visible={somedayOpen}
           tasks={somedayTasks}
+          errorMessage={error}
           onBringBack={(taskId) => update(taskId, UNPARK_PATCH)}
           onDelete={remove}
           onClose={() => setSomedayOpen(false)}
@@ -336,6 +339,7 @@ export function TaskListScreen({ userId }: Props) {
           tally={weeklyReset.tally}
           saving={weeklyReset.saving}
           todayKey={weeklyReset.todayKey}
+          errorMessage={error}
           onStart={weeklyReset.start}
           onDecide={weeklyReset.decide}
           onClose={closeWeeklyReset}
