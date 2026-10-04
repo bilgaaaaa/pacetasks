@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -17,6 +17,7 @@ import { Task } from "../lib/types";
 import { useTasks } from "../hooks/useTasks";
 import { useSettings } from "../hooks/useSettings";
 import { useBrainDump } from "../hooks/useBrainDump";
+import { useSheetHandoff } from "../hooks/useSheetHandoff";
 import { useDoNow } from "../hooks/useDoNow";
 import { useOneThing } from "../hooks/useOneThing";
 import { useRollover } from "../hooks/useRollover";
@@ -58,8 +59,6 @@ interface ListSection {
   data: Task[];
 }
 
-// iOS can't present a new Modal while the previous one is still animating away.
-const MODAL_SWITCH_DELAY_MS = 350;
 
 // Header: a small date label ("SUNDAY · OCTOBER 4") over the greeting
 // ("Good morning").
@@ -108,13 +107,7 @@ export function TaskListScreen({ userId }: Props) {
   const oneThing = useOneThing({ tasks, energy: doNow.energy, workStartHour, workEndHour, onComplete: complete });
   const rollover = useRollover({ tasks, onApply: updateMany });
   const weeklyReset = useWeeklyReset({ tasks, onUpdate: update, onRemove: remove });
-  const switchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (switchTimer.current) clearTimeout(switchTimer.current);
-    };
-  }, []);
+  const sheetHandoff = useSheetHandoff();
 
   const closeWeeklyReset = () => {
     weeklyReset.reset();
@@ -131,18 +124,13 @@ export function TaskListScreen({ userId }: Props) {
     setBrainDumpOpen(false);
   };
 
-  // Close the chooser first; iOS can't present the next sheet until it is gone.
-  const openFromPick = (open: (value: boolean) => void) => {
-    setPickOpen(false);
-    if (switchTimer.current) clearTimeout(switchTimer.current);
-    switchTimer.current = setTimeout(() => open(true), MODAL_SWITCH_DELAY_MS);
-  };
+  // The chooser and the add sheet each open another sheet: they close first and
+  // the next one opens once they are gone (see useSheetHandoff).
+  const openFromPick = (open: (value: boolean) => void) =>
+    sheetHandoff.handOff(() => setPickOpen(false), () => open(true));
 
-  const openBrainDumpFromAdd = () => {
-    setAddOpen(false);
-    if (switchTimer.current) clearTimeout(switchTimer.current);
-    switchTimer.current = setTimeout(() => setBrainDumpOpen(true), MODAL_SWITCH_DELAY_MS);
-  };
+  const openBrainDumpFromAdd = () =>
+    sheetHandoff.handOff(() => setAddOpen(false), () => setBrainDumpOpen(true));
 
   const history = useMemo(() => buildTaskHistory(tasks), [tasks]);
   const stats = useMemo(() => computeStats(tasks), [tasks]);
@@ -390,6 +378,7 @@ export function TaskListScreen({ userId }: Props) {
           onUndo={remove}
           onOpenBrainDump={openBrainDumpFromAdd}
           onClose={() => setAddOpen(false)}
+          onDismissed={sheetHandoff.onDismissed}
         />
 
         <BrainDumpSheet
@@ -408,6 +397,7 @@ export function TaskListScreen({ userId }: Props) {
           onDecideForMe={() => openFromPick(setOneThingOpen)}
           onFitMyTime={() => openFromPick(setDoNowOpen)}
           onClose={() => setPickOpen(false)}
+          onDismissed={sheetHandoff.onDismissed}
         />
 
         <DoNowSheet
