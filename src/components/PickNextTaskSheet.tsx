@@ -8,13 +8,14 @@ interface Props {
   onDecideForMe: () => void; // One Thing mode: a single task, chosen for you
   onFitMyTime: () => void; // Do Now: tasks that fit the time and energy you have
   onClose: () => void;
+  onDismissed: () => void; // the chooser has fully gone (iOS): lets the screen open the next sheet
 }
 
 type IconName = React.ComponentProps<typeof Ionicons>["name"];
 
 // The small chooser behind Today's one "Pick my next task" button. It folds
 // the two helpers that used to be separate buttons into one entry point.
-export function PickNextTaskSheet({ visible, onDecideForMe, onFitMyTime, onClose }: Props) {
+export function PickNextTaskSheet({ visible, onDecideForMe, onFitMyTime, onClose, onDismissed }: Props) {
   const { theme } = useTheme();
   const styles = useStyles();
 
@@ -32,7 +33,7 @@ export function PickNextTaskSheet({ visible, onDecideForMe, onFitMyTime, onClose
   );
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} onDismiss={onDismissed}>
       <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Close">
         {/* Taps inside the panel must not reach the backdrop. */}
         <Pressable style={styles.panel} onPress={() => {}}>

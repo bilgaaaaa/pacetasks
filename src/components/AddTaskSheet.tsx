@@ -45,6 +45,7 @@ interface Props {
   onUndo: (taskId: string) => Promise<boolean>; // false when the delete failed
   onOpenBrainDump: () => void;
   onClose: () => void;
+  onDismissed: () => void; // the sheet has fully gone (iOS): lets the screen open the next sheet
 }
 
 // The add sheet: opens on your usuals (repeat tasks, one tap adds them for
@@ -52,7 +53,16 @@ interface Props {
 // new switches to three calm questions (what, how long, when: a day or a
 // flexible window, plus the part of the day) with optional extras tucked away.
 // After each add it returns to the usuals with an Undo.
-export function AddTaskSheet({ visible, history, usuals, onAdd, onUndo, onOpenBrainDump, onClose }: Props) {
+export function AddTaskSheet({
+  visible,
+  history,
+  usuals,
+  onAdd,
+  onUndo,
+  onOpenBrainDump,
+  onClose,
+  onDismissed,
+}: Props) {
   const { theme } = useTheme();
   const styles = useStyles();
   const inputRef = useRef<TextInput>(null);
@@ -233,7 +243,7 @@ export function AddTaskSheet({ visible, history, usuals, onAdd, onUndo, onOpenBr
   );
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} onDismiss={onDismissed}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : "height"}>
         <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Close add task" />
         <View style={styles.sheet}>
