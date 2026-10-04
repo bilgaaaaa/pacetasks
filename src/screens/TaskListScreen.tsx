@@ -60,8 +60,8 @@ interface ListSection {
 // iOS can't present a new Modal while the previous one is still animating away.
 const MODAL_SWITCH_DELAY_MS = 350;
 
-// The hero card and week strip already say "today", so the header greets
-// instead: a small date label ("SUNDAY · OCTOBER 4") over "Good morning".
+// The header is just the date ("SUNDAY · OCTOBER 4") and the menu; the
+// greeting ("Good morning") is the headline of the hero card below.
 function dateEyebrow(now: Date): string {
   const day = now.toLocaleDateString("en-US", { weekday: "long" });
   const date = now.toLocaleDateString("en-US", { month: "long", day: "numeric" });
@@ -243,10 +243,9 @@ export function TaskListScreen({ userId }: Props) {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <View style={styles.headerTop}>
-            <View style={styles.headerTitles}>
-              <Text style={styles.eyebrow} numberOfLines={1}>{dateEyebrow(now)}</Text>
-              <Text style={styles.title} accessibilityRole="header">{greeting(now)}</Text>
-            </View>
+            <Text style={styles.eyebrow} numberOfLines={1} accessibilityRole="header">
+              {dateEyebrow(now)}
+            </Text>
             <TouchableOpacity onPress={openMenu} style={styles.menuButton} accessibilityLabel="List options">
               <Ionicons name="ellipsis-horizontal" size={20} color={theme.colors.textSecondary} />
             </TouchableOpacity>
@@ -292,6 +291,7 @@ export function TaskListScreen({ userId }: Props) {
                 {/* The hero (with the main action), the week, the carried-over
                     row and the filters scroll away with the list. */}
                 <TodayHero
+                  greeting={greeting(now)}
                   count={summary.count}
                   totalMinutes={summary.totalMinutes}
                   quickWinCount={summary.quickWinCount}
@@ -494,14 +494,11 @@ const useStyles = makeStyles((theme) => ({
   headerTop: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-end",
+    alignItems: "center",
     gap: theme.spacing.sm,
   },
-  headerTitles: {
-    flex: 1,
-    gap: 8, // breathing room between the greeting label and the title
-  },
   eyebrow: {
+    flex: 1,
     color: theme.colors.textSecondary,
     fontSize: theme.typography.eyebrow.fontSize,
     fontWeight: theme.typography.eyebrow.fontWeight,
@@ -514,13 +511,6 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: theme.colors.surface,
     alignItems: "center",
     justifyContent: "center",
-  },
-  title: {
-    color: theme.colors.textPrimary,
-    fontSize: theme.typography.largeTitle.fontSize,
-    fontWeight: theme.typography.largeTitle.fontWeight,
-    fontFamily: theme.typography.largeTitle.fontFamily,
-    letterSpacing: theme.typography.largeTitle.letterSpacing,
   },
   filterRow: {
     paddingTop: 4,

@@ -5,6 +5,7 @@ import { makeStyles, useTheme } from "../hooks/useTheme";
 import { quickWinsMessage, totalsLine } from "../lib/todayCopy";
 
 interface Props {
+  greeting: string; // "Good morning", the card's headline
   count: number;
   totalMinutes: number;
   quickWinCount: number;
@@ -12,15 +13,10 @@ interface Props {
   onPick: () => void;
 }
 
-function heroTitle(count: number, quickWinCount: number, allDone: boolean): string {
-  if (count === 0) return allDone ? "All done for today" : "A fresh start";
-  return quickWinCount > 0 ? "Start with a quick win" : "Ready when you are";
-}
-
-// The pastel card at the top of Today: one line on how the day looks, the
-// real counts (quick wins first, totals second) and the main action. The
-// soft circles are decoration only.
-export function TodayHero({ count, totalMinutes, quickWinCount, allDone, onPick }: Props) {
+// The pastel card at the top of Today: the greeting, the real counts (quick
+// wins first, totals second) and the main action. The soft circles are
+// decoration only.
+export function TodayHero({ greeting, count, totalMinutes, quickWinCount, allDone, onPick }: Props) {
   const { theme } = useTheme();
   const styles = useStyles();
   const quickWins = quickWinsMessage(quickWinCount);
@@ -38,7 +34,7 @@ export function TodayHero({ count, totalMinutes, quickWinCount, allDone, onPick 
 
       <View style={styles.content}>
         <Text style={styles.title} accessibilityRole="header">
-          {heroTitle(count, quickWinCount, allDone)}
+          {greeting}
         </Text>
         <View style={styles.meta}>
           {quickWins && (
@@ -51,11 +47,15 @@ export function TodayHero({ count, totalMinutes, quickWinCount, allDone, onPick 
         </View>
 
         {count > 0 && (
-          <TouchableOpacity style={styles.cta} onPress={onPick} accessibilityRole="button">
+          <TouchableOpacity
+            style={styles.cta}
+            onPress={onPick}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="Pick my next task"
+          >
+            <Ionicons name="sparkles" size={16} color={theme.colors.accentDark} />
             <Text style={styles.ctaText}>Pick my next task</Text>
-            <View style={styles.ctaIcon}>
-              <Ionicons name="arrow-forward" size={16} color={theme.colors.textPrimary} />
-            </View>
           </TouchableOpacity>
         )}
       </View>
@@ -133,31 +133,32 @@ const useStyles = makeStyles((theme) => ({
     fontWeight: "500",
     fontVariant: ["tabular-nums"],
   },
-  // Ink pill like the active tab, so the main action reads as the same family.
+  // A light, full-width pill on the pastel card: the card's own green for
+  // the label and icon, a hairline edge and a soft shadow instead of a
+  // heavy dark fill.
   cta: {
-    alignSelf: "flex-start",
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    minHeight: 46,
-    paddingLeft: 18,
-    paddingRight: 5,
-    paddingVertical: 5,
-    marginTop: 2,
+    justifyContent: "center",
+    gap: 8,
+    minHeight: 48,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    marginTop: 6,
     borderRadius: theme.radius.pill,
-    backgroundColor: theme.colors.textPrimary,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    shadowColor: theme.colors.shadow,
+    shadowOpacity: 1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
   },
   ctaText: {
-    color: theme.colors.surface,
+    color: theme.colors.accentDark,
     fontSize: theme.typography.body.fontSize,
     fontWeight: "700",
-  },
-  ctaIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: theme.colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
+    letterSpacing: 0.1,
   },
 }));
