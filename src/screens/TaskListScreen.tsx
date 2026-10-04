@@ -60,12 +60,17 @@ interface ListSection {
 // iOS can't present a new Modal while the previous one is still animating away.
 const MODAL_SWITCH_DELAY_MS = 350;
 
-function greetingEyebrow(): string {
-  const now = new Date();
-  const day = now.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
+// The hero card and week strip already say "today", so the header greets
+// instead: a small date label ("SUNDAY · OCTOBER 4") over "Good morning".
+function dateEyebrow(now: Date): string {
+  const day = now.toLocaleDateString("en-US", { weekday: "long" });
+  const date = now.toLocaleDateString("en-US", { month: "long", day: "numeric" });
+  return `${day} · ${date}`.toUpperCase();
+}
+
+function greeting(now: Date): string {
   const hour = now.getHours();
-  const part = hour < 12 ? "GOOD MORNING" : hour < 18 ? "GOOD AFTERNOON" : "GOOD EVENING";
-  return `${day} · ${part}`;
+  return hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
 }
 
 // Home screen: today's tasks split into the sections the user picked (all in
@@ -143,7 +148,8 @@ export function TaskListScreen({ userId }: Props) {
 
   // "Today" is the phone's local calendar day; recomputed on every render so a
   // list left open past midnight updates on the next foreground reload.
-  const todayKey = toLocalDateKey(new Date());
+  const now = new Date();
+  const todayKey = toLocalDateKey(now);
   const usuals = useMemo(() => selectUsuals(tasks, todayKey), [tasks, todayKey]);
   const { pending, done: completedTasks } = useMemo(
     () => selectTodayTasks(tasks, todayKey),
@@ -238,8 +244,8 @@ export function TaskListScreen({ userId }: Props) {
         <View style={styles.header}>
           <View style={styles.headerTop}>
             <View style={styles.headerTitles}>
-              <Text style={styles.eyebrow} numberOfLines={1}>{greetingEyebrow()}</Text>
-              <Text style={styles.title} accessibilityRole="header">Today</Text>
+              <Text style={styles.eyebrow} numberOfLines={1}>{dateEyebrow(now)}</Text>
+              <Text style={styles.title} accessibilityRole="header">{greeting(now)}</Text>
             </View>
             <TouchableOpacity onPress={openMenu} style={styles.menuButton} accessibilityLabel="List options">
               <Ionicons name="ellipsis-horizontal" size={20} color={theme.colors.textSecondary} />
