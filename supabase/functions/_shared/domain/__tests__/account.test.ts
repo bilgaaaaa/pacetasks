@@ -19,8 +19,11 @@ describe("account rules", () => {
     expect(normalizeEmail("  Bilge@Example.COM ")).toBe("bilge@example.com");
   });
 
-  it("recognizes a complete six-digit code", () => {
+  it("recognizes a complete code", () => {
     expect(isCompleteCode("123456")).toBe(true);
+    expect(isCompleteCode("12345678")).toBe(true); // the project may send 6 to 10 digits
+    expect(isCompleteCode("1234567890")).toBe(true);
+    expect(isCompleteCode("12345678901")).toBe(false);
     expect(isCompleteCode("12345")).toBe(false);
     expect(isCompleteCode("12345a")).toBe(false);
   });

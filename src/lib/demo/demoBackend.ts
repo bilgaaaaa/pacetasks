@@ -188,7 +188,7 @@ function createDemoChannel(name: string) {
 }
 
 // Auth stand-in. The demo user starts anonymous, like a fresh install; signing up
-// "verifies" the email with any six-digit code except DEMO_WRONG_CODE, so both
+// "verifies" the email with any code except DEMO_WRONG_CODE, so both
 // the happy path and the error message can be seen without a mail server.
 const DEMO_WRONG_CODE = "000000";
 

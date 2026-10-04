@@ -83,7 +83,7 @@ you compete only with your own past pace.
 ### Settings
 
 - **Account (optional)** — the app works with no login. Creating an account
-  asks for first name, last name and email, then for the six-digit code emailed
+  asks for first name, last name and email, then for the code emailed
   to you: no password. Your existing tasks stay. Email tips are a separate
   switch that starts off.
 - **Look** — theme (Match phone, Light, Dark) and colour theme (Sage, Pastel
@@ -144,12 +144,14 @@ after `npm install`.
 
 1. **Authentication → Sign In / Providers → Email**: keep the Email provider
    and **Confirm email** on.
-2. **Authentication → Email Templates**: PaceTasks asks for a six-digit code, so
-   the code must be in the email. In both **Change Email Address** (sign-up) and
+2. **Authentication → Emails → Templates**: PaceTasks asks for a code, so the
+   code must be in the email. In both **Change Email Address** (sign-up) and
    **Magic Link** (sign-in), put `{{ .Token }}` in the body, for example
-   `Your PaceTasks code: {{ .Token }}`.
+   `Your PaceTasks code: {{ .Token }}`. The default templates contain only a link.
 3. **Authentication → SMTP Settings**: Supabase's built-in sender is for testing
    only. Set a mail service before real users sign up.
+4. **Authentication → Sign In / Providers → Email → Email OTP Length**: any
+   value works (the app accepts 6 to 10 digits); 6 is the easiest to type.
 
 ## Brain Dump backend
 

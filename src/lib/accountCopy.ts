@@ -39,7 +39,7 @@ export function switchModeLabel(mode: AccountMode): string {
 }
 
 export function codePrompt(email: string): string {
-  return `Enter the ${ACCOUNT_LIMITS.codeLength}-digit code we sent to ${email}.`;
+  return `Enter the code we sent to ${email}.`;
 }
 
 export function doneMessage(mode: AccountMode, firstName: string | null): string {

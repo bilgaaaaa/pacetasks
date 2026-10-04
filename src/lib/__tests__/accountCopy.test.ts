@@ -26,7 +26,7 @@ describe("accountCopy", () => {
   });
 
   it("names the email the code went to and greets by first name", () => {
-    expect(codePrompt("bilge@example.com")).toBe("Enter the 6-digit code we sent to bilge@example.com.");
+    expect(codePrompt("bilge@example.com")).toBe("Enter the code we sent to bilge@example.com.");
     expect(doneMessage("sign_up", "Bilge")).toBe("You're all set, Bilge.");
     expect(doneMessage("sign_in", null)).toBe("Welcome back.");
   });
