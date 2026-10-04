@@ -5,6 +5,7 @@ import {
   RefreshControl,
   SafeAreaView,
   SectionList,
+  StyleSheet,
   Text,
   TouchableOpacity,
   View,
@@ -22,8 +23,10 @@ import { useRollover } from "../hooks/useRollover";
 import { useWeeklyReset } from "../hooks/useWeeklyReset";
 import { DEFAULT_SETTINGS } from "../lib/settingsApi";
 import { computeStats } from "../lib/stats";
-import { GROUP_BY_LABELS, GROUP_BY_OPTIONS } from "../lib/appearance";
-import { groupTodayTasks, summarizePending } from "../lib/taskSections";
+import { filterTodayTasks, groupTodayTasks, summarizePending, TodayFilter } from "../lib/taskSections";
+import { emptyFilterMessage, totalsLine } from "../lib/todayCopy";
+import { heroMessage } from "../lib/heroCopy";
+import { buildWeek } from "../lib/weekStrip";
 import { selectUsuals } from "../lib/taskRhythm";
 import { buildTaskHistory, findExactMatch } from "@domain/taskHistory";
 import { selectSomedayTasks, selectTodayTasks } from "@domain/todayTasks";
@@ -37,6 +40,10 @@ import { BrainDumpSheet } from "../components/BrainDumpSheet";
 import { DoNowSheet } from "../components/DoNowSheet";
 import { OneThingSheet } from "../components/OneThingSheet";
 import { RolloverCard } from "../components/RolloverCard";
+import { PickNextTaskSheet } from "../components/PickNextTaskSheet";
+import { TodayFilterBar } from "../components/TodayFilterBar";
+import { TodayHero } from "../components/TodayHero";
+import { WeekStrip } from "../components/WeekStrip";
 import { SomedaySheet } from "../components/SomedaySheet";
 import { WeeklyResetSheet } from "../components/WeeklyResetSheet";
 
@@ -54,12 +61,17 @@ interface ListSection {
 // iOS can't present a new Modal while the previous one is still animating away.
 const MODAL_SWITCH_DELAY_MS = 350;
 
-function greetingEyebrow(): string {
-  const now = new Date();
-  const day = now.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
+// Header: a small date label ("SUNDAY · OCTOBER 4") over the greeting
+// ("Good morning").
+function dateEyebrow(now: Date): string {
+  const day = now.toLocaleDateString("en-US", { weekday: "long" });
+  const date = now.toLocaleDateString("en-US", { month: "long", day: "numeric" });
+  return `${day} · ${date}`.toUpperCase();
+}
+
+function greeting(now: Date): string {
   const hour = now.getHours();
-  const part = hour < 12 ? "GOOD MORNING" : hour < 18 ? "GOOD AFTERNOON" : "GOOD EVENING";
-  return `${day} · ${part}`;
+  return hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
 }
 
 // Home screen: today's tasks split into the sections the user picked (all in
@@ -67,10 +79,12 @@ function greetingEyebrow(): string {
 // day really is, and an always-visible capture bar that opens the add sheet
 // (plus Brain Dump for many tasks at once). Each task can be timed with a
 // lightweight range timer or, for fixed-time tasks, the Focus/Pomodoro modal.
-// "What can I do now?" narrows the list to what fits the time and energy the
-// user has, and "Tell me what to do" (One Thing mode) shows a single task. When
-// tasks were left unfinished, a rollover card on top proposes where each one
-// goes. The foot of the list links to Weekly Reset and to the Someday sheet
+// One "Pick my next task" button opens a chooser for the two helpers: "Fit my
+// time" (narrows the list to what fits the time and energy the user has) and
+// "Decide for me" (One Thing mode, a single task). When tasks were left
+// unfinished, a slim "carried over" row opens a review that proposes where
+// each one goes. Quick filters (All, Quick wins, Due today) sit above the
+// list; groupings live behind "Filter". The foot of the list links to Weekly Reset and to the Someday sheet
 // (parked tasks). An end-of-day card appears once nothing is left pending.
 export function TaskListScreen({ userId }: Props) {
   const { theme, appearance, updateAppearance } = useTheme();
@@ -83,6 +97,8 @@ export function TaskListScreen({ userId }: Props) {
   const [brainDumpOpen, setBrainDumpOpen] = useState(false);
   const [doNowOpen, setDoNowOpen] = useState(false);
   const [oneThingOpen, setOneThingOpen] = useState(false);
+  const [pickOpen, setPickOpen] = useState(false);
+  const [filter, setFilter] = useState<TodayFilter>("all");
   const [somedayOpen, setSomedayOpen] = useState(false);
   const [weeklyResetOpen, setWeeklyResetOpen] = useState(false);
   const brainDump = useBrainDump({ onTasksCreated: applyCreated });
@@ -115,6 +131,13 @@ export function TaskListScreen({ userId }: Props) {
     setBrainDumpOpen(false);
   };
 
+  // Close the chooser first; iOS can't present the next sheet until it is gone.
+  const openFromPick = (open: (value: boolean) => void) => {
+    setPickOpen(false);
+    if (switchTimer.current) clearTimeout(switchTimer.current);
+    switchTimer.current = setTimeout(() => open(true), MODAL_SWITCH_DELAY_MS);
+  };
+
   const openBrainDumpFromAdd = () => {
     setAddOpen(false);
     if (switchTimer.current) clearTimeout(switchTimer.current);
@@ -126,7 +149,8 @@ export function TaskListScreen({ userId }: Props) {
 
   // "Today" is the phone's local calendar day; recomputed on every render so a
   // list left open past midnight updates on the next foreground reload.
-  const todayKey = toLocalDateKey(new Date());
+  const now = new Date();
+  const todayKey = toLocalDateKey(now);
   const usuals = useMemo(() => selectUsuals(tasks, todayKey), [tasks, todayKey]);
   const { pending, done: completedTasks } = useMemo(
     () => selectTodayTasks(tasks, todayKey),
@@ -140,13 +164,16 @@ export function TaskListScreen({ userId }: Props) {
   const somedayTasks = useMemo(() => selectSomedayTasks(tasks), [tasks]);
   const hasCompleted = completedTasks.length > 0;
   const allDone = pending.length + done.length > 0 && pending.length === 0;
-  const summary = summarizePending(pending, appearance.quickWinMinutes);
+  const summary = summarizePending(pending, appearance.quickWinMinutes, todayKey);
+  const filterCounts = { all: summary.count, quick: summary.quickWinCount, due: summary.dueCount };
 
   const sections: ListSection[] = useMemo(() => {
-    const grouped = groupTodayTasks(pending, appearance.groupBy, appearance.quickWinMinutes).map(
+    const shown = filterTodayTasks(pending, filter, appearance.quickWinMinutes, todayKey);
+    const grouped = groupTodayTasks(shown, appearance.groupBy, appearance.quickWinMinutes).map(
       ({ key, title, totalMinutes, tasks: sectionTasks }) => ({ key, title, totalMinutes, data: sectionTasks })
     );
-    if (done.length > 0) {
+    // Finished tasks belong to the unfiltered view only.
+    if (filter === "all" && done.length > 0) {
       grouped.push({
         key: "done",
         title: "Done",
@@ -155,7 +182,7 @@ export function TaskListScreen({ userId }: Props) {
       });
     }
     return grouped;
-  }, [pending, done, appearance.groupBy, appearance.quickWinMinutes]);
+  }, [pending, done, filter, todayKey, appearance.groupBy, appearance.quickWinMinutes]);
 
   // Today's Focus tasks (any task with a fixed start time) ordered by that time —
   // this is what "SESSION X OF Y" in the Focus modal counts against.
@@ -207,12 +234,7 @@ export function TaskListScreen({ userId }: Props) {
     Alert.alert("Options", hasCompleted ? undefined : "No completed tasks yet.", options);
   };
 
-  const summaryText =
-    summary.count === 0
-      ? allDone
-        ? "Everything's done. Enjoy the rest of your day."
-        : "Nothing yet. Add whatever's on your mind."
-      : `${summary.count} left, about ${summary.totalMinutes} min.`;
+  const week = useMemo(() => buildWeek(todayKey, tasks), [todayKey, tasks]);
 
   return (
     <LinearGradient
@@ -222,47 +244,19 @@ export function TaskListScreen({ userId }: Props) {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <View style={styles.headerTop}>
-            <Text style={styles.eyebrow}>{greetingEyebrow()}</Text>
+            <View style={styles.headerTitles}>
+              <Text style={styles.eyebrow} numberOfLines={1}>
+                {dateEyebrow(now)}
+              </Text>
+              <Text style={styles.title} accessibilityRole="header">
+                {greeting(now)}
+              </Text>
+            </View>
             <TouchableOpacity onPress={openMenu} style={styles.menuButton} accessibilityLabel="List options">
-              <Ionicons name="ellipsis-horizontal" size={18} color={theme.colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.title}>Today</Text>
-          <Text style={styles.summary}>
-            <Text style={styles.summaryStrong}>{summaryText}</Text>
-            {summary.quickWinCount > 0 &&
-              ` ${summary.quickWinCount} ${summary.quickWinCount === 1 ? "takes" : "take"} ${
-                appearance.quickWinMinutes
-              } minutes or less.`}
-          </Text>
-
-          <View style={styles.helpRow}>
-            <TouchableOpacity onPress={() => setDoNowOpen(true)} style={styles.helpButton} accessibilityRole="button">
-              <Text style={styles.helpButtonText}>What can I do now?</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setOneThingOpen(true)} style={styles.helpButton} accessibilityRole="button">
-              <Text style={styles.helpButtonText}>Tell me what to do</Text>
+              <Ionicons name="ellipsis-horizontal" size={20} color={theme.colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
-          <View style={styles.groupSwitch} accessibilityRole="radiogroup" accessibilityLabel="Group tasks by">
-            {GROUP_BY_OPTIONS.map((option) => {
-              const isActive = appearance.groupBy === option;
-              return (
-                <TouchableOpacity
-                  key={option}
-                  style={[styles.groupOption, isActive && styles.groupOptionActive]}
-                  onPress={() => updateAppearance({ groupBy: option })}
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected: isActive }}
-                >
-                  <Text style={[styles.groupOptionText, isActive && styles.groupOptionTextActive]}>
-                    {GROUP_BY_LABELS[option].short}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
         </View>
 
         {error && <Text style={styles.errorText}>{error}</Text>}
@@ -276,10 +270,12 @@ export function TaskListScreen({ userId }: Props) {
             stickySectionHeadersEnabled={false}
             renderSectionHeader={({ section }) => (
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>
-                  {section.title.toUpperCase()} · {section.data.length}
+                <Text style={styles.sectionTitle} accessibilityRole="header">
+                  {section.title}
                 </Text>
-                <Text style={styles.sectionMinutes}>{section.totalMinutes} min</Text>
+                <Text style={styles.sectionMeta}>
+                  {section.data.length} · {section.totalMinutes} min
+                </Text>
               </View>
             )}
             renderItem={({ item }) => renderTaskItem(item)}
@@ -293,21 +289,45 @@ export function TaskListScreen({ userId }: Props) {
             }
             ListEmptyComponent={
               <View style={styles.emptyState}>
-                <Text style={styles.emptyText}>
-                  Tap “Add a task” below the moment something pops into your head.
-                </Text>
+                <Text style={styles.emptyText}>{emptyFilterMessage(filter)}</Text>
               </View>
             }
             ListHeaderComponent={
-              rollover.visible ? (
-                <RolloverCard
-                  choices={rollover.choices}
-                  saving={rollover.saving}
-                  onChangeDestination={rollover.setDestination}
-                  onApply={rollover.apply}
-                  onDismiss={rollover.dismiss}
+              <>
+                {/* The hero (with the main action), the week, the carried-over
+                    row and the filters scroll away with the list. */}
+                <TodayHero
+                  message={heroMessage({
+                    count: summary.count,
+                    quickWinCount: summary.quickWinCount,
+                    quickWinMinutes: appearance.quickWinMinutes,
+                    streakDays: stats.currentStreakDays,
+                    allDone,
+                  })}
+                  totals={summary.count > 0 ? totalsLine(summary.count, summary.totalMinutes) : ""}
+                  showAction={summary.count > 0}
+                  onPick={() => setPickOpen(true)}
                 />
-              ) : null
+                <WeekStrip days={week} />
+                {rollover.visible && (
+                  <RolloverCard
+                    choices={rollover.choices}
+                    saving={rollover.saving}
+                    onChangeDestination={rollover.setDestination}
+                    onApply={rollover.apply}
+                    onDismiss={rollover.dismiss}
+                  />
+                )}
+                <View style={styles.filterRow}>
+                  <TodayFilterBar
+                    filter={filter}
+                    counts={filterCounts}
+                    groupBy={appearance.groupBy}
+                    onChangeFilter={setFilter}
+                    onChangeGroupBy={(groupBy) => updateAppearance({ groupBy })}
+                  />
+                </View>
+              </>
             }
             ListFooterComponent={
               <>
@@ -348,9 +368,9 @@ export function TaskListScreen({ userId }: Props) {
             accessibilityRole="button"
             accessibilityLabel="Add a task"
           >
-            <Text style={styles.addButtonText}>Add a task…</Text>
+            <Text style={styles.addButtonText} numberOfLines={1}>Add a task…</Text>
             <View style={styles.addButtonIcon}>
-              <Ionicons name="add" size={24} color={theme.colors.onAccent} />
+              <Ionicons name="add" size={22} color={theme.colors.onAccent} />
             </View>
           </TouchableOpacity>
           <TouchableOpacity
@@ -381,6 +401,13 @@ export function TaskListScreen({ userId }: Props) {
           onChangeTitle={brainDump.setTitle}
           onCommit={brainDump.commit}
           onClose={closeBrainDump}
+        />
+
+        <PickNextTaskSheet
+          visible={pickOpen}
+          onDecideForMe={() => openFromPick(setOneThingOpen)}
+          onFitMyTime={() => openFromPick(setDoNowOpen)}
+          onClose={() => setPickOpen(false)}
         />
 
         <DoNowSheet
@@ -470,14 +497,26 @@ const useStyles = makeStyles((theme) => ({
   },
   header: {
     paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.md,
-    paddingBottom: theme.spacing.xs,
-    gap: 10,
+    paddingTop: theme.spacing.sm,
+    paddingBottom: theme.spacing.sm,
+    gap: 6,
   },
   headerTop: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-end",
+    gap: theme.spacing.sm,
+  },
+  headerTitles: {
+    flex: 1,
+    gap: 8, // breathing room between the date label and the greeting
+  },
+  title: {
+    color: theme.colors.textPrimary,
+    fontSize: theme.typography.largeTitle.fontSize,
+    fontWeight: theme.typography.largeTitle.fontWeight,
+    fontFamily: theme.typography.largeTitle.fontFamily,
+    letterSpacing: theme.typography.largeTitle.letterSpacing,
   },
   eyebrow: {
     color: theme.colors.textSecondary,
@@ -488,69 +527,13 @@ const useStyles = makeStyles((theme) => ({
   menuButton: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  title: {
-    color: theme.colors.textPrimary,
-    fontSize: theme.typography.largeTitle.fontSize,
-    fontWeight: theme.typography.largeTitle.fontWeight,
-    fontFamily: theme.typography.largeTitle.fontFamily,
-    letterSpacing: theme.typography.largeTitle.letterSpacing,
-  },
-  summary: {
-    color: theme.colors.textSecondary,
-    fontSize: theme.typography.body.fontSize,
-    lineHeight: 22,
-  },
-  summaryStrong: {
-    color: theme.colors.textPrimary,
-  },
-  helpRow: {
-    flexDirection: "row",
-    gap: theme.spacing.sm,
-  },
-  helpButton: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 44,
+    borderRadius: theme.radius.pill,
     backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.pill,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  helpButtonText: {
-    color: theme.colors.accentDark,
-    fontSize: theme.typography.footnote.fontSize,
-    fontWeight: "700",
-  },
-  groupSwitch: {
-    flexDirection: "row",
-    gap: 4,
-    padding: 4,
-    borderRadius: theme.radius.pill,
-    backgroundColor: theme.colors.surfaceAlt,
-    marginTop: theme.spacing.xs,
-  },
-  groupOption: {
-    flex: 1,
-    height: 36,
-    borderRadius: theme.radius.pill,
     alignItems: "center",
     justifyContent: "center",
   },
-  groupOptionActive: {
-    backgroundColor: theme.colors.surface,
-  },
-  groupOptionText: {
-    color: theme.colors.textSecondary,
-    fontSize: theme.typography.footnote.fontSize,
-    fontWeight: "600",
-  },
-  groupOptionTextActive: {
-    color: theme.colors.textPrimary,
+  filterRow: {
+    paddingTop: 4,
   },
   errorText: {
     color: theme.colors.danger,
@@ -562,26 +545,30 @@ const useStyles = makeStyles((theme) => ({
   },
   listContent: {
     paddingHorizontal: theme.spacing.md,
-    paddingBottom: theme.spacing.lg,
+    paddingTop: theme.spacing.xs,
+    paddingBottom: theme.spacing.md,
   },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "baseline",
-    paddingHorizontal: theme.spacing.sm,
-    paddingTop: theme.spacing.md,
-    paddingBottom: theme.spacing.sm,
+    gap: theme.spacing.sm,
+    paddingHorizontal: 4,
+    paddingTop: 20,
+    paddingBottom: 10,
   },
   sectionTitle: {
-    color: theme.colors.textSecondary,
-    fontSize: theme.typography.eyebrow.fontSize,
-    fontWeight: theme.typography.eyebrow.fontWeight,
-    letterSpacing: theme.typography.eyebrow.letterSpacing,
+    flexShrink: 1,
+    color: theme.colors.textPrimary,
+    fontSize: 20,
+    fontWeight: "700",
+    letterSpacing: -0.3,
   },
-  sectionMinutes: {
+  sectionMeta: {
     color: theme.colors.textSecondary,
-    fontSize: theme.typography.eyebrow.fontSize,
-    fontFamily: theme.fonts.mono,
+    fontSize: theme.typography.footnote.fontSize,
+    fontWeight: "500",
+    fontVariant: ["tabular-nums"],
   },
   footerLink: {
     alignItems: "center",
@@ -602,55 +589,55 @@ const useStyles = makeStyles((theme) => ({
     textAlign: "center",
     paddingHorizontal: theme.spacing.lg,
   },
+  // Pinned under the list on its own solid strip with a hairline, so the
+  // list ends at a clear edge instead of sliding under a floating bar.
   captureBar: {
     flexDirection: "row",
+    alignItems: "center",
     gap: theme.spacing.sm,
     paddingHorizontal: theme.spacing.md,
-    paddingTop: theme.spacing.sm,
+    paddingTop: 10,
+    paddingBottom: 6,
+    backgroundColor: theme.colors.backgroundEnd,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: theme.colors.border,
   },
   addButton: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    height: 60,
+    gap: theme.spacing.sm,
+    minHeight: 52,
     paddingLeft: 20,
-    paddingRight: 8,
+    paddingRight: 6,
+    paddingVertical: 4,
     borderRadius: theme.radius.pill,
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    shadowColor: theme.colors.shadow,
-    shadowOpacity: 1,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 3,
   },
   addButtonText: {
+    flex: 1,
     color: theme.colors.textSecondary,
     fontSize: theme.typography.body.fontSize,
   },
   addButtonIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 40,
+    height: 40,
+    borderRadius: theme.radius.pill,
     backgroundColor: theme.colors.accentDark,
     alignItems: "center",
     justifyContent: "center",
   },
   micButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 52,
+    height: 52,
+    borderRadius: theme.radius.pill,
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: theme.colors.shadow,
-    shadowOpacity: 1,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 3,
   },
 }));

@@ -1,5 +1,5 @@
 import { makeTask } from "@domain/testing/makeTask";
-import { groupTodayTasks, isQuickWin, placeOfTask, summarizePending } from "../taskSections";
+import { filterTodayTasks, groupTodayTasks, isDueByToday, isQuickWin, placeOfTask, summarizePending } from "../taskSections";
 
 // Already in Today's timing order, as selectTodayTasks returns them.
 const pending = [
@@ -9,6 +9,8 @@ const pending = [
   makeTask({ id: "milk", title: "Buy oat milk", estimated_minutes: 10, category: "shopping", timing: "after_work" }),
   makeTask({ id: "misc", title: "Think about holidays", estimated_minutes: 5, category: null, timing: "after_work" }),
 ];
+
+const TODAY = "2026-10-04";
 
 const ids = (sections: ReturnType<typeof groupTodayTasks>) =>
   sections.map((s) => [s.key, s.tasks.map((t) => t.id)]);
@@ -71,7 +73,28 @@ describe("taskSections", () => {
   });
 
   it("summarizes what is left", () => {
-    expect(summarizePending(pending, 5)).toEqual({ count: 5, totalMinutes: 45, quickWinCount: 3 });
+    expect(summarizePending(pending, 5, TODAY)).toEqual({ count: 5, totalMinutes: 45, quickWinCount: 3, dueCount: 0 });
     expect(groupTodayTasks([], "size", 5)).toEqual([]);
+  });
+
+  it("treats only dated tasks due today or earlier as due", () => {
+    expect(isDueByToday({ due_date: TODAY }, TODAY)).toBe(true);
+    expect(isDueByToday({ due_date: "2026-10-01" }, TODAY)).toBe(true); // overdue is still due
+    expect(isDueByToday({ due_date: "2026-10-05" }, TODAY)).toBe(false);
+    expect(isDueByToday({ due_date: null }, TODAY)).toBe(false);
+  });
+
+  it("filters Today by quick wins or due today, keeping order", () => {
+    const dated = [
+      ...pending,
+      makeTask({ id: "tax", title: "Send tax documents", estimated_minutes: 20, due_date: "2026-10-01" }),
+      makeTask({ id: "call", title: "Call the bank", estimated_minutes: 4, due_date: TODAY }),
+    ];
+    const filtered = (filter: Parameters<typeof filterTodayTasks>[1]) =>
+      filterTodayTasks(dated, filter, 5, TODAY).map((t) => t.id);
+    expect(filtered("all")).toEqual(["q4", "bill", "marco", "milk", "misc", "tax", "call"]);
+    expect(filtered("quick")).toEqual(["bill", "marco", "misc", "call"]);
+    expect(filtered("due")).toEqual(["tax", "call"]);
+    expect(summarizePending(dated, 5, TODAY)).toEqual({ count: 7, totalMinutes: 69, quickWinCount: 4, dueCount: 2 });
   });
 });

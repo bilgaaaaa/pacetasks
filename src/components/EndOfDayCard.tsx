@@ -68,6 +68,7 @@ const useStyles = makeStyles((theme) => ({
     color: theme.colors.onAccent,
     fontSize: theme.typography.headline.fontSize,
     fontFamily: theme.fonts.mono,
+    fontVariant: ["tabular-nums"],
   },
   statLabel: {
     color: theme.colors.onAccent,

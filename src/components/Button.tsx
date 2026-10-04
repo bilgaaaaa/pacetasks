@@ -54,7 +54,9 @@ const useStyles = makeStyles((theme) => ({
     justifyContent: "center",
     gap: theme.spacing.sm,
     borderRadius: theme.radius.pill,
-    paddingVertical: theme.spacing.md,
+    minHeight: 48,
+    paddingVertical: 12,
+    paddingHorizontal: theme.spacing.md,
   },
   primary: {
     backgroundColor: theme.colors.accentDark,

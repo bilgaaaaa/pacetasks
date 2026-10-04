@@ -43,7 +43,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const scheme =
     appearance.themeMode === "system" ? (systemScheme === "dark" ? "dark" : "light") : appearance.themeMode;
-  const theme = useMemo(() => buildTheme(scheme, appearance.accent), [scheme, appearance.accent]);
+  const theme = useMemo(
+    () => buildTheme(scheme, appearance.accent, appearance.palette),
+    [scheme, appearance.accent, appearance.palette]
+  );
 
   const value = useMemo(
     () => ({ theme, appearance, appearanceLoaded, updateAppearance }),

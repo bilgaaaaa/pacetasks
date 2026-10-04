@@ -8,14 +8,15 @@ describe("parseAppearance", () => {
   });
 
   it("keeps valid values", () => {
-    const stored = { themeMode: "dark", accent: "plum", groupBy: "place", quickWinMinutes: 10 };
+    const stored = { themeMode: "dark", palette: "pastel", accent: "plum", groupBy: "place", quickWinMinutes: 10 };
     expect(parseAppearance(JSON.stringify(stored))).toEqual(stored);
   });
 
   it("replaces unknown values field by field and clamps the quick-win limit", () => {
-    const stored = { themeMode: "sepia", accent: "ocean", groupBy: "none", quickWinMinutes: 90 };
+    const stored = { themeMode: "sepia", palette: "neon", accent: "ocean", groupBy: "none", quickWinMinutes: 90 };
     expect(parseAppearance(JSON.stringify(stored))).toEqual({
       themeMode: DEFAULT_APPEARANCE.themeMode,
+      palette: DEFAULT_APPEARANCE.palette,
       accent: "ocean",
       groupBy: DEFAULT_APPEARANCE.groupBy,
       quickWinMinutes: 15,

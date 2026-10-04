@@ -132,8 +132,8 @@ const useStyles = makeStyles((theme) => ({
   },
   header: {
     paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.md,
-    paddingBottom: theme.spacing.sm,
+    paddingTop: theme.spacing.sm,
+    paddingBottom: theme.spacing.xs,
   },
   headerTitle: {
     color: theme.colors.textPrimary,
@@ -170,7 +170,7 @@ const useStyles = makeStyles((theme) => ({
   },
   dayRow: {
     backgroundColor: theme.colors.surface,
-    borderRadius: 16,
+    borderRadius: theme.radius.md,
     padding: theme.spacing.md,
     marginBottom: theme.spacing.xs,
     gap: theme.spacing.xs,
@@ -187,6 +187,7 @@ const useStyles = makeStyles((theme) => ({
     color: theme.colors.textSecondary,
     fontSize: theme.typography.footnote.fontSize,
     fontFamily: theme.fonts.mono,
+    fontVariant: ["tabular-nums"],
   },
   dayProgressTrack: {
     flexDirection: "row",
