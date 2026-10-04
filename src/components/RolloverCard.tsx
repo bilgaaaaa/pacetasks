@@ -1,9 +1,9 @@
-import React from "react";
-import { Text, View } from "react-native";
+import React, { useState } from "react";
+import { Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { RolloverDestination } from "@domain/rollover";
 import { RolloverChoice } from "../hooks/useRollover";
-import { destinationLabel, reasonLabel, ROLLOVER_DESTINATION_OPTIONS, rolloverTitle } from "../lib/rolloverCopy";
+import { destinationLabel, reasonLabel, ROLLOVER_DESTINATION_OPTIONS, rolloverSummary } from "../lib/rolloverCopy";
 import { makeStyles, useTheme } from "../hooks/useTheme";
 import { Button } from "./Button";
 import { DropdownPill } from "./DropdownPill";
@@ -16,63 +16,83 @@ interface Props {
   onDismiss: () => void;
 }
 
-// Card at the top of Today for the "I didn't do it" rollover: every unfinished
-// task with the day PaceTasks would move it to, each changeable, accepted in one
-// tap. Purely presentational — the proposals come from useRollover.
+// The "I didn't do it" rollover on Today, folded into one slim row ("4 tasks
+// carried over · Review") so it doesn't push the list off the first screen.
+// Review opens every unfinished task with the day PaceTasks would move it to,
+// each changeable. Nothing is saved until "Apply changes"; "Not now" hides it
+// until tomorrow. Purely presentational — the proposals come from useRollover.
 export function RolloverCard({ choices, saving, onChangeDestination, onApply, onDismiss }: Props) {
   const { theme } = useTheme();
   const styles = useStyles();
+  const [expanded, setExpanded] = useState(false);
+  const summary = rolloverSummary(choices.length);
+
   return (
     <View style={styles.card}>
-      <View style={styles.header}>
-        <View style={styles.headerIcon}>
-          <Ionicons name="return-down-forward" size={18} color={theme.colors.accentDark} />
+      <TouchableOpacity
+        style={styles.summaryRow}
+        onPress={() => setExpanded((open) => !open)}
+        accessibilityRole="button"
+        accessibilityState={{ expanded }}
+        accessibilityLabel={`${summary}. ${expanded ? "Hide review" : "Review"}`}
+      >
+        <View style={styles.icon}>
+          <Ionicons name="return-down-forward" size={16} color={theme.colors.accentDark} />
         </View>
-        <View style={styles.headerText}>
-          <Text style={styles.eyebrow}>UNFINISHED</Text>
-          <Text style={styles.title}>{rolloverTitle(choices.length)}</Text>
-          <Text style={styles.subtitle}>Here's where I'd move them.</Text>
+        <Text style={styles.summaryText} numberOfLines={2}>
+          {summary}
+        </Text>
+        <Text style={styles.reviewText}>{expanded ? "Hide" : "Review"}</Text>
+        <Ionicons
+          name={expanded ? "chevron-up" : "chevron-down"}
+          size={16}
+          color={theme.colors.accentDark}
+        />
+      </TouchableOpacity>
+
+      {expanded && (
+        <View style={styles.body}>
+          <Text style={styles.subtitle}>Here's where I'd move them. Change any, then apply.</Text>
+          <View style={styles.list}>
+            {choices.map((choice) => {
+              const reason = reasonLabel(choice.reason);
+              return (
+                <View key={choice.task.id} style={styles.row}>
+                  <View style={styles.rowText}>
+                    <Text style={styles.taskTitle} numberOfLines={2}>
+                      {choice.task.title}
+                    </Text>
+                    {reason && <Text style={styles.reason}>{reason}</Text>}
+                  </View>
+                  <DropdownPill
+                    style={styles.pill}
+                    label={destinationLabel(choice.destination)}
+                    options={ROLLOVER_DESTINATION_OPTIONS}
+                    value={choice.destination}
+                    onChange={(destination) => onChangeDestination(choice.task.id, destination)}
+                  />
+                </View>
+              );
+            })}
+          </View>
+
+          <View style={styles.actions}>
+            <Button
+              style={styles.action}
+              label={saving ? "Applying…" : "Apply changes"}
+              loading={saving}
+              onPress={onApply}
+            />
+            <Button
+              style={[styles.action, styles.secondaryOnCard]}
+              label="Not now"
+              variant="secondary"
+              disabled={saving}
+              onPress={onDismiss}
+            />
+          </View>
         </View>
-      </View>
-
-      <View style={styles.list}>
-        {choices.map((choice) => {
-          const reason = reasonLabel(choice.reason);
-          return (
-            <View key={choice.task.id} style={styles.row}>
-              <View style={styles.rowText}>
-                <Text style={styles.taskTitle} numberOfLines={2}>
-                  {choice.task.title}
-                </Text>
-                {reason && <Text style={styles.reason}>{reason}</Text>}
-              </View>
-              <DropdownPill
-                style={styles.pill}
-                label={destinationLabel(choice.destination)}
-                options={ROLLOVER_DESTINATION_OPTIONS}
-                value={choice.destination}
-                onChange={(destination) => onChangeDestination(choice.task.id, destination)}
-              />
-            </View>
-          );
-        })}
-      </View>
-
-      <View style={styles.actions}>
-        <Button
-          style={styles.action}
-          label={saving ? "Moving…" : "Looks good"}
-          loading={saving}
-          onPress={onApply}
-        />
-        <Button
-          style={[styles.action, styles.secondaryOnCard]}
-          label="Not now"
-          variant="secondary"
-          disabled={saving}
-          onPress={onDismiss}
-        />
-      </View>
+      )}
     </View>
   );
 }
@@ -80,40 +100,41 @@ export function RolloverCard({ choices, saving, onChangeDestination, onApply, on
 const useStyles = makeStyles((theme) => ({
   card: {
     backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.xl,
-    padding: theme.spacing.md,
-    marginBottom: theme.spacing.md,
-    gap: theme.spacing.md,
+    borderRadius: theme.radius.lg,
+    marginBottom: theme.spacing.sm,
+    overflow: "hidden",
   },
-  header: {
+  summaryRow: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 12,
+    alignItems: "center",
+    gap: 10,
+    minHeight: 52,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
   },
-  headerIcon: {
-    width: 36,
-    height: 36,
+  icon: {
+    width: 28,
+    height: 28,
     borderRadius: theme.radius.pill,
     backgroundColor: theme.colors.quickFill,
     alignItems: "center",
     justifyContent: "center",
   },
-  headerText: {
+  summaryText: {
     flex: 1,
-    gap: 2,
-  },
-  eyebrow: {
-    color: theme.colors.accentDark,
-    fontSize: 11,
-    fontWeight: theme.typography.eyebrow.fontWeight,
-    letterSpacing: theme.typography.eyebrow.letterSpacing,
-  },
-  title: {
     color: theme.colors.textPrimary,
-    fontSize: 19,
-    fontWeight: theme.typography.title.fontWeight,
-    fontFamily: theme.typography.title.fontFamily,
-    letterSpacing: theme.typography.title.letterSpacing,
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  reviewText: {
+    color: theme.colors.accentDark,
+    fontSize: theme.typography.footnote.fontSize,
+    fontWeight: "700",
+  },
+  body: {
+    gap: theme.spacing.md,
+    paddingHorizontal: theme.spacing.md,
+    paddingBottom: theme.spacing.md,
   },
   subtitle: {
     color: theme.colors.textSecondary,

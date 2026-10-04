@@ -10,7 +10,7 @@ export type ThemeMode = (typeof THEME_MODES)[number];
 export const GROUP_BY_OPTIONS = ["all", "size", "place", "category", "when"] as const;
 export type GroupBy = (typeof GROUP_BY_OPTIONS)[number];
 
-// `short` labels the Today switcher; `label`/`hint` the Settings radio list.
+// `label`/`hint` describe each grouping in the Today filter sheet and the Settings radio list.
 export const GROUP_BY_LABELS: Record<GroupBy, { short: string; label: string; hint: string }> = {
   all: { short: "All", label: "All in one list", hint: "Everything together, in the order you'll do it" },
   size: { short: "Size", label: "By size", hint: "Quick wins first, then the longer ones" },

@@ -112,17 +112,47 @@ export function groupTodayTasks(pending: Task[], groupBy: GroupBy, quickWinMinut
   }
 }
 
+// A task with a due day of today or earlier (overdue counts: it is still due).
+// Undated tasks also show on Today, but nothing makes them due today.
+export function isDueByToday(task: Pick<Task, "due_date">, todayKey: string): boolean {
+  return task.due_date !== null && task.due_date <= todayKey;
+}
+
+// The quick filters above the Today list. Grouping (size, place, ...) is a
+// separate choice and applies to whatever the filter leaves.
+export const TODAY_FILTERS = ["all", "quick", "due"] as const;
+export type TodayFilter = (typeof TODAY_FILTERS)[number];
+
+export function filterTodayTasks(
+  pending: Task[],
+  filter: TodayFilter,
+  quickWinMinutes: number,
+  todayKey: string
+): Task[] {
+  switch (filter) {
+    case "all":
+      return pending;
+    case "quick":
+      return pending.filter((t) => isQuickWin(t, quickWinMinutes));
+    case "due":
+      return pending.filter((t) => isDueByToday(t, todayKey));
+  }
+}
+
 export interface TodaySummary {
   count: number;
   totalMinutes: number;
   quickWinCount: number;
+  dueCount: number;
 }
 
-// Numbers for the "7 left, about 62 min. 4 take 5 minutes or less." header line.
-export function summarizePending(pending: Task[], quickWinMinutes: number): TodaySummary {
+// Numbers for the Today header ("2 quick wins available", "13 tasks · about
+// 343 min") and the filter counts, all from the same pending list.
+export function summarizePending(pending: Task[], quickWinMinutes: number, todayKey: string): TodaySummary {
   return {
     count: pending.length,
     totalMinutes: sumMinutes(pending),
     quickWinCount: pending.filter((t) => isQuickWin(t, quickWinMinutes)).length,
+    dueCount: pending.filter((t) => isDueByToday(t, todayKey)).length,
   };
 }

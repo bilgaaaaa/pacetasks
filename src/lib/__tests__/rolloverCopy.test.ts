@@ -1,4 +1,4 @@
-import { destinationLabel, reasonLabel, rolloverTitle, ROLLOVER_DESTINATION_OPTIONS } from "../rolloverCopy";
+import { destinationLabel, reasonLabel, rolloverSummary, ROLLOVER_DESTINATION_OPTIONS } from "../rolloverCopy";
 
 describe("rolloverCopy", () => {
   it("offers every destination with a label", () => {
@@ -12,8 +12,8 @@ describe("rolloverCopy", () => {
     expect(reasonLabel(null)).toBeNull();
   });
 
-  it("counts the unfinished tasks", () => {
-    expect(rolloverTitle(1)).toBe("You left 1 thing unfinished.");
-    expect(rolloverTitle(4)).toBe("You left 4 things unfinished.");
+  it("counts the carried-over tasks", () => {
+    expect(rolloverSummary(1)).toBe("1 task carried over");
+    expect(rolloverSummary(4)).toBe("4 tasks carried over");
   });
 });

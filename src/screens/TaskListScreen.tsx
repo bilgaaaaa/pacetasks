@@ -23,8 +23,8 @@ import { useRollover } from "../hooks/useRollover";
 import { useWeeklyReset } from "../hooks/useWeeklyReset";
 import { DEFAULT_SETTINGS } from "../lib/settingsApi";
 import { computeStats } from "../lib/stats";
-import { GROUP_BY_LABELS, GROUP_BY_OPTIONS } from "../lib/appearance";
-import { groupTodayTasks, summarizePending } from "../lib/taskSections";
+import { filterTodayTasks, groupTodayTasks, summarizePending, TodayFilter } from "../lib/taskSections";
+import { emptyFilterMessage, quickWinsMessage, totalsLine } from "../lib/todayCopy";
 import { selectUsuals } from "../lib/taskRhythm";
 import { buildTaskHistory, findExactMatch } from "@domain/taskHistory";
 import { selectSomedayTasks, selectTodayTasks } from "@domain/todayTasks";
@@ -38,6 +38,9 @@ import { BrainDumpSheet } from "../components/BrainDumpSheet";
 import { DoNowSheet } from "../components/DoNowSheet";
 import { OneThingSheet } from "../components/OneThingSheet";
 import { RolloverCard } from "../components/RolloverCard";
+import { PickNextTaskSheet } from "../components/PickNextTaskSheet";
+import { TodayFilterBar } from "../components/TodayFilterBar";
+import { Button } from "../components/Button";
 import { SomedaySheet } from "../components/SomedaySheet";
 import { WeeklyResetSheet } from "../components/WeeklyResetSheet";
 
@@ -68,10 +71,12 @@ function greetingEyebrow(): string {
 // day really is, and an always-visible capture bar that opens the add sheet
 // (plus Brain Dump for many tasks at once). Each task can be timed with a
 // lightweight range timer or, for fixed-time tasks, the Focus/Pomodoro modal.
-// "What can I do now?" narrows the list to what fits the time and energy the
-// user has, and "Tell me what to do" (One Thing mode) shows a single task. When
-// tasks were left unfinished, a rollover card on top proposes where each one
-// goes. The foot of the list links to Weekly Reset and to the Someday sheet
+// One "Pick my next task" button opens a chooser for the two helpers: "Fit my
+// time" (narrows the list to what fits the time and energy the user has) and
+// "Decide for me" (One Thing mode, a single task). When tasks were left
+// unfinished, a slim "carried over" row opens a review that proposes where
+// each one goes. Quick filters (All, Quick wins, Due today) sit above the
+// list; groupings live behind "Filter". The foot of the list links to Weekly Reset and to the Someday sheet
 // (parked tasks). An end-of-day card appears once nothing is left pending.
 export function TaskListScreen({ userId }: Props) {
   const { theme, appearance, updateAppearance } = useTheme();
@@ -84,6 +89,8 @@ export function TaskListScreen({ userId }: Props) {
   const [brainDumpOpen, setBrainDumpOpen] = useState(false);
   const [doNowOpen, setDoNowOpen] = useState(false);
   const [oneThingOpen, setOneThingOpen] = useState(false);
+  const [pickOpen, setPickOpen] = useState(false);
+  const [filter, setFilter] = useState<TodayFilter>("all");
   const [somedayOpen, setSomedayOpen] = useState(false);
   const [weeklyResetOpen, setWeeklyResetOpen] = useState(false);
   const brainDump = useBrainDump({ onTasksCreated: applyCreated });
@@ -116,6 +123,13 @@ export function TaskListScreen({ userId }: Props) {
     setBrainDumpOpen(false);
   };
 
+  // Close the chooser first; iOS can't present the next sheet until it is gone.
+  const openFromPick = (open: (value: boolean) => void) => {
+    setPickOpen(false);
+    if (switchTimer.current) clearTimeout(switchTimer.current);
+    switchTimer.current = setTimeout(() => open(true), MODAL_SWITCH_DELAY_MS);
+  };
+
   const openBrainDumpFromAdd = () => {
     setAddOpen(false);
     if (switchTimer.current) clearTimeout(switchTimer.current);
@@ -141,13 +155,16 @@ export function TaskListScreen({ userId }: Props) {
   const somedayTasks = useMemo(() => selectSomedayTasks(tasks), [tasks]);
   const hasCompleted = completedTasks.length > 0;
   const allDone = pending.length + done.length > 0 && pending.length === 0;
-  const summary = summarizePending(pending, appearance.quickWinMinutes);
+  const summary = summarizePending(pending, appearance.quickWinMinutes, todayKey);
+  const filterCounts = { all: summary.count, quick: summary.quickWinCount, due: summary.dueCount };
 
   const sections: ListSection[] = useMemo(() => {
-    const grouped = groupTodayTasks(pending, appearance.groupBy, appearance.quickWinMinutes).map(
+    const shown = filterTodayTasks(pending, filter, appearance.quickWinMinutes, todayKey);
+    const grouped = groupTodayTasks(shown, appearance.groupBy, appearance.quickWinMinutes).map(
       ({ key, title, totalMinutes, tasks: sectionTasks }) => ({ key, title, totalMinutes, data: sectionTasks })
     );
-    if (done.length > 0) {
+    // Finished tasks belong to the unfiltered view only.
+    if (filter === "all" && done.length > 0) {
       grouped.push({
         key: "done",
         title: "Done",
@@ -156,7 +173,7 @@ export function TaskListScreen({ userId }: Props) {
       });
     }
     return grouped;
-  }, [pending, done, appearance.groupBy, appearance.quickWinMinutes]);
+  }, [pending, done, filter, todayKey, appearance.groupBy, appearance.quickWinMinutes]);
 
   // Today's Focus tasks (any task with a fixed start time) ordered by that time —
   // this is what "SESSION X OF Y" in the Focus modal counts against.
@@ -208,12 +225,14 @@ export function TaskListScreen({ userId }: Props) {
     Alert.alert("Options", hasCompleted ? undefined : "No completed tasks yet.", options);
   };
 
-  const summaryText =
+  // The headline is what can be done fast; the totals are secondary.
+  const quickWinsText = quickWinsMessage(summary.quickWinCount);
+  const totalsText =
     summary.count === 0
       ? allDone
         ? "Everything's done. Enjoy the rest of your day."
         : "Nothing yet. Add whatever's on your mind."
-      : `${summary.count} left, about ${summary.totalMinutes} min.`;
+      : totalsLine(summary.count, summary.totalMinutes);
 
   return (
     <LinearGradient
@@ -231,13 +250,15 @@ export function TaskListScreen({ userId }: Props) {
               <Ionicons name="ellipsis-horizontal" size={20} color={theme.colors.textSecondary} />
             </TouchableOpacity>
           </View>
-          <Text style={styles.summary}>
-            <Text style={styles.summaryStrong}>{summaryText}</Text>
-            {summary.quickWinCount > 0 &&
-              ` ${summary.quickWinCount} ${summary.quickWinCount === 1 ? "takes" : "take"} ${
-                appearance.quickWinMinutes
-              } minutes or less.`}
-          </Text>
+          <View style={styles.summaryRow}>
+            {quickWinsText && (
+              <View style={styles.quickWinsBadge}>
+                <Ionicons name="flash" size={13} color={theme.colors.quickText} />
+                <Text style={styles.quickWinsText}>{quickWinsText}</Text>
+              </View>
+            )}
+            <Text style={styles.totals}>{totalsText}</Text>
+          </View>
 
         </View>
 
@@ -269,47 +290,15 @@ export function TaskListScreen({ userId }: Props) {
             }
             ListEmptyComponent={
               <View style={styles.emptyState}>
-                <Text style={styles.emptyText}>
-                  Tap “Add a task” below the moment something pops into your head.
-                </Text>
+                <Text style={styles.emptyText}>{emptyFilterMessage(filter)}</Text>
               </View>
             }
             ListHeaderComponent={
               <>
-                {/* Helpers and grouping scroll away with the list so the
-                    tasks get the screen; only the title stays pinned. */}
+                {/* The main action, the carried-over row and the filters scroll
+                    away with the list so the tasks get the screen. */}
                 <View style={styles.listControls}>
-                  <View style={styles.helpRow}>
-                    <TouchableOpacity onPress={() => setDoNowOpen(true)} style={styles.helpButton} accessibilityRole="button">
-                      <Text style={styles.helpButtonText}>What can I do now?</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => setOneThingOpen(true)} style={styles.helpButton} accessibilityRole="button">
-                      <Text style={styles.helpButtonText}>Tell me what to do</Text>
-                    </TouchableOpacity>
-                  </View>
-
-                  <View style={styles.groupSwitch} accessibilityRole="radiogroup" accessibilityLabel="Group tasks by">
-                    {GROUP_BY_OPTIONS.map((option) => {
-                      const isActive = appearance.groupBy === option;
-                      return (
-                        <TouchableOpacity
-                          key={option}
-                          style={[styles.groupOption, isActive && styles.groupOptionActive]}
-                          onPress={() => updateAppearance({ groupBy: option })}
-                          accessibilityRole="radio"
-                          accessibilityState={{ selected: isActive }}
-                        >
-                          <Text
-                            style={[styles.groupOptionText, isActive && styles.groupOptionTextActive]}
-                            numberOfLines={1}
-                            maxFontSizeMultiplier={1.4}
-                          >
-                            {GROUP_BY_LABELS[option].short}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
+                  <Button label="Pick my next task" onPress={() => setPickOpen(true)} />
                 </View>
                 {rollover.visible && (
                   <RolloverCard
@@ -320,6 +309,15 @@ export function TaskListScreen({ userId }: Props) {
                     onDismiss={rollover.dismiss}
                   />
                 )}
+                <View style={styles.filterRow}>
+                  <TodayFilterBar
+                    filter={filter}
+                    counts={filterCounts}
+                    groupBy={appearance.groupBy}
+                    onChangeFilter={setFilter}
+                    onChangeGroupBy={(groupBy) => updateAppearance({ groupBy })}
+                  />
+                </View>
               </>
             }
             ListFooterComponent={
@@ -394,6 +392,13 @@ export function TaskListScreen({ userId }: Props) {
           onChangeTitle={brainDump.setTitle}
           onCommit={brainDump.commit}
           onClose={closeBrainDump}
+        />
+
+        <PickNextTaskSheet
+          visible={pickOpen}
+          onDecideForMe={() => openFromPick(setOneThingOpen)}
+          onFitMyTime={() => openFromPick(setDoNowOpen)}
+          onClose={() => setPickOpen(false)}
         />
 
         <DoNowSheet
@@ -518,71 +523,40 @@ const useStyles = makeStyles((theme) => ({
     fontFamily: theme.typography.largeTitle.fontFamily,
     letterSpacing: theme.typography.largeTitle.letterSpacing,
   },
-  summary: {
-    color: theme.colors.textSecondary,
-    fontSize: theme.typography.subhead.fontSize,
-    lineHeight: 20,
-  },
-  summaryStrong: {
-    color: theme.colors.textPrimary,
-  },
-  listControls: {
-    gap: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.sm,
-    paddingBottom: theme.spacing.md,
-  },
-  helpRow: {
+  summaryRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: theme.spacing.sm,
-  },
-  // Secondary helpers: a light tinted fill, no border, so the green add
-  // button stays the one strong action on the screen.
-  helpButton: {
-    flexGrow: 1,
-    flexBasis: 120,
     alignItems: "center",
-    justifyContent: "center",
-    minHeight: 44,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-    backgroundColor: theme.colors.quickFill,
-    borderRadius: theme.radius.pill,
+    columnGap: theme.spacing.sm,
+    rowGap: 4,
   },
-  helpButtonText: {
+  quickWinsBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: theme.radius.pill,
+    backgroundColor: theme.colors.quickFill,
+  },
+  quickWinsText: {
     color: theme.colors.quickText,
     fontSize: theme.typography.footnote.fontSize,
     fontWeight: "700",
-    textAlign: "center",
   },
-  groupSwitch: {
-    flexDirection: "row",
-    gap: 4,
-    padding: 4,
-    borderRadius: theme.radius.pill,
-    backgroundColor: theme.colors.surfaceAlt,
-  },
-  // Grow from the label's own width so a longer word like "Category" gets
-  // the room it needs instead of every option getting an equal fifth.
-  groupOption: {
-    flexGrow: 1,
-    flexShrink: 1,
-    minHeight: 36,
-    paddingHorizontal: 6,
-    borderRadius: theme.radius.pill,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  groupOptionActive: {
-    backgroundColor: theme.colors.surface,
-  },
-  groupOptionText: {
+  totals: {
     color: theme.colors.textSecondary,
     fontSize: theme.typography.footnote.fontSize,
-    fontWeight: "600",
+    fontWeight: "400",
+    fontVariant: ["tabular-nums"],
   },
-  groupOptionTextActive: {
-    color: theme.colors.textPrimary,
+  listControls: {
+    paddingHorizontal: theme.spacing.sm,
+    paddingBottom: theme.spacing.sm,
+  },
+  filterRow: {
+    paddingHorizontal: theme.spacing.sm,
+    paddingTop: 4,
   },
   errorText: {
     color: theme.colors.danger,

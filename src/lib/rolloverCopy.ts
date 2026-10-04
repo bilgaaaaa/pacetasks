@@ -33,6 +33,7 @@ export function reasonLabel(reason: RolloverReason | null): string | null {
   return reason ? REASON_LABELS[reason] : null;
 }
 
-export function rolloverTitle(taskCount: number): string {
-  return taskCount === 1 ? "You left 1 thing unfinished." : `You left ${taskCount} things unfinished.`;
+// The collapsed rollover row: "4 tasks carried over".
+export function rolloverSummary(taskCount: number): string {
+  return taskCount === 1 ? "1 task carried over" : `${taskCount} tasks carried over`;
 }
