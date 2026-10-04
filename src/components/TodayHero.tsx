@@ -1,8 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { AccessibilityInfo, Animated, Easing, Image, Text, TouchableOpacity, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { makeStyles } from "../hooks/useTheme";
-import { PALETTE } from "../lib/theme";
+import { makeStyles, useTheme } from "../hooks/useTheme";
 import { HeroMessage } from "../lib/heroCopy";
 
 const GRAIN = require("../assets/grain.png");
@@ -50,11 +49,12 @@ function useDrift(durationMs: number) {
   return value;
 }
 
-// The Today hero: a night-blue card with an encouraging line drawn from the
-// real state of the day, the totals, and a compact "Pick my next task"
-// button. Behind the text, two blobs in two-colour gradients from the brand
-// palette drift slowly under a fine grain. All decoration is non-interactive.
+// The Today hero: a deep card with an encouraging line drawn from the real
+// state of the day, the totals, and a compact "Pick my next task" button.
+// Behind the text, two blobs in two-colour gradients from the active color
+// theme (theme.hero) drift slowly under a fine grain. All decoration is non-interactive.
 export function TodayHero({ message, totals, showAction, onPick }: Props) {
+  const { theme } = useTheme();
   const styles = useStyles();
   const driftA = useDrift(9000);
   const driftB = useDrift(12000);
@@ -78,7 +78,7 @@ export function TodayHero({ message, totals, showAction, onPick }: Props) {
       <View style={styles.decor} pointerEvents="none">
         <Animated.View style={[styles.blobA, blobAStyle]}>
           <LinearGradient
-            colors={[PALETTE.peaches, PALETTE.poppyFields]}
+            colors={theme.hero.blobA}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.fill}
@@ -86,7 +86,7 @@ export function TodayHero({ message, totals, showAction, onPick }: Props) {
         </Animated.View>
         <Animated.View style={[styles.blobB, blobBStyle]}>
           <LinearGradient
-            colors={[PALETTE.babyLavender, PALETTE.fuchsiaFlowers]}
+            colors={theme.hero.blobB}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.fill}
@@ -123,7 +123,7 @@ export function TodayHero({ message, totals, showAction, onPick }: Props) {
 
 const useStyles = makeStyles((theme) => ({
   card: {
-    backgroundColor: PALETTE.nightTime,
+    backgroundColor: theme.hero.card,
     borderRadius: 28,
     overflow: "hidden",
     marginBottom: theme.spacing.md,
@@ -180,7 +180,7 @@ const useStyles = makeStyles((theme) => ({
     gap: 6,
   },
   title: {
-    color: PALETTE.daffodil,
+    color: theme.hero.title,
     fontSize: 24,
     lineHeight: 29,
     fontWeight: "800",
@@ -189,13 +189,13 @@ const useStyles = makeStyles((theme) => ({
     maxWidth: "72%",
   },
   body: {
-    color: PALETTE.cream,
+    color: theme.hero.body,
     fontSize: theme.typography.subhead.fontSize,
     lineHeight: 20,
     maxWidth: "76%",
   },
   totals: {
-    color: PALETTE.cream,
+    color: theme.hero.body,
     opacity: 0.6,
     fontSize: 12,
     fontWeight: "600",
@@ -212,10 +212,10 @@ const useStyles = makeStyles((theme) => ({
     paddingVertical: 9,
     marginTop: 10,
     borderRadius: theme.radius.pill,
-    backgroundColor: PALETTE.daffodil,
+    backgroundColor: theme.hero.ctaFill,
   },
   ctaText: {
-    color: PALETTE.nightTime,
+    color: theme.hero.ctaText,
     fontSize: 14,
     fontWeight: "700",
   },

@@ -1,4 +1,4 @@
-import { ACCENT_IDS, AccentId } from "./theme";
+import { ACCENT_IDS, AccentId, PALETTE_IDS, PaletteId } from "./theme";
 
 // Per-device look & layout preferences. Kept on the phone (not in
 // user_settings) because light/dark and layout are a property of the device;
@@ -29,6 +29,7 @@ export const QUICK_WIN_LIMITS = { min: 1, max: 15 } as const;
 
 export interface AppearancePrefs {
   themeMode: ThemeMode; // "system" follows the phone's light/dark setting
+  palette: PaletteId; // color theme; only "sage" uses `accent`
   accent: AccentId;
   groupBy: GroupBy; // how the Today list is split into sections
   quickWinMinutes: number; // tasks this short or shorter count as quick wins
@@ -36,6 +37,7 @@ export interface AppearancePrefs {
 
 export const DEFAULT_APPEARANCE: AppearancePrefs = {
   themeMode: "system",
+  palette: "sage",
   accent: "sage",
   groupBy: "all",
   quickWinMinutes: 5,
@@ -60,6 +62,7 @@ export function parseAppearance(raw: string | null): AppearancePrefs {
   const minutes = Number(data.quickWinMinutes);
   return {
     themeMode: pick(THEME_MODES, data.themeMode, DEFAULT_APPEARANCE.themeMode),
+    palette: pick(PALETTE_IDS, data.palette, DEFAULT_APPEARANCE.palette),
     accent: pick(ACCENT_IDS, data.accent, DEFAULT_APPEARANCE.accent),
     groupBy: pick(GROUP_BY_OPTIONS, data.groupBy, DEFAULT_APPEARANCE.groupBy),
     quickWinMinutes: Number.isInteger(minutes)
