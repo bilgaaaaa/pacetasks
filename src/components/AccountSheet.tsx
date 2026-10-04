@@ -21,7 +21,9 @@ import {
   fieldLabel,
   MARKETING_CONSENT_HINT,
   MARKETING_CONSENT_LABEL,
+  PRIVACY_POLICY_LABEL,
   sheetSubtitle,
+  SIGN_UP_PRIVACY_NOTE,
   sheetTitle,
   switchModeLabel,
 } from "../lib/accountCopy";
@@ -44,6 +46,7 @@ interface Props {
   onVerify: () => void;
   onResendCode: () => void;
   onEditEmail: () => void;
+  onOpenPrivacyPolicy: () => void;
   onClose: () => void;
 }
 
@@ -63,6 +66,7 @@ export function AccountSheet({
   onVerify,
   onResendCode,
   onEditEmail,
+  onOpenPrivacyPolicy,
   onClose,
 }: Props) {
   const { theme } = useTheme();
@@ -151,6 +155,15 @@ export function AccountSheet({
                     trackColor={{ false: theme.colors.border, true: theme.colors.accentDark }}
                     accessibilityLabel={MARKETING_CONSENT_LABEL}
                   />
+                </View>
+              )}
+
+              {isSignUp && (
+                <View style={styles.privacyNote}>
+                  <Text style={styles.hint}>{SIGN_UP_PRIVACY_NOTE}</Text>
+                  <TouchableOpacity onPress={onOpenPrivacyPolicy} hitSlop={12} accessibilityRole="link">
+                    <Text style={styles.link}>{PRIVACY_POLICY_LABEL}</Text>
+                  </TouchableOpacity>
                 </View>
               )}
 
@@ -294,6 +307,16 @@ const useStyles = makeStyles((theme) => ({
     color: theme.colors.textTertiary,
     fontSize: theme.typography.footnote.fontSize,
     fontWeight: "400",
+  },
+  privacyNote: {
+    gap: theme.spacing.xs,
+    alignItems: "flex-start",
+  },
+  link: {
+    color: theme.colors.accentDark,
+    fontSize: theme.typography.footnote.fontSize,
+    fontWeight: theme.typography.footnote.fontWeight,
+    textDecorationLine: "underline",
   },
   done: {
     flex: 1,

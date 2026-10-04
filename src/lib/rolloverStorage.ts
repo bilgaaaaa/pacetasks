@@ -22,3 +22,12 @@ export async function saveRolloverDismissedDay(dayKey: string): Promise<void> {
     console.warn("[rolloverStorage] save failed", e);
   }
 }
+
+// Forgets the dismissal, for when this phone's data is deleted and it starts again empty.
+export async function clearRolloverDismissedDay(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(DISMISSED_DAY_KEY);
+  } catch (e) {
+    console.warn("[rolloverStorage] clear failed", e);
+  }
+}

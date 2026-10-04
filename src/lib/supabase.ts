@@ -54,3 +54,15 @@ export async function refreshAnonymousSession(): Promise<void> {
   const { error } = await supabase.auth.refreshSession();
   if (error) console.warn("[supabase] session refresh failed", error.message);
 }
+
+// Run when the app returns to the foreground: starts a session if there is none
+// (starting one can fail offline) and picks up an email confirmed by link.
+export async function reviveSession(): Promise<void> {
+  try {
+    await ensureSession();
+  } catch (e) {
+    console.warn("[supabase] could not start a session", e);
+    return;
+  }
+  await refreshAnonymousSession();
+}

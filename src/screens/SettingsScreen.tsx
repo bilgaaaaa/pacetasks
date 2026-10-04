@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   SafeAreaView,
@@ -15,7 +15,11 @@ import { useSettings } from "../hooks/useSettings";
 import { useAccount } from "../hooks/useAccount";
 import { AccountCard } from "../components/AccountCard";
 import { AccountSheet } from "../components/AccountSheet";
+import { DataCard } from "../components/DataCard";
+import { DeleteAccountSheet } from "../components/DeleteAccountSheet";
 import { Stepper } from "../components/Stepper";
+import { DATA_SECTION_LABEL } from "../lib/accountCopy";
+import { openExternalLink, PRIVACY_POLICY_URL, SUPPORT_URL } from "../lib/links";
 import { syncDailyReminder } from "../lib/notifications";
 import { ACCENT_OPTIONS, buildTheme } from "../lib/theme";
 import {
@@ -65,8 +69,9 @@ function formatTime(hour: number, minute: number): string {
 // The account (create one, sign in, email consent, sign out), then "Make it
 // yours" (theme, accent, Today's sections, quick-win size — saved on this
 // phone), the work schedule (feeds the before/after-work labels), the evening
-// reminder, Brain Dump auto-create, and the settings the Focus timer + range
-// timer read (chime + Pomodoro length).
+// reminder, Brain Dump auto-create, the settings the Focus timer + range
+// timer read (chime + Pomodoro length), and "Your data" (privacy policy, help,
+// delete the account).
 export function SettingsScreen({ userId, session }: Props) {
   const { theme, appearance, updateAppearance } = useTheme();
   const styles = useStyles();
@@ -84,10 +89,52 @@ export function SettingsScreen({ userId, session }: Props) {
     }
   }, [settings?.reminder_time]);
 
+  // A different user (sign-in, sign-out, account deletion) brings different reminder
+  // settings: the phone's scheduled reminder follows them, without a permission prompt.
+  const reminderUserIdRef = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (!settings) return;
+    const userChanged = reminderUserIdRef.current !== undefined && reminderUserIdRef.current !== settings.user_id;
+    reminderUserIdRef.current = settings.user_id;
+    if (userChanged) {
+      syncDailyReminder(settings.reminder_enabled, settings.reminder_time, { askPermission: false }).catch((e) =>
+        console.warn("[SettingsScreen] reminder re-sync failed", e)
+      );
+    }
+  }, [settings?.user_id]);
+
   const switchColors = {
     trackColor: { false: theme.colors.border, true: theme.colors.accentDark },
     thumbColor: theme.colors.surface,
   };
+
+  // The sheets are rendered in both branches below, in the same position, so a
+  // user change (which reloads the settings) never closes a sheet showing its result.
+  const sheets = (
+    <>
+      <AccountSheet
+        visible={accountSheetOpen}
+        state={account.state}
+        profileFirstName={account.profile?.first_name ?? null}
+        resending={account.busy}
+        onChangeField={account.setField}
+        onChangeMarketingOptIn={account.setMarketingOptIn}
+        onChangeCode={account.setCode}
+        onChangeMode={account.setMode}
+        onSubmit={account.submit}
+        onVerify={account.verify}
+        onResendCode={account.resendCode}
+        onEditEmail={account.editEmail}
+        onOpenPrivacyPolicy={() => openExternalLink(PRIVACY_POLICY_URL)}
+        onClose={() => setAccountSheetOpen(false)}
+      />
+      <DeleteAccountSheet
+        state={account.deletion}
+        onConfirm={account.confirmDeletion}
+        onClose={account.closeDeletion}
+      />
+    </>
+  );
 
   if (loading || !settings) {
     return (
@@ -97,6 +144,7 @@ export function SettingsScreen({ userId, session }: Props) {
       >
         <SafeAreaView style={styles.safeArea}>
           <ActivityIndicator color={theme.colors.accent} style={styles.loader} />
+          {sheets}
         </SafeAreaView>
       </LinearGradient>
     );
@@ -360,23 +408,18 @@ export function SettingsScreen({ userId, session }: Props) {
               })}
             </View>
           </View>
+
+          <Text style={styles.sectionLabel}>{DATA_SECTION_LABEL}</Text>
+          <DataCard
+            hasAccount={account.isSignedUp}
+            busy={account.busy}
+            onOpenPrivacyPolicy={() => openExternalLink(PRIVACY_POLICY_URL)}
+            onOpenSupport={() => openExternalLink(SUPPORT_URL)}
+            onDelete={account.openDeletion}
+          />
         </ScrollView>
 
-        <AccountSheet
-          visible={accountSheetOpen}
-          state={account.state}
-          profileFirstName={account.profile?.first_name ?? null}
-          resending={account.busy}
-          onChangeField={account.setField}
-          onChangeMarketingOptIn={account.setMarketingOptIn}
-          onChangeCode={account.setCode}
-          onChangeMode={account.setMode}
-          onSubmit={account.submit}
-          onVerify={account.verify}
-          onResendCode={account.resendCode}
-          onEditEmail={account.editEmail}
-          onClose={() => setAccountSheetOpen(false)}
-        />
+        {sheets}
       </SafeAreaView>
     </LinearGradient>
   );

@@ -33,6 +33,7 @@ pill tab bar.
 - **Evening review** — a single configurable local notification (renamed from "daily reminder", same mechanism).
 - **Timer chime / Haptics** — toggle a haptic pulse when a Focus session or range timer ends, or when you complete a task (no audio asset pipeline in this build — "chime" is a haptic, not a sound).
 - **Account (optional)** — the app works the moment it is installed, with no login. In Settings, **Create account** asks for first name, last name and email, then for the six-digit code emailed to that address: no password. The account is attached to the user the phone already has, so every task made before signing up stays. **I already have an account** signs in on another phone the same way. Email tips are a separate switch that starts off.
+- **Delete account** — at the bottom of Settings, under **Your data**, next to the links to the privacy policy and the support page. It lists what goes (the account, every task, statistics, settings, brain dumps), asks once, and erases all of it from the server; the phone starts again empty. Before sign-up the same button is **Delete my data** and clears what the phone's anonymous user has stored.
 - **My Pace** — a card on the Stats tab that reads your own history in plain sentences: the three hours in which you finish most tasks, your strongest weekday, and whether tasks take longer or shorter than you estimate. It stays quiet until you have completed 10 tasks (and logged a duration on 5 for the estimate line). No AI involved.
 - **Compete with yourself ("Your pace")** — done today, minutes today, current/best streak, best day, estimate accuracy, a Mon–Fri × 13-week completion heatmap, and a per-day history list with a relative progress bar.
 
@@ -45,10 +46,12 @@ src/components/           AddTaskSheet, TaskItem, FocusSessionModal, EndOfDayCar
                           WeekHeatmap, DropdownPill, ChoiceChips, Stepper, StatCard,
                           BrainDumpSheet, DoNowSheet, OneThingSheet, RolloverCard,
                           SomedaySheet, WeeklyResetSheet, AccountCard, AccountSheet,
-                          TextField, ErrorBanner, Button
+                          DataCard, DeleteAccountSheet, TextField, ErrorBanner, Button
 src/hooks/                useSession, useTasks, useSettings, useTheme (ThemeProvider,
                           makeStyles), useBrainDump, useDoNow, useOneThing,
                           useRollover, useWeeklyReset, useAccount
+assets/                   App icon, splash images, notification icon, favicon
+docs/                     Public pages (privacy policy, support) served by GitHub Pages
 src/lib/                  supabase client, tasksApi, settingsApi, notifications,
                           stats, categories, energy, theme (light/dark palettes +
                           accents), appearance (+ appearanceStorage), taskSections,
@@ -228,7 +231,60 @@ with the same rule-based parser as free mode (`AI_PROVIDER=rules`), so no AI
 key or network call is involved. Data resets
 on reload. To export a static build: `EXPO_PUBLIC_DEMO_MODE=1 npx expo export --platform web`.
 
-## 5. Publish to GitHub
+## 5. Build for TestFlight and the App Store
+
+Builds run on Expo's servers (EAS), so no Mac setup is needed beyond the
+terminal. Needs an Apple Developer Program membership and a free Expo account.
+
+One-time setup:
+```bash
+npm install -g eas-cli
+eas login
+eas init                       # links this folder to an Expo project (adds its id to app.json)
+# The app's Supabase address and publishable key, for builds made on EAS (.env is not uploaded):
+eas env:create --environment production --name EXPO_PUBLIC_SUPABASE_URL --value https://<your-project-ref>.supabase.co --visibility plaintext
+eas env:create --environment production --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value sb_publishable_... --visibility plaintext
+```
+Repeat the two `eas env:create` lines with `--environment preview` if you use the `preview` profile.
+
+Every release:
+```bash
+eas build --platform ios --profile production    # asks for your Apple login the first time; build number goes up by itself
+eas submit --platform ios --profile production   # uploads the build to App Store Connect / TestFlight
+```
+
+- `eas.json` holds the two build profiles: `production` (App Store / TestFlight)
+  and `preview` (installs directly on registered test phones).
+- The version shown in the store is `version` in `app.json`; raise it for each
+  new release. Build numbers are kept by EAS (`appVersionSource: remote`).
+- The app is iPhone-only for now (`supportsTablet: false`): an iPad layout has
+  not been designed or tested, and once an app ships with iPad support Apple
+  does not let it be removed.
+- Icon and splash screen live in `assets/` and are wired up in `app.json`. They
+  are drawn by `design/icon/build_icon_svgs.py` and turned into PNGs by
+  `design/icon/render_icon_pngs.py` (needs Python with Playwright); run both
+  from `design/icon/`, then copy the PNGs into `assets/`.
+
+## 6. Privacy policy and support page
+
+`docs/` holds the public pages the app and the App Store listing link to:
+`privacy.html`, `support.html` and a small `index.html`. They are plain HTML,
+served for free by GitHub Pages.
+
+1. Before publishing, replace `[YOUR FULL NAME]` and `[CONTACT EMAIL]` in
+   `docs/privacy.html` and `docs/support.html`, and name the email service in
+   the privacy policy (search the files for `TO CONFIRM`).
+2. On GitHub: **Settings → Pages → Build and deployment → Deploy from a
+   branch**, branch `main`, folder `/docs`, **Save**.
+3. A minute later the pages are at `https://bilgaaaaa.github.io/pacetasks/`.
+   The app's links (`src/lib/links.ts`) already point there.
+
+When what the app stores changes (a new table, an AI provider, analytics),
+update `docs/privacy.html` in the same pull request. The policy says Brain Dump
+text is not sent to an AI company: that is true only while the `AI_PROVIDER`
+secret is `rules`, so change the policy before changing that secret.
+
+## 7. Publish to GitHub
 
 From inside the `pacetasks` folder:
 
@@ -258,6 +314,8 @@ your Supabase keys are never committed.
 - **"Could not find the function public.create_task"** or a missing column
   such as `due_date` or `postponed_count` — the database is behind the app. Run
   `npx supabase db push` (see step 1).
+- **"Could not find the function public.delete_account"** when deleting an
+  account — the database is behind the app. Run `npx supabase db push`.
 - **Tasks added elsewhere don't appear live** — check that Realtime is enabled
   for the `tasks` table (Dashboard → Database → Publications →
   `supabase_realtime`); the task foundation migration adds it automatically.
