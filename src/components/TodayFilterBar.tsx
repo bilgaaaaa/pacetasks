@@ -15,8 +15,9 @@ interface Props {
 }
 
 // Three quick filters for the Today list (All, Quick wins, Due today) plus a
-// "Filter" control that opens the less-used grouping options (size, place,
-// category, time of day), so the bar stays short.
+// round "Filter" icon button that opens the less-used grouping options (size,
+// place, category, time of day). The icon fills green while a grouping is on.
+// Icon-only so the three labels fit in full even on small phones.
 export function TodayFilterBar({ filter, counts, groupBy, onChangeFilter, onChangeGroupBy }: Props) {
   const { theme } = useTheme();
   const styles = useStyles();
@@ -58,16 +59,9 @@ export function TodayFilterBar({ filter, counts, groupBy, onChangeFilter, onChan
       >
         <Ionicons
           name="options-outline"
-          size={16}
+          size={20}
           color={grouped ? theme.colors.onAccent : theme.colors.textPrimary}
         />
-        <Text
-          style={[styles.filterText, grouped && styles.filterTextActive]}
-          numberOfLines={1}
-          maxFontSizeMultiplier={1.4}
-        >
-          Filter
-        </Text>
       </TouchableOpacity>
 
       <Modal visible={sheetOpen} transparent animationType="fade" onRequestClose={() => setSheetOpen(false)}>
@@ -122,7 +116,7 @@ const useStyles = makeStyles((theme) => ({
     flexGrow: 1,
     flexShrink: 1,
     minHeight: 38,
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
     borderRadius: theme.radius.pill,
     alignItems: "center",
     justifyContent: "center",
@@ -143,11 +137,10 @@ const useStyles = makeStyles((theme) => ({
     color: theme.colors.textPrimary,
   },
   filterButton: {
-    flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    minHeight: 44,
-    paddingHorizontal: 14,
+    justifyContent: "center",
+    width: 44,
+    height: 44,
     borderRadius: theme.radius.pill,
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
@@ -156,14 +149,6 @@ const useStyles = makeStyles((theme) => ({
   filterButtonActive: {
     backgroundColor: theme.colors.accentDark,
     borderColor: theme.colors.accentDark,
-  },
-  filterText: {
-    color: theme.colors.textPrimary,
-    fontSize: theme.typography.footnote.fontSize,
-    fontWeight: "600",
-  },
-  filterTextActive: {
-    color: theme.colors.onAccent,
   },
   backdrop: {
     flex: 1,

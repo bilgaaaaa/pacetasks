@@ -72,7 +72,7 @@ function buildSections(
 export function groupTodayTasks(pending: Task[], groupBy: GroupBy, quickWinMinutes: number): TaskSection[] {
   switch (groupBy) {
     case "all":
-      return buildSections(pending, [{ key: "all", title: "To do", matches: () => true }]);
+      return buildSections(pending, [{ key: "all", title: "Today's plan", matches: () => true }]);
     case "size":
       return buildSections(pending, [
         { key: "quick", title: "Quick wins", matches: (t) => isQuickWin(t, quickWinMinutes) },

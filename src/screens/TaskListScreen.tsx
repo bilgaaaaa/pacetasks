@@ -24,7 +24,8 @@ import { useWeeklyReset } from "../hooks/useWeeklyReset";
 import { DEFAULT_SETTINGS } from "../lib/settingsApi";
 import { computeStats } from "../lib/stats";
 import { filterTodayTasks, groupTodayTasks, summarizePending, TodayFilter } from "../lib/taskSections";
-import { emptyFilterMessage, quickWinsMessage, totalsLine } from "../lib/todayCopy";
+import { emptyFilterMessage } from "../lib/todayCopy";
+import { buildWeek } from "../lib/weekStrip";
 import { selectUsuals } from "../lib/taskRhythm";
 import { buildTaskHistory, findExactMatch } from "@domain/taskHistory";
 import { selectSomedayTasks, selectTodayTasks } from "@domain/todayTasks";
@@ -40,7 +41,8 @@ import { OneThingSheet } from "../components/OneThingSheet";
 import { RolloverCard } from "../components/RolloverCard";
 import { PickNextTaskSheet } from "../components/PickNextTaskSheet";
 import { TodayFilterBar } from "../components/TodayFilterBar";
-import { Button } from "../components/Button";
+import { TodayHero } from "../components/TodayHero";
+import { WeekStrip } from "../components/WeekStrip";
 import { SomedaySheet } from "../components/SomedaySheet";
 import { WeeklyResetSheet } from "../components/WeeklyResetSheet";
 
@@ -225,14 +227,7 @@ export function TaskListScreen({ userId }: Props) {
     Alert.alert("Options", hasCompleted ? undefined : "No completed tasks yet.", options);
   };
 
-  // The headline is what can be done fast; the totals are secondary.
-  const quickWinsText = quickWinsMessage(summary.quickWinCount);
-  const totalsText =
-    summary.count === 0
-      ? allDone
-        ? "Everything's done. Enjoy the rest of your day."
-        : "Nothing yet. Add whatever's on your mind."
-      : totalsLine(summary.count, summary.totalMinutes);
+  const week = useMemo(() => buildWeek(todayKey, tasks), [todayKey, tasks]);
 
   return (
     <LinearGradient
@@ -250,15 +245,6 @@ export function TaskListScreen({ userId }: Props) {
               <Ionicons name="ellipsis-horizontal" size={20} color={theme.colors.textSecondary} />
             </TouchableOpacity>
           </View>
-          <View style={styles.summaryRow}>
-            {quickWinsText && (
-              <View style={styles.quickWinsBadge}>
-                <Ionicons name="flash" size={13} color={theme.colors.quickText} />
-                <Text style={styles.quickWinsText}>{quickWinsText}</Text>
-              </View>
-            )}
-            <Text style={styles.totals}>{totalsText}</Text>
-          </View>
 
         </View>
 
@@ -273,10 +259,12 @@ export function TaskListScreen({ userId }: Props) {
             stickySectionHeadersEnabled={false}
             renderSectionHeader={({ section }) => (
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>
-                  {section.title.toUpperCase()} · {section.data.length}
+                <Text style={styles.sectionTitle} accessibilityRole="header">
+                  {section.title}
                 </Text>
-                <Text style={styles.sectionMinutes}>{section.totalMinutes} min</Text>
+                <Text style={styles.sectionMeta}>
+                  {section.data.length} · {section.totalMinutes} min
+                </Text>
               </View>
             )}
             renderItem={({ item }) => renderTaskItem(item)}
@@ -295,11 +283,16 @@ export function TaskListScreen({ userId }: Props) {
             }
             ListHeaderComponent={
               <>
-                {/* The main action, the carried-over row and the filters scroll
-                    away with the list so the tasks get the screen. */}
-                <View style={styles.listControls}>
-                  <Button label="Pick my next task" onPress={() => setPickOpen(true)} />
-                </View>
+                {/* The hero (with the main action), the week, the carried-over
+                    row and the filters scroll away with the list. */}
+                <TodayHero
+                  count={summary.count}
+                  totalMinutes={summary.totalMinutes}
+                  quickWinCount={summary.quickWinCount}
+                  allDone={allDone}
+                  onPick={() => setPickOpen(true)}
+                />
+                <WeekStrip days={week} />
                 {rollover.visible && (
                   <RolloverCard
                     choices={rollover.choices}
@@ -523,39 +516,7 @@ const useStyles = makeStyles((theme) => ({
     fontFamily: theme.typography.largeTitle.fontFamily,
     letterSpacing: theme.typography.largeTitle.letterSpacing,
   },
-  summaryRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "center",
-    columnGap: theme.spacing.sm,
-    rowGap: 4,
-  },
-  quickWinsBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: theme.radius.pill,
-    backgroundColor: theme.colors.quickFill,
-  },
-  quickWinsText: {
-    color: theme.colors.quickText,
-    fontSize: theme.typography.footnote.fontSize,
-    fontWeight: "700",
-  },
-  totals: {
-    color: theme.colors.textSecondary,
-    fontSize: theme.typography.footnote.fontSize,
-    fontWeight: "400",
-    fontVariant: ["tabular-nums"],
-  },
-  listControls: {
-    paddingHorizontal: theme.spacing.sm,
-    paddingBottom: theme.spacing.sm,
-  },
   filterRow: {
-    paddingHorizontal: theme.spacing.sm,
     paddingTop: 4,
   },
   errorText: {
@@ -575,20 +536,22 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "baseline",
-    paddingHorizontal: theme.spacing.sm,
-    paddingTop: theme.spacing.md,
-    paddingBottom: theme.spacing.sm,
+    gap: theme.spacing.sm,
+    paddingHorizontal: 4,
+    paddingTop: 20,
+    paddingBottom: 10,
   },
   sectionTitle: {
-    color: theme.colors.textSecondary,
-    fontSize: theme.typography.eyebrow.fontSize,
-    fontWeight: theme.typography.eyebrow.fontWeight,
-    letterSpacing: theme.typography.eyebrow.letterSpacing,
+    flexShrink: 1,
+    color: theme.colors.textPrimary,
+    fontSize: 20,
+    fontWeight: "700",
+    letterSpacing: -0.3,
   },
-  sectionMinutes: {
+  sectionMeta: {
     color: theme.colors.textSecondary,
-    fontSize: theme.typography.eyebrow.fontSize,
-    fontFamily: theme.fonts.mono,
+    fontSize: theme.typography.footnote.fontSize,
+    fontWeight: "500",
     fontVariant: ["tabular-nums"],
   },
   footerLink: {
