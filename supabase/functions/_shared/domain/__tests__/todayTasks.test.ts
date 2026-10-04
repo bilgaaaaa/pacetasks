@@ -10,8 +10,14 @@ describe("isPendingToday", () => {
     expect(isPendingToday(makeTask({ due_date: "2026-09-20" }), TODAY)).toBe(true);
   });
 
-  it("hides future-dated, completed and parked tasks", () => {
+  it("shows a task with a later deadline, since it can be done any day before it", () => {
+    expect(isPendingToday(makeTask({ due_date: "2026-10-04", due_kind: "by" }), TODAY)).toBe(true);
+  });
+
+  it("hides tasks set for an exact later day, and completed and parked tasks", () => {
     expect(isPendingToday(makeTask({ due_date: "2026-09-29" }), TODAY)).toBe(false);
+    expect(isPendingToday(makeTask({ due_date: "2026-09-29", due_kind: "on" }), TODAY)).toBe(false);
+    expect(isPendingToday(makeTask({ due_date: "2026-10-04", due_kind: "by", status: "done" }), TODAY)).toBe(false);
     expect(isPendingToday(makeTask({ status: "done" }), TODAY)).toBe(false);
     expect(isPendingToday(makeTask({ status: "someday" }), TODAY)).toBe(false);
   });

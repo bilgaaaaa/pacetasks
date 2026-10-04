@@ -9,10 +9,12 @@ export interface TodayTasks {
   done: Task[];
 }
 
-// A pending task belongs to "Today" when it has no date, is due today, or is
-// overdue; future-dated tasks stay hidden until their day comes.
+// A pending task belongs to "Today" when it has no date, is due today or overdue,
+// or has a deadline ("by"): a deadline task can be done on any day before it. A
+// task set for one exact future day ("on") stays hidden until that day comes.
 export function isPendingToday(task: Task, todayKey: string): boolean {
-  return task.status === "pending" && (task.due_date === null || task.due_date <= todayKey);
+  if (task.status !== "pending") return false;
+  return task.due_date === null || task.due_kind === "by" || task.due_date <= todayKey;
 }
 
 // Splits tasks into what the Today list shows: ordered pending tasks, then done

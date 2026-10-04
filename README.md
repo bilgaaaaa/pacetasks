@@ -47,6 +47,11 @@ you compete only with your own past pace.
 - **Add a task** — the bar at the bottom opens on **your usuals**: tasks you
   have done before, one tap to add (with Undo). Typing something new asks what,
   how long and when. A name you have used before fills in its usual details.
+- **When** — pick a day from the next seven, or open **Whole month** for any
+  later date. Or choose no exact day: **Any day** (stays on Today until done),
+  **This week** or **Next week** (a deadline on that week's Sunday). A task set
+  for one exact later day stays out of Today until that day; a task with a
+  deadline shows on Today right away, because it can be done any day before it.
 - **Brain Dump** — the microphone button. Type or dictate everything on your
   mind in English, Italian, Turkish or a mix; PaceTasks shows the tasks it
   understood before anything is added.
