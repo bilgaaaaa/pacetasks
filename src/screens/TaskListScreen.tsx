@@ -24,7 +24,8 @@ import { useWeeklyReset } from "../hooks/useWeeklyReset";
 import { DEFAULT_SETTINGS } from "../lib/settingsApi";
 import { computeStats } from "../lib/stats";
 import { filterTodayTasks, groupTodayTasks, summarizePending, TodayFilter } from "../lib/taskSections";
-import { emptyFilterMessage } from "../lib/todayCopy";
+import { emptyFilterMessage, totalsLine } from "../lib/todayCopy";
+import { heroMessage } from "../lib/heroCopy";
 import { buildWeek } from "../lib/weekStrip";
 import { selectUsuals } from "../lib/taskRhythm";
 import { buildTaskHistory, findExactMatch } from "@domain/taskHistory";
@@ -60,8 +61,8 @@ interface ListSection {
 // iOS can't present a new Modal while the previous one is still animating away.
 const MODAL_SWITCH_DELAY_MS = 350;
 
-// The header is just the date ("SUNDAY · OCTOBER 4") and the menu; the
-// greeting ("Good morning") is the headline of the hero card below.
+// Header: a small date label ("SUNDAY · OCTOBER 4") over the greeting
+// ("Good morning").
 function dateEyebrow(now: Date): string {
   const day = now.toLocaleDateString("en-US", { weekday: "long" });
   const date = now.toLocaleDateString("en-US", { month: "long", day: "numeric" });
@@ -243,9 +244,14 @@ export function TaskListScreen({ userId }: Props) {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <View style={styles.headerTop}>
-            <Text style={styles.eyebrow} numberOfLines={1} accessibilityRole="header">
-              {dateEyebrow(now)}
-            </Text>
+            <View style={styles.headerTitles}>
+              <Text style={styles.eyebrow} numberOfLines={1}>
+                {dateEyebrow(now)}
+              </Text>
+              <Text style={styles.title} accessibilityRole="header">
+                {greeting(now)}
+              </Text>
+            </View>
             <TouchableOpacity onPress={openMenu} style={styles.menuButton} accessibilityLabel="List options">
               <Ionicons name="ellipsis-horizontal" size={20} color={theme.colors.textSecondary} />
             </TouchableOpacity>
@@ -291,10 +297,15 @@ export function TaskListScreen({ userId }: Props) {
                 {/* The hero (with the main action), the week, the carried-over
                     row and the filters scroll away with the list. */}
                 <TodayHero
-                  greeting={greeting(now)}
-                  count={summary.count}
-                  totalMinutes={summary.totalMinutes}
-                  allDone={allDone}
+                  message={heroMessage({
+                    count: summary.count,
+                    quickWinCount: summary.quickWinCount,
+                    quickWinMinutes: appearance.quickWinMinutes,
+                    streakDays: stats.currentStreakDays,
+                    allDone,
+                  })}
+                  totals={summary.count > 0 ? totalsLine(summary.count, summary.totalMinutes) : ""}
+                  showAction={summary.count > 0}
                   onPick={() => setPickOpen(true)}
                 />
                 <WeekStrip days={week} />
@@ -493,11 +504,21 @@ const useStyles = makeStyles((theme) => ({
   headerTop: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-end",
     gap: theme.spacing.sm,
   },
-  eyebrow: {
+  headerTitles: {
     flex: 1,
+    gap: 8, // breathing room between the date label and the greeting
+  },
+  title: {
+    color: theme.colors.textPrimary,
+    fontSize: theme.typography.largeTitle.fontSize,
+    fontWeight: theme.typography.largeTitle.fontWeight,
+    fontFamily: theme.typography.largeTitle.fontFamily,
+    letterSpacing: theme.typography.largeTitle.letterSpacing,
+  },
+  eyebrow: {
     color: theme.colors.textSecondary,
     fontSize: theme.typography.eyebrow.fontSize,
     fontWeight: theme.typography.eyebrow.fontWeight,

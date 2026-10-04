@@ -97,6 +97,24 @@ const ACCENTS: Record<AccentId, Record<ColorScheme, AccentColors>> = {
   },
 };
 
+// Brand palette for expressive surfaces (the Today hero card, the week strip's
+// today pill). Fixed colors that read the same in light and dark mode,
+// unlike the scheme-aware tokens above.
+export const PALETTE = {
+  babyLavender: "#DBC0E8",
+  blueSkies: "#A3C1E2",
+  daffodil: "#F7E289",
+  nightTime: "#252D45",
+  peaches: "#FBB28B",
+  poppyFields: "#F76F54",
+  fuchsiaFlowers: "#EA5E86",
+  poolTime: "#47B5A8",
+  cottonCandy: "#F9A2C5",
+  mutedEggplant: "#6B515E",
+  hayFields: "#B79A65",
+  cream: "#FBF6EE",
+} as const;
+
 // Human labels + per-scheme swatch colors for the Settings accent picker.
 export const ACCENT_OPTIONS: { id: AccentId; label: string; swatch: Record<ColorScheme, string> }[] = ACCENT_IDS.map(
   (id) => ({

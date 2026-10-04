@@ -1,6 +1,7 @@
 import React from "react";
 import { Text, View } from "react-native";
 import { makeStyles } from "../hooks/useTheme";
+import { PALETTE } from "../lib/theme";
 import { WeekDay } from "../lib/weekStrip";
 
 interface Props {
@@ -52,9 +53,10 @@ const useStyles = makeStyles((theme) => ({
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
+  // Same night blue and daffodil as the hero card above it.
   dayToday: {
-    backgroundColor: theme.colors.textPrimary,
-    borderColor: theme.colors.textPrimary,
+    backgroundColor: PALETTE.nightTime,
+    borderColor: PALETTE.nightTime,
   },
   weekday: {
     color: theme.colors.textSecondary,
@@ -68,7 +70,7 @@ const useStyles = makeStyles((theme) => ({
     fontVariant: ["tabular-nums"],
   },
   textToday: {
-    color: theme.colors.surface,
+    color: PALETTE.daffodil,
   },
   dot: {
     width: 5,
@@ -78,9 +80,9 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: "transparent",
   },
   dotOn: {
-    backgroundColor: theme.colors.accentDark,
+    backgroundColor: PALETTE.poppyFields,
   },
   dotToday: {
-    backgroundColor: theme.colors.surface,
+    backgroundColor: PALETTE.daffodil,
   },
 }));
