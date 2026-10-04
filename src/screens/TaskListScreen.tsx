@@ -58,14 +58,12 @@ interface ListSection {
 // iOS can't present a new Modal while the previous one is still animating away.
 const MODAL_SWITCH_DELAY_MS = 350;
 
-// "Good morning · Sunday, October 4", in sentence case so it reads as a
-// quiet line above the title instead of a shouty label.
-function greetingLine(): string {
+function greetingEyebrow(): string {
   const now = new Date();
+  const day = now.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
   const hour = now.getHours();
-  const part = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
-  const date = now.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
-  return `${part} · ${date}`;
+  const part = hour < 12 ? "GOOD MORNING" : hour < 18 ? "GOOD AFTERNOON" : "GOOD EVENING";
+  return `${day} · ${part}`;
 }
 
 // Home screen: today's tasks split into the sections the user picked (all in
@@ -243,20 +241,13 @@ export function TaskListScreen({ userId }: Props) {
     >
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <Text style={styles.greeting} numberOfLines={1}>
-            {greetingLine()}
-          </Text>
-          <View style={styles.titleRow}>
-            <Text style={styles.title} accessibilityRole="header">
-              Today
-            </Text>
-            <TouchableOpacity
-              onPress={openMenu}
-              style={styles.menuButton}
-              hitSlop={4}
-              accessibilityLabel="List options"
-            >
-              <Ionicons name="ellipsis-horizontal" size={18} color={theme.colors.textSecondary} />
+          <View style={styles.headerTop}>
+            <View style={styles.headerTitles}>
+              <Text style={styles.eyebrow} numberOfLines={1}>{greetingEyebrow()}</Text>
+              <Text style={styles.title} accessibilityRole="header">Today</Text>
+            </View>
+            <TouchableOpacity onPress={openMenu} style={styles.menuButton} accessibilityLabel="List options">
+              <Ionicons name="ellipsis-horizontal" size={20} color={theme.colors.textSecondary} />
             </TouchableOpacity>
           </View>
           <View style={styles.summaryRow}>
@@ -498,37 +489,36 @@ const useStyles = makeStyles((theme) => ({
   header: {
     paddingHorizontal: theme.spacing.lg,
     paddingTop: theme.spacing.sm,
-    paddingBottom: theme.spacing.xs,
+    paddingBottom: theme.spacing.sm,
+    gap: 6,
   },
-  greeting: {
-    color: theme.colors.textSecondary,
-    fontSize: theme.typography.subhead.fontSize,
-    fontWeight: "500",
-    lineHeight: 20,
-  },
-  // The menu sits on the title's own line, centred on it, so the greeting
-  // above and the stats below get the full width.
-  titleRow: {
+  headerTop: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
+    alignItems: "flex-end",
     gap: theme.spacing.sm,
-    marginTop: 2,
-    marginBottom: 12,
+  },
+  headerTitles: {
+    flex: 1,
+    gap: 8, // breathing room between the greeting label and the title
+  },
+  eyebrow: {
+    color: theme.colors.textSecondary,
+    fontSize: theme.typography.eyebrow.fontSize,
+    fontWeight: theme.typography.eyebrow.fontWeight,
+    letterSpacing: theme.typography.eyebrow.letterSpacing,
   },
   menuButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: theme.radius.pill,
-    backgroundColor: theme.colors.surfaceAlt,
+    backgroundColor: theme.colors.surface,
     alignItems: "center",
     justifyContent: "center",
   },
   title: {
-    flex: 1,
     color: theme.colors.textPrimary,
     fontSize: theme.typography.largeTitle.fontSize,
-    lineHeight: 34,
     fontWeight: theme.typography.largeTitle.fontWeight,
     fontFamily: theme.typography.largeTitle.fontFamily,
     letterSpacing: theme.typography.largeTitle.letterSpacing,
