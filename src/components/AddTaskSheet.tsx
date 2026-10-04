@@ -15,21 +15,20 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { TASK_LIMITS } from "@domain/task";
 import { TaskHistoryEntry, findExactMatch, findMatches, normalizeTitle } from "@domain/taskHistory";
-import { addDays, toLocalDateKey } from "@domain/dates";
+import { toLocalDateKey } from "@domain/dates";
 import { makeStyles, useTheme } from "../hooks/useTheme";
 import { EnergyLevel, Task, TaskDraft, TaskTiming } from "../lib/types";
 import { CATEGORIES, categoryColor, getCategory } from "../lib/categories";
 import { TIMING_LABELS } from "../lib/taskSections";
 import { ANY_ENERGY_LABEL, ENERGY_OPTIONS, energyLabel } from "../lib/energy";
-import { resolveDueOption } from "../lib/dueOptions";
+import { DEFAULT_DUE_CHOICE, DueChoice, dueChoiceSummary, resolveDueChoice } from "../lib/dueOptions";
 import { TaskRhythm, describeLastDone, isLate } from "../lib/taskRhythm";
+import { DayPicker } from "./DayPicker";
 
 const MINUTE_PRESETS = [2, 5, 15, 30, 60];
 const TIMING_VALUES: TaskTiming[] = ["anytime", "before_work", "after_work"];
 // null = no energy set, so "What can I do now?" never hides the task.
 const ENERGY_VALUES: (EnergyLevel | null)[] = [null, ...ENERGY_OPTIONS.map((option) => option.value)];
-const WEEKDAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 // Half-hour presets from 6am to 10pm; a fixed time turns the task into a Focus session.
 const SCHEDULED_TIMES = Array.from({ length: 33 }, (_, i) => {
   const totalMinutes = 6 * 60 + i * 30;
@@ -37,7 +36,6 @@ const SCHEDULED_TIMES = Array.from({ length: 33 }, (_, i) => {
 });
 
 type Mode = "usuals" | "new";
-type WhenChoice = "today" | "after_work" | "tomorrow";
 
 interface Props {
   visible: boolean;
@@ -49,16 +47,11 @@ interface Props {
   onClose: () => void;
 }
 
-// "Wed 30 Sep" for a date key, used on the Tomorrow card.
-function shortDayLabel(dateKey: string): string {
-  const date = new Date(`${dateKey}T00:00:00Z`);
-  return `${WEEKDAY_SHORT[date.getUTCDay()]} ${date.getUTCDate()} ${MONTH_SHORT[date.getUTCMonth()]}`;
-}
-
 // The add sheet: opens on your usuals (repeat tasks, one tap adds them for
 // today, ⋯ adjusts first) with a big "What?" field on top. Typing something
-// new switches to three calm questions (what, how long, when) with optional
-// extras tucked away. After each add it returns to the usuals with an Undo.
+// new switches to three calm questions (what, how long, when: a day or a
+// flexible window, plus the part of the day) with optional extras tucked away.
+// After each add it returns to the usuals with an Undo.
 export function AddTaskSheet({ visible, history, usuals, onAdd, onUndo, onOpenBrainDump, onClose }: Props) {
   const { theme } = useTheme();
   const styles = useStyles();
@@ -68,7 +61,7 @@ export function AddTaskSheet({ visible, history, usuals, onAdd, onUndo, onOpenBr
   const [title, setTitle] = useState("");
   const [minutes, setMinutes] = useState<number>(TASK_LIMITS.defaultEstimatedMinutes);
   const [timing, setTiming] = useState<TaskTiming>("anytime");
-  const [tomorrow, setTomorrow] = useState(false);
+  const [due, setDue] = useState<DueChoice>(DEFAULT_DUE_CHOICE);
   const [category, setCategory] = useState<string | null>(null);
   const [energy, setEnergy] = useState<EnergyLevel | null>(null);
   const [scheduledTime, setScheduledTime] = useState<string | null>(null);
@@ -78,7 +71,10 @@ export function AddTaskSheet({ visible, history, usuals, onAdd, onUndo, onOpenBr
   // Snapshot taken on open: an added usual becomes pending and would otherwise vanish from the grid.
   const [shownUsuals, setShownUsuals] = useState<TaskRhythm[]>(usuals);
   const [addedKeys, setAddedKeys] = useState<string[]>([]);
-  const [lastAdded, setLastAdded] = useState<{ taskId: string; key: string; title: string } | null>(null);
+  // `when` is the "for Thu" part of the confirmation; null when the task has no day.
+  const [lastAdded, setLastAdded] = useState<{ taskId: string; key: string; title: string; when: string | null } | null>(
+    null
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -86,7 +82,7 @@ export function AddTaskSheet({ visible, history, usuals, onAdd, onUndo, onOpenBr
     setTitle("");
     setMinutes(TASK_LIMITS.defaultEstimatedMinutes);
     setTiming("anytime");
-    setTomorrow(false);
+    setDue(DEFAULT_DUE_CHOICE);
     setCategory(null);
     setEnergy(null);
     setScheduledTime(null);
@@ -108,7 +104,6 @@ export function AddTaskSheet({ visible, history, usuals, onAdd, onUndo, onOpenBr
   const todayKey = toLocalDateKey(new Date());
   const exactMatch = title.trim() ? findExactMatch(history, title) : undefined;
   const suggestions = mode === "new" && !exactMatch ? findMatches(history, title, 3) : [];
-  const whenChoice: WhenChoice = tomorrow ? "tomorrow" : timing === "after_work" ? "after_work" : "today";
 
   const applyMemory = (
     entry: Pick<TaskHistoryEntry, "lastMinutes" | "timing" | "category" | "energyLevel">,
@@ -134,7 +129,7 @@ export function AddTaskSheet({ visible, history, usuals, onAdd, onUndo, onOpenBr
   };
 
   // Shared by one-tap usuals and the "new" form; returns true when the task was saved.
-  const save = async (draft: TaskDraft): Promise<boolean> => {
+  const save = async (draft: TaskDraft, when: string | null = null): Promise<boolean> => {
     setSaving(true);
     setError(null);
     const created = await onAdd(draft);
@@ -146,7 +141,7 @@ export function AddTaskSheet({ visible, history, usuals, onAdd, onUndo, onOpenBr
     }
     const key = normalizeTitle(draft.title);
     setAddedKeys((prev) => [...prev, key]);
-    setLastAdded({ taskId: created.id, key, title: draft.title });
+    setLastAdded({ taskId: created.id, key, title: draft.title, when });
     return true;
   };
 
@@ -172,16 +167,19 @@ export function AddTaskSheet({ visible, history, usuals, onAdd, onUndo, onOpenBr
   const submitNew = async () => {
     const trimmed = title.trim();
     if (!trimmed || saving) return;
-    const saved = await save({
-      title: trimmed.slice(0, TASK_LIMITS.titleMaxLength),
-      estimated_minutes: Math.min(TASK_LIMITS.maxEstimatedMinutes, Math.max(TASK_LIMITS.minEstimatedMinutes, minutes)),
-      timing,
-      category,
-      energy_level: energy,
-      scheduled_time: scheduledTime,
-      ...resolveDueOption(tomorrow ? "tomorrow" : "any", todayKey),
-      source: "app",
-    });
+    const saved = await save(
+      {
+        title: trimmed.slice(0, TASK_LIMITS.titleMaxLength),
+        estimated_minutes: Math.min(TASK_LIMITS.maxEstimatedMinutes, Math.max(TASK_LIMITS.minEstimatedMinutes, minutes)),
+        timing,
+        category,
+        energy_level: energy,
+        scheduled_time: scheduledTime,
+        ...resolveDueChoice(due, todayKey),
+        source: "app",
+      },
+      dueChoiceSummary(due, todayKey)
+    );
     if (saved) {
       // Back to the usuals, so the next thought is one tap or one word away.
       Keyboard.dismiss();
@@ -213,19 +211,7 @@ export function AddTaskSheet({ visible, history, usuals, onAdd, onUndo, onOpenBr
     setError(null);
   };
 
-  const pickWhen = (choice: WhenChoice) => {
-    setTomorrow(choice === "tomorrow");
-    if (choice === "after_work") setTiming("after_work");
-    if (choice === "today" && timing === "after_work") setTiming("anytime");
-    if (choice !== "tomorrow") setTouched((t) => ({ ...t, timing: true }));
-  };
-
   const durationChoices = Array.from(new Set([...MINUTE_PRESETS, minutes])).sort((a, b) => a - b);
-  const whenCards: { id: WhenChoice; label: string; hint: string }[] = [
-    { id: "today", label: "Today", hint: timing === "before_work" ? "before work" : "anytime" },
-    { id: "after_work", label: "After work", hint: "today" },
-    { id: "tomorrow", label: "Tomorrow", hint: shortDayLabel(addDays(todayKey, 1)) },
-  ];
 
   const renderChips = <T,>(values: T[], selected: T, label: (value: T) => string, onPick: (value: T) => void) => (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow} keyboardShouldPersistTaps="handled">
@@ -397,28 +383,17 @@ export function AddTaskSheet({ visible, history, usuals, onAdd, onUndo, onOpenBr
 
                 <View style={styles.section}>
                   <Text style={styles.questionLabel}>When?</Text>
-                  <View style={styles.whenRow} accessibilityRole="radiogroup">
-                    {whenCards.map((card) => {
-                      const isSelected = card.id === whenChoice;
-                      return (
-                        <TouchableOpacity
-                          key={card.id}
-                          style={[styles.whenCard, isSelected && styles.whenSelected]}
-                          onPress={() => pickWhen(card.id)}
-                          accessibilityRole="radio"
-                          accessibilityState={{ selected: isSelected }}
-                        >
-                          <Text style={[styles.whenHint, isSelected && styles.textOnAccent]}>{card.hint}</Text>
-                          <Text style={[styles.whenLabel, isSelected && styles.textOnAccent]}>{card.label}</Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
+                  <DayPicker todayKey={todayKey} value={due} onChange={setDue} />
+                  <Text style={styles.extrasLabel}>PART OF THE DAY</Text>
+                  {renderChips(TIMING_VALUES, timing, (value) => TIMING_LABELS[value], (value) => {
+                    setTiming(value);
+                    setTouched((t) => ({ ...t, timing: true }));
+                  })}
                 </View>
 
                 <TouchableOpacity style={styles.extrasToggle} onPress={() => setShowExtras((v) => !v)}>
                   <Text style={styles.extrasToggleText}>
-                    {showExtras ? "− Fewer options" : "+ Category, energy, time of day, fixed time"}
+                    {showExtras ? "− Fewer options" : "+ Category, energy, fixed time"}
                   </Text>
                 </TouchableOpacity>
 
@@ -444,11 +419,6 @@ export function AddTaskSheet({ visible, history, usuals, onAdd, onUndo, onOpenBr
                         setTouched((t) => ({ ...t, energy: true }));
                       }
                     )}
-                    <Text style={styles.extrasLabel}>TIME OF DAY</Text>
-                    {renderChips(TIMING_VALUES, timing, (value) => TIMING_LABELS[value], (value) => {
-                      setTiming(value);
-                      setTouched((t) => ({ ...t, timing: true }));
-                    })}
                     <Text style={styles.extrasLabel}>FIXED START (FOCUS SESSION)</Text>
                     {renderChips<string | null>([null, ...SCHEDULED_TIMES], scheduledTime, (value) => value ?? "None", setScheduledTime)}
                   </View>
@@ -473,7 +443,9 @@ export function AddTaskSheet({ visible, history, usuals, onAdd, onUndo, onOpenBr
               lastAdded && (
                 <View style={styles.toast} accessibilityLiveRegion="polite">
                   <Ionicons name="checkmark" size={16} color={theme.colors.quickText} />
-                  <Text style={styles.toastText} numberOfLines={1}>Added “{lastAdded.title}”</Text>
+                  <Text style={styles.toastText} numberOfLines={1}>
+                    Added “{lastAdded.title}”{lastAdded.when ? ` ${lastAdded.when}` : ""}
+                  </Text>
                   <TouchableOpacity style={styles.toastUndo} onPress={undoLastAdd}>
                     <Text style={styles.toastUndoText}>Undo</Text>
                   </TouchableOpacity>
@@ -737,33 +709,6 @@ const useStyles = makeStyles((theme) => ({
   },
   textOnAccent: {
     color: theme.colors.onAccent,
-  },
-  whenRow: {
-    flexDirection: "row",
-    gap: theme.spacing.sm,
-  },
-  whenCard: {
-    flex: 1,
-    height: 88,
-    padding: 12,
-    borderRadius: 18,
-    borderWidth: 1.5,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surface,
-    justifyContent: "space-between",
-  },
-  whenSelected: {
-    borderColor: theme.colors.accentDark,
-    backgroundColor: theme.colors.accentDark,
-  },
-  whenHint: {
-    color: theme.colors.textSecondary,
-    fontSize: 12,
-  },
-  whenLabel: {
-    color: theme.colors.textPrimary,
-    fontSize: theme.typography.body.fontSize,
-    fontWeight: "600",
   },
   extrasToggle: {
     alignSelf: "flex-start",
