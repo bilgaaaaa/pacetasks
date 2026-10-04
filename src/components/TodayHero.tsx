@@ -1,25 +1,20 @@
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { makeStyles, useTheme } from "../hooks/useTheme";
-import { quickWinsMessage, totalsLine } from "../lib/todayCopy";
+import { makeStyles } from "../hooks/useTheme";
+import { totalsLine } from "../lib/todayCopy";
 
 interface Props {
   greeting: string; // "Good morning", the card's headline
   count: number;
   totalMinutes: number;
-  quickWinCount: number;
   allDone: boolean;
   onPick: () => void;
 }
 
-// The pastel card at the top of Today: the greeting, the real counts (quick
-// wins first, totals second) and the main action. The soft circles are
-// decoration only.
-export function TodayHero({ greeting, count, totalMinutes, quickWinCount, allDone, onPick }: Props) {
-  const { theme } = useTheme();
+// The pastel card at the top of Today: the greeting in capitals, the day's
+// totals and the main action. The soft circles are decoration only.
+export function TodayHero({ greeting, count, totalMinutes, allDone, onPick }: Props) {
   const styles = useStyles();
-  const quickWins = quickWinsMessage(quickWinCount);
   const totals =
     count === 0
       ? allDone
@@ -36,15 +31,7 @@ export function TodayHero({ greeting, count, totalMinutes, quickWinCount, allDon
         <Text style={styles.title} accessibilityRole="header">
           {greeting}
         </Text>
-        <View style={styles.meta}>
-          {quickWins && (
-            <View style={styles.badge}>
-              <Ionicons name="flash" size={13} color={theme.colors.quickText} />
-              <Text style={styles.badgeText}>{quickWins}</Text>
-            </View>
-          )}
-          <Text style={styles.totals}>{totals}</Text>
-        </View>
+        <Text style={styles.totals}>{totals}</Text>
 
         {count > 0 && (
           <TouchableOpacity
@@ -54,7 +41,6 @@ export function TodayHero({ greeting, count, totalMinutes, quickWinCount, allDon
             accessibilityRole="button"
             accessibilityLabel="Pick my next task"
           >
-            <Ionicons name="sparkles" size={16} color={theme.colors.accentDark} />
             <Text style={styles.ctaText}>Pick my next task</Text>
           </TouchableOpacity>
         )}
@@ -102,29 +88,9 @@ const useStyles = makeStyles((theme) => ({
     lineHeight: 29,
     fontWeight: "700",
     fontFamily: theme.fonts.display,
-    letterSpacing: -0.6,
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
     maxWidth: "80%",
-  },
-  meta: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "center",
-    columnGap: theme.spacing.sm,
-    rowGap: 6,
-  },
-  badge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: theme.radius.pill,
-    backgroundColor: theme.colors.surface,
-  },
-  badgeText: {
-    color: theme.colors.quickText,
-    fontSize: theme.typography.footnote.fontSize,
-    fontWeight: "700",
   },
   totals: {
     color: theme.colors.quickText,
@@ -133,32 +99,20 @@ const useStyles = makeStyles((theme) => ({
     fontWeight: "500",
     fontVariant: ["tabular-nums"],
   },
-  // A light, full-width pill on the pastel card: the card's own green for
-  // the label and icon, a hairline edge and a soft shadow instead of a
-  // heavy dark fill.
+  // One plain, solid pill: no icon, no border, no shadow.
   cta: {
-    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
     minHeight: 48,
     paddingHorizontal: 18,
     paddingVertical: 12,
     marginTop: 6,
     borderRadius: theme.radius.pill,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    shadowColor: theme.colors.shadow,
-    shadowOpacity: 1,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 2,
+    backgroundColor: theme.colors.accentDark,
   },
   ctaText: {
-    color: theme.colors.accentDark,
+    color: theme.colors.onAccent,
     fontSize: theme.typography.body.fontSize,
-    fontWeight: "700",
-    letterSpacing: 0.1,
+    fontWeight: "600",
   },
 }));

@@ -294,7 +294,6 @@ export function TaskListScreen({ userId }: Props) {
                   greeting={greeting(now)}
                   count={summary.count}
                   totalMinutes={summary.totalMinutes}
-                  quickWinCount={summary.quickWinCount}
                   allDone={allDone}
                   onPick={() => setPickOpen(true)}
                 />
