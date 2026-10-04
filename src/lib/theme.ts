@@ -108,7 +108,10 @@ export const ACCENT_OPTIONS: { id: AccentId; label: string; swatch: Record<Color
 
 const spacing = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32 };
 
-const radius = { sm: 12, md: 18, lg: 24, xl: 28, pill: 999 };
+// Three corner sizes by role: sm for small tags and previews, md for tiles and
+// rows inside a card, lg for cards and sheets. Buttons and chips use pill.
+// `xl` is kept as an alias of lg so every card shares one radius.
+const radius = { sm: 10, md: 16, lg: 20, xl: 20, pill: 999 };
 
 // No bundled font files: one modern system sans (SF Pro / Roboto / Segoe UI)
 // everywhere, so titles, body and numbers read as a single family. Hierarchy
@@ -125,7 +128,7 @@ const fonts = {
 };
 
 const typography = {
-  largeTitle: { fontSize: 34, fontWeight: "700" as const, fontFamily: fonts.display, letterSpacing: -0.8 },
+  largeTitle: { fontSize: 28, fontWeight: "700" as const, fontFamily: fonts.display, letterSpacing: -0.6 },
   title: { fontSize: 22, fontWeight: "700" as const, fontFamily: fonts.display, letterSpacing: -0.4 },
   headline: { fontSize: 17, fontWeight: "600" as const },
   body: { fontSize: 16, fontWeight: "400" as const },

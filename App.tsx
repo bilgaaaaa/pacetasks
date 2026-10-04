@@ -13,10 +13,13 @@ const Tab = createBottomTabNavigator();
 
 // Text-only pill tab bar matching the design: a single rounded bar, the
 // active tab shown as a filled ink pill, inactive tabs plain secondary text.
-function PillTabBar({ state, descriptors, navigation }: any) {
+// Kept compact, and padded by the bottom safe-area inset so it clears the
+// home indicator without a fixed gap on phones that have none.
+function PillTabBar({ state, descriptors, navigation, insets }: any) {
   const styles = useStyles();
+  const bottomInset = insets?.bottom ?? 0;
   return (
-    <View style={styles.tabBarWrapper}>
+    <View style={[styles.tabBarWrapper, { paddingBottom: Math.max(bottomInset, 8) }]}>
       <View style={styles.tabBar}>
         {state.routes.map((route: any, index: number) => {
           const isFocused = state.index === index;
@@ -41,7 +44,11 @@ function PillTabBar({ state, descriptors, navigation }: any) {
               accessibilityRole="tab"
               accessibilityState={{ selected: isFocused }}
             >
-              <Text style={[styles.tabLabel, isFocused && styles.tabLabelActive]}>
+              <Text
+                style={[styles.tabLabel, isFocused && styles.tabLabelActive]}
+                numberOfLines={1}
+                maxFontSizeMultiplier={1.3}
+              >
                 {label}
               </Text>
             </TouchableOpacity>
@@ -148,21 +155,21 @@ const useStyles = makeStyles((theme) => ({
   tabBarWrapper: {
     backgroundColor: theme.colors.backgroundEnd,
     paddingHorizontal: theme.spacing.md,
-    paddingBottom: theme.spacing.md,
-    paddingTop: theme.spacing.sm,
+    paddingTop: 2,
   },
   tabBar: {
     flexDirection: "row",
     backgroundColor: theme.colors.surfaceAlt,
     borderRadius: theme.radius.pill,
-    padding: 4,
-    gap: 4,
+    padding: 3,
+    gap: 3,
   },
   tab: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
     minHeight: 44,
+    paddingHorizontal: 4,
     borderRadius: theme.radius.pill,
   },
   tabActive: {
@@ -171,8 +178,8 @@ const useStyles = makeStyles((theme) => ({
   tabLabel: {
     color: theme.colors.textSecondary,
     fontSize: 12,
-    fontWeight: "600",
-    letterSpacing: 1.2,
+    fontWeight: "700",
+    letterSpacing: 0.8,
   },
   tabLabelActive: {
     color: theme.colors.surface,

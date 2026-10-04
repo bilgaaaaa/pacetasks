@@ -128,7 +128,7 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    minHeight: 60,
+    minHeight: 56,
     paddingVertical: 10,
     paddingLeft: theme.spacing.md,
     paddingRight: 10,
@@ -150,7 +150,7 @@ const useStyles = makeStyles((theme) => ({
   },
   // Same width on every row so the destinations line up in one column.
   pill: {
-    width: 116,
+    minWidth: 112,
     justifyContent: "space-between",
     backgroundColor: theme.colors.surface,
     minHeight: 36,

@@ -115,8 +115,7 @@ export function SettingsScreen({ userId, session }: Props) {
     >
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.content}>
-          <Text style={styles.eyebrow}>SETTINGS</Text>
-          <Text style={styles.headerTitle}>Make it yours</Text>
+          <Text style={styles.headerTitle} accessibilityRole="header">Settings</Text>
 
           {error && <Text style={styles.errorText}>{error}</Text>}
 
@@ -393,15 +392,10 @@ const useStyles = makeStyles((theme) => ({
     marginTop: theme.spacing.xl,
   },
   content: {
-    padding: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.sm,
+    paddingBottom: theme.spacing.xl,
     gap: theme.spacing.md,
-  },
-  eyebrow: {
-    color: theme.colors.textSecondary,
-    fontSize: theme.typography.eyebrow.fontSize,
-    fontWeight: theme.typography.eyebrow.fontWeight,
-    letterSpacing: theme.typography.eyebrow.letterSpacing,
-    marginBottom: -theme.spacing.sm,
   },
   headerTitle: {
     color: theme.colors.textPrimary,
@@ -429,7 +423,7 @@ const useStyles = makeStyles((theme) => ({
     flex: 1,
     padding: theme.spacing.sm,
     gap: theme.spacing.sm,
-    borderRadius: 18,
+    borderRadius: theme.radius.md,
     borderWidth: 2,
     borderColor: "transparent",
     backgroundColor: theme.colors.surface,
@@ -439,7 +433,7 @@ const useStyles = makeStyles((theme) => ({
   },
   themePreview: {
     height: 72,
-    borderRadius: 12,
+    borderRadius: theme.radius.sm,
     overflow: "hidden",
     flexDirection: "row",
   },
@@ -512,7 +506,7 @@ const useStyles = makeStyles((theme) => ({
     minHeight: 56,
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: theme.spacing.sm,
-    borderRadius: 14,
+    borderRadius: theme.radius.md,
   },
   radioRowActive: {
     backgroundColor: theme.colors.surfaceAlt,

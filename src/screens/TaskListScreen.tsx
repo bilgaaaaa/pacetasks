@@ -5,6 +5,7 @@ import {
   RefreshControl,
   SafeAreaView,
   SectionList,
+  StyleSheet,
   Text,
   TouchableOpacity,
   View,
@@ -222,12 +223,14 @@ export function TaskListScreen({ userId }: Props) {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <View style={styles.headerTop}>
-            <Text style={styles.eyebrow}>{greetingEyebrow()}</Text>
+            <View style={styles.headerTitles}>
+              <Text style={styles.eyebrow} numberOfLines={1}>{greetingEyebrow()}</Text>
+              <Text style={styles.title} accessibilityRole="header">Today</Text>
+            </View>
             <TouchableOpacity onPress={openMenu} style={styles.menuButton} accessibilityLabel="List options">
-              <Ionicons name="ellipsis-horizontal" size={18} color={theme.colors.textSecondary} />
+              <Ionicons name="ellipsis-horizontal" size={20} color={theme.colors.textSecondary} />
             </TouchableOpacity>
           </View>
-          <Text style={styles.title}>Today</Text>
           <Text style={styles.summary}>
             <Text style={styles.summaryStrong}>{summaryText}</Text>
             {summary.quickWinCount > 0 &&
@@ -236,33 +239,6 @@ export function TaskListScreen({ userId }: Props) {
               } minutes or less.`}
           </Text>
 
-          <View style={styles.helpRow}>
-            <TouchableOpacity onPress={() => setDoNowOpen(true)} style={styles.helpButton} accessibilityRole="button">
-              <Text style={styles.helpButtonText}>What can I do now?</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setOneThingOpen(true)} style={styles.helpButton} accessibilityRole="button">
-              <Text style={styles.helpButtonText}>Tell me what to do</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.groupSwitch} accessibilityRole="radiogroup" accessibilityLabel="Group tasks by">
-            {GROUP_BY_OPTIONS.map((option) => {
-              const isActive = appearance.groupBy === option;
-              return (
-                <TouchableOpacity
-                  key={option}
-                  style={[styles.groupOption, isActive && styles.groupOptionActive]}
-                  onPress={() => updateAppearance({ groupBy: option })}
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected: isActive }}
-                >
-                  <Text style={[styles.groupOptionText, isActive && styles.groupOptionTextActive]}>
-                    {GROUP_BY_LABELS[option].short}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
         </View>
 
         {error && <Text style={styles.errorText}>{error}</Text>}
@@ -299,15 +275,52 @@ export function TaskListScreen({ userId }: Props) {
               </View>
             }
             ListHeaderComponent={
-              rollover.visible ? (
-                <RolloverCard
-                  choices={rollover.choices}
-                  saving={rollover.saving}
-                  onChangeDestination={rollover.setDestination}
-                  onApply={rollover.apply}
-                  onDismiss={rollover.dismiss}
-                />
-              ) : null
+              <>
+                {/* Helpers and grouping scroll away with the list so the
+                    tasks get the screen; only the title stays pinned. */}
+                <View style={styles.listControls}>
+                  <View style={styles.helpRow}>
+                    <TouchableOpacity onPress={() => setDoNowOpen(true)} style={styles.helpButton} accessibilityRole="button">
+                      <Text style={styles.helpButtonText}>What can I do now?</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => setOneThingOpen(true)} style={styles.helpButton} accessibilityRole="button">
+                      <Text style={styles.helpButtonText}>Tell me what to do</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={styles.groupSwitch} accessibilityRole="radiogroup" accessibilityLabel="Group tasks by">
+                    {GROUP_BY_OPTIONS.map((option) => {
+                      const isActive = appearance.groupBy === option;
+                      return (
+                        <TouchableOpacity
+                          key={option}
+                          style={[styles.groupOption, isActive && styles.groupOptionActive]}
+                          onPress={() => updateAppearance({ groupBy: option })}
+                          accessibilityRole="radio"
+                          accessibilityState={{ selected: isActive }}
+                        >
+                          <Text
+                            style={[styles.groupOptionText, isActive && styles.groupOptionTextActive]}
+                            numberOfLines={1}
+                            maxFontSizeMultiplier={1.4}
+                          >
+                            {GROUP_BY_LABELS[option].short}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+                {rollover.visible && (
+                  <RolloverCard
+                    choices={rollover.choices}
+                    saving={rollover.saving}
+                    onChangeDestination={rollover.setDestination}
+                    onApply={rollover.apply}
+                    onDismiss={rollover.dismiss}
+                  />
+                )}
+              </>
             }
             ListFooterComponent={
               <>
@@ -348,9 +361,9 @@ export function TaskListScreen({ userId }: Props) {
             accessibilityRole="button"
             accessibilityLabel="Add a task"
           >
-            <Text style={styles.addButtonText}>Add a task…</Text>
+            <Text style={styles.addButtonText} numberOfLines={1}>Add a task…</Text>
             <View style={styles.addButtonIcon}>
-              <Ionicons name="add" size={24} color={theme.colors.onAccent} />
+              <Ionicons name="add" size={22} color={theme.colors.onAccent} />
             </View>
           </TouchableOpacity>
           <TouchableOpacity
@@ -470,14 +483,19 @@ const useStyles = makeStyles((theme) => ({
   },
   header: {
     paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.md,
-    paddingBottom: theme.spacing.xs,
-    gap: 10,
+    paddingTop: theme.spacing.sm,
+    paddingBottom: theme.spacing.sm,
+    gap: 6,
   },
   headerTop: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-end",
+    gap: theme.spacing.sm,
+  },
+  headerTitles: {
+    flex: 1,
+    gap: 2,
   },
   eyebrow: {
     color: theme.colors.textSecondary,
@@ -488,7 +506,8 @@ const useStyles = makeStyles((theme) => ({
   menuButton: {
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: theme.radius.pill,
+    backgroundColor: theme.colors.surface,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -501,30 +520,40 @@ const useStyles = makeStyles((theme) => ({
   },
   summary: {
     color: theme.colors.textSecondary,
-    fontSize: theme.typography.body.fontSize,
-    lineHeight: 22,
+    fontSize: theme.typography.subhead.fontSize,
+    lineHeight: 20,
   },
   summaryStrong: {
     color: theme.colors.textPrimary,
   },
+  listControls: {
+    gap: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.sm,
+    paddingBottom: theme.spacing.md,
+  },
   helpRow: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: theme.spacing.sm,
   },
+  // Secondary helpers: a light tinted fill, no border, so the green add
+  // button stays the one strong action on the screen.
   helpButton: {
-    flex: 1,
+    flexGrow: 1,
+    flexBasis: 120,
     alignItems: "center",
     justifyContent: "center",
     minHeight: 44,
-    backgroundColor: theme.colors.surface,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    backgroundColor: theme.colors.quickFill,
     borderRadius: theme.radius.pill,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
   },
   helpButtonText: {
-    color: theme.colors.accentDark,
+    color: theme.colors.quickText,
     fontSize: theme.typography.footnote.fontSize,
     fontWeight: "700",
+    textAlign: "center",
   },
   groupSwitch: {
     flexDirection: "row",
@@ -532,11 +561,14 @@ const useStyles = makeStyles((theme) => ({
     padding: 4,
     borderRadius: theme.radius.pill,
     backgroundColor: theme.colors.surfaceAlt,
-    marginTop: theme.spacing.xs,
   },
+  // Grow from the label's own width so a longer word like "Category" gets
+  // the room it needs instead of every option getting an equal fifth.
   groupOption: {
-    flex: 1,
-    height: 36,
+    flexGrow: 1,
+    flexShrink: 1,
+    minHeight: 36,
+    paddingHorizontal: 6,
     borderRadius: theme.radius.pill,
     alignItems: "center",
     justifyContent: "center",
@@ -562,7 +594,8 @@ const useStyles = makeStyles((theme) => ({
   },
   listContent: {
     paddingHorizontal: theme.spacing.md,
-    paddingBottom: theme.spacing.lg,
+    paddingTop: theme.spacing.xs,
+    paddingBottom: theme.spacing.md,
   },
   sectionHeader: {
     flexDirection: "row",
@@ -603,55 +636,55 @@ const useStyles = makeStyles((theme) => ({
     textAlign: "center",
     paddingHorizontal: theme.spacing.lg,
   },
+  // Pinned under the list on its own solid strip with a hairline, so the
+  // list ends at a clear edge instead of sliding under a floating bar.
   captureBar: {
     flexDirection: "row",
+    alignItems: "center",
     gap: theme.spacing.sm,
     paddingHorizontal: theme.spacing.md,
-    paddingTop: theme.spacing.sm,
+    paddingTop: 10,
+    paddingBottom: 6,
+    backgroundColor: theme.colors.backgroundEnd,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: theme.colors.border,
   },
   addButton: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    height: 60,
+    gap: theme.spacing.sm,
+    minHeight: 52,
     paddingLeft: 20,
-    paddingRight: 8,
+    paddingRight: 6,
+    paddingVertical: 4,
     borderRadius: theme.radius.pill,
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    shadowColor: theme.colors.shadow,
-    shadowOpacity: 1,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 3,
   },
   addButtonText: {
+    flex: 1,
     color: theme.colors.textSecondary,
     fontSize: theme.typography.body.fontSize,
   },
   addButtonIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 40,
+    height: 40,
+    borderRadius: theme.radius.pill,
     backgroundColor: theme.colors.accentDark,
     alignItems: "center",
     justifyContent: "center",
   },
   micButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 52,
+    height: 52,
+    borderRadius: theme.radius.pill,
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: theme.colors.shadow,
-    shadowOpacity: 1,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 3,
   },
 }));
