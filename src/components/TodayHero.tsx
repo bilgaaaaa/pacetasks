@@ -148,7 +148,7 @@ const useStyles = makeStyles((theme) => ({
     overflow: "hidden",
     right: -78,
     top: -64,
-    opacity: 0.95,
+    opacity: 0.6,
   },
   blobB: {
     position: "absolute",
@@ -158,7 +158,7 @@ const useStyles = makeStyles((theme) => ({
     overflow: "hidden",
     right: -24,
     bottom: -52,
-    opacity: 0.9,
+    opacity: 0.55,
   },
   grain: {
     position: "absolute",
