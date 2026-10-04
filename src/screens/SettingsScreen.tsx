@@ -593,6 +593,7 @@ const useStyles = makeStyles((theme) => ({
     fontWeight: "700",
     fontSize: theme.typography.footnote.fontSize,
     fontFamily: theme.fonts.mono,
+    fontVariant: ["tabular-nums"],
   },
   segmentTextActive: {
     color: theme.colors.onAccent,

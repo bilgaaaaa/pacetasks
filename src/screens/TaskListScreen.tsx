@@ -582,6 +582,7 @@ const useStyles = makeStyles((theme) => ({
     color: theme.colors.textSecondary,
     fontSize: theme.typography.eyebrow.fontSize,
     fontFamily: theme.fonts.mono,
+    fontVariant: ["tabular-nums"],
   },
   footerLink: {
     alignItems: "center",

@@ -187,6 +187,7 @@ const useStyles = makeStyles((theme) => ({
     color: theme.colors.textSecondary,
     fontSize: theme.typography.footnote.fontSize,
     fontFamily: theme.fonts.mono,
+    fontVariant: ["tabular-nums"],
   },
   dayProgressTrack: {
     flexDirection: "row",

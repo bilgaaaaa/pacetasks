@@ -608,6 +608,7 @@ const useStyles = makeStyles((theme) => ({
     color: theme.colors.textSecondary,
     fontSize: theme.typography.footnote.fontSize,
     fontFamily: theme.fonts.mono,
+    fontVariant: ["tabular-nums"],
   },
   errorText: {
     color: theme.colors.danger,
@@ -678,6 +679,7 @@ const useStyles = makeStyles((theme) => ({
     color: theme.colors.textSecondary,
     fontSize: 12,
     fontFamily: theme.fonts.mono,
+    fontVariant: ["tabular-nums"],
   },
   tileTitle: {
     color: theme.colors.textPrimary,
@@ -727,6 +729,7 @@ const useStyles = makeStyles((theme) => ({
     color: theme.colors.textPrimary,
     fontSize: 16,
     fontFamily: theme.fonts.mono,
+    fontVariant: ["tabular-nums"],
   },
   durationUnit: {
     color: theme.colors.textSecondary,

@@ -346,6 +346,7 @@ const useStyles = makeStyles((theme) => ({
     color: theme.colors.textTertiary,
     fontSize: theme.typography.footnote.fontSize,
     fontFamily: theme.fonts.mono,
+    fontVariant: ["tabular-nums"],
   },
   confirmRow: {
     flexDirection: "row",

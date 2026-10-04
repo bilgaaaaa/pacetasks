@@ -1,9 +1,10 @@
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import type { RolloverDestination } from "@domain/rollover";
 import { RolloverChoice } from "../hooks/useRollover";
 import { destinationLabel, reasonLabel, ROLLOVER_DESTINATION_OPTIONS, rolloverTitle } from "../lib/rolloverCopy";
-import { makeStyles } from "../hooks/useTheme";
+import { makeStyles, useTheme } from "../hooks/useTheme";
 import { Button } from "./Button";
 import { DropdownPill } from "./DropdownPill";
 
@@ -19,32 +20,43 @@ interface Props {
 // task with the day PaceTasks would move it to, each changeable, accepted in one
 // tap. Purely presentational — the proposals come from useRollover.
 export function RolloverCard({ choices, saving, onChangeDestination, onApply, onDismiss }: Props) {
+  const { theme } = useTheme();
   const styles = useStyles();
   return (
     <View style={styles.card}>
-      <Text style={styles.eyebrow}>UNFINISHED</Text>
-      <Text style={styles.title}>{rolloverTitle(choices.length)}</Text>
-      <Text style={styles.subtitle}>Here's where I'd move them.</Text>
+      <View style={styles.header}>
+        <View style={styles.headerIcon}>
+          <Ionicons name="return-down-forward" size={18} color={theme.colors.accentDark} />
+        </View>
+        <View style={styles.headerText}>
+          <Text style={styles.eyebrow}>UNFINISHED</Text>
+          <Text style={styles.title}>{rolloverTitle(choices.length)}</Text>
+          <Text style={styles.subtitle}>Here's where I'd move them.</Text>
+        </View>
+      </View>
 
-      {choices.map((choice) => {
-        const reason = reasonLabel(choice.reason);
-        return (
-          <View key={choice.task.id} style={styles.row}>
-            <View style={styles.rowText}>
-              <Text style={styles.taskTitle} numberOfLines={2}>
-                {choice.task.title}
-              </Text>
-              {reason && <Text style={styles.reason}>{reason}</Text>}
+      <View style={styles.list}>
+        {choices.map((choice) => {
+          const reason = reasonLabel(choice.reason);
+          return (
+            <View key={choice.task.id} style={styles.row}>
+              <View style={styles.rowText}>
+                <Text style={styles.taskTitle} numberOfLines={2}>
+                  {choice.task.title}
+                </Text>
+                {reason && <Text style={styles.reason}>{reason}</Text>}
+              </View>
+              <DropdownPill
+                style={styles.pill}
+                label={destinationLabel(choice.destination)}
+                options={ROLLOVER_DESTINATION_OPTIONS}
+                value={choice.destination}
+                onChange={(destination) => onChangeDestination(choice.task.id, destination)}
+              />
             </View>
-            <DropdownPill
-              label={destinationLabel(choice.destination)}
-              options={ROLLOVER_DESTINATION_OPTIONS}
-              value={choice.destination}
-              onChange={(destination) => onChangeDestination(choice.task.id, destination)}
-            />
-          </View>
-        );
-      })}
+          );
+        })}
+      </View>
 
       <View style={styles.actions}>
         <Button
@@ -71,32 +83,57 @@ const useStyles = makeStyles((theme) => ({
     borderRadius: theme.radius.xl,
     padding: theme.spacing.md,
     marginBottom: theme.spacing.md,
+    gap: theme.spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+  },
+  headerIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: theme.radius.pill,
+    backgroundColor: theme.colors.quickFill,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerText: {
+    flex: 1,
+    gap: 2,
   },
   eyebrow: {
     color: theme.colors.accentDark,
-    fontSize: theme.typography.eyebrow.fontSize,
+    fontSize: 11,
     fontWeight: theme.typography.eyebrow.fontWeight,
     letterSpacing: theme.typography.eyebrow.letterSpacing,
   },
   title: {
     color: theme.colors.textPrimary,
-    fontSize: theme.typography.title.fontSize,
+    fontSize: 19,
     fontWeight: theme.typography.title.fontWeight,
     fontFamily: theme.typography.title.fontFamily,
-    marginTop: 2,
+    letterSpacing: theme.typography.title.letterSpacing,
   },
   subtitle: {
     color: theme.colors.textSecondary,
     fontSize: theme.typography.subhead.fontSize,
-    marginBottom: theme.spacing.sm,
+  },
+  // Each task sits on its own soft tile instead of between hairlines, so rows
+  // with and without a reason line still read as an even, aligned stack.
+  list: {
+    gap: theme.spacing.sm,
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
-    gap: theme.spacing.sm,
-    paddingVertical: theme.spacing.sm,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: theme.colors.border,
+    gap: 12,
+    minHeight: 60,
+    paddingVertical: 10,
+    paddingLeft: theme.spacing.md,
+    paddingRight: 10,
+    backgroundColor: theme.colors.surfaceAlt,
+    borderRadius: theme.radius.md,
   },
   rowText: {
     flex: 1,
@@ -104,17 +141,25 @@ const useStyles = makeStyles((theme) => ({
   },
   taskTitle: {
     color: theme.colors.textPrimary,
-    fontSize: theme.typography.body.fontSize,
+    fontSize: 15,
     fontWeight: "600",
   },
   reason: {
     color: theme.colors.textSecondary,
-    fontSize: theme.typography.footnote.fontSize,
+    fontSize: 12,
+  },
+  // Same width on every row so the destinations line up in one column.
+  pill: {
+    width: 116,
+    justifyContent: "space-between",
+    backgroundColor: theme.colors.surface,
+    minHeight: 36,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
   },
   actions: {
     flexDirection: "row",
     gap: theme.spacing.sm,
-    marginTop: theme.spacing.sm,
   },
   action: {
     flex: 1,

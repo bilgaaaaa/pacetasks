@@ -110,16 +110,23 @@ const spacing = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32 };
 
 const radius = { sm: 12, md: 18, lg: 24, xl: 28, pill: 999 };
 
-// No bundled font files: a system serif for screen titles and a system mono
-// for minutes/timers give the design's "display + numbers" contrast.
+// No bundled font files: one modern system sans (SF Pro / Roboto / Segoe UI)
+// everywhere, so titles, body and numbers read as a single family. Hierarchy
+// comes from weight and size; `mono` keeps its name for the minute/timer
+// styles, which line digits up with tabular figures instead of a mono face.
+const systemSans = Platform.select({
+  ios: "System",
+  android: "sans-serif",
+  default: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+});
 const fonts = {
-  display: Platform.select({ ios: "Georgia", android: "serif", default: "Georgia, serif" }),
-  mono: Platform.select({ ios: "Menlo", android: "monospace", default: "ui-monospace, Menlo, monospace" }),
+  display: systemSans,
+  mono: systemSans,
 };
 
 const typography = {
-  largeTitle: { fontSize: 38, fontWeight: "500" as const, fontFamily: fonts.display, letterSpacing: -0.5 },
-  title: { fontSize: 24, fontWeight: "500" as const, fontFamily: fonts.display },
+  largeTitle: { fontSize: 34, fontWeight: "700" as const, fontFamily: fonts.display, letterSpacing: -0.8 },
+  title: { fontSize: 22, fontWeight: "700" as const, fontFamily: fonts.display, letterSpacing: -0.4 },
   headline: { fontSize: 17, fontWeight: "600" as const },
   body: { fontSize: 16, fontWeight: "400" as const },
   subhead: { fontSize: 14, fontWeight: "400" as const },

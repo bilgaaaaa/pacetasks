@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Modal, Pressable, Text, TouchableOpacity, View } from "react-native";
+import { Modal, Pressable, StyleProp, Text, TouchableOpacity, View, ViewStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { makeStyles, useTheme } from "../hooks/useTheme";
 
@@ -13,19 +13,20 @@ interface Props<T> {
   options: Option<T>[];
   value: T;
   onChange: (value: T) => void;
+  style?: StyleProp<ViewStyle>; // e.g. a fixed width so pills line up down a list, or a fill that contrasts with the row
 }
 
 // A compact pill that opens a small choice dialog on tap, for a secondary
 // picker inside a row (e.g. where the rollover moves each task), so it takes
 // one tap to open instead of a permanently-visible row of chips.
-export function DropdownPill<T>({ label, options, value, onChange }: Props<T>) {
+export function DropdownPill<T>({ label, options, value, onChange, style }: Props<T>) {
   const { theme } = useTheme();
   const styles = useStyles();
   const [open, setOpen] = useState(false);
 
   return (
     <>
-      <TouchableOpacity style={styles.pill} onPress={() => setOpen(true)}>
+      <TouchableOpacity style={[styles.pill, style]} onPress={() => setOpen(true)}>
         <Text style={styles.pillText}>{label}</Text>
         <Ionicons name="chevron-down" size={14} color={theme.colors.textSecondary} />
       </TouchableOpacity>

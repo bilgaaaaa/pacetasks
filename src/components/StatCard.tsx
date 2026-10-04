@@ -41,6 +41,7 @@ const useStyles = makeStyles((theme) => ({
     color: theme.colors.textPrimary,
     fontSize: 28,
     fontFamily: theme.fonts.mono,
+    fontVariant: ["tabular-nums"],
     marginTop: theme.spacing.xs,
   },
   label: {
