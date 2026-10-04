@@ -80,7 +80,7 @@ function toAccountError(action: string, error: unknown): AccountError {
   return new AccountError(mapped, ERROR_MESSAGES[mapped]);
 }
 
-// Emails a six-digit code to prove the address: for sign-up it is the "confirm
+// Emails a one-time code to prove the address: for sign-up it is the "confirm
 // your email" of the current user, for sign-in a login code for an existing account.
 // Sign-up details travel in the user's metadata, so the profile can still be
 // created if the app is closed between sending the code and entering it.

@@ -51,7 +51,7 @@ interface Props {
 }
 
 // Full-screen sheet for creating an account or signing in, without a password:
-// details, then the six-digit code from the email, then done. Purely
+// details, then the code from the email, then done. Purely
 // presentational — every transition comes from useAccount.
 export function AccountSheet({
   visible,
@@ -191,7 +191,7 @@ export function AccountSheet({
                 value={state.code}
                 onChangeText={onChangeCode}
                 editable={phase === "code"}
-                maxLength={ACCOUNT_LIMITS.codeLength}
+                maxLength={ACCOUNT_LIMITS.codeMaxLength}
                 keyboardType="number-pad"
                 autoComplete="one-time-code"
                 textContentType="oneTimeCode"

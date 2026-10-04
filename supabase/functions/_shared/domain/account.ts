@@ -4,7 +4,10 @@
 export const ACCOUNT_LIMITS = {
   nameMaxLength: 50,
   emailMaxLength: 254,
-  codeLength: 6, // the one-time code Supabase emails
+  // The one-time code Supabase emails. Its length is a project setting ("Email OTP
+  // Length", 6 to 10 digits) the app cannot read, so any length in that range is accepted.
+  codeMinLength: 6,
+  codeMaxLength: 10,
 } as const;
 
 // Deliberately loose: one "@", a dot in the domain, no spaces. The real proof an
@@ -51,7 +54,7 @@ export function validateSignUp(input: SignUpInput): AccountFieldErrors {
   return errors;
 }
 
-// A code is exactly six digits; anything else is not worth a round trip.
+// A code is only digits, as many as Supabase may send; anything else is not worth a round trip.
 export function isCompleteCode(code: string): boolean {
-  return new RegExp(`^\\d{${ACCOUNT_LIMITS.codeLength}}$`).test(code);
+  return new RegExp(`^\\d{${ACCOUNT_LIMITS.codeMinLength},${ACCOUNT_LIMITS.codeMaxLength}}$`).test(code);
 }
