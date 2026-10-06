@@ -34,6 +34,23 @@ export function sheetSubtitle(mode: AccountMode): string {
     : "Enter your account's email and we'll send you a code. Tasks on this phone that aren't in your account stay behind.";
 }
 
+// Between the email form and the sign-in providers.
+export const PROVIDER_DIVIDER_LABEL = "or";
+
+// Under the Apple button: what happens to this phone's tasks, which differs by mode.
+export function appleHint(mode: AccountMode): string {
+  return mode === "sign_up"
+    ? "Your tasks stay with you. If your Apple ID already has a PaceTasks account, that account opens instead."
+    : "Opens the account made with your Apple ID. If there isn't one yet, it creates one and keeps this phone's tasks.";
+}
+
+// The email an account shows on its card; Apple can hide the real one behind a relay address.
+const APPLE_RELAY_DOMAIN = "@privaterelay.appleid.com";
+export function accountEmailLabel(email: string | null): string {
+  if (!email) return "Signed in";
+  return email.endsWith(APPLE_RELAY_DOMAIN) ? "Signed in with Apple (email hidden)" : email;
+}
+
 export function switchModeLabel(mode: AccountMode): string {
   return mode === "sign_up" ? "I already have an account" : "Create a new account instead";
 }
@@ -53,7 +70,7 @@ export const MARKETING_CONSENT_HINT = "Optional. You can change this any time in
 export const PRIVACY_POLICY_LABEL = "Privacy policy";
 export const SUPPORT_LABEL = "Help and support";
 // Shown where name and email are collected, so the policy is one tap away before signing up.
-export const SIGN_UP_PRIVACY_NOTE = "Your name and email are used only for your account.";
+export const SIGN_UP_PRIVACY_NOTE = "Your name and email are used only for your account, whether you type them or Apple shares them.";
 
 // --- Deleting the account (or, before sign-up, this phone's data) ---
 

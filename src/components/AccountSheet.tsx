@@ -15,6 +15,7 @@ import { ACCOUNT_LIMITS, isCompleteCode, normalizeEmail } from "@domain/account"
 import type { AccountField } from "@domain/account";
 import type { AccountMode } from "../lib/accountApi";
 import {
+  appleHint,
   codePrompt,
   doneMessage,
   fieldErrorLabel,
@@ -22,6 +23,7 @@ import {
   MARKETING_CONSENT_HINT,
   MARKETING_CONSENT_LABEL,
   PRIVACY_POLICY_LABEL,
+  PROVIDER_DIVIDER_LABEL,
   sheetSubtitle,
   SIGN_UP_PRIVACY_NOTE,
   sheetTitle,
@@ -29,6 +31,7 @@ import {
 } from "../lib/accountCopy";
 import { AccountState } from "../lib/accountState";
 import { makeStyles, useTheme } from "../hooks/useTheme";
+import { AppleSignInButton } from "./AppleSignInButton";
 import { Button } from "./Button";
 import { ErrorBanner } from "./ErrorBanner";
 import { TextField } from "./TextField";
@@ -38,12 +41,14 @@ interface Props {
   state: AccountState;
   profileFirstName: string | null; // for the greeting after signing in
   resending: boolean;
+  appleAvailable: boolean; // this phone can Sign in with Apple
   onChangeField: (field: AccountField, value: string) => void;
   onChangeMarketingOptIn: (value: boolean) => void;
   onChangeCode: (code: string) => void;
   onChangeMode: (mode: AccountMode) => void;
   onSubmit: () => void;
   onVerify: () => void;
+  onContinueWithApple: () => void;
   onResendCode: () => void;
   onEditEmail: () => void;
   onOpenPrivacyPolicy: () => void;
@@ -51,19 +56,21 @@ interface Props {
 }
 
 // Full-screen sheet for creating an account or signing in, without a password:
-// details, then the code from the email, then done. Purely
+// details, then the code from the email, then done; or one tap on Apple's button. Purely
 // presentational — every transition comes from useAccount.
 export function AccountSheet({
   visible,
   state,
   profileFirstName,
   resending,
+  appleAvailable,
   onChangeField,
   onChangeMarketingOptIn,
   onChangeCode,
   onChangeMode,
   onSubmit,
   onVerify,
+  onContinueWithApple,
   onResendCode,
   onEditEmail,
   onOpenPrivacyPolicy,
@@ -73,7 +80,7 @@ export function AccountSheet({
   const styles = useStyles();
   const { mode, phase, fieldErrors } = state;
   const isSignUp = mode === "sign_up";
-  const isFormPhase = phase === "form" || phase === "sending";
+  const isFormPhase = phase === "form" || phase === "sending" || phase === "connecting";
   const isCodePhase = phase === "code" || phase === "verifying";
   const errorFor = (field: AccountField) => {
     const issue = fieldErrors[field];
@@ -172,12 +179,30 @@ export function AccountSheet({
               <Button
                 label={phase === "sending" ? "Sending the code…" : "Email me a code"}
                 loading={phase === "sending"}
+                disabled={phase === "connecting"}
                 onPress={onSubmit}
               />
+
+              {appleAvailable && (
+                <>
+                  <View style={styles.divider}>
+                    <View style={styles.dividerLine} />
+                    <Text style={styles.hint}>{PROVIDER_DIVIDER_LABEL}</Text>
+                    <View style={styles.dividerLine} />
+                  </View>
+                  <AppleSignInButton
+                    loading={phase === "connecting"}
+                    disabled={phase === "sending"}
+                    onPress={onContinueWithApple}
+                  />
+                  <Text style={[styles.hint, styles.centered]}>{appleHint(mode)}</Text>
+                </>
+              )}
+
               <Button
                 label={switchModeLabel(mode)}
                 variant="secondary"
-                disabled={phase === "sending"}
+                disabled={phase !== "form"}
                 onPress={() => onChangeMode(isSignUp ? "sign_in" : "sign_up")}
               />
             </ScrollView>
@@ -230,7 +255,7 @@ export function AccountSheet({
                 <Ionicons name="checkmark" size={32} color={theme.colors.onAccent} />
               </View>
               <Text style={styles.doneText}>
-                {doneMessage(mode, isSignUp ? state.firstName.trim() || null : profileFirstName)}
+                {doneMessage(mode, (isSignUp && state.firstName.trim()) || profileFirstName)}
               </Text>
               <Button style={styles.doneButton} label="Close" onPress={onClose} />
             </View>
@@ -307,6 +332,19 @@ const useStyles = makeStyles((theme) => ({
     color: theme.colors.textTertiary,
     fontSize: theme.typography.footnote.fontSize,
     fontWeight: "400",
+  },
+  divider: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.spacing.sm,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: theme.colors.border,
+  },
+  centered: {
+    textAlign: "center",
   },
   privacyNote: {
     gap: theme.spacing.xs,

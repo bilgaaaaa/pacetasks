@@ -60,6 +60,29 @@ describe("accountState", () => {
     });
   });
 
+  it("waits on a sign-in provider, then finishes in the mode the provider reported", () => {
+    const connecting = accountReducer(filled, { type: "providerStarted" });
+    expect(connecting).toMatchObject({ phase: "connecting", error: null });
+
+    // The Apple ID already had an account, so a sign-up attempt ends as a sign-in.
+    expect(accountReducer(connecting, { type: "verified", mode: "sign_in" })).toMatchObject({
+      phase: "done",
+      mode: "sign_in",
+    });
+    expect(accountReducer(connecting, { type: "verified" })).toMatchObject({ phase: "done", mode: "sign_up" });
+  });
+
+  it("returns to the form, keeping what was typed, when the provider is closed or fails", () => {
+    const connecting = accountReducer({ ...filled, error: "old" }, { type: "providerStarted" });
+
+    expect(accountReducer(connecting, { type: "providerCanceled" })).toMatchObject({
+      phase: "form",
+      error: null,
+      email: "bilge@example.com",
+    });
+    expect(accountReducer(connecting, { type: "failed", message: "x" })).toMatchObject({ phase: "form", error: "x" });
+  });
+
   it("stays on the code step when asking for a new code fails", () => {
     const inCode: AccountState = { ...filled, phase: "code", code: "12" };
 

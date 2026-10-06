@@ -84,7 +84,7 @@ you compete only with your own past pace.
 
 - **Account (optional)** — the app works with no login. Creating an account
   asks for first name, last name and email, then for the code emailed
-  to you: no password. Your existing tasks stay. Email tips are a separate
+  to you: no password. On iPhone, **Continue with Apple** does the same in one tap. Your existing tasks stay. Email tips are a separate
   switch that starts off.
 - **Look** — theme (Match phone, Light, Dark) and colour theme (Sage, Pastel
   Night, Sunny). Sage also lets you pick an accent. These are saved on the phone.
@@ -152,6 +152,23 @@ after `npm install`.
    only. Set a mail service before real users sign up.
 4. **Authentication → Sign In / Providers → Email → Email OTP Length**: any
    value works (the app accepts 6 to 10 digits); 6 is the easiest to type.
+
+### Sign in with Apple
+
+Shown on iPhone only, under the email form. The app asks iOS for an Apple ID
+token and Supabase verifies it; nothing is stored on the phone.
+
+1. **Authentication → Sign In / Providers → Apple**: enable it and fill only
+   **Client IDs** with `com.pacetasks.app,host.exp.Exponent`. The first is the
+   app, the second is Expo Go (for testing; remove it before the App Store
+   release). The secret key field stays empty: it is only for sign-in on the web.
+2. **Authentication → Sign In / Providers → User Signups**: turn on **Allow
+   manual linking**. It lets the Apple ID attach to the anonymous user the phone
+   already has, which is what keeps the tasks made before signing up.
+
+It works in Expo Go without an Apple Developer Program membership. A real build
+needs the membership, with the **Sign in with Apple** capability on the app ID
+(`app.json` already asks for it).
 
 ## Brain Dump backend
 

@@ -54,6 +54,19 @@ export function validateSignUp(input: SignUpInput): AccountFieldErrors {
   return errors;
 }
 
+export interface ProviderName {
+  firstName: string;
+  lastName: string;
+}
+
+// The name a sign-in provider (Apple, Google) hands over, made to fit a profile.
+// Providers may send only part of a name, or none after the first sign-in: then there is no name.
+export function providerName(givenName: string | null | undefined, familyName: string | null | undefined): ProviderName | null {
+  const firstName = (givenName ?? "").trim().slice(0, ACCOUNT_LIMITS.nameMaxLength).trim();
+  const lastName = (familyName ?? "").trim().slice(0, ACCOUNT_LIMITS.nameMaxLength).trim();
+  return firstName && lastName ? { firstName, lastName } : null;
+}
+
 // A code is only digits, as many as Supabase may send; anything else is not worth a round trip.
 export function isCompleteCode(code: string): boolean {
   return new RegExp(`^\\d{${ACCOUNT_LIMITS.codeMinLength},${ACCOUNT_LIMITS.codeMaxLength}}$`).test(code);
