@@ -1,7 +1,7 @@
 import React from "react";
 import { Switch, Text, View } from "react-native";
 import type { AccountMode, Profile } from "../lib/accountApi";
-import { MARKETING_CONSENT_LABEL } from "../lib/accountCopy";
+import { accountEmailLabel, MARKETING_CONSENT_LABEL } from "../lib/accountCopy";
 import { makeStyles, useTheme } from "../hooks/useTheme";
 import { Button } from "./Button";
 import { ErrorBanner } from "./ErrorBanner";
@@ -55,7 +55,7 @@ export function AccountCard({
   return (
     <View style={styles.card}>
       <Text style={styles.title}>{profile ? `${profile.first_name} ${profile.last_name}` : "Your account"}</Text>
-      <Text style={styles.subtitle}>{email}</Text>
+      <Text style={styles.subtitle}>{accountEmailLabel(email)}</Text>
 
       {profile && (
         <View style={styles.consentRow}>
