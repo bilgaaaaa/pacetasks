@@ -25,7 +25,7 @@ import { useWeeklyReset } from "../hooks/useWeeklyReset";
 import { DEFAULT_SETTINGS } from "../lib/settingsApi";
 import { computeStats } from "../lib/stats";
 import { filterTodayTasks, groupTodayTasks, summarizePending, TodayFilter } from "../lib/taskSections";
-import { emptyFilterMessage, totalsLine } from "../lib/todayCopy";
+import { emptyFilterMessage, greetingForHour, totalsLine } from "../lib/todayCopy";
 import { heroMessage } from "../lib/heroCopy";
 import { buildWeek } from "../lib/weekStrip";
 import { selectUsuals } from "../lib/taskRhythm";
@@ -61,16 +61,11 @@ interface ListSection {
 
 
 // Header: a small date label ("SUNDAY · OCTOBER 4") over the greeting
-// ("Good morning").
+// ("Good morning", from greetingForHour).
 function dateEyebrow(now: Date): string {
   const day = now.toLocaleDateString("en-US", { weekday: "long" });
   const date = now.toLocaleDateString("en-US", { month: "long", day: "numeric" });
   return `${day} · ${date}`.toUpperCase();
-}
-
-function greeting(now: Date): string {
-  const hour = now.getHours();
-  return hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
 }
 
 // Home screen: today's tasks split into the sections the user picked (all in
@@ -104,7 +99,14 @@ export function TaskListScreen({ userId }: Props) {
   const workStartHour = settings?.work_start_hour ?? DEFAULT_SETTINGS.work_start_hour;
   const workEndHour = settings?.work_end_hour ?? DEFAULT_SETTINGS.work_end_hour;
   const doNow = useDoNow(tasks, workStartHour, workEndHour);
-  const oneThing = useOneThing({ tasks, energy: doNow.energy, workStartHour, workEndHour, onComplete: complete });
+  const oneThing = useOneThing({
+    tasks,
+    energy: doNow.energy,
+    workStartHour,
+    workEndHour,
+    quickWinMinutes: appearance.quickWinMinutes,
+    onComplete: complete,
+  });
   const rollover = useRollover({ tasks, onApply: updateMany });
   const weeklyReset = useWeeklyReset({ tasks, onUpdate: update, onRemove: remove });
   const sheetHandoff = useSheetHandoff();
@@ -237,7 +239,7 @@ export function TaskListScreen({ userId }: Props) {
                 {dateEyebrow(now)}
               </Text>
               <Text style={styles.title} accessibilityRole="header">
-                {greeting(now)}
+                {greetingForHour(now.getHours())}
               </Text>
             </View>
             <TouchableOpacity onPress={openMenu} style={styles.menuButton} accessibilityLabel="List options">

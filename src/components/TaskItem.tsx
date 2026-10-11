@@ -6,14 +6,18 @@ import { makeStyles, useTheme } from "../hooks/useTheme";
 import { Task } from "../lib/types";
 import { categoryColor, getCategory } from "../lib/categories";
 import { formatDueLabel } from "../lib/dueLabel";
-import { TIMING_LABELS, isQuickWin } from "../lib/taskSections";
+import { TIMING_LABELS } from "../lib/taskSections";
 import { toLocalDateKey } from "@domain/dates";
+import { isQuickWin } from "@domain/todayTasks";
 
 function formatClock(totalSeconds: number): string {
   const m = Math.floor(totalSeconds / 60);
   const s = totalSeconds % 60;
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
+
+// While the minutes stepper narrows the row, the detail line may wrap instead of being cut off.
+const CONFIRMING_META_LINES = 2;
 
 interface Props {
   task: Task;
@@ -168,7 +172,7 @@ export function TaskItem({
         <Text style={styles.title} numberOfLines={2}>{task.title}</Text>
         <View style={styles.metaRow}>
           {categoryDot}
-          <Text style={styles.meta} numberOfLines={1}>
+          <Text style={styles.meta} numberOfLines={isConfirming ? CONFIRMING_META_LINES : 1}>
             {dueLabel && (
               <Text style={dueLabel === "Overdue" ? styles.metaOverdue : styles.metaDue}>
                 {dueLabel}

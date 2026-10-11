@@ -1,6 +1,17 @@
-import { emptyFilterMessage, quickWinsMessage, totalsLine } from "../todayCopy";
+import { emptyFilterMessage, greetingForHour, quickWinsMessage, totalsLine } from "../todayCopy";
 
 describe("todayCopy", () => {
+  it("greets by the part of the day, and never says good morning at night", () => {
+    expect(greetingForHour(5)).toBe("Good morning");
+    expect(greetingForHour(11)).toBe("Good morning");
+    expect(greetingForHour(12)).toBe("Good afternoon");
+    expect(greetingForHour(17)).toBe("Good afternoon");
+    expect(greetingForHour(18)).toBe("Good evening");
+    expect(greetingForHour(23)).toBe("Good evening");
+    expect(greetingForHour(0)).toBe("Good evening");
+    expect(greetingForHour(4)).toBe("Good evening");
+  });
+
   it("headlines quick wins only when there are some", () => {
     expect(quickWinsMessage(0)).toBeNull();
     expect(quickWinsMessage(1)).toBe("1 quick win available");

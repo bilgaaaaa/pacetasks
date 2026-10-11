@@ -13,7 +13,7 @@ import type { AiTaskCandidate, BrainDumpAiResult, DateExpression, TimeOfDay } fr
 // was a date, time or duration.
 
 // Stored with each session in place of a model name; bump when the rules change.
-export const RULES_PARSER_VERSION = "rules-3";
+export const RULES_PARSER_VERSION = "rules-4";
 
 type Language = "en" | "it" | "tr";
 
@@ -186,10 +186,17 @@ const REMARK_OPENING = new RegExp(
 // Past tense alone is not enough: "toplantı" and "kahvaltı" end the same way.
 const TURKISH_REMARK = words("[çc]ok\\s+\\p{L}+(?:d[ıiuü]|t[ıiuü])(?:m|k)?");
 
+// A household bill in the three languages. English needs a determiner or the kind
+// of bill, so "call Bill" stays a person; "fattura" (an invoice) is left out on purpose.
+const BILL_WORDS =
+  "bills|(?:the|my|a|this|that)\\s+(?:\\p{L}+\\s+)?bill" +
+  "|(?:phone|electric|electricity|gas|water|internet|power|energy)\\s+bill" +
+  "|bolletta|bollette|fatura\\p{L}*";
+
 const CATEGORY_KEYWORDS: Record<CategoryId, RegExp> = {
   work: words("emails?|mail|meeting|report|client|boss|deploy|review|lavoro|riunione|cliente|toplant[ıi]\\p{L}*|iş\\p{L}*|sunum\\p{L}*"),
   shopping: words("buy|groceries|shop|order|comprare|compra|spesa|market|sipari[şs]\\p{L}*|al[ıi][şs]veri[şs]\\p{L}*|sat[ıi]n al"),
-  home: words("clean|laundry|dishes|vacuum|pulire|bucato|lavatrice|piatti|temizle\\p{L}*|[çc]ama[şs][ıi]r\\p{L}*|bula[şs][ıi]k\\p{L}*"),
+  home: words(`clean|laundry|dishes|vacuum|pulire|bucato|lavatrice|piatti|temizle\\p{L}*|[çc]ama[şs][ıi]r\\p{L}*|bula[şs][ıi]k\\p{L}*|${BILL_WORDS}`),
   health: words("doctor|dentist|gym|run|workout|pharmacy|medico|dentista|palestra|farmacia|doktor\\p{L}*|di[şs][çc]i\\p{L}*|spor\\p{L}*|eczane\\p{L}*"),
   personal: words("call|mom|dad|birthday|gift|read|chiamare|mamma|pap[àa]|compleanno|regalo|ara|anne\\p{L}*|baba\\p{L}*|do[ğg]um g[üu]n[üu]"),
 };

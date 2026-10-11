@@ -11,13 +11,14 @@ interface Options {
   energy: EnergyLevel; // the energy last picked in "What can I do now?"; it only shapes the order
   workStartHour: number;
   workEndHour: number;
+  quickWinMinutes: number; // the user's quick-win limit; tasks at or under it are offered first
   onComplete: (taskId: string, actualMinutes: number) => Promise<boolean>; // resolves false when saving failed
 }
 
 // Drives One Thing mode: always exactly one task on screen, the best one to do
-// right now. "Not now" passes on it for this session; completing it logs the
+// right now (a quick win while there is one). "Not now" passes on it for this session; completing it logs the
 // real minutes, then offers the next one.
-export function useOneThing({ tasks, energy, workStartHour, workEndHour, onComplete }: Options) {
+export function useOneThing({ tasks, energy, workStartHour, workEndHour, quickWinMinutes, onComplete }: Options) {
   const [skippedTaskIds, setSkippedTaskIds] = useState<ReadonlySet<string>>(new Set());
   const [confirmingTask, setConfirmingTask] = useState<Task | null>(null); // pinned so a live list update can't swap it mid-confirm
   const [minutes, setMinutes] = useState(0);
@@ -28,8 +29,8 @@ export function useOneThing({ tasks, energy, workStartHour, workEndHour, onCompl
   const todayKey = toLocalDateKey(new Date());
   const currentTiming = getCurrentTiming(workStartHour, workEndHour);
   const queue = useMemo(
-    () => selectOneThingQueue(tasks, { todayKey, energy, currentTiming }, skippedTaskIds),
-    [tasks, todayKey, energy, currentTiming, skippedTaskIds]
+    () => selectOneThingQueue(tasks, { todayKey, energy, currentTiming, quickWinMinutes }, skippedTaskIds),
+    [tasks, todayKey, energy, currentTiming, quickWinMinutes, skippedTaskIds]
   );
   const task = queue[0] ?? null;
   const phase: OneThingPhase = completedTitle !== null ? "completed" : confirmingTask ? "confirming" : "choosing";

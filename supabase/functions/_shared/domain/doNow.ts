@@ -1,6 +1,6 @@
 import { ENERGY_LEVELS } from "./task.ts";
 import type { EnergyLevel, Task, TaskPriority, TaskTiming } from "./task.ts";
-import { isPendingToday } from "./todayTasks.ts";
+import { isPendingToday, isQuickWin } from "./todayTasks.ts";
 
 // "What can I do now?" and One Thing mode: given the time and energy the user
 // has right now, picks the tasks worth doing. Pure and shared, so both screens
@@ -19,6 +19,10 @@ export interface DoNowRankContext {
 
 export interface DoNowContext extends DoNowRankContext {
   availableMinutes: number;
+}
+
+export interface OneThingContext extends DoNowRankContext {
+  quickWinMinutes: number; // the user's quick-win limit, the same one Today's hero and filter use
 }
 
 export interface DoNowSelection {
@@ -120,16 +124,21 @@ export function selectDoNowTasks(tasks: Task[], context: DoNowContext): DoNowSel
   return { plan, planMinutes, alternatives };
 }
 
-// One Thing mode: every task that could be started today, best first, minus the
-// ones the user said "not now" to. Time and energy never hide a task here, since
-// the point is a single answer; energy only shapes the order.
+// One Thing mode: every task that could be started today, minus the ones the user
+// said "not now" to. Quick wins lead, because Today's hero promises a small start
+// right above the button that opens this; after them comes what matters most.
+// Both groups keep the shared ranking. Time and energy never hide a task here,
+// since the point is a single answer; energy only shapes the order.
 export function selectOneThingQueue(
   tasks: Task[],
-  context: DoNowRankContext,
+  context: OneThingContext,
   skippedTaskIds: ReadonlySet<string>
 ): Task[] {
-  return rankTasks(
+  const ranked = rankTasks(
     tasks.filter((task) => isDoableToday(task, context.todayKey) && !skippedTaskIds.has(task.id)),
     context
   );
+  const quickWins = ranked.filter((task) => isQuickWin(task, context.quickWinMinutes));
+  const others = ranked.filter((task) => !isQuickWin(task, context.quickWinMinutes));
+  return [...quickWins, ...others];
 }

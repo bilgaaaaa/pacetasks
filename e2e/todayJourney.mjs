@@ -5,6 +5,7 @@ import { runJourney } from "./harness.mjs";
 // Elements are found by the same labels and wording a person (or VoiceOver) meets.
 
 const NEW_TASK_TITLE = "Buy cat food";
+const QUICK_WIN_TITLE = "Pay the phone bill";
 const BRAIN_DUMP_TEXT = "Tomorrow call the vet, domani comprare il pane, cuma günü faturayı öde";
 
 const passed = await runJourney("today-journey", async ({ page, baseUrl, step, snapshot }) => {
@@ -40,6 +41,8 @@ const passed = await runJourney("today-journey", async ({ page, baseUrl, step, s
     await snapshot("Pick my next task chooser");
     await page.getByText("Decide for me").click();
     await page.getByText("ONE THING").waitFor();
+    // The hero promised a small start, so the first offer is the remaining quick win.
+    await page.getByText(QUICK_WIN_TITLE, { exact: true }).last().waitFor();
   });
 
   await step("Skip the suggestion and close", async () => {
@@ -56,6 +59,8 @@ const passed = await runJourney("today-journey", async ({ page, baseUrl, step, s
     await snapshot("Brain Dump text typed");
     await page.getByText("Sort it out").click();
     await page.getByText("Add 3 tasks").waitFor();
+    // The Turkish bill gets its day and its category, like the other two.
+    await page.getByText("Fri · 5 min · Home").waitFor();
   });
 
   await step("Add the Brain Dump tasks", async () => {
