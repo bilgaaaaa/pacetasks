@@ -1,14 +1,15 @@
-import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { Session } from "@supabase/supabase-js";
 import { isCompleteCode } from "@domain/account";
 import type { AccountField } from "@domain/account";
 import * as accountApi from "../lib/accountApi";
-import { AccountError, AccountMode, Profile } from "../lib/accountApi";
+import { AccountError, AccountMode, Profile, ProfileInput } from "../lib/accountApi";
 import { accountDeletionReducer, INITIAL_ACCOUNT_DELETION_STATE } from "../lib/accountDeletionState";
 import { accountReducer, formErrors, INITIAL_ACCOUNT_STATE } from "../lib/accountState";
+import { isAppleSignInAvailable } from "../lib/appleAuth";
 
 // Drives the account card and sheets: who is signed in, their profile, the
-// passwordless flow (details → emailed code → verified) and deleting the account.
+// passwordless flow (details → emailed code → verified, or Sign in with Apple) and deleting the account.
 // All transitions live in accountReducer and accountDeletionReducer; this hook
 // only performs the network calls around them.
 export function useAccount(session: Session | null) {
@@ -17,11 +18,22 @@ export function useAccount(session: Session | null) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [busy, setBusy] = useState(false); // a profile change, new code or sign-out is in flight
   const [cardError, setCardError] = useState<string | null>(null); // failures outside the sheet
+  const [appleAvailable, setAppleAvailable] = useState(false); // false until the phone says it supports Sign in with Apple
 
   const user = session?.user ?? null;
   const userId = user?.id;
-  const isSignedUp = Boolean(user && !user.is_anonymous && user.email);
+  const isSignedUp = Boolean(user && !user.is_anonymous); // an email stays unconfirmed, and the user anonymous, until its code is entered
   const metadata = user?.user_metadata;
+
+  useEffect(() => {
+    let active = true;
+    isAppleSignInAvailable().then((available) => {
+      if (active) setAppleAvailable(available);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Loads the profile of a signed-up user. A verified account without one (the
   // app was closed before it could be saved) gets it from the sign-up details.
@@ -61,16 +73,18 @@ export function useAccount(session: Session | null) {
   const setCode = useCallback((code: string) => dispatch({ type: "setCode", code }), []);
   const editEmail = useCallback(() => dispatch({ type: "editEmail" }), []);
 
-  const requestCode = useCallback(
+  // What the sign-up form holds; nothing when signing in, where the name and consent fields are hidden.
+  const signUpDetails = useMemo<ProfileInput | null>(
     () =>
-      accountApi.requestEmailCode(
-        state.mode,
-        state.email,
-        state.mode === "sign_up"
-          ? { first_name: state.firstName.trim(), last_name: state.lastName.trim(), marketing_opt_in: state.marketingOptIn }
-          : undefined
-      ),
-    [state.mode, state.email, state.firstName, state.lastName, state.marketingOptIn]
+      state.mode === "sign_up"
+        ? { first_name: state.firstName.trim(), last_name: state.lastName.trim(), marketing_opt_in: state.marketingOptIn }
+        : null,
+    [state.mode, state.firstName, state.lastName, state.marketingOptIn]
+  );
+
+  const requestCode = useCallback(
+    () => accountApi.requestEmailCode(state.mode, state.email, signUpDetails ?? undefined),
+    [state.mode, state.email, signUpDetails]
   );
 
   const submit = useCallback(async () => {
@@ -114,6 +128,23 @@ export function useAccount(session: Session | null) {
       dispatch({ type: "failed", message: toMessage(e) });
     }
   }, [state.phase, state.code, state.mode, state.email]);
+
+  // Apple proves the account itself, so there is no code step: the form goes straight to done.
+  const appleInFlight = useRef(false); // state updates are async, so a double tap needs its own guard
+  const continueWithApple = useCallback(async () => {
+    if (state.phase !== "form" || appleInFlight.current) return;
+    appleInFlight.current = true;
+    dispatch({ type: "providerStarted" });
+    try {
+      const outcome = await accountApi.signInWithApple(signUpDetails);
+      if (outcome === "canceled") dispatch({ type: "providerCanceled" });
+      else dispatch({ type: "verified", mode: outcome === "linked" ? "sign_up" : "sign_in" });
+    } catch (e) {
+      dispatch({ type: "failed", message: toMessage(e) });
+    } finally {
+      appleInFlight.current = false;
+    }
+  }, [state.phase, signUpDetails]);
 
   // Runs a change made from the card (not the sheet), showing a failure on the card.
   const runOnCard = useCallback(async (action: () => Promise<void>) => {
@@ -180,6 +211,7 @@ export function useAccount(session: Session | null) {
     profile,
     busy,
     cardError,
+    appleAvailable,
     open,
     setMode,
     setField,
@@ -189,6 +221,7 @@ export function useAccount(session: Session | null) {
     submit,
     resendCode,
     verify,
+    continueWithApple,
     changeMarketingOptIn,
     signOut,
     deletion,

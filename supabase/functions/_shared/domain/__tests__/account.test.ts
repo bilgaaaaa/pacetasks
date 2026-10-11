@@ -1,4 +1,4 @@
-import { emailIssue, isCompleteCode, normalizeEmail, validateSignUp } from "../account";
+import { emailIssue, isCompleteCode, normalizeEmail, providerName, validateSignUp } from "../account";
 
 describe("account rules", () => {
   it("accepts a complete sign-up", () => {
@@ -17,6 +17,14 @@ describe("account rules", () => {
 
   it("normalizes emails so the same address always matches", () => {
     expect(normalizeEmail("  Bilge@Example.COM ")).toBe("bilge@example.com");
+  });
+
+  it("fits a provider's name to a profile, or reports that there is none", () => {
+    expect(providerName(" Bilge ", "Özcan")).toEqual({ firstName: "Bilge", lastName: "Özcan" });
+    expect(providerName("x".repeat(60), "Özcan")).toEqual({ firstName: "x".repeat(50), lastName: "Özcan" });
+    expect(providerName("Bilge", null)).toBeNull(); // a profile needs both names
+    expect(providerName("  ", "Özcan")).toBeNull();
+    expect(providerName(undefined, undefined)).toBeNull(); // Apple only sends the name the first time
   });
 
   it("recognizes a complete code", () => {
