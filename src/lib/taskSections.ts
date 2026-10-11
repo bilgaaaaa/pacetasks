@@ -1,5 +1,5 @@
 import { CATEGORY_IDS } from "@domain/categories";
-import { TIMING_ORDER } from "@domain/todayTasks";
+import { isQuickWin, TIMING_ORDER } from "@domain/todayTasks";
 import { Task, TaskTiming } from "./types";
 import { GroupBy } from "./appearance";
 import { getCategory, NO_CATEGORY } from "./categories";
@@ -45,11 +45,6 @@ export function placeOfTask(task: Pick<Task, "category">): TaskPlace {
     default:
       return "anywhere";
   }
-}
-
-// A quick win is a short task with no fixed start time (fixed-time tasks are Focus sessions).
-export function isQuickWin(task: Pick<Task, "estimated_minutes" | "scheduled_time">, quickWinMinutes: number): boolean {
-  return !task.scheduled_time && task.estimated_minutes <= quickWinMinutes;
 }
 
 function sumMinutes(tasks: Task[]): number {

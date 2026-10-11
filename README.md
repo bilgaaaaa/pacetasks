@@ -33,7 +33,8 @@ you compete only with your own past pace.
   ("2 tasks take 5 minutes or less. One is a great start."), the totals, and
   one button: **Pick my next task**.
 - **Pick my next task** — opens two helpers. Neither uses AI.
-  - **Decide for me** shows a single task, picked by what matters most.
+  - **Decide for me** shows a single task: a quick win while there is one, then
+    whatever matters most.
     **Done** logs how long it took and offers the next one; **Not now** skips it.
   - **Fit my time** asks how much time (5 min to 1 hour) and energy (low, normal,
     high) you have, then lists the tasks that fit back to back.

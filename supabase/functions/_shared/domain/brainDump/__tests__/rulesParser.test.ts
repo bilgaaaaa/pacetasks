@@ -21,6 +21,14 @@ describe("parseBrainDumpWithRules", () => {
     expect(result.candidates[1].when).toMatchObject({ kind: "relative_day", offsetDays: 1 });
   });
 
+  it("files a bill under home in all three languages, but not a person called Bill", () => {
+    const result = parseBrainDumpWithRules(
+      "pay the phone bill\npagare la bolletta della luce\ncuma günü faturayı öde\ncall Bill tomorrow"
+    );
+
+    expect(result.candidates.map((c) => c.category)).toEqual(["home", "home", "home", "personal"]);
+  });
+
   it("flags vague dates and leaves too-short fragments unparsed", () => {
     const result = parseBrainDumpWithRules("fix the bike someday; ok");
 
