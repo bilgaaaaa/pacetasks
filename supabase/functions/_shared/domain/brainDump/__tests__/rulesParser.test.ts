@@ -368,15 +368,17 @@ describe("parseBrainDumpWithRules", () => {
 
   it("reads dotted, spoken and approximate times", () => {
     expect(
-      summarize("riunione 14.30\ncena alle 19 e 30\nriunione alle 9 e mezza\nsaat 3 gibi toplantı\nyarın akşam 7’de koşu")
+      summarize("dentista 16.30 martedì\ncena alle 19 e 30\nriunione alle 9 e mezza\nsaat 3 gibi toplantı\nyarın akşam 7’de koşu")
     ).toEqual([
-      ["Riunione", null, "14:30"],
+      ["Dentista", "2026-10-13", "16:30"],
       ["Cena", null, "19:30"],
       ["Riunione", null, "09:30"],
       ["Toplantı", null, "15:00"],
       ["Koşu", "2026-10-13", "19:00"],
     ]);
-    expect(summarize("pay 4.30 for coffee\npay 15.00 euros to Marco").map(([, , time]) => time)).toEqual([null, null]);
+    expect(
+      summarize("pay 4.30 for coffee\npay 15.00 euros to Marco\npagare bolletta 18.30").map(([, , time]) => time)
+    ).toEqual([null, null, null]);
   });
 
   it("leaves 'in 2 hours' in the title instead of reading it as a duration", () => {
@@ -473,6 +475,127 @@ describe("parseBrainDumpWithRules", () => {
       ["Water plants every monday", null, null],
       ["Ogni lunedì palestra", null, null],
       ["Her pazartesi spor", null, null],
+    ]);
+  });
+
+  it("decides the half of the day from context words before guessing", () => {
+    expect(
+      summarize(
+        "wake up at 6\nsveglia alle 6\nsaat 6'da kalk\ntrain at 5:30\ndinner at 8\ncena alle 8\nparty at 10\ngym at 7\npick up kids at 3:30"
+      ).map(([, , time]) => time)
+    ).toEqual(["06:00", "06:00", "06:00", "05:30", "20:00", "20:00", "22:00", "07:00", "03:30"]);
+  });
+
+  it("asks for a check when the half of the day was a guess", () => {
+    const result = parseBrainDumpWithRules("meeting at 3\npick up kids at 3:30\nmeeting at 3pm\nwake up at 6\nstandup at 9");
+
+    expect(result.candidates.map((c) => c.ambiguities)).toEqual([
+      [{ field: "scheduled_time", reason: '"at 3" could be morning or afternoon' }],
+      [{ field: "scheduled_time", reason: '"at 3:30" could be morning or afternoon' }],
+      [],
+      [],
+      [],
+    ]);
+  });
+
+  it("reads 'at N' as a time only where a time can stand", () => {
+    expect(summarize("look at 3 apartments\ndrop package at 12 Main Street\ntomorrow at 5 pick up kids\ndinner at 8 with Sara")).toEqual([
+      ["Look at 3 apartments", null, null],
+      ["Drop package at 12 Main Street", null, null],
+      ["Pick up kids", "2026-10-13", "17:00"],
+      ["Dinner with Sara", null, "20:00"],
+    ]);
+  });
+
+  it("reads deadlines written with 'prima del', 'before the' and '…dan önce'", () => {
+    const result = parseBrainDumpWithRules(
+      "pagare le tasse prima del 15 aprile\nconsegnare prima dell'8 marzo\nfinish report before the 15th\n15 nisandan önce vergiyi öde\nyarına kadar ödevi bitir\ncumadan önce raporu gönder"
+    );
+
+    expect(result.candidates.map((c) => [c.title, c.when?.kind === "vague" ? null : c.when?.relation])).toEqual([
+      ["Pagare le tasse", "by"],
+      ["Consegnare", "by"],
+      ["Finish report", "by"],
+      ["Vergiyi öde", "by"],
+      ["Ödevi bitir", "by"],
+      ["Raporu gönder", "by"],
+    ]);
+    expect(summarize("yarın önce süt al")).toEqual([["Önce süt al", "2026-10-13", null]]);
+  });
+
+  it("cuts the 'di' that led in a day", () => {
+    expect(
+      summarize("guardare la partita di domenica sera\ncomprare biglietti per il concerto di venerdì prossimo").map(
+        ([title]) => title
+      )
+    ).toEqual(["Guardare la partita", "Comprare biglietti per il concerto"]);
+  });
+
+  it("keeps the Turkish verb 'at' at the end of a title", () => {
+    const result = parseBrainDumpWithRules("yarın Ali'ye mail at\nbugün 3 mail at");
+
+    expect(result.candidates.map((c) => [c.title, c.language])).toEqual([
+      ["Ali'ye mail at", "tr"],
+      ["3 mail at", "tr"],
+    ]);
+  });
+
+  it("starts a new task at 'and I should…'", () => {
+    expect(summarize("I need to call the bank and I should buy milk").map(([title]) => title)).toEqual([
+      "I need to call the bank",
+      "I should buy milk",
+    ]);
+  });
+
+  it("reads rules through Turkish capitals and keeps them in the title", () => {
+    const result = parseBrainDumpWithRules("ACİL: faturayı gönder\nÖNEMLİ: sunumu bitir\nİSTANBUL bileti al PAZARTESİ");
+
+    expect(result.candidates.map((c) => [c.title, c.priority, c.when?.text ?? null])).toEqual([
+      ["Faturayı gönder", "high", null],
+      ["Sunumu bitir", "high", null],
+      ["İSTANBUL bileti al", null, "PAZARTESİ"],
+    ]);
+  });
+
+  it("drops list markers but keeps ordinals and 'p.m.' inside a sentence", () => {
+    const result = parseBrainDumpWithRules(
+      "1. buy milk\n2) call mom\n- water plants\n• pay rent\n[ ] book flights\nmeeting at 5 p.m. with Bob"
+    );
+
+    expect(result.unparsedFragments).toEqual([]);
+    expect(result.candidates.map((c) => [c.title, c.dueTime])).toEqual([
+      ["Buy milk", null],
+      ["Call mom", null],
+      ["Water plants", null],
+      ["Pay rent", null],
+      ["Book flights", null],
+      ["Meeting with Bob", "17:00"],
+    ]);
+    expect(summarize("5. bölümü oku")).toEqual([["5. bölümü oku", null, null]]);
+  });
+
+  it("adds up durations written in two parts", () => {
+    const result = parseBrainDumpWithRules(
+      "study 2 hours 30 min\n1 saat 30 dakika ders çalış\nstudiare 1 ora e 30 minuti\nrun 1h30\nwrite 1.5 hours\nlavorare 2 ore 15 minuti"
+    );
+
+    expect(result.candidates.map((c) => [c.title, c.estimatedDurationMinutes, c.dueTime])).toEqual([
+      ["Study", 150, null],
+      ["Ders çalış", 90, null],
+      ["Studiare", 90, null],
+      ["Run", 90, null],
+      ["Write", 90, null],
+      ["Lavorare", 135, null],
+    ]);
+  });
+
+  it("keeps a day name that is part of what the task is called", () => {
+    expect(summarize("cuma namazı\npazar kahvaltısı hazırla\nsunday roast with family\npranzo della domenica\ncuma toplantı")).toEqual([
+      ["Cuma namazı", "2026-10-16", null],
+      ["Pazar kahvaltısı hazırla", "2026-10-18", null],
+      ["Sunday roast with family", "2026-10-18", null],
+      ["Pranzo della domenica", "2026-10-18", null],
+      ["Toplantı", "2026-10-16", null],
     ]);
   });
 

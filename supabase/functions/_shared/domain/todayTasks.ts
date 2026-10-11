@@ -12,7 +12,7 @@ export interface TodayTasks {
 // A pending task belongs to "Today" when it has no date, is due today or overdue,
 // or has a deadline ("by"): a deadline task can be done on any day before it. A
 // task set for one exact future day ("on") stays hidden until that day comes.
-export function isPendingToday(task: Task, todayKey: string): boolean {
+export function isPendingToday(task: Pick<Task, "status" | "due_date" | "due_kind">, todayKey: string): boolean {
   if (task.status !== "pending") return false;
   return task.due_date === null || task.due_kind === "by" || task.due_date <= todayKey;
 }
@@ -41,7 +41,7 @@ export interface UpcomingDay {
 
 // A pending task set for one exact later day: exactly the tasks isPendingToday
 // hides, so every pending task is either on Today or in the Upcoming list.
-export function isUpcoming(task: Task, todayKey: string): boolean {
+export function isUpcoming(task: Pick<Task, "status" | "due_date" | "due_kind">, todayKey: string): boolean {
   return task.status === "pending" && !isPendingToday(task, todayKey);
 }
 

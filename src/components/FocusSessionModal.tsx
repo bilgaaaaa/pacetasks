@@ -14,7 +14,7 @@ interface Props {
   workMinutes: number;
   breakMinutes: number;
   onClose: () => void;
-  onComplete: (taskId: string, actualMinutes: number) => void;
+  onComplete: (taskId: string, actualMinutes: number, endedByTimer: boolean) => void; // endedByTimer: the buzz already marked the moment
 }
 
 // A long title shrinks before it is cut off, so it never pushes the clock off the screen.
@@ -43,7 +43,7 @@ export function FocusSessionModal({
   const countdown = useCountdown(() => {
     if (!taskId) return;
     haptics.play("timerEnded");
-    onComplete(taskId, workMinutes);
+    onComplete(taskId, workMinutes, true);
   });
   const { start, stop } = countdown;
 
@@ -115,7 +115,7 @@ export function FocusSessionModal({
 
           <TouchableOpacity
             style={styles.doneButton}
-            onPress={() => onComplete(task.id, Math.max(1, Math.round(elapsedSeconds / 60)))}
+            onPress={() => onComplete(task.id, Math.max(1, Math.round(elapsedSeconds / 60)), false)}
           >
             <Ionicons name="checkmark" size={20} color={theme.colors.onAccent} />
             <Text style={styles.doneButtonText}>Done early</Text>

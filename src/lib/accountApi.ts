@@ -200,10 +200,22 @@ export async function saveProfile(userId: string, input: ProfileInput): Promise<
 // Leaves the account on this phone and starts a fresh anonymous session, so the
 // app keeps working. The account and its tasks stay on the server, and the
 // user's other devices stay signed in (the default scope would sign them all out).
+// A "local" sign-out clears this phone's session even when the request never
+// reached the server, so a dropped connection is not a failure: the phone is
+// signed out either way. Offline, the fresh session cannot start yet; the app's
+// own "couldn't connect" screen says so and retries.
 export async function signOut(): Promise<void> {
   const { error } = await supabase.auth.signOut({ scope: "local" });
-  if (error) throw toAccountError("sign out", error);
-  await ensureSession();
+  if (error) {
+    const accountError = toAccountError("sign out", error);
+    if (accountError.code !== "network") throw accountError;
+    console.warn("[accountApi] signed out on this phone only: the server could not be reached");
+  }
+  try {
+    await ensureSession();
+  } catch (e) {
+    console.warn("[accountApi] starting a fresh session after sign-out failed; retried from the session screen", e);
+  }
 }
 
 // Erases the current user and everything they own on the server, then starts this

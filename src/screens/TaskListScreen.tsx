@@ -107,10 +107,12 @@ export function TaskListScreen({ userId }: Props) {
   const workEndHour = settings?.work_end_hour ?? DEFAULT_SETTINGS.work_end_hour;
   const doNow = useDoNow(tasks, workStartHour, workEndHour);
   const haptics = useHaptics();
-  // Every way of finishing a task (a row, Focus, One Thing) goes through here, so all of them feel the same.
-  const completeTask = (taskId: string, actualMinutes: number) => {
-    haptics.play("taskCompleted");
-    return complete(taskId, actualMinutes);
+  // Every way of finishing a task (a row, Focus, One Thing) goes through here, so all of them feel the same:
+  // one tap once the save has really succeeded. `silent` is for a moment that already had its own cue.
+  const completeTask = async (taskId: string, actualMinutes: number, silent = false) => {
+    const saved = await complete(taskId, actualMinutes);
+    if (saved && !silent) haptics.play("taskCompleted");
+    return saved;
   };
   const oneThing = useOneThing({ tasks, energy: doNow.energy, workStartHour, workEndHour, onComplete: completeTask });
   const rollover = useRollover({ tasks, onApply: updateMany });
@@ -487,8 +489,8 @@ export function TaskListScreen({ userId }: Props) {
           workMinutes={settings?.pomodoro_work_minutes ?? DEFAULT_SETTINGS.pomodoro_work_minutes}
           breakMinutes={settings?.pomodoro_break_minutes ?? DEFAULT_SETTINGS.pomodoro_break_minutes}
           onClose={() => setFocusTask(null)}
-          onComplete={(taskId, actualMinutes) => {
-            completeTask(taskId, actualMinutes);
+          onComplete={(taskId, actualMinutes, endedByTimer) => {
+            completeTask(taskId, actualMinutes, endedByTimer);
             setFocusTask(null);
           }}
         />

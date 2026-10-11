@@ -120,6 +120,30 @@ export const FUNCTION_WORDS: Record<Language, string[]> = {
   ],
 };
 
+// Words that place a clock time in one half of the day when nothing else does:
+// nobody wakes up at 18:00 or sits down to dinner at 07:00. Turkish ones are stems.
+export const HALF_DAY_HINTS: Record<"am" | "pm", Record<Language, string[]>> = {
+  am: {
+    en: ["wake", "alarm", "breakfast", "train", "flight"],
+    it: ["sveglia", "svegliarsi", "colazione", "treno", "volo"],
+    tr: ["kalk", "uyan", "kahvalt[ıi]", "alarm", "tren", "u[çc]a[kğ]"],
+  },
+  pm: {
+    en: ["dinner", "supper", "movie", "cinema", "drinks", "party", "concert"],
+    it: ["cena", "aperitivo", "cinema", "film", "concerto", "festa"],
+    tr: ["ak[şs]am yeme[ğg]i", "sinema", "film", "konser", "parti"],
+  },
+};
+
+// What makes a day name part of a task's name when it comes right after it:
+// "Sunday roast", "cuma namazı". The last Turkish entry is any noun with the
+// possessive ending of a compound ("pazar kahvaltısı").
+export const DAY_COMPOUND_NOUNS: Record<Language, string[]> = {
+  en: ["roast", "brunch", "mass", "service", "school", "league"],
+  it: ["mercato", "messa"],
+  tr: ["namaz[ıi]", "pazar[ıi]", "\\p{L}+s[ıiuü]"],
+};
+
 // `en` and `it` words also match their simple plural ("bill(s)", "riunione/riunioni").
 // `exact` ones match only as written: verbs, and words that are a different word
 // in another form. `trStems` take any Turkish suffix ("fatura" → "faturayı").

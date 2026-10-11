@@ -3,7 +3,9 @@ import { AI_RESULT_LIMITS, BRAIN_DUMP_MAX_CANDIDATES, BRAIN_DUMP_SCHEMA_VERSION,
 import type { AiTaskCandidate, BrainDumpAiResult, DateExpression, TimeOfDay } from "./aiResult.ts";
 import {
   CATEGORY_WORDS,
+  DAY_COMPOUND_NOUNS,
   FUNCTION_WORDS,
+  HALF_DAY_HINTS,
   LANGUAGES,
   MODAL_WORDS,
   MONTH_NAMES,
@@ -23,7 +25,7 @@ import type { CategoryWords, Language } from "./rulesLexicon.ts";
 // was a date, time or duration.
 
 // Stored with each session in place of a model name; bump when the rules change.
-export const RULES_PARSER_VERSION = "rules-4";
+export const RULES_PARSER_VERSION = "rules-5";
 
 // "\b" only knows ASCII letters, so it breaks on "venerdì" or "yarın". These
 // boundaries treat every Unicode letter and digit as part of a word.
@@ -34,6 +36,11 @@ function words(alternatives: string, flags = "iu"): RegExp {
   return new RegExp(`${WORD_START}(?:${alternatives})${WORD_END}`, flags);
 }
 
+// A Turkish stem with whatever endings follow it: "fatura" → "faturayı".
+function anySuffix(stem: string): string {
+  return `${stem}\\p{L}*`;
+}
+
 // Stands in for text that was cut out as a date, time or duration, so later
 // rules can tell "next to a date" ("tomorrow morning") from "part of the name"
 // ("Morning run"). A private-use character that never appears in real text.
@@ -42,16 +49,25 @@ const CUT = "";
 // Phone keyboards type the curly apostrophe, so "7’de" must read like "7'de".
 const APOSTROPHE = "['’]";
 
-// Turkish case endings that attach to a day or a time: "cumaya", "pazartesi'ye", "10:00'da".
-const TR_CASE_SUFFIX = `(?:${APOSTROPHE}?(?:y?[ae]|[dt][ae]))?`;
+// Turkish case endings that attach to a day or a time: "cumaya", "pazartesi'ye",
+// "10:00'da", and "cumadan önce" (before Friday), whose "önce" belongs to the date.
+const TR_CASE_SUFFIX = `(?:${APOSTROPHE}?(?:y?[ae]|[dt][ae]n\\s+[öo]nce|[dt][ae]n?))?`;
+const ENDS_WITH_BEFORE = /[dt][ae]n\s+[öo]nce$/iu;
+
+// Bullets and checkboxes pasted in with a list. A number counts as a marker only
+// when several lines start with one: alone, "5. bölümü oku" is "read chapter 5".
+const BULLET = /^\s*(?:[-–•*·]|\[[ xX]?\])\s+/u;
+const NUMBER_MARKER = /^\s*\d{1,2}[.)]\s+/u;
+const MIN_NUMBERED_LINES = 2;
 
 // Sentence ends, list separators and words that always start a new task. Not
-// separators: a decimal comma ("1,5 ore"), the dot of an abbreviation
-// ("Dr. Smith") and "prima o poi" (sooner or later).
+// separators: a decimal comma ("1,5 ore"), the dot of an abbreviation, an
+// ordinal or "p.m." ("Dr. Smith", "5. bölüm") and "prima o poi" (sooner or later).
 const ABBREVIATION = "dr|mr|mrs|ms|prof|sig|dott|vs|etc";
 const SPLIT_PATTERN = new RegExp(
   `\\n|;|(?<!\\d),|,(?!\\d)` +
-    `|(?<=[.!?])(?<!${WORD_START}(?:${ABBREVIATION})\\.)\\s+` + // the mark stays with its sentence ("taxes!!")
+    // the mark stays with its sentence ("taxes!!")
+    `|(?<=[.!?])(?<!${WORD_START}(?:${ABBREVIATION})\\.|\\d\\.|${WORD_START}[ap]\\.m\\.)\\s+` +
     `|(?<!prima o)\\s+(?:and then|and also|then|e poi|poi|ve sonra)\\s+`,
   "iu"
 );
@@ -81,11 +97,11 @@ const TR_DAY_WORD = new RegExp(`^\\s+g[üu]n[üu](?:n[ae]|nde)?${WORD_END}`, "iu
 // Longest phrases first, so "day after tomorrow" never reads as "tomorrow".
 const RELATIVE_DAYS: Array<[number, RegExp]> = [
   [2, words("the day after tomorrow|day after tomorrow|dopodomani|[öo]b[üu]r g[üu]n|yar[ıi]ndan sonra")],
-  [1, words("tomorrow|domani|yar[ıi]n")],
+  [1, words(`tomorrow|domani|yar[ıi]n${TR_CASE_SUFFIX}`)],
   [
     0,
     words(
-      "today|tonight|this (?:morning|afternoon|evening)|oggi|stasera|stamattina|stanotte|bug[üu]n|" +
+      `today|tonight|this (?:morning|afternoon|evening)|oggi|stasera|stamattina|stanotte|bug[üu]n${TR_CASE_SUFFIX}|` +
         "bu (?:sabah|ak[şs]am|gece)"
     ),
   ],
@@ -136,6 +152,7 @@ const DAY_OF_MONTH: RegExp[] = [
   words(`(?<=(?:on|by|before|until)\\s+)the\\s+${DAY_NUMBER}${ORDINAL}(?!\\s+(?:${ORDINAL_NOUN}))`),
   words(`(?<=^\\s*|(?:entro|per)\\s+)il\\s+${DAY_NUMBER}(?![:.,]?\\d|\\s*[°º%])`),
   words(`il\\s+${DAY_NUMBER}(?=[\\s.!]*$)`),
+  words(`(?<=prima del\\s+)${DAY_NUMBER}(?![:.,]?\\d|\\s*[°º%])`),
   words(`ay[ıi]n\\s+${DAY_NUMBER}(?:${APOSTROPHE}?\\p{L}+)?`),
   words(`${DAY_NUMBER}${APOSTROPHE}(?:s[ıiuü]|[ıiuü])n(?:d[ae]|[ae])`),
 ];
@@ -156,8 +173,9 @@ const SOMEDAY_DATE = words(
 const SOON_DATE = words(`soon|presto|yak[ıi]nda|${NEXT_WEEK}`);
 
 // A date is a deadline only when the deadline word touches it: "by Friday",
-// "entro venerdì", "cumaya kadar"; a stray "before" elsewhere doesn't count.
-const DEADLINE_BEFORE_DATE = new RegExp(`${WORD_START}(?:by|before|until|entro|prima di)\\s+(?:the\\s+)?$`, "iu");
+// "entro venerdì", "prima del 15", "cumaya kadar"; a stray "before" elsewhere doesn't count.
+const DEADLINE_WORD = `by|before|until|entro|prima dell${APOSTROPHE}|prima del(?:la)?|prima di`;
+const DEADLINE_BEFORE_DATE = new RegExp(`${WORD_START}(?:${DEADLINE_WORD})\\s*(?:(?:the|il)\\s+)?$`, "iu");
 const DEADLINE_AFTER_DATE = new RegExp(`^\\s*(?:kadar|dek)${WORD_END}`, "iu");
 // The same word left behind once its date is cut ("kirayı cumaya kadar öde").
 const DEADLINE_AFTER_CUT = new RegExp(`${CUT}\\s*(?:kadar|dek)${WORD_END}`, "iu");
@@ -169,67 +187,18 @@ const DAY_LEAD_IN = new RegExp(
   `${WORD_START}(?:on|by|before|until|this|for|entro|prima di|di|il|per|questo|bu)\\s*$`,
   "iu"
 );
+// "Sunday roast", "cuma namazı", "pranzo della domenica": the day names the thing, so it stays.
+const DAY_COMPOUND_AFTER = new RegExp(
+  `^\\s+(?:${LANGUAGES.flatMap((language) => DAY_COMPOUND_NOUNS[language]).join("|")})${WORD_END}`,
+  "iu"
+);
+const DAY_COMPOUND_BEFORE = new RegExp(`${WORD_START}della?\\s+$`, "iu");
 // Words that can only have pointed at the date that was cut right after them
 // ("call the bank on ␣ about the loan"), wherever they are in the title.
 const LEAD_IN_BEFORE_CUT = new RegExp(
-  `${WORD_START}(?:(?:on|by|before|until|this|entro|prima di|per|il|quest[oa]|bu)\\s+)+(?=${CUT})`,
+  `${WORD_START}(?:(?:${DEADLINE_WORD}|on|this|per|il|dell${APOSTROPHE}|della?|di|quest[oa]|bu)\\s*)+(?=${CUT})`,
   "giu"
 );
-
-const HOUR = "(?<hour>\\d{1,2})";
-const MINUTE = "(?<minute>\\d{2})";
-const MERIDIEM = "(?<meridiem>am|pm)";
-// "saat 3 gibi", "alle 3 circa": about that time, which is as exact as a task gets.
-const ROUGHLY = "(?:\\s+(?:gibi|civar[ıi](?:nda)?|circa))?";
-const CURRENCY = "[€$£₺]|euros?|eur|dollars?|usd|lira|tl|pounds?";
-// Clock times, most explicit first. A dot counts as a time separator with a
-// lead-in word or a Turkish case ending ("alle 18.30", "9.30'da"); a bare one only
-// where it cannot be a price: a quarter past a two-digit hour ("14.30", not "4.30" or "12.50 euros").
-const TIME_PATTERNS: RegExp[] = [
-  words(
-    `(?:at around|at about|at|alle ore|alle|ore|verso le|intorno alle|saat)\\s*${HOUR}` +
-      `(?:(?:[:.]|\\s+e\\s+)${MINUTE}|(?<half>\\s+e\\s+mezz[ao]|\\s+bu[çc]uk))?\\s*${MERIDIEM}?${TR_CASE_SUFFIX}${ROUGHLY}`
-  ),
-  words(`${HOUR}:${MINUTE}${TR_CASE_SUFFIX}${ROUGHLY}`),
-  words(`${HOUR}\\.${MINUTE}${APOSTROPHE}[dt][ae]`),
-  words(`${HOUR}\\s*${MERIDIEM}`),
-  words(`${HOUR}${APOSTROPHE}[dt][ae]${ROUGHLY}`), // Turkish "7'de"
-  new RegExp(
-    `(?<![\\p{L}\\p{N}.,€$£₺])(?<hour>1\\d|2[0-3])\\.(?<minute>00|15|30|45)(?![\\p{L}\\p{N}]|[.,]\\d)` +
-      `(?!\\s*(?:${CURRENCY}))`,
-    "iu"
-  ),
-];
-// "at 7 in the evening" means 19:00: hours below this are moved to the later half of the day.
-const NOON_HOUR = 12;
-// "meeting at 3" is never 03:00: with nothing saying morning, hours up to this one
-// are afternoon. A time written with minutes is as often a morning train ("6:45"), so it turns earlier.
-const LAST_ASSUMED_PM_HOUR = 7;
-const LAST_ASSUMED_PM_HOUR_WITH_MINUTES = 5;
-const HALF_HOUR_MINUTES = 30;
-
-// "in 2 hours", "2 saat sonra", "bir saat içinde" name a moment, not how long
-// the task takes; the parser has no clock to place it, so the words stay in the title.
-const NOT_FROM_NOW = `(?<!${WORD_START}(?:in|within|tra|fra|entro)\\s+)`;
-const NOT_UNTIL_LATER = "(?!\\s+(?:sonra|i[çc]inde))";
-
-function durationWords(alternatives: string): RegExp {
-  return new RegExp(`${NOT_FROM_NOW}${WORD_START}(?:${alternatives})${NOT_UNTIL_LATER}`, "iu");
-}
-
-const MINUTES_PATTERN = durationWords(`(\\d{1,3})\\s*(?:min|mins|minutes?|minut[oi]|dk|dakika)${WORD_END}`);
-// Not followed by "&" ("2 H&M shirts") or by a number (Turkish "saat 10" means "at 10").
-const HOURS_PATTERN = durationWords(
-  "(\\d(?:[.,]5)?)\\s*(?:h|hr|hrs|hours?|or[ae]|saat)(?![&\\p{L}\\p{N}])(?!\\s*\\d)"
-);
-// Durations written in words, longest first so "an hour and a half" never reads as "an hour".
-const DURATION_PHRASES: Array<[number, RegExp]> = (
-  [
-    [90, `an hour and a half|un${APOSTROPHE}ora e mezz[ao]|bir bu[çc]uk saat`],
-    [30, `half an hour|half hour|mezz${APOSTROPHE}?ora|yar[ıi]m saat`],
-    [60, `(?<!half )an hour|one hour|un${APOSTROPHE}ora|bir saat`],
-  ] as Array<[number, string]>
-).map(([minutes, phrase]) => [minutes, durationWords(`(?:${phrase})${WORD_END}`)]);
 
 // `bare` words are cut only right next to a cut date ("tomorrow morning"), so
 // "Morning run" keeps its name; `phrase`s are only ever about when. "Before/after
@@ -261,6 +230,98 @@ const TIME_OF_DAY_BESIDE_CUT = new RegExp(
 );
 // "pay the bill friday morning": the day name ends the text once this is set aside.
 const TIME_OF_DAY_AFTER_DAY = new RegExp(`^\\s+(?:${BARE_TIME_OF_DAY})${WORD_END}`, "iu");
+
+// Words a clock time is found beside: "tomorrow", "venerdì", "akşam".
+const DATE_WORD =
+  `${LANGUAGES.flatMap((language) => WEEKDAY_NAMES[language]).join("|")}|` +
+  `tomorrow|today|tonight|domani|oggi|stasera|yar[ıi]n|bug[üu]n|${BARE_TIME_OF_DAY}`;
+const DATE_WORD_BEFORE = new RegExp(`${WORD_START}(?:${DATE_WORD})\\s+$`, "iu");
+const DATE_WORD_AFTER = new RegExp(`^\\s+(?:${DATE_WORD})${WORD_END}`, "iu");
+// What may follow "at 5" when it is a time; a noun there makes it a count or an
+// address ("look at 3 apartments", "at 12 Main Street").
+const AFTER_BARE_HOUR = new RegExp(
+  `^\\s*(?:$|[.,;:!?)]|(?:with|for|to|about|before|after|and|or|then|on|in|by|until|${DATE_WORD})${WORD_END})`,
+  "iu"
+);
+
+const HOUR = "(?<hour>\\d{1,2})";
+const MINUTE = "(?<minute>\\d{2})";
+const MERIDIEM = "(?<meridiem>[ap]\\.?m\\.?)";
+// "saat 3 gibi", "alle 3 circa": about that time, which is as exact as a task gets.
+const ROUGHLY = "(?:\\s+(?:gibi|civar[ıi](?:nda)?|circa))?";
+const CURRENCY = "[€$£₺]|euros?|eur|dollars?|usd|lira|tl|pounds?";
+
+interface TimePattern {
+  pattern: RegExp;
+  // For wording that is only sometimes a time: decides from the text around the match.
+  isTime?: (around: { before: string; after: string; isBareHour: boolean }) => boolean;
+}
+// Clock times, most explicit first. "ore" and "saat" also mean "hours", so they
+// lead in a time only when no number comes before them ("2 saat 15 dakika").
+const TIME_PATTERNS: TimePattern[] = [
+  {
+    pattern: words(`(?:at around|at about|at)\\s*${HOUR}(?:[:.]${MINUTE})?\\s*${MERIDIEM}?`),
+    isTime: ({ before, after, isBareHour }) =>
+      !isBareHour || before.trim() === "" || DATE_WORD_BEFORE.test(before) || AFTER_BARE_HOUR.test(after),
+  },
+  {
+    pattern: words(
+      `(?:alle ore|alle|verso le|intorno alle|(?<!\\d\\s*)(?:ore|saat))\\s*${HOUR}` +
+        `(?:(?:[:.]|\\s+e\\s+)${MINUTE}|(?<half>\\s+e\\s+mezz[ao]|\\s+bu[çc]uk))?${TR_CASE_SUFFIX}${ROUGHLY}`
+    ),
+  },
+  { pattern: words(`${HOUR}:${MINUTE}\\s*${MERIDIEM}?${TR_CASE_SUFFIX}${ROUGHLY}`) },
+  { pattern: words(`${HOUR}\\.${MINUTE}${APOSTROPHE}[dt][ae]`) },
+  { pattern: words(`${HOUR}\\s*${MERIDIEM}`) },
+  { pattern: words(`${HOUR}${APOSTROPHE}[dt][ae]${ROUGHLY}`) }, // Turkish "7'de"
+  {
+    // A bare "18.30" is as often an amount, so it needs a day beside it, a
+    // round quarter hour and no currency ("dentista 16.30 martedì").
+    pattern: new RegExp(
+      `(?<![\\p{L}\\p{N}.,€$£₺])(?<hour>1\\d|2[0-3])\\.(?<minute>00|15|30|45)(?![\\p{L}\\p{N}]|[.,]\\d)` +
+        `(?!\\s*(?:${CURRENCY}))`,
+      "iu"
+    ),
+    isTime: ({ before, after }) => DATE_WORD_BEFORE.test(before) || DATE_WORD_AFTER.test(after),
+  },
+];
+const NOON_HOUR = 12;
+// "meeting at 3" is never 03:00: a bare hour up to this one is taken as afternoon
+// when nothing says which half of the day it is, and the task is flagged for a check.
+const LAST_AMBIGUOUS_HOUR = 6;
+const HALF_HOUR_MINUTES = 30;
+const HALF_DAY_HINT: Array<["am" | "pm", RegExp]> = (["am", "pm"] as const).map((half) => [
+  half,
+  words([...HALF_DAY_HINTS[half].en, ...HALF_DAY_HINTS[half].it, ...HALF_DAY_HINTS[half].tr.map(anySuffix)].join("|")),
+]);
+
+// "in 2 hours", "2 saat sonra", "bir saat içinde" name a moment, not how long
+// the task takes; the parser has no clock to place it, so the words stay in the title.
+const NOT_FROM_NOW = `(?<!${WORD_START}(?:in|within|tra|fra|entro)\\s+)`;
+const NOT_UNTIL_LATER = "(?!\\s+(?:sonra|i[çc]inde))";
+
+function durationWords(alternatives: string): RegExp {
+  return new RegExp(`${NOT_FROM_NOW}${WORD_START}(?:${alternatives})${NOT_UNTIL_LATER}`, "iu");
+}
+
+const HOUR_UNIT = "h|hr|hrs|hours?|or[ae]|saat";
+const MINUTE_UNIT = "min|mins|minutes?|minut[oi]|dk|dakika";
+const MINUTES_PATTERN = durationWords(`(\\d{1,3})\\s*(?:${MINUTE_UNIT})${WORD_END}`);
+// Not followed by "&" ("2 H&M shirts") or by a number (Turkish "saat 10" means "at 10").
+const HOURS_PATTERN = durationWords(`(\\d(?:[.,]5)?)\\s*(?:${HOUR_UNIT})(?![&\\p{L}\\p{N}])(?!\\s*\\d)`);
+// "2 hours 30 min", "1 ora e 30 minuti", "1h30": one duration, added up.
+const HOURS_AND_MINUTES = durationWords(
+  `(\\d{1,2})\\s*(?:${HOUR_UNIT})(?:\\s*(?:(?:and|e|ve)\\s+)?(\\d{1,2})\\s*(?:${MINUTE_UNIT})|(\\d{2}))${WORD_END}`
+);
+const MINUTES_PER_HOUR = 60;
+// Durations written in words, longest first so "an hour and a half" never reads as "an hour".
+const DURATION_PHRASES: Array<[number, RegExp]> = (
+  [
+    [90, `an hour and a half|un${APOSTROPHE}ora e mezz[ao]|bir bu[çc]uk saat`],
+    [30, `half an hour|half hour|mezz${APOSTROPHE}?ora|yar[ıi]m saat`],
+    [60, `(?<!half )an hour|one hour|un${APOSTROPHE}ora|bir saat`],
+  ] as Array<[number, string]>
+).map(([minutes, phrase]) => [minutes, durationWords(`(?:${phrase})${WORD_END}`)]);
 
 // High priority: a word that means it, or more than one "!". Words that are
 // ordinary adjectives too ("important documents") only count at the edges of the text.
@@ -311,7 +372,7 @@ function categoryPattern({ en, it, exact, trStems }: CategoryWords): RegExp {
       ...en.map((word) => `${word}(?:e?s)?`),
       ...it.map(italianWithPlural),
       ...exact,
-      ...trStems.map((stem) => `${stem}\\p{L}*`),
+      ...trStems.map(anySuffix),
     ].join("|")
   );
 }
@@ -333,8 +394,9 @@ const LEADING_JOINER = new RegExp(
 const LEADING_PUNCTUATION = /^[\s:,–-]+/u;
 // Words that only pointed at a date, time or duration. Trimmed from the title's
 // edges, and only when something was actually cut out, so "put the washing
-// machine on" and "Turn on the heating" keep their words.
-const DATE_PREPOSITION = "by|before|until|at|on|entro|prima di|alle|ore|saat|i[çc]in|kadar";
+// machine on" and "Turn on the heating" keep their words. "at" is not one of
+// them: a time is cut together with its "at", and Turkish "mail at" means "send".
+const DATE_PREPOSITION = "by|before|until|on|entro|prima di|alle|ore|saat|i[çc]in|kadar";
 const LEADING_PREPOSITION = new RegExp(`^(?:(?:${DATE_PREPOSITION}|di|of)${WORD_END}[\\s,]*)+`, "iu");
 const TRAILING_PREPOSITION = new RegExp(`(?:[\\s,]*${WORD_START}(?:${DATE_PREPOSITION}|for|per|in))+$`, "iu");
 
@@ -342,7 +404,7 @@ const TRAILING_PREPOSITION = new RegExp(`(?:[\\s,]*${WORD_START}(?:${DATE_PREPOS
 // in English and Italian ("…and email the boss", "…e comprare il pane").
 const ITALIAN_INFINITIVE = "\\p{L}{2,}(?:[aei]re|rre)(?:si|l[aoie]|gli|mi|ti|ci)?";
 const CLAUSE_START: Record<"en" | "it", RegExp> = {
-  en: new RegExp(`^(?:${[...MODAL_WORDS.en, ...VERBS.en].join("|")})${WORD_END}\\s+\\S`, "iu"),
+  en: new RegExp(`^(?:(?:i|we)\\s+)?(?:${[...MODAL_WORDS.en, ...VERBS.en].join("|")})${WORD_END}\\s+\\S`, "iu"),
   it: new RegExp(
     `^(?:${[...MODAL_WORDS.it, ...VERBS.it].join("|")}|${ITALIAN_INFINITIVE})${WORD_END}\\s+\\S`,
     "iu"
@@ -382,13 +444,15 @@ const LANGUAGE_WORDS: Record<Language, RegExp> = {
 const TURKISH_ONLY_LETTERS = /[ığşİ]/giu;
 const TURKISH_SHARED_LETTERS = /[çöü]/giu;
 const MIN_TURKISH_LETTERS = 2;
+// A Turkish verb in final position outweighs one stray word: in "mail at", "at" is the verb, not English.
+const TURKISH_FINAL_VERB_WEIGHT = 2;
 
 // Turns a brain dump into task candidates with pattern rules only. The result
 // has the same shape an AI model must return, so normalize.ts, the review policy
 // and commit treat it exactly like an AI proposal. `localeHint` is the phone's
 // locale: it settles the language only when the text itself gives no clue.
 export function parseBrainDumpWithRules(text: string, localeHint: string | null = null): BrainDumpAiResult {
-  const segments = text
+  const segments = withoutListMarkers(text)
     .split(SPLIT_PATTERN)
     .flatMap(splitAtJoiners)
     .map((s) => s.trim())
@@ -437,6 +501,14 @@ export function parseBrainDumpWithRules(text: string, localeHint: string | null 
   };
 }
 
+function withoutListMarkers(text: string): string {
+  const lines = text.split("\n");
+  const isNumberedList = lines.filter((line) => NUMBER_MARKER.test(line)).length >= MIN_NUMBERED_LINES;
+  return lines
+    .map((line) => (isNumberedList ? line.replace(NUMBER_MARKER, "") : line).replace(BULLET, ""))
+    .join("\n");
+}
+
 // Splits at "and / e / ve / sonra" only where a new task starts; a list of
 // things ("bread and milk") stays one task.
 function splitAtJoiners(text: string): string[] {
@@ -445,7 +517,7 @@ function splitAtJoiners(text: string): string[] {
   for (let i = 0; i < rest.length; i += 2) {
     const [joiner, right] = [rest[i], rest[i + 1]];
     const left = tasks[tasks.length - 1];
-    if (startsNewTask(left, joiner.trim().toLowerCase(), right)) tasks.push(right);
+    if (startsNewTask(left, joiner, right)) tasks.push(right);
     else tasks[tasks.length - 1] = `${left}${joiner}${right}`;
   }
   return tasks;
@@ -455,10 +527,20 @@ function splitAtJoiners(text: string): string[] {
 // or something with its own day or time when `left` has one too ("Marco e Anna
 // cena sabato" shares one day, "dentist at 5 and gym at 7" does not).
 function startsNewTask(left: string, joiner: string, right: string): boolean {
+  if (isInsideDetail(left, joiner, right)) return false;
   if (CONDITION_CLAUSE.test(right.trim())) return true;
   if (hasDetail(left) && hasDetail(right)) return true;
   const opening = withoutLeadingDate(right).replace(MAYBE_WORD, "").trim().replace(LEADING_JOINER, "");
-  return STARTS_OWN_TASK[joiner](left, opening);
+  return STARTS_OWN_TASK[joiner.trim().toLowerCase()](left, opening);
+}
+
+// "1 ora e 30 minuti", "alle 19 e 30": the joining word sits inside one duration or time.
+function isInsideDetail(left: string, joiner: string, right: string): boolean {
+  const whole = `${left}${joiner}${right}`;
+  return [extractDuration(whole), extractTime(whole, null)].some((detail) => {
+    const start = detail ? whole.indexOf(detail.matched) : -1;
+    return detail !== null && start >= 0 && start < left.length && start + detail.matched.length > left.length + joiner.length;
+  });
 }
 
 function hasDetail(text: string): boolean {
@@ -489,7 +571,28 @@ type SegmentOutcome =
   // Not a task: a remark, or too little to act on.
   | { kind: "unparsed" };
 
-function parseSegment(segment: string): SegmentOutcome {
+// "İ" has no lowercase partner under /iu, so "ACİL" and "PAZARTESİ" would slip
+// past every rule. The rules read this copy; restoreOriginal puts the letters back.
+function foldDottedCapital(text: string): string {
+  return text.replaceAll("İ", "i");
+}
+
+// Gives the words of `piece` (found in order in `folded`) the spelling they have in `original`.
+function restoreOriginal(piece: string, folded: string, original: string): string {
+  let cursor = 0;
+  return piece
+    .split(" ")
+    .map((word) => {
+      const start = folded.indexOf(word, cursor);
+      if (start === -1) return word;
+      cursor = start + word.length;
+      return original.slice(start, cursor);
+    })
+    .join(" ");
+}
+
+function parseSegment(original: string): SegmentOutcome {
+  const segment = foldDottedCapital(original);
   if (isRemark(segment)) return { kind: "unparsed" };
 
   const ambiguities: AiTaskCandidate["ambiguities"] = [];
@@ -523,9 +626,9 @@ function parseSegment(segment: string): SegmentOutcome {
   const trimmed = somethingCut
     ? cleaned.replace(LEADING_PUNCTUATION, "").replace(LEADING_PREPOSITION, "").replace(TRAILING_PREPOSITION, "")
     : cleaned;
-  const title = truncate(trimmed.trim(), AI_RESULT_LIMITS.titleMaxLength);
+  const title = restoreOriginal(truncate(trimmed.trim(), AI_RESULT_LIMITS.titleMaxLength), segment, original);
 
-  const when = date?.expression ?? null;
+  const when = date ? { ...date.expression, text: restoreOriginal(date.expression.text, segment, original) } : null;
   const dueTime = time?.value ?? null;
   const estimatedDurationMinutes = duration?.minutes ?? null;
   if (title.length === 0) {
@@ -540,11 +643,15 @@ function parseSegment(segment: string): SegmentOutcome {
     confidence = Math.min(confidence, 0.8);
     ambiguities.push({ field: "due_date", reason: `"${when.text}" isn't a specific day` });
   }
+  if (time?.isHalfOfDayGuessed) {
+    const written = restoreOriginal(time.matched.trim(), segment, original);
+    ambiguities.push({ field: "scheduled_time", reason: `"${written}" could be morning or afternoon` });
+  }
 
-  const language = detectLanguage(title) ?? detectLanguage(segment);
+  const language = detectLanguage(title) ?? detectLanguage(original);
   const candidate: AiTaskCandidate = {
     title, // capitalized by the caller, once its language is settled
-    sourceSpan: truncate(segment, AI_RESULT_LIMITS.sourceSpanMaxLength),
+    sourceSpan: truncate(original, AI_RESULT_LIMITS.sourceSpanMaxLength),
     language: language ?? "en", // settled by the caller once the whole dump is known
     notes: null,
     when,
@@ -571,7 +678,7 @@ function isHighPriority(segment: string): boolean {
 }
 
 // True when `dayName` is at either end of `text`, touches something already
-// cut, or is led in by a word like "on".
+// cut, or is led in by a word like "on"; never when it names the thing itself.
 function standsAlone(text: string, dayName: string): boolean {
   const start = text.indexOf(dayName);
   if (start === -1) return false;
@@ -579,6 +686,7 @@ function standsAlone(text: string, dayName: string): boolean {
   const isBlank = (piece: string) => piece.replace(outside, "") === "";
   const before = text.slice(0, start);
   const after = text.slice(start + dayName.length);
+  if (DAY_COMPOUND_AFTER.test(after) || DAY_COMPOUND_BEFORE.test(before)) return false;
   return (
     isBlank(before) ||
     isBlank(after.replace(TIME_OF_DAY_AFTER_DAY, "")) ||
@@ -603,9 +711,13 @@ function spanOf(match: RegExpMatchArray): Span {
   return [start, start + match[0].length];
 }
 
-// True when a deadline word sits right before the date or "kadar" right after it.
+// True when a deadline word sits right before the date, "kadar" right after it, or "…dan önce" on it.
 function isDeadline(segment: string, [start, end]: Span): boolean {
-  return DEADLINE_BEFORE_DATE.test(segment.slice(0, start)) || DEADLINE_AFTER_DATE.test(segment.slice(end));
+  return (
+    DEADLINE_BEFORE_DATE.test(segment.slice(0, start)) ||
+    DEADLINE_AFTER_DATE.test(segment.slice(end)) ||
+    ENDS_WITH_BEFORE.test(segment.slice(start, end))
+  );
 }
 
 function relationOf(segment: string, span: Span): "on" | "by" {
@@ -724,33 +836,66 @@ function extractMonthDate(segment: string): ExtractedDate | null {
   return { expression: { kind: "month_end", relation, text: monthEnd[0] }, cutAlways: [monthEnd[0]], dayName };
 }
 
-// `timeOfDay` settles a bare hour: "7" with "evening" or "afternoon" is 19:00,
-// with "morning" 07:00, and with nothing an early hour is taken as afternoon.
-function extractTime(text: string, timeOfDay: TimeOfDay | null): { value: string; matched: string } | null {
-  for (const pattern of TIME_PATTERNS) {
+interface ExtractedTime {
+  value: string;
+  matched: string;
+  isHalfOfDayGuessed: boolean; // neither the words nor the notation say morning or afternoon
+}
+
+function extractTime(text: string, timeOfDay: TimeOfDay | null): ExtractedTime | null {
+  for (const { pattern, isTime } of TIME_PATTERNS) {
     const match = text.match(pattern);
     if (!match?.groups) continue;
 
-    const { hour: hourText, minute: minuteText, meridiem: meridiemText, half } = match.groups;
-    const meridiem = (meridiemText ?? "").toLowerCase();
-    let hour = Number(hourText);
-    // A leading zero ("07:30") is 24-hour notation, which already says morning.
-    const lastPmHour = minuteText || half ? LAST_ASSUMED_PM_HOUR_WITH_MINUTES : LAST_ASSUMED_PM_HOUR;
-    const isAssumedPm = timeOfDay === null && !hourText.startsWith("0") && hour >= 1 && hour <= lastPmHour;
-    const isLaterHalf =
-      meridiem === "pm" || (meridiem === "" && (timeOfDay === "evening" || timeOfDay === "afternoon" || isAssumedPm));
+    const { hour: hourText, minute: minuteText, meridiem, half: halfPast } = match.groups;
+    const hasMinutes = Boolean(minuteText);
+    const [start, end] = spanOf(match);
+    const isBareHour = !hasMinutes && !halfPast && !meridiem;
+    const around = { before: text.slice(0, start), after: text.slice(end), isBareHour };
+    if (isTime && !isTime(around)) continue;
 
-    if (isLaterHalf && hour < NOON_HOUR) hour += NOON_HOUR;
-    if (meridiem === "am" && hour === NOON_HOUR) hour = 0;
-    const minute = half ? HALF_HOUR_MINUTES : Number(minuteText ?? 0);
+    const writtenHour = Number(hourText);
+    const minute = halfPast ? HALF_HOUR_MINUTES : Number(minuteText ?? 0);
+    const { half, isGuessed } = halfOfDay(text, hourText, { meridiem, hasMinutes, timeOfDay });
+    const hour = half === null ? writtenHour : (writtenHour % NOON_HOUR) + (half === "pm" ? NOON_HOUR : 0);
     if (hour > 23 || minute > 59) continue;
 
-    return { value: `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`, matched: match[0] };
+    return {
+      value: `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`,
+      matched: match[0],
+      isHalfOfDayGuessed: isGuessed,
+    };
   }
   return null;
 }
 
+// Which half of the day a written hour is in; null keeps it as written. What is
+// stated wins (am/pm, 24-hour notation, "morning"), then a context word
+// ("wake up", "cena"), and only then a guess: a bare early hour is afternoon.
+function halfOfDay(
+  text: string,
+  hourText: string,
+  { meridiem, hasMinutes, timeOfDay }: { meridiem: string | undefined; hasMinutes: boolean; timeOfDay: TimeOfDay | null }
+): { half: "am" | "pm" | null; isGuessed: boolean } {
+  const hour = Number(hourText);
+  if (meridiem) return { half: meridiem.toLowerCase().startsWith("p") ? "pm" : "am", isGuessed: false };
+  if (hour === 0 || hour >= NOON_HOUR || hourText.startsWith("0")) return { half: null, isGuessed: false };
+  if (timeOfDay) return { half: timeOfDay === "morning" ? "am" : "pm", isGuessed: false };
+
+  const hinted = HALF_DAY_HINT.find(([, pattern]) => pattern.test(text))?.[0];
+  if (hinted) return { half: hinted, isGuessed: false };
+
+  const isAmbiguous = hour <= LAST_AMBIGUOUS_HOUR;
+  return { half: isAmbiguous && !hasMinutes ? "pm" : null, isGuessed: isAmbiguous };
+}
+
 function extractDuration(text: string): { minutes: number; matched: string } | null {
+  const compound = text.match(HOURS_AND_MINUTES);
+  if (compound) {
+    const minutes = Number(compound[1]) * MINUTES_PER_HOUR + Number(compound[2] ?? compound[3]);
+    return { minutes: clampDuration(minutes), matched: compound[0] };
+  }
+
   const minutesMatch = text.match(MINUTES_PATTERN);
   if (minutesMatch) return { minutes: clampDuration(Number(minutesMatch[1])), matched: minutesMatch[0] };
 
@@ -761,7 +906,8 @@ function extractDuration(text: string): { minutes: number; matched: string } | n
 
   const hoursMatch = text.match(HOURS_PATTERN);
   if (hoursMatch) {
-    return { minutes: clampDuration(Number(hoursMatch[1].replace(",", ".")) * 60), matched: hoursMatch[0] };
+    const hours = Number(hoursMatch[1].replace(",", "."));
+    return { minutes: clampDuration(hours * MINUTES_PER_HOUR), matched: hoursMatch[0] };
   }
   return null;
 }
@@ -782,7 +928,7 @@ function detectLanguage(text: string): Language | null {
   const turkishShared = count(TURKISH_SHARED_LETTERS);
   const turkish =
     count(LANGUAGE_WORDS.tr) +
-    (TURKISH_CLAUSE_END.test(text) ? 1 : 0) +
+    (TURKISH_CLAUSE_END.test(text) ? TURKISH_FINAL_VERB_WEIGHT : 0) +
     turkishOnly +
     (turkishOnly + turkishShared >= MIN_TURKISH_LETTERS ? turkishShared : 0);
   if (english === 0 && italian === 0 && turkish === 0) return null;

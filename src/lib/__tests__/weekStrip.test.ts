@@ -25,4 +25,16 @@ describe("buildWeek", () => {
     ]);
     expect(week.map((d) => d.dueCount)).toEqual([0, 2, 0, 0, 0, 0, 0]);
   });
+
+  it("marks a later day only for tasks waiting in Upcoming, not for deadlines already on Today", () => {
+    const week = buildWeek("2026-10-05", [
+      makeTask({ due_date: "2026-10-07", due_kind: "on" }),
+      makeTask({ due_date: "2026-10-08", due_kind: "by" }),
+      makeTask({ due_date: "2026-10-05", due_kind: "by" }),
+      makeTask({ due_date: "2026-10-05", due_kind: "on" }),
+    ]);
+    expect(week.map((d) => d.dueCount)).toEqual([2, 0, 1, 0, 0, 0, 0]);
+    // Only Wednesday has something to show; today's own tasks are on Today, not in Upcoming.
+    expect(week.map((d) => d.opensUpcoming)).toEqual([false, false, true, false, false, false, false]);
+  });
 });

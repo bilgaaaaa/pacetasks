@@ -5,7 +5,7 @@ import { WeekDay } from "../lib/weekStrip";
 
 interface Props {
   days: WeekDay[];
-  onPressDay: (day: WeekDay) => void; // only later days are tappable: they open the Upcoming list on that day
+  onPressDay: (day: WeekDay) => void; // only for a later day with tasks waiting (opensUpcoming): opens the Upcoming list on it
 }
 
 function dayLabel(day: WeekDay): string {
@@ -13,14 +13,13 @@ function dayLabel(day: WeekDay): string {
 }
 
 // This week at a glance under the Today hero: today as a filled ink pill,
-// and a dot under any day with pending tasks due. The days still to come are
-// buttons, because what is set for them is not on Today.
+// and a dot under any day with pending tasks due. A later day with a dot is a
+// button, because what is set for it is not on Today.
 export function WeekStrip({ days, onPressDay }: Props) {
   const styles = useStyles();
-  const todayIndex = days.findIndex((day) => day.isToday);
   return (
     <View style={styles.row} accessibilityRole="summary" accessibilityLabel="This week">
-      {days.map((day, index) => {
+      {days.map((day) => {
         const content = (
           <>
             <Text style={[styles.weekday, day.isToday && styles.textToday]} maxFontSizeMultiplier={1.3}>
@@ -34,7 +33,7 @@ export function WeekStrip({ days, onPressDay }: Props) {
             />
           </>
         );
-        return index > todayIndex ? (
+        return day.opensUpcoming ? (
           <TouchableOpacity
             key={day.key}
             style={styles.day}
