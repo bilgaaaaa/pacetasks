@@ -242,7 +242,27 @@ npm run typecheck   # TypeScript
 npm run db:test     # pgTAP database tests; needs Docker and `npx supabase start`
 cd supabase/functions && deno task test    # Edge Function and AI layer tests (needs Deno 2)
 cd supabase/functions && deno task check   # type-check the Edge Function
+npm run e2e         # simulated journey through the web demo, filmed
+npm run verify      # typecheck + Jest + the simulated journey, in one go
 ```
+
+### Simulated journey
+
+`npm run e2e` exports the [web demo](#web-demo), opens it in a headless browser
+at iPhone size and plays one day as a person would: finish a task, add one,
+"Decide for me", a Brain Dump in three languages, Pace, Settings and dark mode.
+The clock is fixed to a Monday morning in Europe/Rome, so every run sees the
+same day. It writes a film (`e2e/output/today-journey.webm`) and a screenshot
+per step (`e2e/output/shots/`), and fails on a broken step or a console error.
+
+First run on a new machine: `npx playwright install chromium`.
+
+It runs against the demo backend, in a browser. What only a real iPhone has
+(notifications, haptics, the keyboard, safe areas) is still checked by hand.
+
+GitHub runs `typecheck`, `npm test` and the journey on every pull request and
+on `main` (`.github/workflows/verify.yml`); the film and screenshots are
+attached to the run as the `simulated-journey` artifact.
 
 ## Web demo
 
@@ -338,6 +358,7 @@ src/components/            Presentational pieces: sheets, cards, rows, buttons
 src/hooks/                 One hook per feature; all data access for a screen goes through these
 src/lib/                   Supabase client and API files, pure logic, UI copy, theme
 src/lib/demo/              In-memory backend for the web demo
+e2e/                       Simulated journey: `harness.mjs` (browser, film, steps) and the journeys
 supabase/migrations/       Database schema, security policies and functions
 supabase/templates/        The sign-up and sign-in emails, pasted into the Supabase dashboard
 supabase/tests/database/   pgTAP tests for the database

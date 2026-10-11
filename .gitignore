@@ -15,3 +15,5 @@ web-build/
 npm-debug.*
 *.log
 .DS_Store
+# Films, screenshots and the demo build written by `npm run e2e`.
+e2e/output/

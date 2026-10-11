@@ -8,9 +8,12 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "web:demo": "EXPO_PUBLIC_DEMO_MODE=1 expo start --web",
+    "web:demo:export": "EXPO_PUBLIC_DEMO_MODE=1 expo export --platform web --output-dir e2e/output/web",
     "test": "jest",
     "typecheck": "tsc --noEmit",
-    "db:test": "supabase test db"
+    "db:test": "supabase test db",
+    "e2e": "npm run web:demo:export && node e2e/todayJourney.mjs",
+    "verify": "npm run typecheck && npm test && npm run e2e"
   },
   "dependencies": {
     "@expo/metro-runtime": "~57.0.15",
@@ -45,6 +48,7 @@
     "babel-preset-expo": "^57.0.0",
     "jest": "^29.7.0",
     "jest-expo": "~57.0.5",
+    "playwright": "^1.56.0",
     "supabase": "^2.118.0",
     "typescript": "~5.9.2"
   },
