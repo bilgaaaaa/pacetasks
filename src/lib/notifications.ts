@@ -1,7 +1,6 @@
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
-
-const REMINDER_IDENTIFIER = "pacetasks-daily-reminder";
+import { PlannedReminder, REMINDER_ID_PREFIX } from "./reminderPlan";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -12,7 +11,21 @@ Notifications.setNotificationHandler({
   }),
 });
 
+const isSupported = Platform.OS !== "web"; // browsers have no scheduled local notifications
+const MIN_LEAD_MS = 5000; // iOS rejects a moment that has passed by the time it is scheduled
+
+export type NotificationPermission = "granted" | "denied" | "undetermined";
+
+// What iOS currently allows, without ever showing the permission prompt.
+export async function getNotificationPermission(): Promise<NotificationPermission> {
+  if (!isSupported) return "undetermined";
+  const current = await Notifications.getPermissionsAsync();
+  if (current.granted) return "granted";
+  return current.canAskAgain ? "undetermined" : "denied";
+}
+
 export async function requestNotificationPermission(): Promise<boolean> {
+  if (!isSupported) return false;
   const current = await Notifications.getPermissionsAsync();
   if (current.granted) return true;
 
@@ -20,42 +33,64 @@ export async function requestNotificationPermission(): Promise<boolean> {
   return requested.granted;
 }
 
-// Makes the phone's scheduled reminder match the settings. `askPermission: false`
-// is for background re-syncs: it schedules only if notifications are already allowed.
-export async function syncDailyReminder(
-  enabled: boolean,
-  time: string,
+async function cancelScheduledReminders(): Promise<void> {
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  await Promise.all(
+    scheduled
+      .filter((notification) => notification.identifier.startsWith(REMINDER_ID_PREFIX))
+      .map((notification) => Notifications.cancelScheduledNotificationAsync(notification.identifier))
+  );
+}
+
+// Runs happen one after another and only the newest plan counts, so an older
+// run can never bring back a reminder that a newer one removed.
+let latestRun = 0;
+let queue: Promise<void> = Promise.resolve();
+
+// Makes the phone's scheduled reminders match the plan: everything this app
+// scheduled before is replaced. `askPermission: false` is for background
+// re-plans: it schedules only if notifications are already allowed.
+export function syncReminders(
+  reminders: PlannedReminder[],
   { askPermission = true }: { askPermission?: boolean } = {}
 ): Promise<void> {
-  await Notifications.cancelScheduledNotificationAsync(REMINDER_IDENTIFIER).catch(
-    () => {
-      // No-op: nothing was scheduled yet, which is fine.
-    }
-  );
+  if (!isSupported) return Promise.resolve();
+  const run = ++latestRun;
+  const isSuperseded = () => run !== latestRun;
 
-  if (!enabled) return;
+  queue = queue
+    .then(async () => {
+      if (isSuperseded()) return;
+      await cancelScheduledReminders();
+      if (reminders.length === 0) return;
 
-  const [hourStr, minuteStr] = time.split(":");
-  const hour = Number(hourStr);
-  const minute = Number(minuteStr);
-  if (Number.isNaN(hour) || Number.isNaN(minute)) return;
+      const granted = askPermission
+        ? await requestNotificationPermission()
+        : (await Notifications.getPermissionsAsync()).granted;
+      if (!granted) return;
 
-  const granted = askPermission
-    ? await requestNotificationPermission()
-    : (await Notifications.getPermissionsAsync()).granted;
-  if (!granted) return;
-
-  await Notifications.scheduleNotificationAsync({
-    identifier: REMINDER_IDENTIFIER,
-    content: {
-      title: "PaceTasks",
-      body: "Got a minute? Check what's left on your list.",
-      sound: Platform.OS === "ios" ? "default" : undefined,
-    },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.DAILY,
-      hour,
-      minute,
-    },
-  });
+      let scheduled = 0;
+      for (const reminder of reminders) {
+        if (isSuperseded()) return;
+        if (reminder.at.getTime() - Date.now() < MIN_LEAD_MS) continue;
+        try {
+          await Notifications.scheduleNotificationAsync({
+            identifier: reminder.id,
+            content: {
+              title: reminder.title,
+              body: reminder.body,
+              // Only a task about to start makes a sound; the daily check-in stays silent.
+              sound: reminder.kind === "task" ? "default" : false,
+            },
+            trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: reminder.at },
+          });
+          scheduled++;
+        } catch (e) {
+          console.warn(`[notifications] could not schedule ${reminder.id}`, e);
+        }
+      }
+      console.log(`[notifications] ${scheduled} reminder(s) scheduled`);
+    })
+    .catch((e) => console.warn("[notifications] reminder sync failed", e));
+  return queue;
 }

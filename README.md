@@ -85,11 +85,15 @@ you compete only with your own past pace.
 
 - **Account (optional)** — the app works with no login. Creating an account
   asks for first name, last name and email, then for the code emailed
-  to you: no password. Your existing tasks stay. Email tips are a separate
+  to you: no password. On iPhone, **Continue with Apple** does the same in one tap. Your existing tasks stay. Email tips are a separate
   switch that starts off.
 - **Look** — theme (Match phone, Light, Dark) and colour theme (Sage, Pastel
   Night, Sunny). Sage also lets you pick an accent. These are saved on the phone.
-- **Work schedule, evening review, timer chime, haptics, Pomodoro length.**
+- **Reminders** — a **daily check-in** at the time you choose, sent only when
+  tasks are still open and without a sound, and a heads-up 10 minutes **before
+  a timed task**. Both are scheduled on the phone and planned a few days ahead,
+  so they stop by themselves if the app stays closed.
+- **Work schedule, timer chime, haptics, Pomodoro length.**
 - **Your data** — privacy policy, help and support, and **Delete account**
   (or **Delete my data** before sign-up), which erases everything on the server.
 
@@ -149,10 +153,29 @@ after `npm install`.
    code must be in the email. In both **Change Email Address** (sign-up) and
    **Magic Link** (sign-in), put `{{ .Token }}` in the body, for example
    `Your PaceTasks code: {{ .Token }}`. The default templates contain only a link.
+   The emails PaceTasks uses are kept in `supabase/templates/` (`sign_up_code.html`
+   and `sign_in_code.html`, each with its subject line on top): paste them in.
 3. **Authentication → SMTP Settings**: Supabase's built-in sender is for testing
    only. Set a mail service before real users sign up.
 4. **Authentication → Sign In / Providers → Email → Email OTP Length**: any
    value works (the app accepts 6 to 10 digits); 6 is the easiest to type.
+
+### Sign in with Apple
+
+Shown on iPhone only, under the email form. The app asks iOS for an Apple ID
+token and Supabase verifies it; nothing is stored on the phone.
+
+1. **Authentication → Sign In / Providers → Apple**: enable it and fill only
+   **Client IDs** with `com.pacetasks.app,host.exp.Exponent`. The first is the
+   app, the second is Expo Go (for testing; remove it before the App Store
+   release). The secret key field stays empty: it is only for sign-in on the web.
+2. **Authentication → Sign In / Providers → User Signups**: turn on **Allow
+   manual linking**. It lets the Apple ID attach to the anonymous user the phone
+   already has, which is what keeps the tasks made before signing up.
+
+It works in Expo Go without an Apple Developer Program membership. A real build
+needs the membership, with the **Sign in with Apple** capability on the app ID
+(`app.json` already asks for it).
 
 ## Brain Dump backend
 
@@ -291,6 +314,19 @@ eas submit --platform ios --profile production   # uploads to App Store Connect 
   `design/icon/build_icon_svgs.py` and rendered by
   `design/icon/render_icon_pngs.py` (needs Python with Playwright).
 
+### Store listing and screenshots
+
+- `store.config.json` holds the App Store listing in English, Italian and
+  Turkish: name, subtitle, promo text, description, keywords and the support
+  and privacy links. `eas metadata:push` uploads it to App Store Connect.
+  `storeListing.test.ts` keeps every field within Apple's character limits.
+- `design/store/screenshots/<locale>/` holds five 1320x2868 screenshots per
+  language (iPhone 6.9", the only size App Store Connect requires). They are
+  built from the web demo by `design/store/build_store_screenshots.py`; its
+  header has the three commands. Rebuild them when a screen changes.
+- The interface is English-only in v1, so the Italian and Turkish listings say
+  so and keep the feature names in English.
+
 ## Privacy policy and support page
 
 `docs/` holds the public pages the app and the App Store listing link to:
@@ -313,8 +349,10 @@ update `docs/privacy.html` in the same pull request.
 ```
 App.tsx                    Root: theme provider, session, the three tabs
 app.json, eas.json         Expo config and EAS build profiles
+store.config.json          App Store listing (EN, IT, TR) for `eas metadata:push`
 assets/                    App icon, splash images, notification icon, favicon
 design/icon/               Scripts and SVG sources for the icon set
+design/store/              App Store screenshots and the script that builds them
 docs/                      Public pages (privacy policy, support) for GitHub Pages
 src/screens/               TaskListScreen (Today), StatsScreen (Pace), SettingsScreen
 src/components/            Presentational pieces: sheets, cards, rows, buttons
@@ -323,6 +361,7 @@ src/lib/                   Supabase client and API files, pure logic, UI copy, t
 src/lib/demo/              In-memory backend for the web demo
 e2e/                       Simulated journey: `harness.mjs` (browser, film, steps) and the journeys
 supabase/migrations/       Database schema, security policies and functions
+supabase/templates/        The sign-up and sign-in emails, pasted into the Supabase dashboard
 supabase/tests/database/   pgTAP tests for the database
 supabase/functions/_shared/domain/   Pure TypeScript shared by the app and Edge Functions (`@domain/...`)
 supabase/functions/_shared/server/   Deno-only server code: AI layer, Brain Dump service

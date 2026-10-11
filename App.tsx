@@ -5,6 +5,10 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { StatusBar } from "expo-status-bar";
 import { ThemeProvider, makeStyles, useTheme } from "./src/hooks/useTheme";
 import { useSession } from "./src/hooks/useSession";
+import { SettingsProvider } from "./src/hooks/useSettings";
+import { TasksProvider } from "./src/hooks/useTasks";
+import { Button } from "./src/components/Button";
+import { SESSION_ERROR_HINT, SESSION_ERROR_TITLE, SESSION_RETRY_LABEL } from "./src/lib/sessionCopy";
 import { TaskListScreen } from "./src/screens/TaskListScreen";
 import { StatsScreen } from "./src/screens/StatsScreen";
 import { SettingsScreen } from "./src/screens/SettingsScreen";
@@ -59,12 +63,12 @@ function PillTabBar({ state, descriptors, navigation, insets }: any) {
   );
 }
 
-// Waits for the anonymous Supabase session and the saved appearance, then
-// wires the three tabs (Today / Pace / Settings) behind the pill tab bar.
+// Waits for the anonymous Supabase session and the saved appearance, loads the
+// user's settings and tasks once (SettingsProvider, TasksProvider), then wires the three tabs (Today / Pace / Settings) behind the pill tab bar.
 function AppContent() {
   const { theme, appearanceLoaded } = useTheme();
   const styles = useStyles();
-  const { session, loading, error } = useSession();
+  const { session, loading, failed, retry } = useSession();
 
   const navigationTheme = useMemo(() => {
     const base = theme.isDark ? DarkTheme : DefaultTheme;
@@ -89,14 +93,14 @@ function AppContent() {
     );
   }
 
-  if (error) {
+  if (failed) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.errorText}>Couldn't start session: {error}</Text>
-        <Text style={styles.errorHint}>
-          Check that EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY
-          are set in your .env file.
+        <Text style={styles.errorTitle} accessibilityRole="header">
+          {SESSION_ERROR_TITLE}
         </Text>
+        <Text style={styles.errorHint}>{SESSION_ERROR_HINT}</Text>
+        <Button label={SESSION_RETRY_LABEL} onPress={retry} style={styles.retryButton} />
       </View>
     );
   }
@@ -104,23 +108,27 @@ function AppContent() {
   const userId = session?.user.id;
 
   return (
-    <NavigationContainer theme={navigationTheme}>
-      <StatusBar style={theme.isDark ? "light" : "dark"} />
-      <Tab.Navigator
-        screenOptions={{ headerShown: false }}
-        tabBar={(props) => <PillTabBar {...props} />}
-      >
-        <Tab.Screen name="Tasks" options={{ tabBarLabel: "Today" }}>
-          {() => <TaskListScreen userId={userId} />}
-        </Tab.Screen>
-        <Tab.Screen name="Stats" options={{ tabBarLabel: "Pace" }}>
-          {() => <StatsScreen userId={userId} />}
-        </Tab.Screen>
-        <Tab.Screen name="Settings" options={{ tabBarLabel: "Settings" }}>
-          {() => <SettingsScreen userId={userId} session={session} />}
-        </Tab.Screen>
-      </Tab.Navigator>
-    </NavigationContainer>
+    <SettingsProvider userId={userId}>
+      <TasksProvider userId={userId}>
+        <NavigationContainer theme={navigationTheme}>
+          <StatusBar style={theme.isDark ? "light" : "dark"} />
+          <Tab.Navigator
+            screenOptions={{ headerShown: false }}
+            tabBar={(props) => <PillTabBar {...props} />}
+          >
+            <Tab.Screen name="Tasks" options={{ tabBarLabel: "Today" }}>
+              {() => <TaskListScreen userId={userId} />}
+            </Tab.Screen>
+            <Tab.Screen name="Stats" options={{ tabBarLabel: "Pace" }}>
+              {() => <StatsScreen />}
+            </Tab.Screen>
+            <Tab.Screen name="Settings" options={{ tabBarLabel: "Settings" }}>
+              {() => <SettingsScreen userId={userId} session={session} />}
+            </Tab.Screen>
+          </Tab.Navigator>
+        </NavigationContainer>
+      </TasksProvider>
+    </SettingsProvider>
   );
 }
 
@@ -140,17 +148,20 @@ const useStyles = makeStyles((theme) => ({
     justifyContent: "center",
     padding: theme.spacing.lg,
   },
-  errorText: {
-    color: theme.colors.danger,
-    fontSize: 16,
+  errorTitle: {
+    color: theme.colors.textPrimary,
+    fontSize: theme.typography.headline.fontSize,
     fontWeight: "700",
     textAlign: "center",
   },
   errorHint: {
     color: theme.colors.textSecondary,
-    fontSize: 13,
+    fontSize: theme.typography.subhead.fontSize,
     textAlign: "center",
     marginTop: theme.spacing.sm,
+  },
+  retryButton: {
+    marginTop: theme.spacing.lg,
   },
   tabBarWrapper: {
     backgroundColor: theme.colors.backgroundEnd,

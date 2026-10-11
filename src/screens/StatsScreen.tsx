@@ -12,22 +12,23 @@ import { useTasks } from "../hooks/useTasks";
 import { computeStats, buildWeekdayHeatmap } from "../lib/stats";
 import { computePaceInsights } from "../lib/paceInsights";
 import { paceInsightLines } from "../lib/paceInsightsCopy";
+import { formatDayLabel } from "../lib/dueLabel";
+import { Button } from "../components/Button";
+import { ErrorBanner } from "../components/ErrorBanner";
 import { PaceInsightsCard } from "../components/PaceInsightsCard";
 import { StatCard } from "../components/StatCard";
 import { WeekHeatmap } from "../components/WeekHeatmap";
-
-interface Props {
-  userId: string | undefined;
-}
 
 // "Compete with yourself" ("Your pace"): a 2-column stat grid, the "My Pace"
 // insights (best hours, strongest day, estimates vs reality), a weekday
 // contribution heatmap, and a per-day history list with a relative progress
 // bar — no comparisons to anyone else's numbers, only your own history.
-export function StatsScreen({ userId }: Props) {
+// A failed load shows the error with a retry: zeros would read as "no history".
+export function StatsScreen() {
   const { theme } = useTheme();
   const styles = useStyles();
-  const { tasks, loading } = useTasks(userId);
+  const { tasks, loading, error, refresh } = useTasks();
+  const loadFailed = error !== null && tasks.length === 0;
   const stats = useMemo(() => computeStats(tasks), [tasks]);
   const heatmap = useMemo(() => buildWeekdayHeatmap(stats.dailyBreakdown), [stats]);
   const paceLines = useMemo(() => paceInsightLines(computePaceInsights(tasks)), [tasks]);
@@ -45,8 +46,13 @@ export function StatsScreen({ userId }: Props) {
           </Text>
         </View>
 
-        {loading ? (
+        {loading && tasks.length === 0 ? (
           <ActivityIndicator color={theme.colors.accent} style={styles.loader} />
+        ) : loadFailed ? (
+          <View style={styles.loadError}>
+            <ErrorBanner message={`Your history could not be loaded. ${error}`} />
+            <Button label="Try again" variant="secondary" onPress={refresh} />
+          </View>
         ) : (
           <FlatList
             data={stats.dailyBreakdown}
@@ -97,9 +103,9 @@ export function StatsScreen({ userId }: Props) {
               return (
                 <View style={styles.dayRow}>
                   <View style={styles.dayInfo}>
-                    <Text style={styles.dayDate}>{item.date}</Text>
+                    <Text style={styles.dayDate}>{formatDayLabel(item.date)}</Text>
                     <Text style={styles.dayMeta}>
-                      {item.completedCount} tasks · {item.actualMinutes} min
+                      {item.completedCount === 1 ? "1 task" : `${item.completedCount} tasks`} · {item.actualMinutes} min
                     </Text>
                   </View>
                   <View style={styles.dayProgressTrack}>
@@ -149,6 +155,11 @@ const useStyles = makeStyles((theme) => ({
   },
   loader: {
     marginTop: theme.spacing.xl,
+  },
+  loadError: {
+    paddingHorizontal: theme.spacing.lg,
+    marginTop: theme.spacing.lg,
+    gap: theme.spacing.md,
   },
   listContent: {
     paddingHorizontal: theme.spacing.lg,

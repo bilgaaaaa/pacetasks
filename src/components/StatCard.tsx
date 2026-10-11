@@ -1,11 +1,8 @@
 import React from "react";
 import { Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { makeStyles } from "../hooks/useTheme";
 
 interface Props {
-  icon?: keyof typeof Ionicons.glyphMap;
-  color?: string;
   valueColor?: string;
   label: string;
   value: string;
@@ -13,14 +10,11 @@ interface Props {
 }
 
 // One tile in the stats grid. Kept dumb on purpose — all the math happens
-// in lib/stats.ts, this just renders whatever number/icon/color it's given.
-// `icon`/`color` are optional so plain uppercase-label cards (no icon, no
-// colored border) can reuse this same component.
-export function StatCard({ icon, color, valueColor, label, value, hint }: Props) {
+// in lib/stats.ts, this just renders the label and number it's given.
+export function StatCard({ valueColor, label, value, hint }: Props) {
   const styles = useStyles();
   return (
-    <View style={[styles.card, color ? { borderTopColor: color, borderTopWidth: 3 } : null]}>
-      {icon && color && <Ionicons name={icon} size={20} color={color} />}
+    <View style={styles.card}>
       <Text style={styles.label}>{label}</Text>
       <Text style={[styles.value, valueColor ? { color: valueColor } : null]}>{value}</Text>
       {hint && <Text style={styles.hint}>{hint}</Text>}

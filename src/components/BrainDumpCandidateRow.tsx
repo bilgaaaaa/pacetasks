@@ -41,7 +41,8 @@ export function BrainDumpCandidateRow({ candidate, edit, todayKey, disabled, onT
         disabled={disabled}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         accessibilityRole="checkbox"
-        accessibilityState={{ checked: edit.included }}
+        accessibilityState={{ checked: edit.included, disabled }}
+        accessibilityLabel={`Include ${draft.title}`}
       >
         <View style={[styles.checkCircle, edit.included && styles.checkCircleOn]}>
           {edit.included && <Ionicons name="checkmark" size={16} color={theme.colors.onAccent} />}

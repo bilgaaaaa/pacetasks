@@ -1,0 +1,76 @@
+{
+  "configVersion": 0,
+  "apple": {
+    "categories": [
+      "PRODUCTIVITY",
+      "LIFESTYLE"
+    ],
+    "info": {
+      "en-US": {
+        "title": "PaceTasks: Plan at Your Pace",
+        "subtitle": "Tasks that fit your real day",
+        "promoText": "Empty your head in one go. PaceTasks turns it into tasks, then shows what fits the time and energy you have right now.",
+        "description": "Tell PaceTasks what you need to do. It figures out how to fit it into your life.\n\nMost task apps make you manage the app: dates, priorities, lists, labels. PaceTasks is for people with a fixed work schedule who just want to get their personal things done before or after work, without planning a plan.\n\nBRAIN DUMP\nType or dictate everything on your mind in one go, in English, Italian, Turkish or a mix. PaceTasks splits it into tasks, understands \"tomorrow morning\" or \"by Friday\", and shows you what it understood before anything is added.\n\nPICK MY NEXT TASK\n• Decide for me: one task, chosen by what matters most. Done, or not now.\n• Fit my time: say how much time and energy you have, from 5 minutes to an hour, and get the tasks that fit back to back.\n\nNO GUILT PILE\n• Carried over: tasks you didn't finish get a suggested new home (today, tomorrow, the weekend or Someday). Change any of them, then apply.\n• Weekly Reset: a calm walk through what keeps getting postponed.\n• Someday: park ideas so they stop crowding your day.\n\nYOUR PACE, NOBODY ELSE'S\n• See what you finished, your streak and a 13-week weekday heatmap.\n• My Pace tells you, in plain sentences, when you really get things done and whether tasks take longer than you guess.\n• Timers and focus sessions log the real minutes, so estimates get honest.\n\nMADE TO FEEL CALM\n• Add your usual tasks with one tap.\n• Light and dark, three colour themes.\n• No ads, no trackers, no analytics.\n\nNO SIGN-UP NEEDED\nPaceTasks works without an account: your tasks are kept on our server in the EU under an anonymous ID. Create one only if you want your tasks kept safe when you change phone: first name, last name, email and a code, no password. Delete your account and all your data from inside the app at any time.\n\nPaceTasks is free.",
+        "keywords": [
+          "todo",
+          "to do list",
+          "planner",
+          "task manager",
+          "brain dump",
+          "focus",
+          "pomodoro",
+          "daily",
+          "energy",
+          "organizer",
+          "checklist"
+        ],
+        "marketingUrl": "https://bilgaaaaa.github.io/pacetasks/",
+        "supportUrl": "https://bilgaaaaa.github.io/pacetasks/support.html",
+        "privacyPolicyUrl": "https://bilgaaaaa.github.io/pacetasks/privacy.html"
+      },
+      "it": {
+        "title": "PaceTasks: al tuo ritmo",
+        "subtitle": "Impegni a misura di giornata",
+        "promoText": "Svuota la testa in un colpo solo. PaceTasks trasforma tutto in attività e ti mostra cosa ci sta nel tempo e con l'energia che hai adesso.",
+        "description": "Di' a PaceTasks cosa devi fare. Ci pensa lei a farlo stare nella tua vita.\n\nQuasi tutte le app per le cose da fare ti fanno gestire l'app: date, priorità, liste, etichette. PaceTasks è per chi ha un orario di lavoro fisso e vuole solo sbrigare le proprie cose prima o dopo il lavoro, senza perdere tempo a pianificare.\n\nBRAIN DUMP\nScrivi o detta tutto quello che hai in testa, in italiano, inglese, turco o mescolando. PaceTasks lo divide in attività, capisce \"domani mattina\" o \"entro venerdì\" e ti mostra cosa ha capito prima di aggiungere qualsiasi cosa.\n\nSCEGLI LA PROSSIMA ATTIVITÀ\n• Decide for me: una sola attività, scelta in base a ciò che conta di più. Fatta, oppure non ora.\n• Fit my time: indica tempo ed energia, da 5 minuti a un'ora, e ricevi le attività che ci stanno, una dopo l'altra.\n\nNIENTE MONTAGNA DI SENSI DI COLPA\n• Carried over: le attività non finite ricevono una nuova proposta (oggi, domani, il weekend o Someday, cioè \"prima o poi\"). Cambia quelle che vuoi, poi applica.\n• Weekly Reset: un giro tranquillo tra le cose che continui a rimandare.\n• Someday: parcheggia le idee, così non affollano la giornata.\n\nIL TUO RITMO, NON QUELLO DEGLI ALTRI\n• Guarda cosa hai completato, la tua serie e una mappa di calore di 13 settimane (giorni feriali).\n• My Pace ti dice, con frasi semplici, quando concludi davvero le cose e se le attività durano più di quanto pensi.\n• Timer e sessioni di concentrazione registrano i minuti reali, così le stime diventano oneste.\n\nPENSATA PER DARE CALMA\n• Aggiungi le attività abituali con un tocco.\n• Chiaro e scuro, tre temi di colore.\n• Niente pubblicità, niente tracciamento, niente analytics.\n\nNESSUNA REGISTRAZIONE NECESSARIA\nPaceTasks funziona senza account: le tue attività sono conservate sul nostro server nell'UE con un ID anonimo. Creane uno solo se vuoi tenere al sicuro le attività quando cambi telefono: nome, cognome, email e un codice, nessuna password. Puoi eliminare l'account e tutti i tuoi dati dall'app in qualsiasi momento.\n\nIn questa versione l'interfaccia dell'app è in inglese; Brain Dump capisce l'italiano.\n\nPaceTasks è gratuita.",
+        "keywords": [
+          "cose da fare",
+          "todo",
+          "lista",
+          "promemoria",
+          "agenda",
+          "organizzare",
+          "pomodoro",
+          "produttività",
+          "routine",
+          "energia"
+        ],
+        "marketingUrl": "https://bilgaaaaa.github.io/pacetasks/",
+        "supportUrl": "https://bilgaaaaa.github.io/pacetasks/support.html",
+        "privacyPolicyUrl": "https://bilgaaaaa.github.io/pacetasks/privacy.html"
+      },
+      "tr": {
+        "title": "PaceTasks: Kendi Temponda",
+        "subtitle": "Gününe sığan yapılacaklar",
+        "promoText": "Aklındakileri tek seferde boşalt. PaceTasks hepsini göreve çevirir ve şu anki zamanına ve enerjine uyanları gösterir.",
+        "description": "PaceTasks'e ne yapman gerektiğini söyle. O da bunu hayatına nasıl sığdıracağını bulsun.\n\nÇoğu görev uygulaması sana uygulamayı yönettirir: tarihler, öncelikler, listeler, etiketler. PaceTasks, sabit mesaisi olan ve kişisel işlerini işten önce ya da sonra, plan yapmayı planlamadan halletmek isteyenler için.\n\nBRAIN DUMP\nAklındaki her şeyi tek seferde yaz ya da dikte et; Türkçe, İngilizce, İtalyanca ya da karışık. PaceTasks bunları görevlere ayırır, \"yarın sabah\" ya da \"cumaya kadar\" gibi ifadeleri anlar ve hiçbir şey eklemeden önce ne anladığını gösterir.\n\nSIRADAKİ GÖREVİMİ SEÇ\n• Decide for me: senin yerine karar verir; en önemli olana göre seçilmiş tek bir görev. Bitti ya da şimdi değil.\n• Fit my time: 5 dakikadan bir saate kadar ne kadar zamanın ve enerjin olduğunu söyle, art arda sığan görevleri gör.\n\nSUÇLULUK YIĞINI YOK\n• Carried over: bitiremediğin görevlere yeni bir yer önerilir (bugün, yarın, hafta sonu ya da Someday, yani \"bir ara\"). İstediğini değiştir, sonra uygula.\n• Weekly Reset: sürekli ertelediklerinin üzerinden sakin bir geçiş.\n• Someday: fikirlerini park et, gününü kalabalıklaştırmasınlar.\n\nSENİN TEMPON, BAŞKASININ DEĞİL\n• Neleri bitirdiğini, serini ve 13 haftalık hafta içi ısı haritanı gör.\n• My Pace, işleri gerçekte ne zaman bitirdiğini ve görevlerin tahmin ettiğinden uzun sürüp sürmediğini sade cümlelerle söyler.\n• Zamanlayıcılar ve odak seansları gerçek dakikaları kaydeder, tahminlerin gerçekçi olur.\n\nSAKİN HİSSETTİRMEK İÇİN TASARLANDI\n• Her zamanki görevlerini tek dokunuşla ekle.\n• Açık ve koyu görünüm, üç renk teması.\n• Reklam yok, takip yok, analitik yok.\n\nKAYIT GEREKMEZ\nPaceTasks hesap olmadan çalışır: görevlerin AB'deki sunucumuzda anonim bir kimlikle saklanır. Yalnızca telefon değiştirdiğinde görevlerinin güvende kalmasını istersen hesap aç: ad, soyad, e-posta ve bir kod, şifre yok. Hesabını ve tüm verilerini istediğin an uygulamanın içinden silebilirsin.\n\nBu sürümde uygulamanın arayüzü İngilizcedir; Brain Dump Türkçeyi anlar.\n\nPaceTasks ücretsizdir.",
+        "keywords": [
+          "yapılacaklar",
+          "görev",
+          "liste",
+          "planlayıcı",
+          "hatırlatıcı",
+          "ajanda",
+          "pomodoro",
+          "verimlilik",
+          "rutin",
+          "odak",
+          "enerji"
+        ],
+        "marketingUrl": "https://bilgaaaaa.github.io/pacetasks/",
+        "supportUrl": "https://bilgaaaaa.github.io/pacetasks/support.html",
+        "privacyPolicyUrl": "https://bilgaaaaa.github.io/pacetasks/privacy.html"
+      }
+    }
+  }
+}

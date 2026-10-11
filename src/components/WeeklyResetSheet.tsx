@@ -14,6 +14,10 @@ const MOVE_ACTION_ROWS: ResetAction[][] = [
   ["weekend", "someday"],
 ];
 
+// A title can be 200 characters: it shrinks, then is cut off, so it never runs into the header or the buttons.
+const TITLE_MAX_LINES = 4;
+const TITLE_MIN_SCALE = 0.6;
+
 interface Props {
   visible: boolean;
   phase: WeeklyResetPhase;
@@ -96,7 +100,9 @@ export function WeeklyResetSheet({
         {phase === "reviewing" && item && (
           <View style={styles.body}>
             <View style={styles.center}>
-              <Text style={styles.title}>{item.task.title}</Text>
+              <Text style={styles.title} numberOfLines={TITLE_MAX_LINES} adjustsFontSizeToFit minimumFontScale={TITLE_MIN_SCALE}>
+                {item.task.title}
+              </Text>
               <Text style={styles.meta}>{itemReason(item, todayKey)}</Text>
             </View>
             <View style={styles.actions}>

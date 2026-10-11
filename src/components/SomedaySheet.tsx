@@ -1,22 +1,23 @@
 import React from "react";
 import { Modal, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { getCategory } from "../lib/categories";
 import { makeStyles, useTheme } from "../hooks/useTheme";
 import { Task } from "../lib/types";
 import { ErrorBanner } from "./ErrorBanner";
+import { TaskActionRow } from "./TaskActionRow";
 
 interface Props {
   visible: boolean;
   tasks: Task[]; // parked tasks, from selectSomedayTasks
   errorMessage: string | null; // a failed save from the task list, which this sheet covers
   onBringBack: (taskId: string) => void;
-  onDelete: (taskId: string) => void;
+  onDelete: (taskId: string) => void; // already confirmed by the row
   onClose: () => void;
 }
 
 // Full-screen sheet listing the "someday" tasks: things worth keeping but not
-// part of the daily workload. Each can be brought back to Today or deleted.
+// part of the daily workload. Each can be brought back to Today or deleted
+// (after a confirmation, see TaskActionRow).
 // Purely presentational — the list and the actions come from the screen.
 export function SomedaySheet({ visible, tasks, errorMessage, onBringBack, onDelete, onClose }: Props) {
   const { theme } = useTheme();
@@ -47,33 +48,13 @@ export function SomedaySheet({ visible, tasks, errorMessage, onBringBack, onDele
             </View>
           ) : (
             tasks.map((task) => (
-              <View key={task.id} style={styles.row}>
-                <View style={styles.rowText}>
-                  <Text style={styles.taskTitle}>{task.title}</Text>
-                  <Text style={styles.meta}>
-                    {[task.category ? getCategory(task.category).label : null, `~${task.estimated_minutes} min`]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  style={styles.bringBackButton}
-                  onPress={() => onBringBack(task.id)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Bring back ${task.title}`}
-                >
-                  <Text style={styles.bringBackText}>Bring back</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.deleteButton}
-                  onPress={() => onDelete(task.id)}
-                  hitSlop={8}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Delete ${task.title}`}
-                >
-                  <Ionicons name="trash-outline" size={16} color={theme.colors.textTertiary} />
-                </TouchableOpacity>
-              </View>
+              <TaskActionRow
+                key={task.id}
+                task={task}
+                actionLabel="Bring back"
+                onAction={(parked) => onBringBack(parked.id)}
+                onDelete={onDelete}
+              />
             ))
           )}
         </ScrollView>
@@ -129,47 +110,6 @@ const useStyles = makeStyles((theme) => ({
   },
   error: {
     marginBottom: theme.spacing.md,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: theme.spacing.sm,
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.lg,
-    padding: theme.spacing.md,
-    marginBottom: theme.spacing.sm,
-  },
-  rowText: {
-    flex: 1,
-    gap: 2,
-  },
-  taskTitle: {
-    color: theme.colors.textPrimary,
-    fontSize: theme.typography.headline.fontSize,
-    fontWeight: theme.typography.headline.fontWeight,
-  },
-  meta: {
-    color: theme.colors.textSecondary,
-    fontSize: theme.typography.footnote.fontSize,
-  },
-  bringBackButton: {
-    backgroundColor: theme.colors.accentDark,
-    borderRadius: theme.radius.pill,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-  },
-  bringBackText: {
-    color: theme.colors.onAccent,
-    fontSize: theme.typography.footnote.fontSize,
-    fontWeight: "700",
-  },
-  deleteButton: {
-    width: 28,
-    height: 28,
-    borderRadius: theme.radius.sm,
-    backgroundColor: theme.colors.surfaceAlt,
-    alignItems: "center",
-    justifyContent: "center",
   },
   empty: {
     backgroundColor: theme.colors.surfaceAlt,

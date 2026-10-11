@@ -56,6 +56,24 @@ describe("selectDoNowTasks", () => {
     expect(selectDoNowTasks(tasks, makeContext()).plan.map((t) => t.id)).toEqual(["overdue", "today", "undated"]);
   });
 
+  it("ranks a deadline that is still ahead below priority, nearest first", () => {
+    const tasks = [
+      makeTask({ id: "undated", estimated_minutes: 1 }),
+      makeTask({ id: "by-later", estimated_minutes: 1, due_date: "2026-10-19", due_kind: "by" }),
+      makeTask({ id: "by-sooner", estimated_minutes: 1, due_date: "2026-10-04", due_kind: "by" }),
+      makeTask({ id: "undated-high", estimated_minutes: 1, priority: "high" }),
+      makeTask({ id: "today-low", estimated_minutes: 1, priority: "low", due_date: TODAY }),
+    ];
+
+    expect(selectDoNowTasks(tasks, makeContext()).plan.map((t) => t.id)).toEqual([
+      "today-low",
+      "undated-high",
+      "by-sooner",
+      "by-later",
+      "undated",
+    ]);
+  });
+
   it("ranks by priority, with no priority counting as medium", () => {
     const tasks = [
       makeTask({ id: "low", estimated_minutes: 1, priority: "low" }),
@@ -114,7 +132,7 @@ describe("selectDoNowTasks", () => {
 });
 
 describe("selectOneThingQueue", () => {
-  const rankContext = { todayKey: TODAY, energy: "low", currentTiming: "anytime", quickWinMinutes: 5 } as const;
+  const rankContext = { todayKey: TODAY, energy: "low", currentTiming: "anytime" } as const;
 
   it("ranks every task that can be started today, whatever its length or energy", () => {
     const tasks = [
@@ -128,30 +146,23 @@ describe("selectOneThingQueue", () => {
     expect(selectOneThingQueue(tasks, rankContext, new Set()).map((t) => t.id)).toEqual(["due", "long-deep"]);
   });
 
-  it("offers quick wins first, then what matters most", () => {
+  it("opens with the shortest task when everything else is equal, so starting is easy", () => {
     const tasks = [
-      makeTask({ id: "overdue-long", estimated_minutes: 45, due_date: "2026-09-20" }),
-      makeTask({ id: "quick-undated", estimated_minutes: 3 }),
-      makeTask({ id: "quick-due", estimated_minutes: 5, due_date: TODAY }),
-      makeTask({ id: "just-over", estimated_minutes: 6, due_date: TODAY }),
+      makeTask({ id: "long", estimated_minutes: 45 }),
+      makeTask({ id: "short", estimated_minutes: 5 }),
     ];
 
-    expect(selectOneThingQueue(tasks, rankContext, new Set()).map((t) => t.id)).toEqual([
-      "quick-due",
-      "quick-undated",
-      "overdue-long",
-      "just-over",
-    ]);
+    expect(selectOneThingQueue(tasks, rankContext, new Set()).map((t) => t.id)).toEqual(["short", "long"]);
   });
 
-  it("follows the user's own quick-win limit", () => {
+  it("puts an undated high-priority task ahead of a deadline weeks away", () => {
     const tasks = [
-      makeTask({ id: "overdue-long", estimated_minutes: 45, due_date: "2026-09-20" }),
-      makeTask({ id: "ten", estimated_minutes: 10 }),
+      makeTask({ id: "by-far", due_date: "2026-10-19", due_kind: "by" }),
+      makeTask({ id: "high", priority: "high" }),
+      makeTask({ id: "overdue", priority: "low", due_date: "2026-09-20" }),
     ];
 
-    expect(selectOneThingQueue(tasks, { ...rankContext, quickWinMinutes: 10 }, new Set())[0].id).toBe("ten");
-    expect(selectOneThingQueue(tasks, { ...rankContext, quickWinMinutes: 5 }, new Set())[0].id).toBe("overdue-long");
+    expect(selectOneThingQueue(tasks, rankContext, new Set()).map((t) => t.id)).toEqual(["overdue", "high", "by-far"]);
   });
 
   it("leaves out tasks the user skipped", () => {

@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   RefreshControl,
   SafeAreaView,
   SectionList,
@@ -16,8 +15,10 @@ import { makeStyles, useTheme } from "../hooks/useTheme";
 import { Task } from "../lib/types";
 import { useTasks } from "../hooks/useTasks";
 import { useSettings } from "../hooks/useSettings";
+import { useReminders } from "../hooks/useReminders";
 import { useBrainDump } from "../hooks/useBrainDump";
 import { useSheetHandoff } from "../hooks/useSheetHandoff";
+import { useHaptics } from "../hooks/useHaptics";
 import { useDoNow } from "../hooks/useDoNow";
 import { useOneThing } from "../hooks/useOneThing";
 import { useRollover } from "../hooks/useRollover";
@@ -26,12 +27,13 @@ import { DEFAULT_SETTINGS } from "../lib/settingsApi";
 import { computeStats } from "../lib/stats";
 import { filterTodayTasks, groupTodayTasks, summarizePending, TodayFilter } from "../lib/taskSections";
 import { emptyFilterMessage, greetingForHour, totalsLine } from "../lib/todayCopy";
-import { heroMessage } from "../lib/heroCopy";
-import { buildWeek } from "../lib/weekStrip";
+import { upcomingLink } from "../lib/upcomingCopy";
+import { heroMessage, heroStart } from "../lib/heroCopy";
+import { buildWeek, WeekDay } from "../lib/weekStrip";
 import { selectUsuals } from "../lib/taskRhythm";
 import { buildTaskHistory, findExactMatch } from "@domain/taskHistory";
-import { selectSomedayTasks, selectTodayTasks } from "@domain/todayTasks";
-import { PARK_PATCH, UNPARK_PATCH } from "@domain/taskPatch";
+import { groupUpcomingByDay, selectSomedayTasks, selectTodayTasks, selectUpcomingTasks } from "@domain/todayTasks";
+import { PARK_PATCH, reschedulePatch, UNPARK_PATCH } from "@domain/taskPatch";
 import { toLocalDateKey } from "@domain/dates";
 import { AddTaskSheet } from "../components/AddTaskSheet";
 import { TaskItem } from "../components/TaskItem";
@@ -46,6 +48,7 @@ import { TodayFilterBar } from "../components/TodayFilterBar";
 import { TodayHero } from "../components/TodayHero";
 import { WeekStrip } from "../components/WeekStrip";
 import { SomedaySheet } from "../components/SomedaySheet";
+import { UpcomingSheet } from "../components/UpcomingSheet";
 import { WeeklyResetSheet } from "../components/WeeklyResetSheet";
 
 interface Props {
@@ -60,8 +63,7 @@ interface ListSection {
 }
 
 
-// Header: a small date label ("SUNDAY · OCTOBER 4") over the greeting
-// ("Good morning", from greetingForHour).
+// Header: a small date label ("SUNDAY · OCTOBER 4") over the greeting from todayCopy.
 function dateEyebrow(now: Date): string {
   const day = now.toLocaleDateString("en-US", { weekday: "long" });
   const date = now.toLocaleDateString("en-US", { month: "long", day: "numeric" });
@@ -78,14 +80,17 @@ function dateEyebrow(now: Date): string {
 // "Decide for me" (One Thing mode, a single task). When tasks were left
 // unfinished, a slim "carried over" row opens a review that proposes where
 // each one goes. Quick filters (All, Quick wins, Due today) sit above the
-// list; groupings live behind "Filter". The foot of the list links to Weekly Reset and to the Someday sheet
+// list; groupings live behind the round button beside them. The foot of the list links to Weekly Reset, to the
+// Upcoming sheet (tasks set for a later day, also opened from the week strip) and to the Someday sheet
 // (parked tasks). An end-of-day card appears once nothing is left pending.
 export function TaskListScreen({ userId }: Props) {
   const { theme, appearance, updateAppearance } = useTheme();
   const styles = useStyles();
-  const { tasks, loading, error, refresh, create, applyCreated, complete, update, updateMany, remove, clearCompleted } =
-    useTasks(userId);
-  const { settings } = useSettings(userId);
+  const { tasks, loading, error, refresh, create, applyCreated, complete, update, updateMany, remove } =
+    useTasks();
+  const { settings } = useSettings();
+  // An empty list after a failed load is not "no tasks": reminders wait for a real one.
+  useReminders(userId, tasks, !loading && (tasks.length > 0 || !error));
   const [focusTask, setFocusTask] = useState<Task | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [brainDumpOpen, setBrainDumpOpen] = useState(false);
@@ -95,18 +100,21 @@ export function TaskListScreen({ userId }: Props) {
   const [filter, setFilter] = useState<TodayFilter>("all");
   const [somedayOpen, setSomedayOpen] = useState(false);
   const [weeklyResetOpen, setWeeklyResetOpen] = useState(false);
+  // `dayKey` is the day the sheet opens on (a tap in the week strip); null opens at the top.
+  const [upcoming, setUpcoming] = useState<{ open: boolean; dayKey: string | null }>({ open: false, dayKey: null });
   const brainDump = useBrainDump({ onTasksCreated: applyCreated });
   const workStartHour = settings?.work_start_hour ?? DEFAULT_SETTINGS.work_start_hour;
   const workEndHour = settings?.work_end_hour ?? DEFAULT_SETTINGS.work_end_hour;
   const doNow = useDoNow(tasks, workStartHour, workEndHour);
-  const oneThing = useOneThing({
-    tasks,
-    energy: doNow.energy,
-    workStartHour,
-    workEndHour,
-    quickWinMinutes: appearance.quickWinMinutes,
-    onComplete: complete,
-  });
+  const haptics = useHaptics();
+  // Every way of finishing a task (a row, Focus, One Thing) goes through here, so all of them feel the same:
+  // one tap once the save has really succeeded. `silent` is for a moment that already had its own cue.
+  const completeTask = async (taskId: string, actualMinutes: number, silent = false) => {
+    const saved = await complete(taskId, actualMinutes);
+    if (saved && !silent) haptics.play("taskCompleted");
+    return saved;
+  };
+  const oneThing = useOneThing({ tasks, energy: doNow.energy, workStartHour, workEndHour, onComplete: completeTask });
   const rollover = useRollover({ tasks, onApply: updateMany });
   const weeklyReset = useWeeklyReset({ tasks, onUpdate: update, onRemove: remove });
   const sheetHandoff = useSheetHandoff();
@@ -134,6 +142,10 @@ export function TaskListScreen({ userId }: Props) {
   const openBrainDumpFromAdd = () =>
     sheetHandoff.handOff(() => setAddOpen(false), () => setBrainDumpOpen(true));
 
+  // A Focus pill tapped inside "Fit my time": that sheet has to go before the session can show.
+  const startFocusFromDoNow = (task: Task) =>
+    sheetHandoff.handOff(() => setDoNowOpen(false), () => setFocusTask(task));
+
   const history = useMemo(() => buildTaskHistory(tasks), [tasks]);
   const stats = useMemo(() => computeStats(tasks), [tasks]);
 
@@ -152,7 +164,8 @@ export function TaskListScreen({ userId }: Props) {
     [completedTasks, todayKey]
   );
   const somedayTasks = useMemo(() => selectSomedayTasks(tasks), [tasks]);
-  const hasCompleted = completedTasks.length > 0;
+  const upcomingTasks = useMemo(() => selectUpcomingTasks(tasks, todayKey), [tasks, todayKey]);
+  const upcomingDays = useMemo(() => groupUpcomingByDay(upcomingTasks), [upcomingTasks]);
   const allDone = pending.length + done.length > 0 && pending.length === 0;
   const summary = summarizePending(pending, appearance.quickWinMinutes, todayKey);
   const filterCounts = { all: summary.count, quick: summary.quickWinCount, due: summary.dueCount };
@@ -187,10 +200,11 @@ export function TaskListScreen({ userId }: Props) {
     ? focusTasksToday.findIndex((t) => t.id === focusTask.id) + 1
     : 0;
 
-  // One task row for both the Today list and the "What can I do now?" sheet.
+  // One task row for both the Today list and the "What can I do now?" sheet,
+  // which passes its own way of starting Focus (it has to close first).
   // The range timer's suggested min/max come from this task's own history
   // (see taskHistory.ts); with no completed history yet, both ends are its estimate.
-  const renderTaskItem = (task: Task) => {
+  const renderTaskItem = (task: Task, onStartFocus: (task: Task) => void = setFocusTask) => {
     const historyEntry = findExactMatch(history, task.title);
     const suggestedMin = historyEntry?.minMinutes ?? task.estimated_minutes;
     const suggestedMax = historyEntry?.maxMinutes ?? task.estimated_minutes;
@@ -202,26 +216,12 @@ export function TaskListScreen({ userId }: Props) {
         suggestedMin={Math.min(suggestedMin, suggestedMax)}
         suggestedMax={Math.max(suggestedMin, suggestedMax)}
         quickWinMinutes={appearance.quickWinMinutes}
-        chimeEnabled={settings?.timer_chime_enabled ?? DEFAULT_SETTINGS.timer_chime_enabled}
-        onComplete={complete}
+        onComplete={completeTask}
         onDelete={remove}
         onPark={(taskId) => update(taskId, PARK_PATCH)}
-        onStartFocus={setFocusTask}
+        onStartFocus={onStartFocus}
       />
     );
-  };
-
-  const openMenu = () => {
-    const options: any[] = [];
-    if (hasCompleted) {
-      options.push({
-        text: "Clear completed tasks",
-        style: "destructive",
-        onPress: clearCompleted,
-      });
-    }
-    options.push({ text: "Cancel", style: "cancel" });
-    Alert.alert("Options", hasCompleted ? undefined : "No completed tasks yet.", options);
   };
 
   const week = useMemo(() => buildWeek(todayKey, tasks), [todayKey, tasks]);
@@ -242,9 +242,6 @@ export function TaskListScreen({ userId }: Props) {
                 {greetingForHour(now.getHours())}
               </Text>
             </View>
-            <TouchableOpacity onPress={openMenu} style={styles.menuButton} accessibilityLabel="List options">
-              <Ionicons name="ellipsis-horizontal" size={20} color={theme.colors.textSecondary} />
-            </TouchableOpacity>
           </View>
 
         </View>
@@ -292,13 +289,15 @@ export function TaskListScreen({ userId }: Props) {
                     quickWinCount: summary.quickWinCount,
                     quickWinMinutes: appearance.quickWinMinutes,
                     streakDays: stats.currentStreakDays,
+                    doneToday: stats.todayCompleted > 0,
                     allDone,
+                    start: heroStart(oneThing.firstPick, todayKey, appearance.quickWinMinutes),
                   })}
                   totals={summary.count > 0 ? totalsLine(summary.count, summary.totalMinutes) : ""}
                   showAction={summary.count > 0}
                   onPick={() => setPickOpen(true)}
                 />
-                <WeekStrip days={week} />
+                <WeekStrip days={week} onPressDay={(day: WeekDay) => setUpcoming({ open: true, dayKey: day.key })} />
                 {rollover.visible && (
                   <RolloverCard
                     choices={rollover.choices}
@@ -335,6 +334,15 @@ export function TaskListScreen({ userId }: Props) {
                     accessibilityRole="button"
                   >
                     <Text style={styles.footerLinkText}>Weekly reset · {weeklyReset.pendingCount} to review</Text>
+                  </TouchableOpacity>
+                )}
+                {upcomingTasks.length > 0 && (
+                  <TouchableOpacity
+                    onPress={() => setUpcoming({ open: true, dayKey: null })}
+                    style={styles.footerLink}
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.footerLinkText}>{upcomingLink(upcomingTasks.length)}</Text>
                   </TouchableOpacity>
                 )}
                 {somedayTasks.length > 0 && (
@@ -411,8 +419,9 @@ export function TaskListScreen({ userId }: Props) {
           errorMessage={error}
           onChangeMinutes={doNow.setAvailableMinutes}
           onChangeEnergy={doNow.setEnergy}
-          renderTask={renderTaskItem}
+          renderTask={(task) => renderTaskItem(task, startFocusFromDoNow)}
           onClose={() => setDoNowOpen(false)}
+          onDismissed={sheetHandoff.onDismissed}
         />
 
         <OneThingSheet
@@ -445,6 +454,17 @@ export function TaskListScreen({ userId }: Props) {
           onClose={() => setSomedayOpen(false)}
         />
 
+        <UpcomingSheet
+          visible={upcoming.open}
+          days={upcomingDays}
+          todayKey={todayKey}
+          focusDayKey={upcoming.dayKey}
+          errorMessage={error}
+          onMoveToToday={(task) => update(task.id, reschedulePatch(task, todayKey))}
+          onDelete={remove}
+          onClose={() => setUpcoming((current) => ({ ...current, open: false }))}
+        />
+
         <WeeklyResetSheet
           visible={weeklyResetOpen}
           phase={weeklyReset.phase}
@@ -468,10 +488,9 @@ export function TaskListScreen({ userId }: Props) {
           sessionTotal={focusTasksToday.length}
           workMinutes={settings?.pomodoro_work_minutes ?? DEFAULT_SETTINGS.pomodoro_work_minutes}
           breakMinutes={settings?.pomodoro_break_minutes ?? DEFAULT_SETTINGS.pomodoro_break_minutes}
-          chimeEnabled={settings?.timer_chime_enabled ?? DEFAULT_SETTINGS.timer_chime_enabled}
           onClose={() => setFocusTask(null)}
-          onComplete={(taskId, actualMinutes) => {
-            complete(taskId, actualMinutes);
+          onComplete={(taskId, actualMinutes, endedByTimer) => {
+            completeTask(taskId, actualMinutes, endedByTimer);
             setFocusTask(null);
           }}
         />
@@ -515,14 +534,6 @@ const useStyles = makeStyles((theme) => ({
     fontSize: theme.typography.eyebrow.fontSize,
     fontWeight: theme.typography.eyebrow.fontWeight,
     letterSpacing: theme.typography.eyebrow.letterSpacing,
-  },
-  menuButton: {
-    width: 44,
-    height: 44,
-    borderRadius: theme.radius.pill,
-    backgroundColor: theme.colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
   },
   filterRow: {
     paddingTop: 4,

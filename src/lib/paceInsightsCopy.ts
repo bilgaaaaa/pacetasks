@@ -6,8 +6,9 @@ import type { PaceInsights } from "./paceInsights";
 
 const WEEKDAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
+// A window can start at hour 0 or end at hour 24; both are midnight, and "24:00" is not a time people read.
 function formatHour(hour: number): string {
-  return `${String(hour).padStart(2, "0")}:00`;
+  return hour % 24 === 0 ? "midnight" : `${String(hour).padStart(2, "0")}:00`;
 }
 
 // One sentence per pattern found; before there is enough history, one sentence saying how much is missing.

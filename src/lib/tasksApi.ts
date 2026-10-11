@@ -57,11 +57,3 @@ export async function deleteTask(taskId: string): Promise<void> {
   if (error) throw error;
 }
 
-export async function clearCompletedTasks(userId: string): Promise<void> {
-  const { error } = await supabase
-    .from("tasks")
-    .delete()
-    .eq("user_id", userId)
-    .eq("status", "done");
-  if (error) throw error;
-}
