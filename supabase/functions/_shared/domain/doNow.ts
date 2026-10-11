@@ -55,21 +55,35 @@ export function fitsNow(task: Task, context: DoNowContext): boolean {
 
 type RankKey = number | string;
 
+// How length breaks a tie: the longest task makes the most of a set amount of
+// time, the shortest is the easiest way to get started.
+type DurationOrder = "longest_first" | "shortest_first";
+
+// Sorts after every real date key, so undated tasks follow the ones with a deadline.
+const NO_DEADLINE_KEY = "9999-12-31";
+
+// True when the task's day has come: due today or overdue.
+function isDueNow(task: Task, todayKey: string): boolean {
+  return task.due_date !== null && task.due_date <= todayKey;
+}
+
 // Sort keys, most important first; lower sorts earlier. Overdue and due-today
-// tasks lead (oldest date first), then priority, then tasks that suit this part
-// of the day, firm tasks before "maybe" ones, the best use of the user's energy,
-// and finally longer tasks so the available time is well used.
-function rankKeys(task: Task, context: DoNowRankContext): RankKey[] {
+// tasks lead (oldest date first), then priority, the nearest upcoming deadline,
+// tasks that suit this part of the day, firm tasks before "maybe" ones, the best
+// use of the user's energy, and finally length in the caller's `durationOrder`.
+function rankKeys(task: Task, context: DoNowRankContext, durationOrder: DurationOrder): RankKey[] {
+  const dueNow = isDueNow(task, context.todayKey);
   const energyGap = Math.abs(energyRank(context.energy) - energyRank(task.energy_level ?? ASSUMED_TASK_ENERGY));
   const suitsNow = task.timing === "anytime" || task.timing === context.currentTiming;
   return [
-    task.due_date === null ? 1 : 0,
-    task.due_date ?? "",
+    dueNow ? 0 : 1,
+    dueNow ? (task.due_date as string) : "",
     task.priority === null ? DEFAULT_PRIORITY_RANK : PRIORITY_RANK[task.priority],
+    task.due_date ?? NO_DEADLINE_KEY,
     suitsNow ? 0 : 1,
     task.flexible ? 1 : 0,
     energyGap,
-    -task.estimated_minutes,
+    durationOrder === "longest_first" ? -task.estimated_minutes : task.estimated_minutes,
     task.created_at,
     task.id,
   ];
@@ -90,19 +104,21 @@ function compareKeys(a: RankKey[], b: RankKey[]): number {
 }
 
 // Orders tasks from "do this first" to "do this last" for the current moment.
-function rankTasks(tasks: Task[], context: DoNowRankContext): Task[] {
+function rankTasks(tasks: Task[], context: DoNowRankContext, durationOrder: DurationOrder): Task[] {
   return tasks
-    .map((task) => ({ task, keys: rankKeys(task, context) }))
+    .map((task) => ({ task, keys: rankKeys(task, context, durationOrder) }))
     .sort((a, b) => compareKeys(a.keys, b.keys))
     .map(({ task }) => task);
 }
 
-// Ranks every task that fits, then fills the available time in that order: `plan`
-// is what to do back to back, `alternatives` are the other tasks that would fit.
+// Ranks every task that fits (longer first among equals, so the time is well
+// used), then fills the available time in that order: `plan` is what to do back
+// to back, `alternatives` are the other tasks that would fit.
 export function selectDoNowTasks(tasks: Task[], context: DoNowContext): DoNowSelection {
   const ranked = rankTasks(
     tasks.filter((task) => fitsNow(task, context)),
-    context
+    context,
+    "longest_first"
   );
 
   const plan: Task[] = [];
@@ -122,7 +138,8 @@ export function selectDoNowTasks(tasks: Task[], context: DoNowContext): DoNowSel
 
 // One Thing mode: every task that could be started today, best first, minus the
 // ones the user said "not now" to. Time and energy never hide a task here, since
-// the point is a single answer; energy only shapes the order.
+// the point is a single answer; energy only shapes the order, and among equals
+// the shortest comes first so starting is easy.
 export function selectOneThingQueue(
   tasks: Task[],
   context: DoNowRankContext,
@@ -130,6 +147,7 @@ export function selectOneThingQueue(
 ): Task[] {
   return rankTasks(
     tasks.filter((task) => isDoableToday(task, context.todayKey) && !skippedTaskIds.has(task.id)),
-    context
+    context,
+    "shortest_first"
   );
 }

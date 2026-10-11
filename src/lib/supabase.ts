@@ -1,6 +1,6 @@
 import "react-native-url-polyfill/auto";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { createClient, Session, SupabaseClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? "";
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "";
@@ -34,14 +34,28 @@ export const supabase: SupabaseClient = isDemoMode
       },
     });
 
+let sessionInFlight: Promise<Session | null> | null = null;
+
 // Ensures every device has a stable anonymous user so tasks can be scoped
-// with row-level security without asking the user to sign up.
-export async function ensureSession() {
-  const { data } = await supabase.auth.getSession();
+// with row-level security without asking the user to sign up. Callers that
+// overlap share one attempt, so two of them can never create two anonymous users.
+export function ensureSession(): Promise<Session | null> {
+  sessionInFlight ??= startSession().finally(() => {
+    sessionInFlight = null;
+  });
+  return sessionInFlight;
+}
+
+async function startSession(): Promise<Session | null> {
+  const { data, error: sessionError } = await supabase.auth.getSession();
+  // A stored session that could not be refreshed (offline, server error) is still the user's:
+  // signing in anonymously here would replace it and orphan every task they have.
+  if (sessionError) throw sessionError;
   if (data.session) return data.session;
 
   const { data: signInData, error } = await supabase.auth.signInAnonymously();
   if (error) throw error;
+  console.log("[supabase] started a new anonymous session");
   return signInData.session;
 }
 

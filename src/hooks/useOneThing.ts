@@ -4,6 +4,8 @@ import { selectOneThingQueue } from "@domain/doNow";
 import { getCurrentTiming } from "../lib/deviceContext";
 import { EnergyLevel, Task } from "../lib/types";
 
+const NOTHING_SKIPPED: ReadonlySet<string> = new Set();
+
 export type OneThingPhase = "choosing" | "confirming" | "completed";
 
 interface Options {
@@ -18,7 +20,7 @@ interface Options {
 // right now. "Not now" passes on it for this session; completing it logs the
 // real minutes, then offers the next one.
 export function useOneThing({ tasks, energy, workStartHour, workEndHour, onComplete }: Options) {
-  const [skippedTaskIds, setSkippedTaskIds] = useState<ReadonlySet<string>>(new Set());
+  const [skippedTaskIds, setSkippedTaskIds] = useState<ReadonlySet<string>>(NOTHING_SKIPPED);
   const [confirmingTask, setConfirmingTask] = useState<Task | null>(null); // pinned so a live list update can't swap it mid-confirm
   const [minutes, setMinutes] = useState(0);
   const [saving, setSaving] = useState(false);
@@ -32,13 +34,18 @@ export function useOneThing({ tasks, energy, workStartHour, workEndHour, onCompl
     [tasks, todayKey, energy, currentTiming, skippedTaskIds]
   );
   const task = queue[0] ?? null;
+  // What a fresh visit opens with, whatever was skipped in this one; the Today hero words its line from it.
+  const firstPick = useMemo(
+    () => selectOneThingQueue(tasks, { todayKey, energy, currentTiming }, NOTHING_SKIPPED)[0] ?? null,
+    [tasks, todayKey, energy, currentTiming]
+  );
   const phase: OneThingPhase = completedTitle !== null ? "completed" : confirmingTask ? "confirming" : "choosing";
 
   const skip = useCallback(() => {
     if (task) setSkippedTaskIds((prev) => new Set(prev).add(task.id));
   }, [task]);
 
-  const resetSkipped = useCallback(() => setSkippedTaskIds(new Set()), []);
+  const resetSkipped = useCallback(() => setSkippedTaskIds(NOTHING_SKIPPED), []);
 
   const startConfirm = useCallback(() => {
     if (!task) return;
@@ -64,7 +71,7 @@ export function useOneThing({ tasks, energy, workStartHour, workEndHour, onCompl
   // Closing the sheet starts the next visit fresh: nothing skipped, nothing half-confirmed.
   const reset = useCallback(() => {
     visitRef.current += 1;
-    setSkippedTaskIds(new Set());
+    setSkippedTaskIds(NOTHING_SKIPPED);
     setConfirmingTask(null);
     setCompletedTitle(null);
   }, []);
@@ -72,6 +79,7 @@ export function useOneThing({ tasks, energy, workStartHour, workEndHour, onCompl
   return {
     phase,
     task: confirmingTask ?? task,
+    firstPick,
     remainingCount: Math.max(0, queue.length - 1),
     skippedCount: skippedTaskIds.size,
     minutes,

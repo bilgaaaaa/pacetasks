@@ -25,8 +25,8 @@ import { useWeeklyReset } from "../hooks/useWeeklyReset";
 import { DEFAULT_SETTINGS } from "../lib/settingsApi";
 import { computeStats } from "../lib/stats";
 import { filterTodayTasks, groupTodayTasks, summarizePending, TodayFilter } from "../lib/taskSections";
-import { emptyFilterMessage, totalsLine } from "../lib/todayCopy";
-import { heroMessage } from "../lib/heroCopy";
+import { emptyFilterMessage, greeting, totalsLine } from "../lib/todayCopy";
+import { heroMessage, heroStart } from "../lib/heroCopy";
 import { buildWeek } from "../lib/weekStrip";
 import { selectUsuals } from "../lib/taskRhythm";
 import { buildTaskHistory, findExactMatch } from "@domain/taskHistory";
@@ -60,17 +60,11 @@ interface ListSection {
 }
 
 
-// Header: a small date label ("SUNDAY · OCTOBER 4") over the greeting
-// ("Good morning").
+// Header: a small date label ("SUNDAY · OCTOBER 4") over the greeting from todayCopy.
 function dateEyebrow(now: Date): string {
   const day = now.toLocaleDateString("en-US", { weekday: "long" });
   const date = now.toLocaleDateString("en-US", { month: "long", day: "numeric" });
   return `${day} · ${date}`.toUpperCase();
-}
-
-function greeting(now: Date): string {
-  const hour = now.getHours();
-  return hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
 }
 
 // Home screen: today's tasks split into the sections the user picked (all in
@@ -89,7 +83,7 @@ export function TaskListScreen({ userId }: Props) {
   const { theme, appearance, updateAppearance } = useTheme();
   const styles = useStyles();
   const { tasks, loading, error, refresh, create, applyCreated, complete, update, updateMany, remove } =
-    useTasks(userId);
+    useTasks();
   const { settings } = useSettings();
   // An empty list after a failed load is not "no tasks": reminders wait for a real one.
   useReminders(userId, tasks, !loading && (tasks.length > 0 || !error));
@@ -225,7 +219,7 @@ export function TaskListScreen({ userId }: Props) {
                 {dateEyebrow(now)}
               </Text>
               <Text style={styles.title} accessibilityRole="header">
-                {greeting(now)}
+                {greeting(now.getHours())}
               </Text>
             </View>
           </View>
@@ -275,7 +269,9 @@ export function TaskListScreen({ userId }: Props) {
                     quickWinCount: summary.quickWinCount,
                     quickWinMinutes: appearance.quickWinMinutes,
                     streakDays: stats.currentStreakDays,
+                    doneToday: stats.todayCompleted > 0,
                     allDone,
+                    start: heroStart(oneThing.firstPick, todayKey, appearance.quickWinMinutes),
                   })}
                   totals={summary.count > 0 ? totalsLine(summary.count, summary.totalMinutes) : ""}
                   showAction={summary.count > 0}

@@ -1,10 +1,11 @@
-import { emptyFilterMessage, quickWinsMessage, totalsLine } from "../todayCopy";
+import { emptyFilterMessage, greeting, totalsLine } from "../todayCopy";
 
 describe("todayCopy", () => {
-  it("headlines quick wins only when there are some", () => {
-    expect(quickWinsMessage(0)).toBeNull();
-    expect(quickWinsMessage(1)).toBe("1 quick win available");
-    expect(quickWinsMessage(2)).toBe("2 quick wins available");
+  it("greets by the part of the day, with a calm line late at night", () => {
+    expect([5, 11].map(greeting)).toEqual(["Good morning", "Good morning"]);
+    expect([12, 17].map(greeting)).toEqual(["Good afternoon", "Good afternoon"]);
+    expect([18, 21].map(greeting)).toEqual(["Good evening", "Good evening"]);
+    expect([22, 23, 0, 4].map(greeting)).toEqual(Array(4).fill("Winding down"));
   });
 
   it("keeps the totals as a short secondary line", () => {

@@ -1,30 +1,29 @@
-import { addDays } from "@domain/dates";
+import { addDays, weekdayIndex } from "@domain/dates";
+import { GRID_WEEKDAYS } from "./dayPicker";
 import { Task } from "./types";
-
-const WEEKDAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export interface WeekDay {
   key: string; // "YYYY-MM-DD"
-  weekday: string; // "Sun"
+  weekday: string; // "Mon"
   dayOfMonth: number;
   isToday: boolean;
   dueCount: number; // pending tasks due on this exact day
 }
 
-// The Sunday-to-Saturday week around `todayKey` for the Today screen's day
-// strip, with how many pending tasks are due on each day. Pure calendar math
-// on date keys, so it ignores time zones and DST.
+// The Monday-to-Sunday week around `todayKey` for the Today screen's day strip
+// (the same week as "This week" in the add sheet and the month grid), with how
+// many pending tasks are due on each day. Pure calendar math on date keys.
 export function buildWeek(todayKey: string, tasks: Pick<Task, "status" | "due_date">[]): WeekDay[] {
-  const todayIndex = new Date(`${todayKey}T00:00:00Z`).getUTCDay();
-  const sunday = addDays(todayKey, -todayIndex);
+  const daysSinceMonday = (weekdayIndex(todayKey) + 6) % 7;
+  const monday = addDays(todayKey, -daysSinceMonday);
   const dueByDay = new Map<string, number>();
   for (const task of tasks) {
     if (task.status === "pending" && task.due_date) {
       dueByDay.set(task.due_date, (dueByDay.get(task.due_date) ?? 0) + 1);
     }
   }
-  return WEEKDAY_SHORT.map((weekday, index) => {
-    const key = addDays(sunday, index);
+  return GRID_WEEKDAYS.map((weekday, index) => {
+    const key = addDays(monday, index);
     return {
       key,
       weekday,

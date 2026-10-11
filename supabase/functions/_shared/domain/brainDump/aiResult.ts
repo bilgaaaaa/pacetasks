@@ -3,12 +3,15 @@ import { ENERGY_LEVELS, TASK_PRIORITIES } from "../task.ts";
 
 // The contract an AI provider must return for a brain dump. It is a proposal:
 // validated here, then normalized by normalize.ts before anything is saved.
-// Bump BRAIN_DUMP_SCHEMA_VERSION whenever this shape changes.
+// Bump BRAIN_DUMP_SCHEMA_VERSION whenever an answer that was valid stops being
+// valid; a new optional way to describe a date keeps the version.
 export const BRAIN_DUMP_SCHEMA_VERSION = 1;
 
 export const TASK_CONTEXTS = ["home", "work", "outside", "computer", "phone", "errands"] as const;
 export const TIMES_OF_DAY = ["morning", "afternoon", "evening"] as const;
 export const DATE_RELATIONS = ["on", "by"] as const;
+// "next" is the upcoming one strictly after today; "next_week" is the one in the week after this one.
+export const WEEKDAY_RELATIONS = [...DATE_RELATIONS, "next", "next_week"] as const;
 
 // Most tasks one brain dump may produce; commit_brain_dump enforces the same limit.
 export const BRAIN_DUMP_MAX_CANDIDATES = 25;
@@ -37,7 +40,24 @@ export const dateExpressionSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("weekday"),
     weekday: z.number().int().min(1).max(7), // ISO: 1 = Monday … 7 = Sunday
-    relation: z.enum(["on", "by", "next"]),
+    relation: z.enum(WEEKDAY_RELATIONS),
+    text: dateText,
+  }),
+  z.object({
+    kind: z.literal("weekend"), // "this weekend": Saturday, or today when it already is the weekend
+    relation: z.enum(DATE_RELATIONS),
+    text: dateText,
+  }),
+  z.object({
+    kind: z.literal("month_day"), // "the 15th", "15 ottobre": the next such day, today included
+    month: z.number().int().min(1).max(12).nullable(), // null = no month named
+    day: z.number().int().min(1).max(31),
+    relation: z.enum(DATE_RELATIONS),
+    text: dateText,
+  }),
+  z.object({
+    kind: z.literal("month_end"), // "end of month", "fine mese", "ay sonu"
+    relation: z.enum(DATE_RELATIONS),
     text: dateText,
   }),
   z.object({

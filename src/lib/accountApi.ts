@@ -197,9 +197,10 @@ export async function saveProfile(userId: string, input: ProfileInput): Promise<
 }
 
 // Leaves the account on this phone and starts a fresh anonymous session, so the
-// app keeps working. The account and its tasks stay on the server.
+// app keeps working. The account and its tasks stay on the server, and the
+// user's other devices stay signed in (the default scope would sign them all out).
 export async function signOut(): Promise<void> {
-  const { error } = await supabase.auth.signOut();
+  const { error } = await supabase.auth.signOut({ scope: "local" });
   if (error) throw toAccountError("sign out", error);
   await ensureSession();
 }

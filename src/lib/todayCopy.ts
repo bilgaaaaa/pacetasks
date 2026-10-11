@@ -3,11 +3,15 @@ import type { TodayFilter } from "./taskSections";
 // UI copy for the Today header and filters. Counts come from summarizePending,
 // so every number shown is computed from the real pending list.
 
-// The headline under "Today": what can be knocked out fast. Null when there
-// is nothing quick, so the header shows only the secondary totals.
-export function quickWinsMessage(quickWinCount: number): string | null {
-  if (quickWinCount <= 0) return null;
-  return quickWinCount === 1 ? "1 quick win available" : `${quickWinCount} quick wins available`;
+// The first hour (0–23) of each part of the day; late night wraps past midnight until morning.
+const GREETING_HOURS = { morning: 5, afternoon: 12, evening: 18, lateNight: 22 } as const;
+
+// The Today header's greeting for a local hour. Late night gets a calm line of
+// its own, so nobody is wished a good morning at 01:00.
+export function greeting(hour: number): string {
+  if (hour < GREETING_HOURS.morning || hour >= GREETING_HOURS.lateNight) return "Winding down";
+  if (hour < GREETING_HOURS.afternoon) return "Good morning";
+  return hour < GREETING_HOURS.evening ? "Good afternoon" : "Good evening";
 }
 
 // The secondary totals line: "13 tasks · about 343 min".

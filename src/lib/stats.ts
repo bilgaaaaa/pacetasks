@@ -11,7 +11,7 @@ export interface DailyStat {
 export interface Stats {
   todayCompleted: number;
   todayActualMinutes: number;
-  currentStreakDays: number;
+  currentStreakDays: number; // consecutive days with a task done, ending today or, until today's first task, yesterday
   bestStreakDays: number;
   bestDayCount: number;
   totalCompleted: number;
@@ -23,6 +23,13 @@ export interface Stats {
 // at 01:00 in Padova counts toward that day rather than the previous one.
 function toDateKey(iso: string): string {
   return toLocalDateKey(new Date(iso));
+}
+
+// How close an estimate was to the real time, 0–1; guessing too long counts
+// against it exactly as much as guessing too short.
+function estimateCloseness(estimatedMinutes: number, actualMinutes: number): number {
+  const longer = Math.max(estimatedMinutes, actualMinutes);
+  return longer === 0 ? 1 : Math.min(estimatedMinutes, actualMinutes) / longer;
 }
 
 // Streaks, best day and estimate accuracy from completed tasks, all in local days.
@@ -53,8 +60,9 @@ export function computeStats(tasks: Task[]): Stats {
   const todayKey = toLocalDateKey(new Date());
   const today = byDay.get(todayKey);
 
+  // A day that has only just begun doesn't break the streak: count back from yesterday until today has a task done.
   let currentStreakDays = 0;
-  let cursor = todayKey;
+  let cursor = today ? todayKey : addDays(todayKey, -1);
   while (byDay.has(cursor)) {
     currentStreakDays += 1;
     cursor = addDays(cursor, -1);
@@ -83,12 +91,7 @@ export function computeStats(tasks: Task[]): Stats {
       ? null
       : Math.round(
           (withActuals.reduce(
-            (sum, t) =>
-              sum +
-              Math.min(
-                1,
-                t.estimated_minutes / Math.max(1, t.actual_minutes as number)
-              ),
+            (sum, t) => sum + estimateCloseness(t.estimated_minutes, t.actual_minutes as number),
             0
           ) /
             withActuals.length) *

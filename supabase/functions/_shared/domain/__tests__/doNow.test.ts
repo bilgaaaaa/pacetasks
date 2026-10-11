@@ -56,6 +56,24 @@ describe("selectDoNowTasks", () => {
     expect(selectDoNowTasks(tasks, makeContext()).plan.map((t) => t.id)).toEqual(["overdue", "today", "undated"]);
   });
 
+  it("ranks a deadline that is still ahead below priority, nearest first", () => {
+    const tasks = [
+      makeTask({ id: "undated", estimated_minutes: 1 }),
+      makeTask({ id: "by-later", estimated_minutes: 1, due_date: "2026-10-19", due_kind: "by" }),
+      makeTask({ id: "by-sooner", estimated_minutes: 1, due_date: "2026-10-04", due_kind: "by" }),
+      makeTask({ id: "undated-high", estimated_minutes: 1, priority: "high" }),
+      makeTask({ id: "today-low", estimated_minutes: 1, priority: "low", due_date: TODAY }),
+    ];
+
+    expect(selectDoNowTasks(tasks, makeContext()).plan.map((t) => t.id)).toEqual([
+      "today-low",
+      "undated-high",
+      "by-sooner",
+      "by-later",
+      "undated",
+    ]);
+  });
+
   it("ranks by priority, with no priority counting as medium", () => {
     const tasks = [
       makeTask({ id: "low", estimated_minutes: 1, priority: "low" }),
@@ -126,6 +144,25 @@ describe("selectOneThingQueue", () => {
     ];
 
     expect(selectOneThingQueue(tasks, rankContext, new Set()).map((t) => t.id)).toEqual(["due", "long-deep"]);
+  });
+
+  it("opens with the shortest task when everything else is equal, so starting is easy", () => {
+    const tasks = [
+      makeTask({ id: "long", estimated_minutes: 45 }),
+      makeTask({ id: "short", estimated_minutes: 5 }),
+    ];
+
+    expect(selectOneThingQueue(tasks, rankContext, new Set()).map((t) => t.id)).toEqual(["short", "long"]);
+  });
+
+  it("puts an undated high-priority task ahead of a deadline weeks away", () => {
+    const tasks = [
+      makeTask({ id: "by-far", due_date: "2026-10-19", due_kind: "by" }),
+      makeTask({ id: "high", priority: "high" }),
+      makeTask({ id: "overdue", priority: "low", due_date: "2026-09-20" }),
+    ];
+
+    expect(selectOneThingQueue(tasks, rankContext, new Set()).map((t) => t.id)).toEqual(["overdue", "high", "by-far"]);
   });
 
   it("leaves out tasks the user skipped", () => {
