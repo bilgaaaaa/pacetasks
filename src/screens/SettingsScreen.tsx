@@ -14,6 +14,7 @@ import { Session } from "@supabase/supabase-js";
 import { makeStyles, useTheme } from "../hooks/useTheme";
 import { useSettings } from "../hooks/useSettings";
 import { useAccount } from "../hooks/useAccount";
+import { useNotificationPermission } from "../hooks/useNotificationPermission";
 import { AccountCard } from "../components/AccountCard";
 import { AccountSheet } from "../components/AccountSheet";
 import { DataCard } from "../components/DataCard";
@@ -22,11 +23,13 @@ import { Button } from "../components/Button";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { Stepper } from "../components/Stepper";
 import { DATA_SECTION_LABEL } from "../lib/accountCopy";
-import { openExternalLink, PRIVACY_POLICY_URL, SUPPORT_URL } from "../lib/links";
+import { openAppSettings, openExternalLink, PRIVACY_POLICY_URL, SUPPORT_URL } from "../lib/links";
 import { requestNotificationPermission } from "../lib/notifications";
 import {
   CHECK_IN_TITLE,
   checkInSubtitle,
+  REMINDERS_BLOCKED_ACTION,
+  REMINDERS_BLOCKED_MESSAGE,
   REMINDERS_SECTION_LABEL,
   TASK_REMINDER_TITLE,
   taskReminderSubtitle,
@@ -47,6 +50,8 @@ interface Props {
   userId: string | undefined;
   session: Session | null; // who is using the app: an anonymous user or a signed-up account
 }
+
+const STALLED_AFTER_MS = 4000; // how long Settings waits for a session before offering a retry
 
 const POMODORO_PRESETS: { work: number; break: number; label: string }[] = [
   { work: 15, break: 3, label: "15 + 3" },
@@ -104,13 +109,29 @@ export function SettingsScreen({ userId, session }: Props) {
 
   // Turning a reminder on is the moment to ask iOS for permission; the phone's
   // schedule itself follows the saved settings through useReminders.
+  const notifications = useNotificationPermission();
   const saveReminderSwitch = async (patch: { reminder_enabled?: boolean; task_reminder_enabled?: boolean }) => {
-    await save(patch);
-    if (patch.reminder_enabled || patch.task_reminder_enabled) await requestNotificationPermission();
+    const saved = await save(patch);
+    if (!saved || !(patch.reminder_enabled || patch.task_reminder_enabled)) return;
+    await requestNotificationPermission().catch((e) => console.warn("[SettingsScreen] permission request failed", e));
+    notifications.refresh();
   };
 
   // Without a session (it could not be started) there is nothing to load yet: start one first.
   const retryLoading = () => (userId ? refresh() : reviveSession());
+
+  // Settings missing with nothing in flight and no error means no session could
+  // be started: after a short wait the screen offers a retry instead of spinning on.
+  const [stalled, setStalled] = useState(false);
+  const waitingWithoutCause = !settings && !loading && !error;
+  useEffect(() => {
+    if (!waitingWithoutCause) {
+      setStalled(false);
+      return;
+    }
+    const timer = setTimeout(() => setStalled(true), STALLED_AFTER_MS);
+    return () => clearTimeout(timer);
+  }, [waitingWithoutCause]);
 
   const switchColors = {
     trackColor: { false: theme.colors.border, true: theme.colors.accentDark },
@@ -147,7 +168,7 @@ export function SettingsScreen({ userId, session }: Props) {
 
   if (!settings) {
     // Still loading shows the spinner; a failed load says so and offers another try.
-    const loadError = loading ? null : error ?? account.cardError;
+    const loadError = loading ? null : error ?? account.cardError ?? (stalled ? "Check your connection." : null);
     return (
       <LinearGradient
         colors={[theme.colors.background, theme.colors.backgroundEnd]}
@@ -156,7 +177,7 @@ export function SettingsScreen({ userId, session }: Props) {
         <SafeAreaView style={styles.safeArea}>
           {loadError ? (
             <View style={styles.loadFailed}>
-              <ErrorBanner message={`Settings could not be loaded. ${loadError}`} />
+              <ErrorBanner message={`Your settings could not be loaded. ${loadError}`} />
               <Button label="Try again" variant="secondary" onPress={retryLoading} />
             </View>
           ) : (
@@ -350,6 +371,12 @@ export function SettingsScreen({ userId, session }: Props) {
           </View>
 
           <Text style={styles.sectionLabel}>{REMINDERS_SECTION_LABEL}</Text>
+          {notifications.permission === "denied" && (settings.reminder_enabled || (settings.task_reminder_enabled ?? true)) && (
+            <View style={styles.card}>
+              <Text style={styles.cardSubtitle}>{REMINDERS_BLOCKED_MESSAGE}</Text>
+              <Button label={REMINDERS_BLOCKED_ACTION} variant="secondary" onPress={openAppSettings} />
+            </View>
+          )}
           <View style={styles.toggleRow}>
             <View style={styles.toggleText}>
               <Text style={styles.toggleTitle}>{CHECK_IN_TITLE}</Text>
@@ -409,7 +436,7 @@ export function SettingsScreen({ userId, session }: Props) {
             </View>
             <Switch
               value={settings.timer_chime_enabled}
-              onValueChange={(enabled) => save({ timer_chime_enabled: enabled })}
+              onValueChange={(enabled) => void save({ timer_chime_enabled: enabled })}
               {...switchColors}
             />
           </View>
@@ -421,7 +448,7 @@ export function SettingsScreen({ userId, session }: Props) {
             </View>
             <Switch
               value={settings.haptics_enabled}
-              onValueChange={(enabled) => save({ haptics_enabled: enabled })}
+              onValueChange={(enabled) => void save({ haptics_enabled: enabled })}
               {...switchColors}
             />
           </View>
@@ -435,7 +462,7 @@ export function SettingsScreen({ userId, session }: Props) {
             </View>
             <Switch
               value={settings.brain_dump_auto_create}
-              onValueChange={(enabled) => save({ brain_dump_auto_create: enabled })}
+              onValueChange={(enabled) => void save({ brain_dump_auto_create: enabled })}
               {...switchColors}
             />
           </View>

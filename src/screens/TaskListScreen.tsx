@@ -91,7 +91,8 @@ export function TaskListScreen({ userId }: Props) {
   const { tasks, loading, error, refresh, create, applyCreated, complete, update, updateMany, remove } =
     useTasks(userId);
   const { settings } = useSettings();
-  useReminders(tasks, loading);
+  // An empty list after a failed load is not "no tasks": reminders wait for a real one.
+  useReminders(userId, tasks, !loading && (tasks.length > 0 || !error));
   const [focusTask, setFocusTask] = useState<Task | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [brainDumpOpen, setBrainDumpOpen] = useState(false);

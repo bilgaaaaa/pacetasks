@@ -43,6 +43,12 @@ describe("planReminders: daily check-in", () => {
     expect(plan[0].at).toEqual(at("2026-10-12", "18:30"));
   });
 
+  it("keeps the same clock time across the end of summer time", () => {
+    const plan = planReminders([makeTask()], SETTINGS, at("2026-10-24", "12:00"));
+    expect(plan.slice(0, 3).map((r) => [r.at.getHours(), r.at.getMinutes()])).toEqual([[18, 30], [18, 30], [18, 30]]);
+    expect(plan[1].id).toBe("pacetasks-check-in-2026-10-25"); // the day the clocks go back in Europe/Rome
+  });
+
   it("says what is left and points at the quickest task", () => {
     const one = planReminders([makeTask({ title: "Haircut", estimated_minutes: 60 })], SETTINGS, NOON)[0];
     expect(one).toMatchObject({ title: "One thing left today", body: "Haircut, about 60 min." });

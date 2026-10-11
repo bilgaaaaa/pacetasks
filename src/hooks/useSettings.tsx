@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { UserSettings } from "../lib/types";
 import * as settingsApi from "../lib/settingsApi";
 
@@ -9,7 +9,7 @@ interface SettingsContextValue {
   loading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
-  save: (patch: SettingsPatch) => Promise<void>;
+  save: (patch: SettingsPatch) => Promise<boolean>;
 }
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
@@ -22,19 +22,29 @@ export function SettingsProvider({ userId, children }: { userId: string | undefi
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // The user the app is on right now: an answer that arrives for an earlier user is ignored.
+  const currentUserId = useRef(userId);
+  currentUserId.current = userId;
+
   const refresh = useCallback(async () => {
     setSettings((current) => (current?.user_id === userId ? current : null));
-    if (!userId) return;
+    if (!userId) {
+      setLoading(false);
+      setError(null);
+      return;
+    }
     try {
       setLoading(true);
       const data = await settingsApi.fetchOrCreateSettings(userId);
+      if (currentUserId.current !== userId) return;
       setSettings(data);
       setError(null);
     } catch (e: any) {
+      if (currentUserId.current !== userId) return;
       console.warn("[useSettings] load failed", e);
       setError(e.message ?? "Failed to load settings");
     } finally {
-      setLoading(false);
+      if (currentUserId.current === userId) setLoading(false);
     }
   }, [userId]);
 
@@ -42,16 +52,26 @@ export function SettingsProvider({ userId, children }: { userId: string | undefi
     refresh();
   }, [refresh]);
 
+  // Never throws: a failure is reported through `error` and resolves false, like useTasks' changes.
   const save = useCallback(
-    async (patch: SettingsPatch) => {
-      if (!userId) return;
-      const updated = await settingsApi.updateSettings(userId, patch);
-      setSettings(updated);
+    async (patch: SettingsPatch): Promise<boolean> => {
+      if (!userId) return false;
+      try {
+        const updated = await settingsApi.updateSettings(userId, patch);
+        if (currentUserId.current !== userId) return false;
+        setSettings(updated);
+        setError(null);
+        return true;
+      } catch (e: any) {
+        if (currentUserId.current !== userId) return false;
+        console.warn("[useSettings] save failed", e);
+        setError(e.message ?? "Couldn't save your settings");
+        return false;
+      }
     },
     [userId]
   );
 
-  // A load that finished for the previous user must not be shown to the next one.
   const current = settings?.user_id === userId ? settings : null;
   const value = useMemo(
     () => ({ settings: current, loading, error, refresh, save }),

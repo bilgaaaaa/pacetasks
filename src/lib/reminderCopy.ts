@@ -28,6 +28,8 @@ export function taskReminderCopy(task: Task, leadMinutes: number): ReminderText 
 export const REMINDERS_SECTION_LABEL = "REMINDERS";
 export const CHECK_IN_TITLE = "Daily check-in";
 export const checkInSubtitle = (time: string) => `One quiet nudge at ${time}, only if tasks are still open`;
+export const REMINDERS_BLOCKED_MESSAGE = "Notifications are turned off for PaceTasks, so reminders can't arrive.";
+export const REMINDERS_BLOCKED_ACTION = "Open iPhone Settings";
 export const TASK_REMINDER_TITLE = "Before a timed task";
 export const taskReminderSubtitle = (leadMinutes: number) =>
   `${leadMinutes} minutes before a task with a start time`;
