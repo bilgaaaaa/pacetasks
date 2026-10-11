@@ -59,6 +59,7 @@ branch and reaches `main` by pull request; that branch is never deleted.
 - `supabase/functions/_eval/` — evaluation set and runner for choosing/regressing AI models (`deno task eval`); not deployed.
 - `supabase/migrations/` — source of truth for the DB schema, RLS policies and `public.create_task`. Never edit an applied migration; add a new timestamped file and mirror column/enum changes in `@domain/task`. DB tests live in `supabase/tests/database/` (pgTAP).
 - Tests: `npm test` (Jest, pinned to Europe/Rome via `jest.globalSetup.js`), `npm run typecheck`, `npm run db:test`.
+- Simulated journey: `npm run e2e` exports the web demo and plays it in a headless browser at iPhone size with a fixed clock, writing a film and step screenshots to `e2e/output/` (`npm run verify` = typecheck + Jest + journey; GitHub runs the same on every pull request). `e2e/harness.mjs` owns the browser, server, film and step runner; a journey file (`e2e/todayJourney.mjs`) only lists steps. Find elements by `accessibilityLabel` or visible wording, never by generated class names, and when a change renames a label or button the journey uses, update the journey in the same change.
 
 ## Conventions
 
