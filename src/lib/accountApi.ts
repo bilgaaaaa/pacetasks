@@ -2,6 +2,7 @@ import { normalizeEmail, providerName } from "@domain/account";
 import { requestAppleCredential } from "./appleAuth";
 import { clearRolloverDismissedDay } from "./rolloverStorage";
 import { ensureSession, supabase } from "./supabase";
+import { clearKeptResetTasks } from "./weeklyResetStorage";
 
 // The only file that talks to Supabase about accounts. PaceTasks is
 // passwordless: an account is an email proven with a one-time code, or an Apple
@@ -216,7 +217,7 @@ export async function deleteAccount(): Promise<void> {
   // The user no longer exists on the server: only this phone's copy of the session is cleared.
   const { error: signOutError } = await supabase.auth.signOut({ scope: "local" });
   if (signOutError) console.warn("[accountApi] clearing the session after deletion failed", signOutError);
-  await clearRolloverDismissedDay();
+  await Promise.all([clearRolloverDismissedDay(), clearKeptResetTasks()]);
   try {
     await ensureSession();
   } catch (e) {

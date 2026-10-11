@@ -378,7 +378,8 @@ const useStyles = makeStyles((theme) => ({
     fontFamily: theme.typography.title.fontFamily,
     textAlign: "center",
   },
+  // The same space around the button as Brain Dump's "All set", so both results sit alike.
   doneButton: {
-    marginTop: theme.spacing.sm,
+    marginVertical: theme.spacing.md,
   },
 }));

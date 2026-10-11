@@ -618,6 +618,7 @@ const useStyles = makeStyles((theme) => ({
   },
   paletteList: {
     gap: theme.spacing.sm,
+    marginTop: theme.spacing.md,
   },
   paletteRow: {
     flexDirection: "row",

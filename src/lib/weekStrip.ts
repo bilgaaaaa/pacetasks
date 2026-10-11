@@ -1,4 +1,4 @@
-import { addDays, weekdayIndex } from "@domain/dates";
+import { addDays, startOfWeek } from "@domain/dates";
 import { GRID_WEEKDAYS } from "./dayPicker";
 import { Task } from "./types";
 
@@ -14,8 +14,7 @@ export interface WeekDay {
 // (the same week as "This week" in the add sheet and the month grid), with how
 // many pending tasks are due on each day. Pure calendar math on date keys.
 export function buildWeek(todayKey: string, tasks: Pick<Task, "status" | "due_date">[]): WeekDay[] {
-  const daysSinceMonday = (weekdayIndex(todayKey) + 6) % 7;
-  const monday = addDays(todayKey, -daysSinceMonday);
+  const monday = startOfWeek(todayKey);
   const dueByDay = new Map<string, number>();
   for (const task of tasks) {
     if (task.status === "pending" && task.due_date) {

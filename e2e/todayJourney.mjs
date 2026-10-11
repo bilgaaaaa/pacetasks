@@ -166,6 +166,13 @@ const passed = await runJourney("today-journey", async ({ page, baseUrl, step, s
     await summary.waitFor({ state: "detached" });
   });
 
+  await step("Weekly Reset stops asking about the tasks that were kept", async () => {
+    // One task was moved to tomorrow and the rest were kept, so nothing is left to review this week.
+    const weeklyResetLink = page.getByText(/^Weekly reset · /);
+    await page.getByText(/^Someday · \d+ parked$/).scrollIntoViewIfNeeded();
+    await weeklyResetLink.waitFor({ state: "detached" });
+  });
+
   await step("Pace shows today's numbers", async () => {
     await page.getByText("PACE", { exact: true }).click();
     await page.getByText("Your pace").waitFor();
@@ -203,6 +210,8 @@ const passed = await runJourney("today-journey", async ({ page, baseUrl, step, s
     await page.getByLabel("Dark", { exact: true }).click();
     await page.getByText("TODAY", { exact: true }).click();
     await page.getByText("Today's plan").waitFor();
+    // Today is still scrolled down to its footer links; the film ends on the hero at the top of the list.
+    await page.getByText("Pick my next task").evaluate((heroAction) => heroAction.scrollIntoView({ block: "end" }));
   });
 });
 
