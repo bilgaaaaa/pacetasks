@@ -1,4 +1,4 @@
-import { isQuickWin } from "./taskSections";
+import { isQuickWin } from "@domain/todayTasks";
 import { Task } from "./types";
 
 // The encouraging headline and line in the Today hero card. Picked from the

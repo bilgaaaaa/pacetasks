@@ -1,6 +1,7 @@
 import {
   groupUpcomingByDay,
   isPendingToday,
+  isQuickWin,
   isUpcoming,
   selectSomedayTasks,
   selectTodayTasks,
@@ -9,6 +10,14 @@ import {
 import { makeTask } from "../testing/makeTask";
 
 const TODAY = "2026-09-28";
+
+describe("isQuickWin", () => {
+  it("counts short tasks up to the limit, and never a fixed-time Focus task", () => {
+    expect(isQuickWin(makeTask({ estimated_minutes: 5, scheduled_time: null }), 5)).toBe(true);
+    expect(isQuickWin(makeTask({ estimated_minutes: 6, scheduled_time: null }), 5)).toBe(false);
+    expect(isQuickWin(makeTask({ estimated_minutes: 2, scheduled_time: "09:00" }), 5)).toBe(false);
+  });
+});
 
 describe("isPendingToday", () => {
   it("includes undated, due-today and overdue pending tasks", () => {

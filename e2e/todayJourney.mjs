@@ -124,6 +124,8 @@ const passed = await runJourney("today-journey", async ({ page, baseUrl, step, s
     await snapshot("Brain Dump text typed");
     await page.getByText("Sort it out").click();
     await page.getByText("Add 3 tasks").waitFor();
+    // The Turkish bill gets its day and its category, like the other two.
+    await page.getByText("Fri · 5 min · Home").waitFor();
   });
 
   await step("Add the Brain Dump tasks", async () => {

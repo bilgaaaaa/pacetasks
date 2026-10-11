@@ -1,11 +1,10 @@
-import { emptyFilterMessage, greeting, totalsLine } from "../todayCopy";
+import { emptyFilterMessage, greetingForHour, totalsLine } from "../todayCopy";
 
 describe("todayCopy", () => {
   it("greets by the part of the day, with a calm line late at night", () => {
-    expect([5, 11].map(greeting)).toEqual(["Good morning", "Good morning"]);
-    expect([12, 17].map(greeting)).toEqual(["Good afternoon", "Good afternoon"]);
-    expect([18, 21].map(greeting)).toEqual(["Good evening", "Good evening"]);
-    expect([22, 23, 0, 4].map(greeting)).toEqual(Array(4).fill("Winding down"));
+    expect([5, 11].map(greetingForHour)).toEqual(["Good morning", "Good morning"]);
+    expect([12, 17].map(greetingForHour)).toEqual(["Good afternoon", "Good afternoon"]);
+    expect([18, 23, 0, 4].map(greetingForHour)).toEqual(Array(4).fill("Good evening"));
   });
 
   it("keeps the totals as a short secondary line", () => {

@@ -8,7 +8,8 @@ import { Task } from "../lib/types";
 import { categoryColor, getCategory } from "../lib/categories";
 import { formatClock } from "../lib/countdown";
 import { formatDueLabel } from "../lib/dueLabel";
-import { TIMING_LABELS, isQuickWin } from "../lib/taskSections";
+import { TIMING_LABELS } from "../lib/taskSections";
+import { isQuickWin } from "@domain/todayTasks";
 import { toLocalDateKey } from "@domain/dates";
 
 interface Props {

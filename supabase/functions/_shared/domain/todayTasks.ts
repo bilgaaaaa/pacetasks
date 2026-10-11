@@ -17,6 +17,12 @@ export function isPendingToday(task: Pick<Task, "status" | "due_date" | "due_kin
   return task.due_date === null || task.due_kind === "by" || task.due_date <= todayKey;
 }
 
+// A quick win is a short task with no fixed start time (fixed-time tasks are Focus sessions).
+// Shared so the Today list, its hero line and "Decide for me" agree on what counts.
+export function isQuickWin(task: Pick<Task, "estimated_minutes" | "scheduled_time">, quickWinMinutes: number): boolean {
+  return !task.scheduled_time && task.estimated_minutes <= quickWinMinutes;
+}
+
 // Splits tasks into what the Today list shows: ordered pending tasks, then done
 // ones. Shared so the app list and Siri's "today" answer never disagree.
 export function selectTodayTasks(tasks: Task[], todayKey: string): TodayTasks {

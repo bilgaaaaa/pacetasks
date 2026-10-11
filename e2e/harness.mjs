@@ -73,7 +73,9 @@ export async function runJourney(journeyName, defineSteps) {
     hasTouch: true,
     locale: "en-GB",
     timezoneId: TIME_ZONE,
-    recordVideo: { dir: VIDEO_DIR, size: { width: VIEWPORT.width * 2, height: VIEWPORT.height * 2 } },
+    // The film is recorded at the viewport's own size. A larger canvas leaves the app
+    // in one corner on grey, and it jumps to full size whenever a screenshot is taken.
+    recordVideo: { dir: VIDEO_DIR, size: VIEWPORT },
   });
   context.setDefaultTimeout(STEP_TIMEOUT_MS);
   const page = await context.newPage();

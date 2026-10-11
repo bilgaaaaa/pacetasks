@@ -3,15 +3,17 @@ import type { TodayFilter } from "./taskSections";
 // UI copy for the Today header and filters. Counts come from summarizePending,
 // so every number shown is computed from the real pending list.
 
-// The first hour (0–23) of each part of the day; late night wraps past midnight until morning.
-const GREETING_HOURS = { morning: 5, afternoon: 12, evening: 18, lateNight: 22 } as const;
+// Hours at which the greeting changes. The night (before 5) stays "Good evening":
+// someone still up at 1 am is ending their day, not starting it.
+const MORNING_START_HOUR = 5;
+const AFTERNOON_START_HOUR = 12;
+const EVENING_START_HOUR = 18;
 
-// The Today header's greeting for a local hour. Late night gets a calm line of
-// its own, so nobody is wished a good morning at 01:00.
-export function greeting(hour: number): string {
-  if (hour < GREETING_HOURS.morning || hour >= GREETING_HOURS.lateNight) return "Winding down";
-  if (hour < GREETING_HOURS.afternoon) return "Good morning";
-  return hour < GREETING_HOURS.evening ? "Good afternoon" : "Good evening";
+// The greeting above Today, from the phone's local hour (0-23).
+export function greetingForHour(hour: number): string {
+  if (hour >= MORNING_START_HOUR && hour < AFTERNOON_START_HOUR) return "Good morning";
+  if (hour >= AFTERNOON_START_HOUR && hour < EVENING_START_HOUR) return "Good afternoon";
+  return "Good evening";
 }
 
 // The secondary totals line: "13 tasks · about 343 min".

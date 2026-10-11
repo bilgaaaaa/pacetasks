@@ -1,5 +1,5 @@
 import { makeTask } from "@domain/testing/makeTask";
-import { filterTodayTasks, groupTodayTasks, isDueByToday, isQuickWin, placeOfTask, summarizePending } from "../taskSections";
+import { filterTodayTasks, groupTodayTasks, isDueByToday, placeOfTask, summarizePending } from "../taskSections";
 
 // Already in Today's timing order, as selectTodayTasks returns them.
 const pending = [
@@ -16,12 +16,6 @@ const ids = (sections: ReturnType<typeof groupTodayTasks>) =>
   sections.map((s) => [s.key, s.tasks.map((t) => t.id)]);
 
 describe("taskSections", () => {
-  it("never counts a fixed-time Focus task as a quick win", () => {
-    expect(isQuickWin(makeTask({ estimated_minutes: 2, scheduled_time: "09:00" }), 5)).toBe(false);
-    expect(isQuickWin(makeTask({ estimated_minutes: 5, scheduled_time: null }), 5)).toBe(true);
-    expect(isQuickWin(makeTask({ estimated_minutes: 6, scheduled_time: null }), 5)).toBe(false);
-  });
-
   it("derives the place from the category", () => {
     expect(placeOfTask({ category: "home" })).toBe("home");
     expect(placeOfTask({ category: "shopping" })).toBe("out");

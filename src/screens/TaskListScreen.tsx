@@ -26,7 +26,7 @@ import { useWeeklyReset } from "../hooks/useWeeklyReset";
 import { DEFAULT_SETTINGS } from "../lib/settingsApi";
 import { computeStats } from "../lib/stats";
 import { filterTodayTasks, groupTodayTasks, summarizePending, TodayFilter } from "../lib/taskSections";
-import { emptyFilterMessage, greeting, totalsLine } from "../lib/todayCopy";
+import { emptyFilterMessage, greetingForHour, totalsLine } from "../lib/todayCopy";
 import { upcomingLink } from "../lib/upcomingCopy";
 import { heroMessage, heroStart } from "../lib/heroCopy";
 import { buildWeek, WeekDay } from "../lib/weekStrip";
@@ -239,7 +239,7 @@ export function TaskListScreen({ userId }: Props) {
                 {dateEyebrow(now)}
               </Text>
               <Text style={styles.title} accessibilityRole="header">
-                {greeting(now.getHours())}
+                {greetingForHour(now.getHours())}
               </Text>
             </View>
           </View>

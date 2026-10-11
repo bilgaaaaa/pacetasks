@@ -180,10 +180,21 @@ export const CATEGORY_WORDS: Record<CategoryId, CategoryWords> = {
   },
   // Bills, rent and taxes live here too: the app has no finance category.
   home: {
-    en: ["clean", "laundry", "dish", "vacuum", "bill", "rent", "invoice", "tax"],
+    en: ["clean", "laundry", "dish", "vacuum", "rent", "invoice", "tax"],
     it: ["bucato", "lavatrice", "piatto", "aspirapolvere", "bolletta", "affitto", "fattura", "tassa"],
     // "kira" takes only its own endings: a free suffix would match "kiraz" (cherry).
-    exact: ["pulire", "lavare", "stirare", "kira", "kiray[ıi]\\p{L}*", "kiras[ıi]\\p{L}*"],
+    // A bill needs a determiner or its kind, so "call Bill" stays a person.
+    exact: [
+      "pulire",
+      "lavare",
+      "stirare",
+      "kira",
+      "kiray[ıi]\\p{L}*",
+      "kiras[ıi]\\p{L}*",
+      "bills",
+      "(?:the|my|a|this|that)\\s+(?:\\p{L}+\\s+)?bill",
+      "(?:phone|electric|electricity|gas|water|internet|power|energy)\\s+bill",
+    ],
     trStems: [
       "temizl",
       "[çc]ama[şs][ıi]r",
