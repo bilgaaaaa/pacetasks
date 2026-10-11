@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { makeStyles, useTheme } from "../hooks/useTheme";
 import { GROUP_BY_LABELS, GROUP_BY_OPTIONS, GroupBy } from "../lib/appearance";
 import { TODAY_FILTERS, TodayFilter } from "../lib/taskSections";
-import { TODAY_FILTER_LABELS } from "../lib/todayCopy";
+import { GROUP_PANEL_TITLE, TODAY_FILTER_LABELS } from "../lib/todayCopy";
 
 interface Props {
   filter: TodayFilter;
@@ -15,7 +15,7 @@ interface Props {
 }
 
 // Three quick filters for the Today list (All, Quick wins, Due today) plus a
-// round "Filter" icon button that opens the less-used grouping options (size,
+// round icon button ("Group the list") that opens the less-used grouping options (size,
 // place, category, time of day). The icon fills green while a grouping is on.
 // Icon-only so the three labels fit in full even on small phones.
 export function TodayFilterBar({ filter, counts, groupBy, onChangeFilter, onChangeGroupBy }: Props) {
@@ -55,7 +55,7 @@ export function TodayFilterBar({ filter, counts, groupBy, onChangeFilter, onChan
         style={[styles.filterButton, grouped && styles.filterButtonActive]}
         onPress={() => setSheetOpen(true)}
         accessibilityRole="button"
-        accessibilityLabel={grouped ? `Filter: ${GROUP_BY_LABELS[groupBy].label}` : "Filter"}
+        accessibilityLabel={grouped ? `${GROUP_PANEL_TITLE}: ${GROUP_BY_LABELS[groupBy].label}` : GROUP_PANEL_TITLE}
       >
         <Ionicons
           name="options-outline"
@@ -68,7 +68,7 @@ export function TodayFilterBar({ filter, counts, groupBy, onChangeFilter, onChan
         <Pressable style={styles.backdrop} onPress={() => setSheetOpen(false)} accessibilityLabel="Close">
           <Pressable style={styles.panel} onPress={() => {}}>
             <Text style={styles.panelTitle} accessibilityRole="header">
-              Group the list
+              {GROUP_PANEL_TITLE}
             </Text>
             {GROUP_BY_OPTIONS.map((option) => {
               const active = groupBy === option;

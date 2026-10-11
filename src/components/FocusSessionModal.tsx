@@ -1,8 +1,10 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect } from "react";
 import { Modal, SafeAreaView, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
 import { makeStyles, useTheme } from "../hooks/useTheme";
+import { useCountdown } from "../hooks/useCountdown";
+import { useHaptics } from "../hooks/useHaptics";
+import { formatClock } from "../lib/countdown";
 import { Task } from "../lib/types";
 
 interface Props {
@@ -11,19 +13,16 @@ interface Props {
   sessionTotal: number; // how many Focus tasks are scheduled today
   workMinutes: number;
   breakMinutes: number;
-  chimeEnabled: boolean; // "Timer chime" setting — played as a haptic pulse (no audio asset pipeline in this build)
   onClose: () => void;
   onComplete: (taskId: string, actualMinutes: number) => void;
 }
 
-function formatClock(totalSeconds: number): string {
-  const m = Math.floor(totalSeconds / 60);
-  const s = totalSeconds % 60;
-  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-}
+// A long title shrinks before it is cut off, so it never pushes the clock off the screen.
+const LONG_TITLE_MIN_SCALE = 0.6;
 
 // Full-screen Pomodoro countdown, opened by tapping a task's Focus pill.
-// Counts down from `workMinutes`; reaching zero auto-completes the task
+// Counts down from `workMinutes` against the clock (see useCountdown), so it
+// keeps time while the phone is locked; reaching zero auto-completes the task
 // (actual_minutes = workMinutes) so the "estimate accuracy" stat still gets
 // a real data point for Focus tasks, same as manually confirmed ones.
 export function FocusSessionModal({
@@ -32,59 +31,43 @@ export function FocusSessionModal({
   sessionTotal,
   workMinutes,
   breakMinutes,
-  chimeEnabled,
   onClose,
   onComplete,
 }: Props) {
   const { theme } = useTheme();
   const styles = useStyles();
-  const [remainingSeconds, setRemainingSeconds] = useState(workMinutes * 60);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const haptics = useHaptics();
+  const totalSeconds = workMinutes * 60;
+  const taskId = task?.id;
 
-  // Reset the countdown whenever a new task is opened into focus mode.
-  useEffect(() => {
-    if (task) setRemainingSeconds(workMinutes * 60);
-  }, [task?.id, workMinutes]);
+  const countdown = useCountdown(() => {
+    if (!taskId) return;
+    haptics.play("timerEnded");
+    onComplete(taskId, workMinutes);
+  });
+  const { start, stop } = countdown;
 
+  // A session runs for as long as a task is open; a newly opened task starts a fresh one.
   useEffect(() => {
-    if (!task) return;
-    intervalRef.current = setInterval(() => {
-      setRemainingSeconds((prev) => Math.max(0, prev - 1));
-    }, 1000);
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [task?.id]);
-
-  useEffect(() => {
-    if (task && remainingSeconds === 0) {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      if (chimeEnabled) {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
-          () => {}
-        );
-      }
-      onComplete(task.id, workMinutes);
-    }
-  }, [remainingSeconds, task, chimeEnabled, workMinutes, onComplete]);
+    if (!taskId) return;
+    start(totalSeconds);
+    return stop;
+  }, [taskId, totalSeconds, start, stop]);
 
   if (!task) return null;
 
-  const totalSeconds = workMinutes * 60;
-  const elapsedFraction = 1 - remainingSeconds / totalSeconds;
-  const elapsedMinutes = Math.floor((totalSeconds - remainingSeconds) / 60);
-
-  const handleClose = () => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    onClose();
-  };
+  // Before the first tick the full session is still ahead.
+  const remainingSeconds = countdown.isRunning ? countdown.remainingSeconds : totalSeconds;
+  const elapsedSeconds = totalSeconds - remainingSeconds;
+  const elapsedFraction = elapsedSeconds / totalSeconds;
+  const elapsedMinutes = Math.floor(elapsedSeconds / 60);
 
   return (
-    <Modal visible={!!task} animationType="slide" onRequestClose={handleClose}>
+    <Modal visible={!!task} animationType="slide" onRequestClose={onClose}>
       <SafeAreaView style={styles.screen}>
         <View style={styles.content}>
           <View style={styles.header}>
-            <TouchableOpacity style={styles.closeButton} onPress={handleClose} accessibilityLabel="Close focus session">
+            <TouchableOpacity style={styles.closeButton} onPress={onClose} accessibilityLabel="Close focus session">
               <Ionicons name="chevron-down" size={20} color={theme.colors.textPrimary} />
             </TouchableOpacity>
             <Text style={styles.eyebrow}>
@@ -94,7 +77,9 @@ export function FocusSessionModal({
           </View>
 
           <Text style={styles.fixedTime}>{task.scheduled_time} · fixed time</Text>
-          <Text style={styles.taskTitle}>{task.title}</Text>
+          <Text style={styles.taskTitle} numberOfLines={3} adjustsFontSizeToFit minimumFontScale={LONG_TITLE_MIN_SCALE}>
+            {task.title}
+          </Text>
 
           <View style={styles.clockArea}>
             <Text style={styles.countdown}>{formatClock(remainingSeconds)}</Text>
@@ -130,7 +115,7 @@ export function FocusSessionModal({
 
           <TouchableOpacity
             style={styles.doneButton}
-            onPress={() => onComplete(task.id, Math.max(1, Math.round((totalSeconds - remainingSeconds) / 60)))}
+            onPress={() => onComplete(task.id, Math.max(1, Math.round(elapsedSeconds / 60)))}
           >
             <Ionicons name="checkmark" size={20} color={theme.colors.onAccent} />
             <Text style={styles.doneButtonText}>Done early</Text>

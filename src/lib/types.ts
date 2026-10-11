@@ -21,7 +21,7 @@ export interface UserSettings {
   reminder_enabled: boolean; // the daily check-in, sent only when tasks are still open
   reminder_time: string; // "HH:MM", 24h — when the daily check-in arrives
   task_reminder_enabled: boolean; // a reminder shortly before a task with a fixed start time
-  timer_chime_enabled: boolean; // haptic "chime" when a Focus session or range-timer ends
+  timer_chime_enabled: boolean; // a gentle buzz when a Focus session or range timer ends (see src/lib/haptics.ts)
   haptics_enabled: boolean; // haptic tap when a task is completed
   pomodoro_work_minutes: number; // Focus session length
   pomodoro_break_minutes: number; // break length between Focus sessions

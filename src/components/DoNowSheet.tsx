@@ -25,6 +25,7 @@ interface Props {
   onChangeEnergy: (energy: EnergyLevel) => void;
   renderTask: (task: Task) => React.ReactElement; // the screen's own task row, so timers and completion work as on Today
   onClose: () => void;
+  onDismissed: () => void; // the sheet has fully gone (iOS): lets the screen open the Focus session a row asked for
 }
 
 // Full-screen sheet for "What can I do now?": pick how much time and energy you
@@ -41,6 +42,7 @@ export function DoNowSheet({
   onChangeEnergy,
   renderTask,
   onClose,
+  onDismissed,
 }: Props) {
   const { theme } = useTheme();
   const styles = useStyles();
@@ -48,7 +50,13 @@ export function DoNowSheet({
   const shownAlternatives = alternatives.slice(0, MAX_ALTERNATIVES_SHOWN);
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+      onDismiss={onDismissed}
+    >
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <View style={styles.flex}>

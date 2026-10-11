@@ -1,36 +1,61 @@
 import React from "react";
-import { Text, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 import { makeStyles } from "../hooks/useTheme";
 import { WeekDay } from "../lib/weekStrip";
 
 interface Props {
   days: WeekDay[];
+  onPressDay: (day: WeekDay) => void; // only later days are tappable: they open the Upcoming list on that day
+}
+
+function dayLabel(day: WeekDay): string {
+  return `${day.weekday} ${day.dayOfMonth}${day.isToday ? ", today" : ""}${day.dueCount > 0 ? `, ${day.dueCount} due` : ""}`;
 }
 
 // This week at a glance under the Today hero: today as a filled ink pill,
-// and a dot under any day with pending tasks due. Read-only.
-export function WeekStrip({ days }: Props) {
+// and a dot under any day with pending tasks due. The days still to come are
+// buttons, because what is set for them is not on Today.
+export function WeekStrip({ days, onPressDay }: Props) {
   const styles = useStyles();
+  const todayIndex = days.findIndex((day) => day.isToday);
   return (
     <View style={styles.row} accessibilityRole="summary" accessibilityLabel="This week">
-      {days.map((day) => (
-        <View
-          key={day.key}
-          style={[styles.day, day.isToday && styles.dayToday]}
-          accessible
-          accessibilityLabel={`${day.weekday} ${day.dayOfMonth}${day.isToday ? ", today" : ""}${
-            day.dueCount > 0 ? `, ${day.dueCount} due` : ""
-          }`}
-        >
-          <Text style={[styles.weekday, day.isToday && styles.textToday]} maxFontSizeMultiplier={1.3}>
-            {day.weekday}
-          </Text>
-          <Text style={[styles.date, day.isToday && styles.textToday]} maxFontSizeMultiplier={1.3}>
-            {day.dayOfMonth}
-          </Text>
-          <View style={[styles.dot, day.dueCount > 0 && styles.dotOn, day.isToday && day.dueCount > 0 && styles.dotToday]} />
-        </View>
-      ))}
+      {days.map((day, index) => {
+        const content = (
+          <>
+            <Text style={[styles.weekday, day.isToday && styles.textToday]} maxFontSizeMultiplier={1.3}>
+              {day.weekday}
+            </Text>
+            <Text style={[styles.date, day.isToday && styles.textToday]} maxFontSizeMultiplier={1.3}>
+              {day.dayOfMonth}
+            </Text>
+            <View
+              style={[styles.dot, day.dueCount > 0 && styles.dotOn, day.isToday && day.dueCount > 0 && styles.dotToday]}
+            />
+          </>
+        );
+        return index > todayIndex ? (
+          <TouchableOpacity
+            key={day.key}
+            style={styles.day}
+            onPress={() => onPressDay(day)}
+            accessibilityRole="button"
+            accessibilityLabel={dayLabel(day)}
+            accessibilityHint="Shows what is set for this day"
+          >
+            {content}
+          </TouchableOpacity>
+        ) : (
+          <View
+            key={day.key}
+            style={[styles.day, day.isToday && styles.dayToday]}
+            accessible
+            accessibilityLabel={dayLabel(day)}
+          >
+            {content}
+          </View>
+        );
+      })}
     </View>
   );
 }

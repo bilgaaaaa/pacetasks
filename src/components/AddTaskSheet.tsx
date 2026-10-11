@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Keyboard,
@@ -65,7 +65,6 @@ export function AddTaskSheet({
 }: Props) {
   const { theme } = useTheme();
   const styles = useStyles();
-  const inputRef = useRef<TextInput>(null);
 
   const [mode, setMode] = useState<Mode>("usuals");
   const [title, setTitle] = useState("");
@@ -156,7 +155,8 @@ export function AddTaskSheet({
   };
 
   const addUsual = (rhythm: TaskRhythm) => {
-    if (saving) return;
+    // An added usual stays added until Undo: a second tap must not create a duplicate.
+    if (saving || addedKeys.includes(rhythm.key)) return;
     save({
       title: rhythm.title,
       estimated_minutes: rhythm.lastMinutes,
@@ -276,7 +276,6 @@ export function AddTaskSheet({
             <View style={styles.whatBlock}>
               <Text style={styles.questionLabel}>What?</Text>
               <TextInput
-                ref={inputRef}
                 style={[styles.whatInput, mode === "new" && styles.whatInputActive]}
                 value={title}
                 onChangeText={handleTitleChange}
@@ -337,8 +336,9 @@ export function AddTaskSheet({
                           <TouchableOpacity
                             style={[styles.tile, added && styles.tileAdded]}
                             onPress={() => addUsual(rhythm)}
-                            disabled={saving}
-                            accessibilityLabel={`Add ${rhythm.title} for today`}
+                            disabled={saving || added}
+                            accessibilityState={{ disabled: saving || added }}
+                            accessibilityLabel={added ? `${rhythm.title}, added for today` : `Add ${rhythm.title} for today`}
                           >
                             <View style={styles.tileTop}>
                               <View

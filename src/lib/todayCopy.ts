@@ -27,6 +27,9 @@ export const TODAY_FILTER_LABELS: Record<TodayFilter, string> = {
   due: "Due today",
 };
 
+// The grouping panel's heading, and the name VoiceOver reads for the button that opens it.
+export const GROUP_PANEL_TITLE = "Group the list";
+
 // Shown in place of the list when a filter leaves nothing.
 export function emptyFilterMessage(filter: TodayFilter): string {
   switch (filter) {

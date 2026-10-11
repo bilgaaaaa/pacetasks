@@ -20,11 +20,11 @@ export function EndOfDayCard({ tasksToday, minutesToday, streakDays }: Props) {
       <View style={styles.statsRow}>
         <View style={styles.stat}>
           <Text style={styles.statValue}>{tasksToday}</Text>
-          <Text style={styles.statLabel}>tasks</Text>
+          <Text style={styles.statLabel}>{tasksToday === 1 ? "task" : "tasks"}</Text>
         </View>
         <View style={styles.stat}>
           <Text style={styles.statValue}>{minutesToday}</Text>
-          <Text style={styles.statLabel}>minutes</Text>
+          <Text style={styles.statLabel}>{minutesToday === 1 ? "minute" : "minutes"}</Text>
         </View>
         <View style={styles.stat}>
           <Text style={styles.statValue}>{streakDays}d</Text>

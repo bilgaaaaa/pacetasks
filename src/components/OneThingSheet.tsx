@@ -10,6 +10,11 @@ import { Button } from "./Button";
 import { ErrorBanner } from "./ErrorBanner";
 import { Stepper } from "./Stepper";
 
+// A title can be 200 characters: it shrinks, then is cut off, so it never runs into the header or the buttons.
+const TITLE_MAX_LINES = 4;
+const TITLE_MIN_SCALE = 0.6;
+const NOTES_MAX_LINES = 4;
+
 interface Props {
   visible: boolean;
   phase: OneThingPhase;
@@ -73,7 +78,9 @@ export function OneThingSheet({
                 <Ionicons name="checkmark" size={32} color={theme.colors.onAccent} />
               </View>
               <Text style={styles.title}>Done.</Text>
-              <Text style={styles.meta}>{completedTitle}</Text>
+              <Text style={styles.meta} numberOfLines={TITLE_MAX_LINES}>
+                {completedTitle}
+              </Text>
             </View>
             <View style={styles.actions}>
               {task ? (
@@ -92,9 +99,15 @@ export function OneThingSheet({
         ) : task ? (
           <View style={styles.body}>
             <View style={styles.center}>
-              <Text style={styles.title}>{task.title}</Text>
+              <Text style={styles.title} numberOfLines={TITLE_MAX_LINES} adjustsFontSizeToFit minimumFontScale={TITLE_MIN_SCALE}>
+                {task.title}
+              </Text>
               <Text style={styles.meta}>{oneThingMeta(task, todayKey)}</Text>
-              {task.notes && <Text style={styles.notes}>{task.notes}</Text>}
+              {task.notes && (
+                <Text style={styles.notes} numberOfLines={NOTES_MAX_LINES}>
+                  {task.notes}
+                </Text>
+              )}
             </View>
             {phase === "confirming" ? (
               <View style={styles.actions}>

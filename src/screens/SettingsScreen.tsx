@@ -35,7 +35,15 @@ import {
   taskReminderSubtitle,
 } from "../lib/reminderCopy";
 import { REMINDER_POLICY } from "../lib/reminderPlan";
+import {
+  BRAIN_DUMP_AUTO_CREATE_TITLE,
+  COMPLETION_TAP_SUBTITLE,
+  COMPLETION_TAP_TITLE,
+  TIMER_BUZZ_SUBTITLE,
+  TIMER_BUZZ_TITLE,
+} from "../lib/settingsCopy";
 import { reviveSession } from "../lib/supabase";
+import { formatTimeOfDay, parseTimeOfDay } from "../lib/timeFormat";
 import { ACCENT_OPTIONS, buildTheme, PALETTE_OPTIONS, PaletteId, paletteUsesAccent } from "../lib/theme";
 import {
   GROUP_BY_LABELS,
@@ -69,26 +77,11 @@ function themePreviews(palette: PaletteId): Record<ThemeMode, [PreviewColors, Pr
   return { system: [light, dark], light: [light, light], dark: [dark, dark] };
 }
 
-function formatHour(hour: number): string {
-  const period = hour >= 12 ? "PM" : "AM";
-  const displayHour = hour % 12 === 0 ? 12 : hour % 12;
-  return `${displayHour} ${period}`;
-}
-
-function parseTime(time: string): { hour: number; minute: number } {
-  const [hourStr, minuteStr] = time.split(":");
-  return { hour: Number(hourStr) || 0, minute: Number(minuteStr) || 0 };
-}
-
-function formatTime(hour: number, minute: number): string {
-  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
-}
-
 // The account (create one, sign in, email consent, sign out), then "Make it
 // yours" (theme, accent, Today's sections, quick-win size — saved on this
 // phone), the work schedule (feeds the before/after-work labels), the
-// reminders, Brain Dump auto-create, the settings the Focus timer + range
-// timer read (chime + Pomodoro length), and "Your data" (privacy policy, help,
+// reminders, the two vibrations (timer buzz, completion tap; see
+// src/lib/haptics.ts), Brain Dump auto-create, the Pomodoro length, and "Your data" (privacy policy, help,
 // delete the account).
 export function SettingsScreen({ userId, session }: Props) {
   const { theme, appearance, updateAppearance } = useTheme();
@@ -101,7 +94,7 @@ export function SettingsScreen({ userId, session }: Props) {
 
   useEffect(() => {
     if (settings) {
-      const { hour, minute } = parseTime(settings.reminder_time);
+      const { hour, minute } = parseTimeOfDay(settings.reminder_time);
       setReminderHour(hour);
       setReminderMinute(minute);
     }
@@ -191,7 +184,7 @@ export function SettingsScreen({ userId, session }: Props) {
     );
   }
 
-  const applyReminderTime = (hour: number, minute: number) => save({ reminder_time: formatTime(hour, minute) });
+  const applyReminderTime = (hour: number, minute: number) => save({ reminder_time: formatTimeOfDay(hour, minute) });
 
   return (
     <LinearGradient
@@ -359,7 +352,7 @@ export function SettingsScreen({ userId, session }: Props) {
               value={settings.work_start_hour}
               min={0}
               max={23}
-              format={formatHour}
+              format={formatTimeOfDay}
               onChange={(hour) => save({ work_start_hour: hour })}
             />
             <Stepper
@@ -367,7 +360,7 @@ export function SettingsScreen({ userId, session }: Props) {
               value={settings.work_end_hour}
               min={0}
               max={23}
-              format={formatHour}
+              format={formatTimeOfDay}
               onChange={(hour) => save({ work_end_hour: hour })}
             />
           </View>
@@ -382,11 +375,12 @@ export function SettingsScreen({ userId, session }: Props) {
           <View style={styles.toggleRow}>
             <View style={styles.toggleText}>
               <Text style={styles.toggleTitle}>{CHECK_IN_TITLE}</Text>
-              <Text style={styles.toggleSubtitle}>{checkInSubtitle(formatTime(reminderHour, reminderMinute))}</Text>
+              <Text style={styles.toggleSubtitle}>{checkInSubtitle(formatTimeOfDay(reminderHour, reminderMinute))}</Text>
             </View>
             <Switch
               value={settings.reminder_enabled}
               onValueChange={(enabled) => saveReminderSwitch({ reminder_enabled: enabled })}
+              accessibilityLabel={CHECK_IN_TITLE}
               {...switchColors}
             />
           </View>
@@ -396,7 +390,7 @@ export function SettingsScreen({ userId, session }: Props) {
               value={reminderHour}
               min={0}
               max={23}
-              format={formatHour}
+              format={(hour) => String(hour).padStart(2, "0")}
               onChange={(hour) => {
                 setReminderHour(hour);
                 applyReminderTime(hour, reminderMinute);
@@ -424,6 +418,7 @@ export function SettingsScreen({ userId, session }: Props) {
             <Switch
               value={settings.task_reminder_enabled ?? true}
               onValueChange={(enabled) => saveReminderSwitch({ task_reminder_enabled: enabled })}
+              accessibilityLabel={TASK_REMINDER_TITLE}
               {...switchColors}
             />
           </View>
@@ -431,33 +426,33 @@ export function SettingsScreen({ userId, session }: Props) {
           <Text style={styles.sectionLabel}>WHILE YOU WORK</Text>
           <View style={styles.toggleRow}>
             <View style={styles.toggleText}>
-              <Text style={styles.toggleTitle}>Timer chime</Text>
-              <Text style={styles.toggleSubtitle}>
-                Soft tone when a Focus session or range timer ends
-              </Text>
+              <Text style={styles.toggleTitle}>{TIMER_BUZZ_TITLE}</Text>
+              <Text style={styles.toggleSubtitle}>{TIMER_BUZZ_SUBTITLE}</Text>
             </View>
             <Switch
               value={settings.timer_chime_enabled}
               onValueChange={(enabled) => void save({ timer_chime_enabled: enabled })}
+              accessibilityLabel={TIMER_BUZZ_TITLE}
               {...switchColors}
             />
           </View>
 
           <View style={styles.toggleRow}>
             <View style={styles.toggleText}>
-              <Text style={styles.toggleTitle}>Haptics</Text>
-              <Text style={styles.toggleSubtitle}>A tap when a task is completed</Text>
+              <Text style={styles.toggleTitle}>{COMPLETION_TAP_TITLE}</Text>
+              <Text style={styles.toggleSubtitle}>{COMPLETION_TAP_SUBTITLE}</Text>
             </View>
             <Switch
               value={settings.haptics_enabled}
               onValueChange={(enabled) => void save({ haptics_enabled: enabled })}
+              accessibilityLabel={COMPLETION_TAP_TITLE}
               {...switchColors}
             />
           </View>
 
           <View style={styles.toggleRow}>
             <View style={styles.toggleText}>
-              <Text style={styles.toggleTitle}>Add clear brain dumps directly</Text>
+              <Text style={styles.toggleTitle}>{BRAIN_DUMP_AUTO_CREATE_TITLE}</Text>
               <Text style={styles.toggleSubtitle}>
                 Skip the review when every task is clear. Anything unclear still asks first.
               </Text>
@@ -465,6 +460,7 @@ export function SettingsScreen({ userId, session }: Props) {
             <Switch
               value={settings.brain_dump_auto_create}
               onValueChange={(enabled) => void save({ brain_dump_auto_create: enabled })}
+              accessibilityLabel={BRAIN_DUMP_AUTO_CREATE_TITLE}
               {...switchColors}
             />
           </View>
