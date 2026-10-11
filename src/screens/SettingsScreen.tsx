@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   SafeAreaView,
@@ -18,10 +18,21 @@ import { AccountCard } from "../components/AccountCard";
 import { AccountSheet } from "../components/AccountSheet";
 import { DataCard } from "../components/DataCard";
 import { DeleteAccountSheet } from "../components/DeleteAccountSheet";
+import { Button } from "../components/Button";
+import { ErrorBanner } from "../components/ErrorBanner";
 import { Stepper } from "../components/Stepper";
 import { DATA_SECTION_LABEL } from "../lib/accountCopy";
 import { openExternalLink, PRIVACY_POLICY_URL, SUPPORT_URL } from "../lib/links";
-import { syncDailyReminder } from "../lib/notifications";
+import { requestNotificationPermission } from "../lib/notifications";
+import {
+  CHECK_IN_TITLE,
+  checkInSubtitle,
+  REMINDERS_SECTION_LABEL,
+  TASK_REMINDER_TITLE,
+  taskReminderSubtitle,
+} from "../lib/reminderCopy";
+import { REMINDER_POLICY } from "../lib/reminderPlan";
+import { reviveSession } from "../lib/supabase";
 import { ACCENT_OPTIONS, buildTheme, PALETTE_OPTIONS, PaletteId, paletteUsesAccent } from "../lib/theme";
 import {
   GROUP_BY_LABELS,
@@ -70,14 +81,14 @@ function formatTime(hour: number, minute: number): string {
 
 // The account (create one, sign in, email consent, sign out), then "Make it
 // yours" (theme, accent, Today's sections, quick-win size — saved on this
-// phone), the work schedule (feeds the before/after-work labels), the evening
-// reminder, Brain Dump auto-create, the settings the Focus timer + range
+// phone), the work schedule (feeds the before/after-work labels), the
+// reminders, Brain Dump auto-create, the settings the Focus timer + range
 // timer read (chime + Pomodoro length), and "Your data" (privacy policy, help,
 // delete the account).
 export function SettingsScreen({ userId, session }: Props) {
   const { theme, appearance, updateAppearance } = useTheme();
   const styles = useStyles();
-  const { settings, loading, error, save } = useSettings(userId);
+  const { settings, loading, error, refresh, save } = useSettings();
   const account = useAccount(session);
   const [accountSheetOpen, setAccountSheetOpen] = useState(false);
   const [reminderHour, setReminderHour] = useState(18);
@@ -91,19 +102,15 @@ export function SettingsScreen({ userId, session }: Props) {
     }
   }, [settings?.reminder_time]);
 
-  // A different user (sign-in, sign-out, account deletion) brings different reminder
-  // settings: the phone's scheduled reminder follows them, without a permission prompt.
-  const reminderUserIdRef = useRef<string | undefined>(undefined);
-  useEffect(() => {
-    if (!settings) return;
-    const userChanged = reminderUserIdRef.current !== undefined && reminderUserIdRef.current !== settings.user_id;
-    reminderUserIdRef.current = settings.user_id;
-    if (userChanged) {
-      syncDailyReminder(settings.reminder_enabled, settings.reminder_time, { askPermission: false }).catch((e) =>
-        console.warn("[SettingsScreen] reminder re-sync failed", e)
-      );
-    }
-  }, [settings?.user_id]);
+  // Turning a reminder on is the moment to ask iOS for permission; the phone's
+  // schedule itself follows the saved settings through useReminders.
+  const saveReminderSwitch = async (patch: { reminder_enabled?: boolean; task_reminder_enabled?: boolean }) => {
+    await save(patch);
+    if (patch.reminder_enabled || patch.task_reminder_enabled) await requestNotificationPermission();
+  };
+
+  // Without a session (it could not be started) there is nothing to load yet: start one first.
+  const retryLoading = () => (userId ? refresh() : reviveSession());
 
   const switchColors = {
     trackColor: { false: theme.colors.border, true: theme.colors.accentDark },
@@ -138,25 +145,30 @@ export function SettingsScreen({ userId, session }: Props) {
     </>
   );
 
-  if (loading || !settings) {
+  if (!settings) {
+    // Still loading shows the spinner; a failed load says so and offers another try.
+    const loadError = loading ? null : error ?? account.cardError;
     return (
       <LinearGradient
         colors={[theme.colors.background, theme.colors.backgroundEnd]}
         style={styles.gradient}
       >
         <SafeAreaView style={styles.safeArea}>
-          <ActivityIndicator color={theme.colors.accent} style={styles.loader} />
+          {loadError ? (
+            <View style={styles.loadFailed}>
+              <ErrorBanner message={`Settings could not be loaded. ${loadError}`} />
+              <Button label="Try again" variant="secondary" onPress={retryLoading} />
+            </View>
+          ) : (
+            <ActivityIndicator color={theme.colors.accent} style={styles.loader} />
+          )}
           {sheets}
         </SafeAreaView>
       </LinearGradient>
     );
   }
 
-  const applyReminderTime = async (hour: number, minute: number) => {
-    const time = formatTime(hour, minute);
-    await save({ reminder_time: time });
-    await syncDailyReminder(settings.reminder_enabled, time);
-  };
+  const applyReminderTime = (hour: number, minute: number) => save({ reminder_time: formatTime(hour, minute) });
 
   return (
     <LinearGradient
@@ -337,19 +349,15 @@ export function SettingsScreen({ userId, session }: Props) {
             />
           </View>
 
+          <Text style={styles.sectionLabel}>{REMINDERS_SECTION_LABEL}</Text>
           <View style={styles.toggleRow}>
             <View style={styles.toggleText}>
-              <Text style={styles.toggleTitle}>Evening review</Text>
-              <Text style={styles.toggleSubtitle}>
-                A gentle summary at {formatTime(reminderHour, reminderMinute)}
-              </Text>
+              <Text style={styles.toggleTitle}>{CHECK_IN_TITLE}</Text>
+              <Text style={styles.toggleSubtitle}>{checkInSubtitle(formatTime(reminderHour, reminderMinute))}</Text>
             </View>
             <Switch
               value={settings.reminder_enabled}
-              onValueChange={async (enabled) => {
-                await save({ reminder_enabled: enabled });
-                await syncDailyReminder(enabled, settings.reminder_time);
-              }}
+              onValueChange={(enabled) => saveReminderSwitch({ reminder_enabled: enabled })}
               {...switchColors}
             />
           </View>
@@ -379,6 +387,19 @@ export function SettingsScreen({ userId, session }: Props) {
             />
           </View>
 
+          <View style={styles.toggleRow}>
+            <View style={styles.toggleText}>
+              <Text style={styles.toggleTitle}>{TASK_REMINDER_TITLE}</Text>
+              <Text style={styles.toggleSubtitle}>{taskReminderSubtitle(REMINDER_POLICY.taskLeadMinutes)}</Text>
+            </View>
+            <Switch
+              value={settings.task_reminder_enabled ?? true}
+              onValueChange={(enabled) => saveReminderSwitch({ task_reminder_enabled: enabled })}
+              {...switchColors}
+            />
+          </View>
+
+          <Text style={styles.sectionLabel}>WHILE YOU WORK</Text>
           <View style={styles.toggleRow}>
             <View style={styles.toggleText}>
               <Text style={styles.toggleTitle}>Timer chime</Text>
@@ -473,6 +494,11 @@ const useStyles = makeStyles((theme) => ({
   },
   loader: {
     marginTop: theme.spacing.xl,
+  },
+  loadFailed: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.xl,
+    gap: theme.spacing.md,
   },
   content: {
     paddingHorizontal: theme.spacing.lg,

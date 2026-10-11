@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   RefreshControl,
   SafeAreaView,
   SectionList,
@@ -16,6 +15,7 @@ import { makeStyles, useTheme } from "../hooks/useTheme";
 import { Task } from "../lib/types";
 import { useTasks } from "../hooks/useTasks";
 import { useSettings } from "../hooks/useSettings";
+import { useReminders } from "../hooks/useReminders";
 import { useBrainDump } from "../hooks/useBrainDump";
 import { useSheetHandoff } from "../hooks/useSheetHandoff";
 import { useDoNow } from "../hooks/useDoNow";
@@ -88,9 +88,10 @@ function greeting(now: Date): string {
 export function TaskListScreen({ userId }: Props) {
   const { theme, appearance, updateAppearance } = useTheme();
   const styles = useStyles();
-  const { tasks, loading, error, refresh, create, applyCreated, complete, update, updateMany, remove, clearCompleted } =
+  const { tasks, loading, error, refresh, create, applyCreated, complete, update, updateMany, remove } =
     useTasks(userId);
-  const { settings } = useSettings(userId);
+  const { settings } = useSettings();
+  useReminders(tasks, loading);
   const [focusTask, setFocusTask] = useState<Task | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [brainDumpOpen, setBrainDumpOpen] = useState(false);
@@ -150,7 +151,6 @@ export function TaskListScreen({ userId }: Props) {
     [completedTasks, todayKey]
   );
   const somedayTasks = useMemo(() => selectSomedayTasks(tasks), [tasks]);
-  const hasCompleted = completedTasks.length > 0;
   const allDone = pending.length + done.length > 0 && pending.length === 0;
   const summary = summarizePending(pending, appearance.quickWinMinutes, todayKey);
   const filterCounts = { all: summary.count, quick: summary.quickWinCount, due: summary.dueCount };
@@ -209,19 +209,6 @@ export function TaskListScreen({ userId }: Props) {
     );
   };
 
-  const openMenu = () => {
-    const options: any[] = [];
-    if (hasCompleted) {
-      options.push({
-        text: "Clear completed tasks",
-        style: "destructive",
-        onPress: clearCompleted,
-      });
-    }
-    options.push({ text: "Cancel", style: "cancel" });
-    Alert.alert("Options", hasCompleted ? undefined : "No completed tasks yet.", options);
-  };
-
   const week = useMemo(() => buildWeek(todayKey, tasks), [todayKey, tasks]);
 
   return (
@@ -240,9 +227,6 @@ export function TaskListScreen({ userId }: Props) {
                 {greeting(now)}
               </Text>
             </View>
-            <TouchableOpacity onPress={openMenu} style={styles.menuButton} accessibilityLabel="List options">
-              <Ionicons name="ellipsis-horizontal" size={20} color={theme.colors.textSecondary} />
-            </TouchableOpacity>
           </View>
 
         </View>
@@ -513,14 +497,6 @@ const useStyles = makeStyles((theme) => ({
     fontSize: theme.typography.eyebrow.fontSize,
     fontWeight: theme.typography.eyebrow.fontWeight,
     letterSpacing: theme.typography.eyebrow.letterSpacing,
-  },
-  menuButton: {
-    width: 44,
-    height: 44,
-    borderRadius: theme.radius.pill,
-    backgroundColor: theme.colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
   },
   filterRow: {
     paddingTop: 4,

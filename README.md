@@ -88,7 +88,11 @@ you compete only with your own past pace.
   switch that starts off.
 - **Look** — theme (Match phone, Light, Dark) and colour theme (Sage, Pastel
   Night, Sunny). Sage also lets you pick an accent. These are saved on the phone.
-- **Work schedule, evening review, timer chime, haptics, Pomodoro length.**
+- **Reminders** — a **daily check-in** at the time you choose, sent only when
+  tasks are still open and without a sound, and a heads-up 10 minutes **before
+  a timed task**. Both are scheduled on the phone and planned a few days ahead,
+  so they stop by themselves if the app stays closed.
+- **Work schedule, timer chime, haptics, Pomodoro length.**
 - **Your data** — privacy policy, help and support, and **Delete account**
   (or **Delete my data** before sign-up), which erases everything on the server.
 
@@ -148,6 +152,8 @@ after `npm install`.
    code must be in the email. In both **Change Email Address** (sign-up) and
    **Magic Link** (sign-in), put `{{ .Token }}` in the body, for example
    `Your PaceTasks code: {{ .Token }}`. The default templates contain only a link.
+   The emails PaceTasks uses are kept in `supabase/templates/` (`sign_up_code.html`
+   and `sign_in_code.html`, each with its subject line on top): paste them in.
 3. **Authentication → SMTP Settings**: Supabase's built-in sender is for testing
    only. Set a mail service before real users sign up.
 4. **Authentication → Sign In / Providers → Email → Email OTP Length**: any
@@ -301,6 +307,7 @@ src/hooks/                 One hook per feature; all data access for a screen go
 src/lib/                   Supabase client and API files, pure logic, UI copy, theme
 src/lib/demo/              In-memory backend for the web demo
 supabase/migrations/       Database schema, security policies and functions
+supabase/templates/        The sign-up and sign-in emails, pasted into the Supabase dashboard
 supabase/tests/database/   pgTAP tests for the database
 supabase/functions/_shared/domain/   Pure TypeScript shared by the app and Edge Functions (`@domain/...`)
 supabase/functions/_shared/server/   Deno-only server code: AI layer, Brain Dump service

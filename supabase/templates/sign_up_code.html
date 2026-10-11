@@ -1,0 +1,10 @@
+<!-- Supabase → Authentication → Emails → "Change Email Address" (the app's sign-up).
+     Subject: {{ .Token }} is your PaceTasks code -->
+<div style="font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; max-width: 440px; margin: 0 auto; padding: 32px 24px; color: #1f2937; font-size: 16px; line-height: 1.5;">
+  <p style="margin: 0 0 16px;">Hi{{ if .Data.first_name }} {{ .Data.first_name }}{{ end }},</p>
+  <p style="margin: 0 0 20px;">Nice to have you here. Type this code into PaceTasks to finish creating your account:</p>
+  <p style="margin: 0 0 20px; padding: 16px; background: #f3f4f6; border-radius: 12px; text-align: center; font-size: 32px; font-weight: 700; letter-spacing: 6px;">{{ .Token }}</p>
+  <p style="margin: 0 0 20px;">The tasks already on your phone stay exactly where they are.</p>
+  <p style="margin: 0 0 24px; color: #6b7280; font-size: 14px;">The code only works for a short while. If you didn't ask for it, you can ignore this email and nothing will change.</p>
+  <p style="margin: 0;">Bilge<br><span style="color: #6b7280; font-size: 14px;">PaceTasks</span></p>
+</div>
