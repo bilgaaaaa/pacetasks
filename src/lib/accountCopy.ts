@@ -65,7 +65,9 @@ export function doneMessage(mode: AccountMode, firstName: string | null): string
 }
 
 export const MARKETING_CONSENT_LABEL = "Send me tips and product news by email";
-export const MARKETING_CONSENT_HINT = "Optional. You can change this any time in Settings.";
+// GDPR consent has to be informed, so the hint names the sender and the frequency.
+export const MARKETING_CONSENT_HINT =
+  "Optional. Short emails from PaceTasks only, at most one every day or two. You can switch them off in Settings at any time.";
 
 export const PRIVACY_POLICY_LABEL = "Privacy policy";
 export const SUPPORT_LABEL = "Help and support";

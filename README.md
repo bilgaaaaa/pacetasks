@@ -293,6 +293,19 @@ eas submit --platform ios --profile production   # uploads to App Store Connect 
   `design/icon/build_icon_svgs.py` and rendered by
   `design/icon/render_icon_pngs.py` (needs Python with Playwright).
 
+### Store listing and screenshots
+
+- `store.config.json` holds the App Store listing in English, Italian and
+  Turkish: name, subtitle, promo text, description, keywords and the support
+  and privacy links. `eas metadata:push` uploads it to App Store Connect.
+  `storeListing.test.ts` keeps every field within Apple's character limits.
+- `design/store/screenshots/<locale>/` holds five 1320x2868 screenshots per
+  language (iPhone 6.9", the only size App Store Connect requires). They are
+  built from the web demo by `design/store/build_store_screenshots.py`; its
+  header has the three commands. Rebuild them when a screen changes.
+- The interface is English-only in v1, so the Italian and Turkish listings say
+  so and keep the feature names in English.
+
 ## Privacy policy and support page
 
 `docs/` holds the public pages the app and the App Store listing link to:
@@ -315,8 +328,10 @@ update `docs/privacy.html` in the same pull request.
 ```
 App.tsx                    Root: theme provider, session, the three tabs
 app.json, eas.json         Expo config and EAS build profiles
+store.config.json          App Store listing (EN, IT, TR) for `eas metadata:push`
 assets/                    App icon, splash images, notification icon, favicon
 design/icon/               Scripts and SVG sources for the icon set
+design/store/              App Store screenshots and the script that builds them
 docs/                      Public pages (privacy policy, support) for GitHub Pages
 src/screens/               TaskListScreen (Today), StatsScreen (Pace), SettingsScreen
 src/components/            Presentational pieces: sheets, cards, rows, buttons

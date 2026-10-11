@@ -10,11 +10,20 @@ import {
   deletionTitle,
   doneMessage,
   fieldErrorLabel,
+  MARKETING_CONSENT_HINT,
+  MARKETING_CONSENT_LABEL,
   sheetTitle,
   switchModeLabel,
 } from "../accountCopy";
 
 describe("accountCopy", () => {
+  it("tells people what the email switch signs them up for", () => {
+    expect(MARKETING_CONSENT_LABEL).toBe("Send me tips and product news by email");
+    expect(MARKETING_CONSENT_HINT).toContain("Optional");
+    expect(MARKETING_CONSENT_HINT).toContain("at most one every day or two");
+    expect(MARKETING_CONSENT_HINT).toContain("You can switch them off in Settings at any time");
+  });
+
   it("says what to fix in a field", () => {
     expect(fieldErrorLabel("firstName", "required")).toBe("First name is needed");
     expect(fieldErrorLabel("lastName", "too_long")).toBe("Keep it under 50 characters");
