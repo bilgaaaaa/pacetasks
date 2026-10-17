@@ -165,16 +165,6 @@ export function useTasks(userId: string | undefined) {
     [run]
   );
 
-  const clearCompleted = useCallback(
-    () =>
-      run("clear completed tasks", async () => {
-        if (!userId) return;
-        await tasksApi.clearCompletedTasks(userId);
-        setTasks((prev) => prev.filter((t) => t.status !== "done"));
-      }),
-    [run, userId]
-  );
-
   return {
     tasks,
     loading,
@@ -186,6 +176,5 @@ export function useTasks(userId: string | undefined) {
     update,
     updateMany,
     remove,
-    clearCompleted,
   };
 }

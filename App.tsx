@@ -5,6 +5,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { StatusBar } from "expo-status-bar";
 import { ThemeProvider, makeStyles, useTheme } from "./src/hooks/useTheme";
 import { useSession } from "./src/hooks/useSession";
+import { SettingsProvider } from "./src/hooks/useSettings";
 import { TaskListScreen } from "./src/screens/TaskListScreen";
 import { StatsScreen } from "./src/screens/StatsScreen";
 import { SettingsScreen } from "./src/screens/SettingsScreen";
@@ -104,23 +105,25 @@ function AppContent() {
   const userId = session?.user.id;
 
   return (
-    <NavigationContainer theme={navigationTheme}>
-      <StatusBar style={theme.isDark ? "light" : "dark"} />
-      <Tab.Navigator
-        screenOptions={{ headerShown: false }}
-        tabBar={(props) => <PillTabBar {...props} />}
-      >
-        <Tab.Screen name="Tasks" options={{ tabBarLabel: "Today" }}>
-          {() => <TaskListScreen userId={userId} />}
-        </Tab.Screen>
-        <Tab.Screen name="Stats" options={{ tabBarLabel: "Pace" }}>
-          {() => <StatsScreen userId={userId} />}
-        </Tab.Screen>
-        <Tab.Screen name="Settings" options={{ tabBarLabel: "Settings" }}>
-          {() => <SettingsScreen userId={userId} session={session} />}
-        </Tab.Screen>
-      </Tab.Navigator>
-    </NavigationContainer>
+    <SettingsProvider userId={userId}>
+      <NavigationContainer theme={navigationTheme}>
+        <StatusBar style={theme.isDark ? "light" : "dark"} />
+        <Tab.Navigator
+          screenOptions={{ headerShown: false }}
+          tabBar={(props) => <PillTabBar {...props} />}
+        >
+          <Tab.Screen name="Tasks" options={{ tabBarLabel: "Today" }}>
+            {() => <TaskListScreen userId={userId} />}
+          </Tab.Screen>
+          <Tab.Screen name="Stats" options={{ tabBarLabel: "Pace" }}>
+            {() => <StatsScreen userId={userId} />}
+          </Tab.Screen>
+          <Tab.Screen name="Settings" options={{ tabBarLabel: "Settings" }}>
+            {() => <SettingsScreen userId={userId} session={session} />}
+          </Tab.Screen>
+        </Tab.Navigator>
+      </NavigationContainer>
+    </SettingsProvider>
   );
 }
 
