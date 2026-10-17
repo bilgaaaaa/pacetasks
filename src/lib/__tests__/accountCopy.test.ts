@@ -1,4 +1,6 @@
 import {
+  accountEmailLabel,
+  appleHint,
   codePrompt,
   deletionConfirmLabel,
   deletionConsequences,
@@ -29,6 +31,18 @@ describe("accountCopy", () => {
     expect(codePrompt("bilge@example.com")).toBe("Enter the code we sent to bilge@example.com.");
     expect(doneMessage("sign_up", "Bilge")).toBe("You're all set, Bilge.");
     expect(doneMessage("sign_in", null)).toBe("Welcome back.");
+  });
+
+  it("explains what the Apple button does to this phone's tasks in each mode", () => {
+    expect(appleHint("sign_up")).toMatch(/tasks stay with you/);
+    expect(appleHint("sign_in")).toMatch(/^Opens the account made with your Apple ID\./);
+    expect(appleHint("sign_in")).toMatch(/creates one/); // signing in with a new Apple ID makes an account, so it says so
+  });
+
+  it("shows the account's email, without exposing Apple's relay address", () => {
+    expect(accountEmailLabel("bilge@example.com")).toBe("bilge@example.com");
+    expect(accountEmailLabel("abc123@privaterelay.appleid.com")).toBe("Signed in with Apple (email hidden)");
+    expect(accountEmailLabel(null)).toBe("Signed in");
   });
 
   it("words the deletion for an account and for a phone without one", () => {

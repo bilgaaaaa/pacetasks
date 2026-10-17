@@ -119,12 +119,14 @@ export function SettingsScreen({ userId, session }: Props) {
         state={account.state}
         profileFirstName={account.profile?.first_name ?? null}
         resending={account.busy}
+        appleAvailable={account.appleAvailable}
         onChangeField={account.setField}
         onChangeMarketingOptIn={account.setMarketingOptIn}
         onChangeCode={account.setCode}
         onChangeMode={account.setMode}
         onSubmit={account.submit}
         onVerify={account.verify}
+        onContinueWithApple={account.continueWithApple}
         onResendCode={account.resendCode}
         onEditEmail={account.editEmail}
         onOpenPrivacyPolicy={() => openExternalLink(PRIVACY_POLICY_URL)}
