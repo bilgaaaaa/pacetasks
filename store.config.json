@@ -1,0 +1,38 @@
+{
+  "configVersion": 0,
+  "apple": {
+    "copyright": "2026 Bilge Ozcanbaz",
+    "categories": ["PRODUCTIVITY"],
+    "info": {
+      "en-US": {
+        "title": "PaceTasks",
+        "subtitle": "Tasks that fit around work",
+        "promoText": "Tell PaceTasks what you need to do. It fits your tasks around work, with the time and energy you really have.",
+        "description": "Tell me what I need to do. PaceTasks figures out how to fit it into your life.\n\nPaceTasks is a task app for people who work a fixed schedule. Catch personal tasks the moment you think of them, then get them done before or after work, with the time and energy you really have. You compete only with your own pace.\n\nPICK MY NEXT TASK\nCan't decide? Decide for me shows one task: a quick win while there is one, then whatever matters most. Fit my time asks how much time and energy you have and lists the tasks that fit back to back.\n\nBRAIN DUMP\nTap the microphone and type or dictate everything on your mind, in English, Italian, Turkish or a mix. PaceTasks shows the tasks it understood before anything is added.\n\nUNFINISHED TASKS FIND A NEW DAY\nYesterday's leftovers don't pile up. One row on Today proposes where each should go: today, tomorrow, the weekend or someday. When tasks have waited too long, Weekly Reset walks you through them one at a time.\n\nYOUR PACE\nStreaks, minutes, a 13-week heatmap and how close your estimates come to reality. After ten finished tasks, My Pace tells you in plain sentences when you get the most done.\n\nALSO\n- A timer on every task, and Focus sessions for tasks with a start time\n- Quick wins highlighted, so a small start is always in sight\n- Light and dark, with three colour themes\n- An evening review reminder\n\nYOUR TASKS STAY YOURS\nNo ads, no trackers, no analytics. No account needed: add your email later to keep your tasks when you change phones, with a sign-in code instead of a password. Delete everything from Settings at any time.",
+        "keywords": ["tasks", "to do", "planner", "routine", "focus", "pomodoro", "brain dump", "checklist", "after work", "streak"],
+        "marketingUrl": "https://bilgaaaaa.github.io/PaceTasksWebsite/",
+        "supportUrl": "https://bilgaaaaa.github.io/PaceTasksWebsite/support.html",
+        "privacyPolicyUrl": "https://bilgaaaaa.github.io/PaceTasksWebsite/privacy.html"
+      }
+    },
+    "advisory": {
+      "alcoholTobaccoOrDrugUseOrReferences": "NONE",
+      "contests": "NONE",
+      "gamblingSimulated": "NONE",
+      "horrorOrFearThemes": "NONE",
+      "matureOrSuggestiveThemes": "NONE",
+      "medicalOrTreatmentInformation": "NONE",
+      "profanityOrCrudeHumor": "NONE",
+      "sexualContentGraphicAndNudity": "NONE",
+      "sexualContentOrNudity": "NONE",
+      "violenceCartoonOrFantasy": "NONE",
+      "violenceRealistic": "NONE",
+      "violenceRealisticProlongedGraphicOrSadistic": "NONE",
+      "gambling": false,
+      "unrestrictedWebAccess": false,
+      "kidsAgeBand": null,
+      "ageRatingOverride": "NONE",
+      "koreaAgeRatingOverride": "NONE"
+    }
+  }
+}

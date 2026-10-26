@@ -20,7 +20,7 @@ you compete only with your own past pace.
 5. [Tests](#tests)
 6. [Web demo](#web-demo)
 7. [Build for TestFlight and the App Store](#build-for-testflight-and-the-app-store)
-8. [Privacy policy and support page](#privacy-policy-and-support-page)
+8. [Website](#website)
 9. [Project structure](#project-structure)
 10. [Working together](#working-together)
 11. [Troubleshooting](#troubleshooting)
@@ -190,7 +190,7 @@ npx supabase secrets set BRAIN_DUMP_DAILY_LIMIT=30    # optional, default 30 per
 
 Switching between free mode, a vendor or a model is only a `secrets set`: no
 code change or redeploy. API keys live only in Supabase secrets, never in the
-app. Update the [privacy policy](#privacy-policy-and-support-page) *before*
+app. Update the [privacy policy](#website) *before*
 moving off `rules`, because it says the text is not sent to an AI company.
 
 **Compare models** with the evaluation set (30 English, Italian, Turkish and
@@ -291,37 +291,75 @@ eas submit --platform ios --profile production   # uploads to App Store Connect 
   `design/icon/build_icon_svgs.py` and rendered by
   `design/icon/render_icon_pngs.py` (needs Python with Playwright).
 
-## Privacy policy and support page
+### App Store listing
 
-`docs/` holds the public pages the app and the App Store listing link to:
-`privacy.html`, `support.html` and a small `index.html`, served for free by
-GitHub Pages.
+`store.config.json` holds the App Store listing, sent to App Store Connect with
+[EAS Metadata](https://docs.expo.dev/eas/metadata/) (beta): name, subtitle,
+description, keywords, the Productivity category, the age rating (every answer
+"none") and the marketing, support and privacy links to the [website](#website).
+Upload a build first, then:
 
-1. Replace `[YOUR FULL NAME]` and `[CONTACT EMAIL]` in `docs/privacy.html` and
-   `docs/support.html`, and name the email service in the policy (search the
-   files for `TO CONFIRM`).
-2. On GitHub: **Settings → Pages → Deploy from a branch**, branch `main`,
-   folder `/docs`.
-3. The pages appear at `https://bilgaaaaa.github.io/pacetasks/`. The app's links
-   (`src/lib/links.ts`) already point there.
+```bash
+eas metadata:push      # sends store.config.json to App Store Connect
+eas metadata:pull      # brings edits made on the website back into the file
+```
 
-When what the app stores changes (a new table, an AI provider, analytics),
-update `docs/privacy.html` in the same pull request.
+Two things the file can't hold, set once in App Store Connect:
+
+- **App Review contact.** Apple needs a phone number, so the review block is not
+  in the file. Add it with your number, or fill it in on the website:
+  ```json
+  "review": {
+    "firstName": "Bilge",
+    "lastName": "Ozcanbaz",
+    "email": "ozcanbazbilge@gmail.com",
+    "phone": "+39 ...",
+    "demoRequired": false,
+    "notes": "No sign-in is needed: PaceTasks opens straight onto Today and every feature works without an account. Creating an account is optional (Settings > Create account) and uses a one-time code sent by email, so there is no demo account. Brain Dump (the microphone next to Add a task) reads typed or dictated text with the app's own rules; no AI service is used. To delete an account or all data: Settings > Your data > Delete account."
+  }
+  ```
+- **App Privacy.** Answer it from the [privacy policy](#website): name and email
+  (only with an account), the tasks and Brain Dump text, and the user ID are
+  linked to the user and used for app functionality; the email is also used for
+  marketing only when tips are switched on; nothing is used for tracking.
+
+## Website
+
+The public website lives in its own repository,
+[bilgaaaaa/PaceTasksWebsite](https://github.com/bilgaaaaa/PaceTasksWebsite), served by GitHub Pages at
+**https://bilgaaaaa.github.io/PaceTasksWebsite/**: a landing page, the privacy
+policy, help and support, and the [web demo](#web-demo) at `/demo/`. The app's
+links (`src/lib/links.ts`) and the App Store listing point there.
+
+Its deploy workflow checks out this repository and exports the web demo with
+`WEB_BASE_URL` set to the site's path; `app.config.js` turns that into Expo's
+`experiments.baseUrl` so the demo's files load from that subpath. It runs on
+every push to the website and once a day, so the demo follows `main` here.
+
+- **After a UI change:** with both repositories cloned side by side, run
+  `npm run site:screens -- ../PaceTasksWebsite/screens` to take the website's
+  screenshots again from the web demo, on the simulated journey's fixed Monday.
+  It fails if the demo sends any request outside the browser, because the site
+  promises it never does. Without a folder, the screenshots go to
+  `e2e/output/site-screens/`.
+- **When what the app stores changes** (a new table, an AI provider, analytics),
+  update `privacy.html` in the website repository before that version is released.
 
 ## Project structure
 
 ```
 App.tsx                    Root: theme provider, session, the three tabs
 app.json, eas.json         Expo config and EAS build profiles
+store.config.json          App Store listing for `eas metadata:push`
+app.config.js              Extends app.json: serves the web export from a subpath, for the website's demo
 assets/                    App icon, splash images, notification icon, favicon
 design/icon/               Scripts and SVG sources for the icon set
-docs/                      Public pages (privacy policy, support) for GitHub Pages
 src/screens/               TaskListScreen (Today), StatsScreen (Pace), SettingsScreen
 src/components/            Presentational pieces: sheets, cards, rows, buttons
 src/hooks/                 One hook per feature; all data access for a screen goes through these
 src/lib/                   Supabase client and API files, pure logic, UI copy, theme
 src/lib/demo/              In-memory backend for the web demo
-e2e/                       Simulated journey: `harness.mjs` (browser, film, steps) and the journeys
+e2e/                       Simulated journey: `harness.mjs` (browser, film, steps), the journeys and the website screenshots
 supabase/migrations/       Database schema, security policies and functions
 supabase/tests/database/   pgTAP tests for the database
 supabase/functions/_shared/domain/   Pure TypeScript shared by the app and Edge Functions (`@domain/...`)
@@ -381,5 +419,5 @@ The full conventions are in `.cursor/rules/pacetasks.mdc`.
 - **Tasks added elsewhere don't appear live** — check that Realtime is enabled
   for the `tasks` table (Dashboard → Database → Publications →
   `supabase_realtime`).
-- **The privacy or support link opens "not found"** — GitHub Pages is not
-  enabled yet. See [Privacy policy and support page](#privacy-policy-and-support-page).
+- **The privacy or support link opens "not found"** — the website is not
+  deployed yet. See [Website](#website).
