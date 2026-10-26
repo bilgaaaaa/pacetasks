@@ -293,50 +293,34 @@ eas submit --platform ios --profile production   # uploads to App Store Connect 
 
 ## Website
 
-`docs/` is the public website that the app and the App Store listing link to,
-served by GitHub Pages at **https://bilgaaaaa.github.io/pacetasks/**. It is
-plain HTML, CSS and a few lines of JavaScript in the app's Sage theme, light and dark, with no build step.
+The public website lives in its own repository,
+[bilgaaaaa/PaceTasksWebsite](https://github.com/bilgaaaaa/PaceTasksWebsite), served by GitHub Pages at
+**https://bilgaaaaa.github.io/PaceTasksWebsite/**: a landing page, the privacy
+policy, help and support, and the [web demo](#web-demo) at `/demo/`. The app's
+links (`src/lib/links.ts`) and the App Store listing point there.
 
-| File | Purpose |
-| --- | --- |
-| `index.html` | Landing page; also the App Store marketing URL |
-| `privacy.html` | Privacy policy; the App Store privacy policy URL |
-| `support.html` | Help and support; the App Store support URL |
-| `site.css`, `site.js` | Shared look, and the script that starts the demo inside the hero phone on wide screens |
-| `screens/` | Screenshots of the web demo, made by `npm run site:screens` |
-| `og-image.png` | Link preview (1200×630): the hero card with the Today screen |
+Its deploy workflow checks out this repository and exports the web demo with
+`WEB_BASE_URL` set to the site's path; `app.config.js` turns that into Expo's
+`experiments.baseUrl` so the demo's files load from that subpath. It runs on
+every push to the website and once a day, so the demo follows `main` here.
 
-`.github/workflows/pages.yml` copies `docs/`, exports the [web demo](#web-demo)
-into `demo/` and deploys both on every push to `main`. Pull requests that touch
-the site build it without deploying. The demo is built with
-`WEB_BASE_URL=/pacetasks/demo`, which `app.config.js` turns into Expo's
-`experiments.baseUrl` so its files load from that subpath.
-
-One-time setup on GitHub: **Settings → Pages → Build and deployment → Source:
-GitHub Actions**. Then push to `main`, or run the **Website** workflow by hand.
-
-- **Preview locally:** `python3 -m http.server 4173 --directory docs`, then open
-  http://localhost:4173. Only the deployed site has the demo.
-- **After a UI change:** `npm run site:screens` takes the screenshots again
-  from the web demo, on the simulated journey's fixed Monday. It fails if the
-  demo sends any request outside the browser, because the site promises it never does.
-- **When the app is live:** replace "Coming soon to iPhone" in `docs/index.html`
-  with the App Store link.
-- **Still to confirm:** name the email service that sends sign-in codes in
-  `docs/privacy.html` (search for `TO CONFIRM`).
-
-When what the app stores changes (a new table, an AI provider, analytics),
-update `docs/privacy.html` in the same pull request.
+- **After a UI change:** with both repositories cloned side by side, run
+  `npm run site:screens -- ../PaceTasksWebsite/screens` to take the website's
+  screenshots again from the web demo, on the simulated journey's fixed Monday.
+  It fails if the demo sends any request outside the browser, because the site
+  promises it never does. Without a folder, the screenshots go to
+  `e2e/output/site-screens/`.
+- **When what the app stores changes** (a new table, an AI provider, analytics),
+  update `privacy.html` in the website repository before that version is released.
 
 ## Project structure
 
 ```
 App.tsx                    Root: theme provider, session, the three tabs
 app.json, eas.json         Expo config and EAS build profiles
-app.config.js              Extends app.json: serves the web export from a subpath for the website
+app.config.js              Extends app.json: serves the web export from a subpath, for the website's demo
 assets/                    App icon, splash images, notification icon, favicon
 design/icon/               Scripts and SVG sources for the icon set
-docs/                      The website: landing page, privacy policy, support (GitHub Pages)
 src/screens/               TaskListScreen (Today), StatsScreen (Pace), SettingsScreen
 src/components/            Presentational pieces: sheets, cards, rows, buttons
 src/hooks/                 One hook per feature; all data access for a screen goes through these
@@ -402,5 +386,5 @@ The full conventions are in `.cursor/rules/pacetasks.mdc`.
 - **Tasks added elsewhere don't appear live** — check that Realtime is enabled
   for the `tasks` table (Dashboard → Database → Publications →
   `supabase_realtime`).
-- **The privacy or support link opens "not found"** — GitHub Pages is not
-  enabled yet, or its source is not **GitHub Actions**. See [Website](#website).
+- **The privacy or support link opens "not found"** — the website is not
+  deployed yet. See [Website](#website).

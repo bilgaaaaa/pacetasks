@@ -1,16 +1,17 @@
 import { mkdir, writeFile } from "node:fs/promises";
-import { join } from "node:path";
-import { fileURLToPath } from "node:url";
-import { runJourney } from "./harness.mjs";
+import { join, resolve } from "node:path";
+import { OUTPUT_DIR, runJourney } from "./harness.mjs";
 
-// Photographs the web demo for the website (docs/screens/), on the same fixed
-// Monday as the simulated journey. Run with `npm run site:screens` after a UI change.
+// Photographs the web demo for the website (bilgaaaaa/PaceTasksWebsite), on the same
+// fixed Monday as the simulated journey. After a UI change, with both repositories
+// side by side: `npm run site:screens -- ../PaceTasksWebsite/screens`.
 
-const SCREENS_DIR = fileURLToPath(new URL("../docs/screens/", import.meta.url));
+const SCREENS_DIR = resolve(process.argv[2] ?? join(OUTPUT_DIR, "site-screens"));
 const BRAIN_DUMP_TEXT = "Tomorrow call the vet, domani comprare il pane, cuma günü faturayı öde";
 const WEBP_QUALITY = 0.86;
 
 await mkdir(SCREENS_DIR, { recursive: true });
+console.log(`[site-screens] writing to ${SCREENS_DIR}`);
 
 // Re-encodes the screenshot as WebP with the browser's own encoder, so no image library is needed.
 async function saveScreen(page, name) {
