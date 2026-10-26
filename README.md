@@ -291,6 +291,38 @@ eas submit --platform ios --profile production   # uploads to App Store Connect 
   `design/icon/build_icon_svgs.py` and rendered by
   `design/icon/render_icon_pngs.py` (needs Python with Playwright).
 
+### App Store listing
+
+`store.config.json` holds the App Store listing, sent to App Store Connect with
+[EAS Metadata](https://docs.expo.dev/eas/metadata/) (beta): name, subtitle,
+description, keywords, the Productivity category, the age rating (every answer
+"none") and the marketing, support and privacy links to the [website](#website).
+Upload a build first, then:
+
+```bash
+eas metadata:push      # sends store.config.json to App Store Connect
+eas metadata:pull      # brings edits made on the website back into the file
+```
+
+Two things the file can't hold, set once in App Store Connect:
+
+- **App Review contact.** Apple needs a phone number, so the review block is not
+  in the file. Add it with your number, or fill it in on the website:
+  ```json
+  "review": {
+    "firstName": "Bilge",
+    "lastName": "Ozcanbaz",
+    "email": "ozcanbazbilge@gmail.com",
+    "phone": "+39 ...",
+    "demoRequired": false,
+    "notes": "No sign-in is needed: PaceTasks opens straight onto Today and every feature works without an account. Creating an account is optional (Settings > Create account) and uses a one-time code sent by email, so there is no demo account. Brain Dump (the microphone next to Add a task) reads typed or dictated text with the app's own rules; no AI service is used. To delete an account or all data: Settings > Your data > Delete account."
+  }
+  ```
+- **App Privacy.** Answer it from the [privacy policy](#website): name and email
+  (only with an account), the tasks and Brain Dump text, and the user ID are
+  linked to the user and used for app functionality; the email is also used for
+  marketing only when tips are switched on; nothing is used for tracking.
+
 ## Website
 
 The public website lives in its own repository,
@@ -318,6 +350,7 @@ every push to the website and once a day, so the demo follows `main` here.
 ```
 App.tsx                    Root: theme provider, session, the three tabs
 app.json, eas.json         Expo config and EAS build profiles
+store.config.json          App Store listing for `eas metadata:push`
 app.config.js              Extends app.json: serves the web export from a subpath, for the website's demo
 assets/                    App icon, splash images, notification icon, favicon
 design/icon/               Scripts and SVG sources for the icon set
