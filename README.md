@@ -20,7 +20,7 @@ you compete only with your own past pace.
 5. [Tests](#tests)
 6. [Web demo](#web-demo)
 7. [Build for TestFlight and the App Store](#build-for-testflight-and-the-app-store)
-8. [Privacy policy and support page](#privacy-policy-and-support-page)
+8. [Website](#website)
 9. [Project structure](#project-structure)
 10. [Working together](#working-together)
 11. [Troubleshooting](#troubleshooting)
@@ -190,7 +190,7 @@ npx supabase secrets set BRAIN_DUMP_DAILY_LIMIT=30    # optional, default 30 per
 
 Switching between free mode, a vendor or a model is only a `secrets set`: no
 code change or redeploy. API keys live only in Supabase secrets, never in the
-app. Update the [privacy policy](#privacy-policy-and-support-page) *before*
+app. Update the [privacy policy](#website) *before*
 moving off `rules`, because it says the text is not sent to an AI company.
 
 **Compare models** with the evaluation set (30 English, Italian, Turkish and
@@ -291,19 +291,39 @@ eas submit --platform ios --profile production   # uploads to App Store Connect 
   `design/icon/build_icon_svgs.py` and rendered by
   `design/icon/render_icon_pngs.py` (needs Python with Playwright).
 
-## Privacy policy and support page
+## Website
 
-`docs/` holds the public pages the app and the App Store listing link to:
-`privacy.html`, `support.html` and a small `index.html`, served for free by
-GitHub Pages.
+`docs/` is the public website that the app and the App Store listing link to,
+served by GitHub Pages at **https://bilgaaaaa.github.io/pacetasks/**. It is
+plain HTML, CSS and a few lines of JavaScript in the app's Sage theme, light and dark, with no build step.
 
-1. Replace `[YOUR FULL NAME]` and `[CONTACT EMAIL]` in `docs/privacy.html` and
-   `docs/support.html`, and name the email service in the policy (search the
-   files for `TO CONFIRM`).
-2. On GitHub: **Settings → Pages → Deploy from a branch**, branch `main`,
-   folder `/docs`.
-3. The pages appear at `https://bilgaaaaa.github.io/pacetasks/`. The app's links
-   (`src/lib/links.ts`) already point there.
+| File | Purpose |
+| --- | --- |
+| `index.html` | Landing page; also the App Store marketing URL |
+| `privacy.html` | Privacy policy; the App Store privacy policy URL |
+| `support.html` | Help and support; the App Store support URL |
+| `site.css`, `site.js` | Shared look, and the script that starts the demo inside the hero phone on wide screens |
+| `screens/` | Screenshots of the web demo, made by `npm run site:screens` |
+| `og-image.png` | Link preview (1200×630): the hero card with the Today screen |
+
+`.github/workflows/pages.yml` copies `docs/`, exports the [web demo](#web-demo)
+into `demo/` and deploys both on every push to `main`. Pull requests that touch
+the site build it without deploying. The demo is built with
+`WEB_BASE_URL=/pacetasks/demo`, which `app.config.js` turns into Expo's
+`experiments.baseUrl` so its files load from that subpath.
+
+One-time setup on GitHub: **Settings → Pages → Build and deployment → Source:
+GitHub Actions**. Then push to `main`, or run the **Website** workflow by hand.
+
+- **Preview locally:** `python3 -m http.server 4173 --directory docs`, then open
+  http://localhost:4173. Only the deployed site has the demo.
+- **After a UI change:** `npm run site:screens` takes the screenshots again
+  from the web demo, on the simulated journey's fixed Monday. It fails if the
+  demo sends any request outside the browser, because the site promises it never does.
+- **When the app is live:** replace "Coming soon to iPhone" in `docs/index.html`
+  with the App Store link.
+- **Still to confirm:** name the email service that sends sign-in codes in
+  `docs/privacy.html` (search for `TO CONFIRM`).
 
 When what the app stores changes (a new table, an AI provider, analytics),
 update `docs/privacy.html` in the same pull request.
@@ -313,15 +333,16 @@ update `docs/privacy.html` in the same pull request.
 ```
 App.tsx                    Root: theme provider, session, the three tabs
 app.json, eas.json         Expo config and EAS build profiles
+app.config.js              Extends app.json: serves the web export from a subpath for the website
 assets/                    App icon, splash images, notification icon, favicon
 design/icon/               Scripts and SVG sources for the icon set
-docs/                      Public pages (privacy policy, support) for GitHub Pages
+docs/                      The website: landing page, privacy policy, support (GitHub Pages)
 src/screens/               TaskListScreen (Today), StatsScreen (Pace), SettingsScreen
 src/components/            Presentational pieces: sheets, cards, rows, buttons
 src/hooks/                 One hook per feature; all data access for a screen goes through these
 src/lib/                   Supabase client and API files, pure logic, UI copy, theme
 src/lib/demo/              In-memory backend for the web demo
-e2e/                       Simulated journey: `harness.mjs` (browser, film, steps) and the journeys
+e2e/                       Simulated journey: `harness.mjs` (browser, film, steps), the journeys and the website screenshots
 supabase/migrations/       Database schema, security policies and functions
 supabase/tests/database/   pgTAP tests for the database
 supabase/functions/_shared/domain/   Pure TypeScript shared by the app and Edge Functions (`@domain/...`)
@@ -382,4 +403,4 @@ The full conventions are in `.cursor/rules/pacetasks.mdc`.
   for the `tasks` table (Dashboard → Database → Publications →
   `supabase_realtime`).
 - **The privacy or support link opens "not found"** — GitHub Pages is not
-  enabled yet. See [Privacy policy and support page](#privacy-policy-and-support-page).
+  enabled yet, or its source is not **GitHub Actions**. See [Website](#website).

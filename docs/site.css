@@ -1,48 +1,238 @@
-/* Shared look for the PaceTasks public pages: the app's sage palette, light and dark. */
+/* Shared look for the PaceTasks website: the app's Sage theme, light and dark, and its system type. */
 :root {
   --background: #e7efe1;
+  --background-end: #d7e4d0;
   --surface: #f6f8f1;
   --border: #d6e0cf;
   --text-primary: #26332a;
   --text-secondary: #56634f;
   --accent: #3f7446;
+  --on-accent: #ffffff;
+  /* The Today hero card: forest green, daffodil title, cream copy. */
+  --hero-card: #2f4636;
+  --hero-title: #f7e289;
+  --hero-body: #fbf6ee;
+  --hero-blob-a: linear-gradient(135deg, #9fc89d, #4e8552);
+  --hero-blob-b: linear-gradient(135deg, #f7e289, #b79a65);
+  --phone-bezel: #1b231d;
+  --shadow: rgba(38, 51, 42, 0.18);
+  --font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #141a16;
+    --background-end: #101512;
     --surface: #1d2520;
     --border: #2e3931;
     --text-primary: #e4ecdf;
     --text-secondary: #a3b09e;
     --accent: #8dc495;
+    --on-accent: #10180f;
+    --hero-card: #2a3d30;
+    --phone-bezel: #050806;
+    --shadow: rgba(0, 0, 0, 0.45);
   }
 }
+
 * { box-sizing: border-box; }
+html { color-scheme: light dark; background: var(--background-end); }
 body {
   margin: 0;
-  background: var(--background);
+  min-height: 100vh;
+  background: linear-gradient(180deg, var(--background), var(--background-end));
   color: var(--text-primary);
-  font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font: 17px/1.6 var(--font);
+  -webkit-font-smoothing: antialiased;
 }
-main {
-  max-width: 44rem;
-  margin: 0 auto;
-  padding: 2.5rem 1rem 4rem;
-}
-header.brand {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 2rem;
-}
-header.brand img { width: 44px; height: 44px; border-radius: 10px; }
-header.brand a { color: var(--text-primary); font-weight: 600; text-decoration: none; }
-h1, h2 { font-family: Georgia, "Times New Roman", serif; font-weight: 500; line-height: 1.2; }
-h1 { font-size: 2.25rem; margin: 0 0 0.25rem; }
-h2 { font-size: 1.4rem; margin: 2.25rem 0 0.5rem; }
+img { max-width: 100%; display: block; }
+a { color: var(--accent); text-underline-offset: 0.15em; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+h1, h2, h3 { font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; }
 p, li { color: var(--text-primary); }
-.meta, footer { color: var(--text-secondary); font-size: 0.9rem; }
-a { color: var(--accent); }
+.skip-link { position: absolute; left: 1rem; top: -4rem; padding: 0.5rem 1rem; background: var(--surface); }
+.skip-link:focus { top: 1rem; }
+
+/* Header and footer, shared by every page. */
+.site-header,
+.site-footer {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 1.25rem 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--text-primary);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+}
+.brand img { width: 36px; height: 36px; border-radius: 9px; }
+.site-nav { display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; }
+.site-nav a { color: var(--text-secondary); text-decoration: none; font-weight: 500; }
+.site-nav a:hover,
+.site-nav a[aria-current="page"] { color: var(--text-primary); }
+.site-footer {
+  margin-top: 4rem;
+  padding-top: 1.5rem;
+  padding-bottom: 2.5rem;
+  border-top: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+.site-footer p { margin: 0; color: inherit; }
+
+/* Buttons: the hero's daffodil pill, as in the app's "Pick my next task". */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0.7rem 1.5rem;
+  border-radius: 999px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.button-hero { background: var(--hero-title); color: var(--hero-card); }
+.button-hero:hover { filter: brightness(1.05); }
+.button-hero:focus-visible { outline-color: var(--hero-title); }
+
+/* Landing page. */
+.landing { max-width: 72rem; margin: 0 auto; padding: 0 1rem; }
+
+.hero-card {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  display: grid;
+  gap: 2.5rem;
+  padding: 3rem 1.5rem 0;
+  border-radius: 32px;
+  background: var(--hero-card);
+  color: var(--hero-body);
+}
+.hero-blob {
+  position: absolute;
+  z-index: -2;
+  border-radius: 50%;
+  animation: drift 14s ease-in-out infinite alternate;
+}
+.hero-blob-a { width: 16rem; height: 16rem; right: -8rem; top: -7rem; background: var(--hero-blob-a); opacity: 0.6; }
+.hero-blob-b { width: 12rem; height: 12rem; right: -3rem; bottom: -5rem; background: var(--hero-blob-b); opacity: 0.55; animation-duration: 18s; }
+/* The same fine grain the app lays over its hero card. */
+.hero-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: url("grain.png") repeat;
+  opacity: 0.3;
+  pointer-events: none;
+}
+@keyframes drift {
+  from { transform: translate(0, 0); }
+  to { transform: translate(-2.5rem, 1.5rem); }
+}
+.hero-copy { align-self: center; max-width: 34rem; }
+.hero-copy h1 {
+  margin: 0 0 1.25rem;
+  color: var(--hero-title);
+  font-size: clamp(2.75rem, 1.6rem + 4.6vw, 5.25rem);
+  line-height: 1;
+  letter-spacing: -0.045em;
+}
+.hero-lede { margin: 0 0 2rem; color: var(--hero-body); font-size: 1.2rem; line-height: 1.55; }
+.hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.5rem; }
+.hero-status { margin: 0; color: var(--hero-body); opacity: 0.85; font-size: 0.95rem; }
+
+/* Phone frame: the screenshot, or the live demo once started. */
+.phone {
+  margin: 0;
+  justify-self: center;
+  width: min(100%, 300px);
+}
+.phone-screen {
+  aspect-ratio: 393 / 852;
+  overflow: hidden;
+  border: 10px solid var(--phone-bezel);
+  border-radius: 46px;
+  background: var(--background);
+  box-shadow: 0 30px 60px -20px var(--shadow);
+}
+.phone-screen img,
+.phone-screen iframe { width: 100%; height: 100%; border: 0; object-fit: cover; object-position: top; }
+.phone figcaption { margin-top: 0.9rem; color: var(--text-secondary); font-size: 0.85rem; text-align: center; }
+/* In the hero, the phone rises out of the card's bottom edge on small screens. */
+.hero-phone { max-height: 22rem; overflow: hidden; }
+.hero-phone figcaption { display: none; }
+
+/* Feature rows: text and screenshot side by side, alternating on wide screens. */
+.features { display: grid; gap: 4.5rem; margin: 5rem 0; }
+.feature { display: grid; gap: 2rem; align-items: center; }
+.feature h2 { margin: 0 0 1rem; font-size: clamp(1.75rem, 1.3rem + 1.6vw, 2.5rem); }
+.feature p { margin: 0 0 1rem; max-width: 34rem; color: var(--text-secondary); }
+.feature .phone { width: min(100%, 250px); }
+.feature-quote {
+  margin: 1.5rem 0 0;
+  padding: 1rem 1.25rem;
+  max-width: 34rem;
+  border-left: 4px solid var(--accent);
+  border-radius: 0 14px 14px 0;
+  background: var(--surface);
+  font-size: 1.15rem;
+  line-height: 1.45;
+}
+
+/* Privacy promise and questions. */
+.split { display: grid; gap: 1.5rem; padding: 3rem 0; border-top: 1px solid var(--border); }
+.split h2 { margin: 0; font-size: clamp(1.75rem, 1.3rem + 1.6vw, 2.5rem); }
+.promise-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 1rem; }
+.promise-list li { padding-left: 2rem; position: relative; }
+.promise-list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.35em;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  background: var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.5l2.5 2.5L12 5.5' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 0.8rem no-repeat;
+}
+.promise-list strong { display: block; }
+.promise-list span { color: var(--text-secondary); }
+.questions details { border-bottom: 1px solid var(--border); padding: 0.9rem 0; }
+.questions details:first-child { padding-top: 0; }
+.questions summary { cursor: pointer; font-weight: 600; }
+.questions details p { margin: 0.5rem 0 0; color: var(--text-secondary); }
+.questions > p { margin: 1.25rem 0 0; }
+
+@media (min-width: 900px) {
+  .hero-card { grid-template-columns: 1.15fr 1fr; padding: 4rem 4rem 3.5rem; }
+  .hero-blob-a { width: 34rem; height: 34rem; right: -14rem; top: -14rem; }
+  .hero-blob-b { width: 22rem; height: 22rem; right: 18%; bottom: -12rem; }
+  .hero-phone { max-height: none; overflow: visible; width: 330px; }
+  .feature .phone { width: 280px; }
+  .hero-phone figcaption { display: block; color: var(--hero-body); opacity: 0.8; }
+  .feature { grid-template-columns: 1fr 1fr; gap: 4rem; }
+  .feature:nth-child(even) .phone { order: -1; }
+  .split { grid-template-columns: 1fr 1.6fr; gap: 3rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-blob { animation: none; }
+}
+
+/* Policy and help pages: one readable column. */
+.page { max-width: 44rem; margin: 0 auto; padding: 1.5rem 1rem 0; }
+.page h1 { font-size: 2.25rem; margin: 0 0 0.25rem; }
+.page h2 { font-size: 1.4rem; margin: 2.25rem 0 0.5rem; }
+.meta { color: var(--text-secondary); font-size: 0.9rem; }
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -54,9 +244,8 @@ a { color: var(--accent); }
 .card > :last-child { margin-bottom: 0; }
 table { width: 100%; border-collapse: collapse; }
 th, td { text-align: left; vertical-align: top; padding: 0.5rem 0.5rem 0.5rem 0; border-bottom: 1px solid var(--border); }
-th { color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; }
+th { color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; }
 .table-scroll { overflow-x: auto; }
-footer { margin-top: 3rem; border-top: 1px solid var(--border); padding-top: 1rem; }
 /* On a phone, three columns are too narrow to read: each row becomes a stacked block. */
 @media (max-width: 600px) {
   table, tbody, tr, td { display: block; }

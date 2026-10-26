@@ -4,15 +4,27 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>PaceTasks — Privacy Policy</title>
+  <meta name="description" content="What PaceTasks stores, why, for how long, and how to delete it.">
+  <meta name="theme-color" content="#2f4636">
   <link rel="icon" href="icon.png">
+  <link rel="apple-touch-icon" href="icon.png">
   <link rel="stylesheet" href="site.css">
 </head>
 <body>
-<main>
-  <header class="brand"><img src="icon.png" alt=""><a href="./">PaceTasks</a></header>
+<a class="skip-link" href="#main">Skip to content</a>
 
+<header class="site-header">
+  <a class="brand" href="./"><img src="icon.png" alt="" width="36" height="36">PaceTasks</a>
+  <nav class="site-nav" aria-label="Site">
+    <a href="demo/">Try the demo</a>
+    <a href="support.html">Help</a>
+    <a href="privacy.html" aria-current="page">Privacy</a>
+  </nav>
+</header>
+
+<main id="main" class="page">
   <h1>Privacy Policy</h1>
-  <p class="meta">Last updated: 4 October 2026</p>
+  <p class="meta">Last updated: 26 October 2026</p>
 
   <div class="card">
     <p><strong>In short.</strong> PaceTasks stores the tasks you type so it can show them to you. It has no ads, no
@@ -21,9 +33,8 @@
   </div>
 
   <h2>Who is responsible</h2>
-  <p>PaceTasks is made by <!-- TO CONFIRM: full legal name -->[YOUR FULL NAME], an individual developer based in
-  Padova, Italy, who is the data controller. Contact:
-  <!-- TO CONFIRM: public contact address --><a href="mailto:[CONTACT EMAIL]">[CONTACT EMAIL]</a>.</p>
+  <p>PaceTasks is made by Bilge Ozcanbaz, an individual developer based in Padova, Italy, who is the data controller.
+  Contact: <a href="mailto:ozcanbazbilge@gmail.com">ozcanbazbilge@gmail.com</a>.</p>
 
   <h2>What PaceTasks stores</h2>
   <div class="table-scroll">
@@ -100,6 +111,10 @@
   <p>The evening reminder is scheduled on your phone by the app itself. No notification content passes through our
   server.</p>
 
+  <h2>The web demo</h2>
+  <p>The demo on this website runs entirely in your browser, on sample tasks. What you type into it is not sent to
+  us or to anyone else, and it is gone as soon as you reload or close the page.</p>
+
   <h2>Where your data is kept and who helps process it</h2>
   <ul>
     <li><strong>Supabase</strong> hosts the database and handles sign-in. The PaceTasks database is located in the
@@ -107,7 +122,8 @@
     <li><strong>An email delivery service</strong> sends the one-time sign-in codes
     <!-- TO CONFIRM: name the service once SMTP is set up, e.g. Google (Gmail) -->to the address you entered.</li>
     <li><strong>Apple</strong> distributes the app; its own privacy policy covers the App Store.</li>
-    <li><strong>GitHub</strong> hosts this website (not the app's data) and, like any web host, logs visits to it.</li>
+    <li><strong>GitHub</strong> hosts this website and its demo (not the app's data) and, like any web host, logs
+    visits to it.</li>
   </ul>
   <p>These services process data only to provide the app. Data is encrypted in transit, and each user can read and
   change only their own rows in the database.</p>
@@ -134,8 +150,15 @@
 
   <h2>Changes</h2>
   <p>If this policy changes, the new version is published on this page with a new date.</p>
-
-  <footer><a href="./">PaceTasks</a> · <a href="support.html">Help and support</a></footer>
 </main>
+
+<footer class="site-footer">
+  <p>Made in Padova by <a href="https://bilgalog.dev">Bilge Ozcanbaz</a>.</p>
+  <nav class="site-nav" aria-label="Footer">
+    <a href="support.html">Help and support</a>
+    <a href="privacy.html">Privacy policy</a>
+    <a href="https://github.com/bilgaaaaa/pacetasks">Source code</a>
+  </nav>
+</footer>
 </body>
 </html>
