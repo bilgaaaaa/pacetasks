@@ -7,7 +7,6 @@
   --text-primary: #26332a;
   --text-secondary: #56634f;
   --accent: #3f7446;
-  --on-accent: #ffffff;
   /* The Today hero card: forest green, daffodil title, cream copy. */
   --hero-card: #2f4636;
   --hero-title: #f7e289;
@@ -27,7 +26,6 @@
     --text-primary: #e4ecdf;
     --text-secondary: #a3b09e;
     --accent: #8dc495;
-    --on-accent: #10180f;
     --hero-card: #2a3d30;
     --phone-bezel: #050806;
     --shadow: rgba(0, 0, 0, 0.45);
@@ -217,9 +215,9 @@ p, li { color: var(--text-primary); }
   .hero-blob-a { width: 34rem; height: 34rem; right: -14rem; top: -14rem; }
   .hero-blob-b { width: 22rem; height: 22rem; right: 18%; bottom: -12rem; }
   .hero-phone { max-height: none; overflow: visible; width: 330px; }
-  .feature .phone { width: 280px; }
   .hero-phone figcaption { display: block; color: var(--hero-body); opacity: 0.8; }
   .feature { grid-template-columns: 1fr 1fr; gap: 4rem; }
+  .feature .phone { width: 280px; }
   .feature:nth-child(even) .phone { order: -1; }
   .split { grid-template-columns: 1fr 1.6fr; gap: 3rem; }
 }
