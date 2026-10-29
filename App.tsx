@@ -94,8 +94,8 @@ function AppContent() {
       <View style={styles.centered}>
         <Text style={styles.errorText}>Couldn't start session: {error}</Text>
         <Text style={styles.errorHint}>
-          Check that EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY
-          are set in your .env file.
+          Check your internet connection and try again. If it keeps happening,
+          the app's server settings are missing from this build.
         </Text>
       </View>
     );

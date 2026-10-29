@@ -9,6 +9,8 @@
     "web": "expo start --web",
     "web:demo": "EXPO_PUBLIC_DEMO_MODE=1 expo start --web",
     "web:demo:export": "EXPO_PUBLIC_DEMO_MODE=1 expo export --platform web --output-dir e2e/output/web",
+    "ios:testflight": "eas build --platform ios --profile production --auto-submit",
+    "ios:preview": "eas build --platform ios --profile preview",
     "test": "jest",
     "typecheck": "tsc --noEmit",
     "db:test": "supabase test db",
