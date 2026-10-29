@@ -17,14 +17,17 @@ export function useSession() {
         refreshAnonymousSession(); // not awaited: the app must not wait on the network to start
       })
       .catch((e) => {
+        console.warn("[useSession] could not start a session", e);
         if (isMounted) setError(e.message ?? "Failed to start session");
       })
       .finally(() => {
         if (isMounted) setLoading(false);
       });
 
+    // A session arriving later (e.g. after a failed offline start) clears the startup error.
     const { data: listener } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s);
+      if (s) setError(null);
     });
 
     // Coming back to the app: an email confirmed by link shows up here, and a
