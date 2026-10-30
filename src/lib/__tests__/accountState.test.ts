@@ -1,4 +1,4 @@
-import { accountReducer, AccountState, formErrors, INITIAL_ACCOUNT_STATE } from "../accountState";
+import { accountReducer, AccountState, emailSuggestionToAsk, formErrors, INITIAL_ACCOUNT_STATE } from "../accountState";
 
 const filled: AccountState = {
   ...INITIAL_ACCOUNT_STATE,
@@ -75,5 +75,41 @@ describe("accountState", () => {
       phase: "form",
       email: "bilge@example.com",
     });
+  });
+
+  it("asks once about a mistyped email, then sends what was typed", () => {
+    const typo: AccountState = { ...filled, email: "bilge@icould.com" };
+    expect(emailSuggestionToAsk(typo)).toBe("bilge@icloud.com");
+    expect(emailSuggestionToAsk(filled)).toBeNull();
+
+    const asked = accountReducer(typo, { type: "emailSuggested", suggestion: "bilge@icloud.com" });
+    expect(asked.emailSuggestion).toBe("bilge@icloud.com");
+    expect(emailSuggestionToAsk(asked)).toBeNull(); // a second tap keeps the address as typed
+  });
+
+  it("asks again after the email is edited or the mode changes", () => {
+    const asked: AccountState = { ...filled, email: "bilge@icould.com", emailSuggestion: "bilge@icloud.com" };
+
+    expect(accountReducer(asked, { type: "setField", field: "email", value: "bilge@icoud.com" }).emailSuggestion).toBeNull();
+    expect(accountReducer(asked, { type: "setField", field: "firstName", value: "B" }).emailSuggestion).toBe("bilge@icloud.com");
+    expect(accountReducer(asked, { type: "setMode", mode: "sign_in" }).emailSuggestion).toBeNull();
+  });
+
+  it("uses the suggested email from the form or the code step, back on the form", () => {
+    const asked: AccountState = { ...filled, email: "bilge@icould.com", emailSuggestion: "bilge@icloud.com" };
+    const fixed = { ...asked, email: "bilge@icloud.com", emailSuggestion: null };
+
+    expect(accountReducer(asked, { type: "emailSuggestionAccepted" })).toEqual(fixed);
+    expect(
+      accountReducer({ ...asked, phase: "code", code: "12", error: "x" }, { type: "emailSuggestionAccepted" })
+    ).toEqual(fixed);
+    expect(accountReducer({ ...asked, phase: "sending" }, { type: "emailSuggestionAccepted" }).phase).toBe("sending");
+    expect(accountReducer(filled, { type: "emailSuggestionAccepted" })).toBe(filled);
+  });
+
+  it("keeps the question when going back from the code step to change the email", () => {
+    const inCode: AccountState = { ...filled, phase: "code", emailSuggestion: "bilge@icloud.com" };
+
+    expect(accountReducer(inCode, { type: "editEmail" }).emailSuggestion).toBe("bilge@icloud.com");
   });
 });

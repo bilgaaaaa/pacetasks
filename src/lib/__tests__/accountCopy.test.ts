@@ -7,7 +7,10 @@ import {
   deletionIntro,
   deletionTitle,
   doneMessage,
+  EMAIL_SUGGESTION_KEEP_HINT,
+  emailSuggestionQuestion,
   fieldErrorLabel,
+  SEND_CODE_LABEL,
   sheetTitle,
   switchModeLabel,
 } from "../accountCopy";
@@ -17,6 +20,11 @@ describe("accountCopy", () => {
     expect(fieldErrorLabel("firstName", "required")).toBe("First name is needed");
     expect(fieldErrorLabel("lastName", "too_long")).toBe("Keep it under 50 characters");
     expect(fieldErrorLabel("email", "invalid")).toBe("That doesn't look like an email address");
+  });
+
+  it("asks about a likely typo and names the button that keeps the address", () => {
+    expect(emailSuggestionQuestion("bilge@icloud.com")).toBe("Did you mean bilge@icloud.com?");
+    expect(EMAIL_SUGGESTION_KEEP_HINT).toContain(`"${SEND_CODE_LABEL}"`);
   });
 
   it("words the sheet for each mode", () => {

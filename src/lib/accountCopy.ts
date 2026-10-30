@@ -38,6 +38,16 @@ export function switchModeLabel(mode: AccountMode): string {
   return mode === "sign_up" ? "I already have an account" : "Create a new account instead";
 }
 
+export const SEND_CODE_LABEL = "Email me a code";
+
+// Asked once before sending when the domain looks mistyped ("icould.com").
+export function emailSuggestionQuestion(suggestion: string): string {
+  return `Did you mean ${suggestion}?`;
+}
+
+export const EMAIL_SUGGESTION_ACCEPT_LABEL = "Yes, use that";
+export const EMAIL_SUGGESTION_KEEP_HINT = `No? Tap "${SEND_CODE_LABEL}" again to keep what you typed.`;
+
 export function codePrompt(email: string): string {
   return `Enter the code we sent to ${email}.`;
 }
