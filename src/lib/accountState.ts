@@ -1,4 +1,4 @@
-import { emailIssue, validateSignUp } from "@domain/account";
+import { emailIssue, suggestEmail, validateSignUp } from "@domain/account";
 import type { AccountField, AccountFieldErrors } from "@domain/account";
 import type { AccountMode } from "./accountApi";
 
@@ -17,6 +17,7 @@ export interface AccountState {
   code: string;
   fieldErrors: AccountFieldErrors;
   error: string | null; // user-facing message from the last failed request
+  emailSuggestion: string | null; // likely fix for a mistyped email, asked about once before sending
 }
 
 export type AccountAction =
@@ -31,7 +32,9 @@ export type AccountAction =
   | { type: "verifyStarted" }
   | { type: "verified" }
   | { type: "failed"; message: string }
-  | { type: "editEmail" };
+  | { type: "editEmail" }
+  | { type: "emailSuggested"; suggestion: string }
+  | { type: "emailSuggestionAccepted" };
 
 export const INITIAL_ACCOUNT_STATE: AccountState = {
   mode: "sign_up",
@@ -43,6 +46,7 @@ export const INITIAL_ACCOUNT_STATE: AccountState = {
   code: "",
   fieldErrors: {},
   error: null,
+  emailSuggestion: null,
 };
 
 // What is wrong with the form for the current mode; signing in only needs the email.
@@ -52,17 +56,24 @@ export function formErrors(state: AccountState): AccountFieldErrors {
   return email ? { email } : {};
 }
 
+// A fix to offer before sending, or null once the user was asked about this email,
+// so a second tap sends the address exactly as typed.
+export function emailSuggestionToAsk(state: AccountState): string | null {
+  return state.emailSuggestion ? null : suggestEmail(state.email);
+}
+
 export function accountReducer(state: AccountState, action: AccountAction): AccountState {
   switch (action.type) {
     case "opened":
       return { ...INITIAL_ACCOUNT_STATE, mode: action.mode };
 
     case "setMode":
-      return { ...state, mode: action.mode, phase: "form", code: "", fieldErrors: {}, error: null };
+      return { ...state, mode: action.mode, phase: "form", code: "", fieldErrors: {}, error: null, emailSuggestion: null };
 
     case "setField": {
       const { [action.field]: _cleared, ...fieldErrors } = state.fieldErrors;
-      return { ...state, [action.field]: action.value, fieldErrors, error: null };
+      const emailSuggestion = action.field === "email" ? null : state.emailSuggestion;
+      return { ...state, [action.field]: action.value, fieldErrors, error: null, emailSuggestion };
     }
 
     case "setMarketingOptIn":
@@ -94,5 +105,23 @@ export function accountReducer(state: AccountState, action: AccountAction): Acco
 
     case "editEmail":
       return { ...state, phase: "form", code: "", error: null };
+
+    case "emailSuggested":
+      return { ...state, emailSuggestion: action.suggestion };
+
+    // Also reachable from the code step, where a code sent to a mistyped address never arrives.
+    case "emailSuggestionAccepted": {
+      if (!state.emailSuggestion || (state.phase !== "form" && state.phase !== "code")) return state;
+      const { email: _cleared, ...fieldErrors } = state.fieldErrors;
+      return {
+        ...state,
+        phase: "form",
+        email: state.emailSuggestion,
+        emailSuggestion: null,
+        code: "",
+        fieldErrors,
+        error: null,
+      };
+    }
   }
 }

@@ -35,6 +35,10 @@ const SCHEDULED_TIMES = Array.from({ length: 33 }, (_, i) => {
   return `${String(Math.floor(totalMinutes / 60)).padStart(2, "0")}:${String(totalMinutes % 60).padStart(2, "0")}`;
 });
 
+// iOS draws the 28pt "What?" text taller than React Native measures it and clipped the tops of
+// the letters; the field centers its text, so this spare height keeps every letter whole.
+const WHAT_INPUT_MIN_HEIGHT = 60;
+
 type Mode = "usuals" | "new";
 
 interface Props {
@@ -550,6 +554,7 @@ const useStyles = makeStyles((theme) => ({
     color: theme.colors.textPrimary,
     fontSize: 28,
     fontFamily: theme.fonts.display,
+    minHeight: WHAT_INPUT_MIN_HEIGHT,
     paddingVertical: theme.spacing.sm,
     borderBottomWidth: 2,
     borderBottomColor: theme.colors.border,

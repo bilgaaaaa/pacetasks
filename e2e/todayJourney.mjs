@@ -1,12 +1,15 @@
 import { runJourney } from "./harness.mjs";
 
 // One simulated day in PaceTasks, start to finish: finish a task, add one, let
-// the app pick the next, dump a few thoughts, then check Pace, Settings and dark mode.
+// the app pick the next, dump a few thoughts, then check Pace, Settings, sign-up and dark mode.
 // Elements are found by the same labels and wording a person (or VoiceOver) meets.
 
 const NEW_TASK_TITLE = "Buy cat food";
 const QUICK_WIN_TITLE = "Pay the phone bill";
 const BRAIN_DUMP_TEXT = "Tomorrow call the vet, domani comprare il pane, cuma günü faturayı öde";
+// A real bounce: the sign-up code went to "icould.com" and never arrived.
+const MISTYPED_EMAIL = "bilge@icould.com";
+const SUGGESTED_EMAIL = "bilge@icloud.com";
 
 const passed = await runJourney("today-journey", async ({ page, baseUrl, step, snapshot }) => {
   await step("Today loads with the seeded day", async () => {
@@ -79,6 +82,21 @@ const passed = await runJourney("today-journey", async ({ page, baseUrl, step, s
 
   await step("Settings opens", async () => {
     await page.getByText("SETTINGS", { exact: true }).click();
+    await page.getByLabel("Theme", { exact: true }).waitFor();
+  });
+
+  await step("Sign-up catches a mistyped email", async () => {
+    await page.getByText("Create account", { exact: true }).click();
+    await page.getByLabel("First name", { exact: true }).fill("Bilge");
+    await page.getByLabel("Last name", { exact: true }).fill("Ozcan");
+    await page.getByLabel("Email", { exact: true }).fill(MISTYPED_EMAIL);
+    await page.getByText("Email me a code", { exact: true }).click();
+    await page.getByText(`Did you mean ${SUGGESTED_EMAIL}?`).waitFor();
+    await snapshot("Typo question");
+    await page.getByText("Yes, use that", { exact: true }).click();
+    const email = await page.getByLabel("Email", { exact: true }).inputValue();
+    if (email !== SUGGESTED_EMAIL) throw new Error(`email is "${email}", expected "${SUGGESTED_EMAIL}"`);
+    await page.getByLabel("Close", { exact: true }).click();
     await page.getByLabel("Theme", { exact: true }).waitFor();
   });
 
