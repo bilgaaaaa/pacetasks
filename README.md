@@ -8,7 +8,8 @@ before or after work. It plans around the time and energy you really have, and
 you compete only with your own past pace.
 
 - **App:** Expo SDK 57 (React Native 0.86, TypeScript)
-- **Backend:** Supabase (Postgres with row-level security, Auth, Realtime, one Edge Function)
+- **Backend:** Supabase (Postgres with row-level security, Auth, Realtime, Edge Functions)
+- **Payments:** App Store subscriptions through RevenueCat (PaceTasks Pro)
 - **Status:** ready for the first TestFlight build; iPhone only for v1
 
 ## Contents
@@ -17,13 +18,14 @@ you compete only with your own past pace.
 2. [Quick start](#quick-start)
 3. [Set up Supabase](#set-up-supabase)
 4. [Brain Dump backend](#brain-dump-backend)
-5. [Tests](#tests)
-6. [Web demo](#web-demo)
-7. [Build for TestFlight and the App Store](#build-for-testflight-and-the-app-store)
-8. [Privacy policy and support page](#privacy-policy-and-support-page)
-9. [Project structure](#project-structure)
-10. [Working together](#working-together)
-11. [Troubleshooting](#troubleshooting)
+5. [PaceTasks Pro and Siri](#pacetasks-pro-and-siri)
+6. [Tests](#tests)
+7. [Web demo](#web-demo)
+8. [Build for TestFlight and the App Store](#build-for-testflight-and-the-app-store)
+9. [Privacy policy and support page](#privacy-policy-and-support-page)
+10. [Project structure](#project-structure)
+11. [Working together](#working-together)
+12. [Troubleshooting](#troubleshooting)
 
 ## What the app does
 
@@ -89,6 +91,24 @@ you compete only with your own past pace.
 - **My Pace** — plain sentences about your own history: the hours in which you
   finish most, your strongest weekday, whether tasks take longer than you
   estimate. It stays quiet until you have completed 10 tasks.
+
+### Pro and Siri
+
+- **Pro** — a monthly or yearly App Store subscription; both start with a free
+  week. Settings shows a **Try PaceTasks Pro** card that opens the plans, with
+  the trial and renewal terms next to the button, **Restore purchases**, and the
+  Terms of Use and Privacy Policy links. Subscribers see their plan, when it
+  renews and **Manage subscription**.
+- **Siri** (Pro) — works in English, Italian and Turkish, no setup needed:
+  - "Hey Siri, add to PaceTasks" → Siri asks what to add; say several tasks at
+    once and they go through Brain Dump and are added straight away.
+  - "What's next in PaceTasks?" → the one task Decide for me would pick.
+  - "What's on today in PaceTasks?" → how many tasks are left, how long they
+    take, and the first three by name.
+  The same actions appear in the Shortcuts app.
+- **AI Brain Dump** (Pro, when switched on) — with an AI provider configured,
+  Pro users' Brain Dumps are read by the AI model and everyone else's by the free
+  rules. The paywall lists it only while it is really on.
 
 ### Settings
 
@@ -257,6 +277,69 @@ zone), optional `locale`, `channel` (`app` | `siri` | `shortcut`), `mode`
 **Privacy.** Raw Brain Dump text is erased after 30 days by a nightly `pg_cron`
 job, and function logs never contain the text.
 
+## PaceTasks Pro and Siri
+
+```
+App Store ⇄ RevenueCat ──webhook──▶ revenuecat-webhook ─┐
+app (react-native-purchases) ──▶ pro-sync ──────────────┤──▶ pro_entitlements ──▶ is_pro()
+                                                        │
+iPhone Siri → App Intent → POST /functions/v1/siri ─────┘  (add → Brain Dump; next / today → shared Today rules)
+```
+
+- The app buys through RevenueCat (`src/lib/purchases.ts`, `src/hooks/usePro.tsx`).
+  After a purchase or restore it calls `pro-sync`, which reads RevenueCat with
+  the secret key and writes `pro_entitlements`. The webhook keeps it right on
+  renewals, cancellations, refunds and transfers.
+- Siri runs in the app's own process. The Supabase session lives in the
+  Keychain (`modules/pace-session-store`), so the intent calls the `siri`
+  function as the signed-in user and refreshes the token when needed. The
+  server writes what Siri says (`@domain/siri/siriSpeech`), in the phone's
+  language.
+- `plugins/withPaceSiri.js` copies `native/siri/` (the App Intents, the App
+  Shortcuts phrases and their EN/IT/TR string catalogs) into the iOS app at
+  prebuild. Siri needs a real build: it does not work in Expo Go.
+
+### One-time setup
+
+1. **App Store Connect → your app → Subscriptions**: create a group
+   "PaceTasks Pro" with two auto-renewable subscriptions,
+   `pacetasks_pro_monthly` (1 month) and `pacetasks_pro_yearly` (1 year). On
+   each, add an **Introductory Offer → Free → 1 week**, set the prices, and
+   fill the localizations and review screenshot (the paywall).
+   Sign the **Paid Apps agreement** under Agreements, Tax, and Banking first.
+2. **RevenueCat** (free up to $2.5k monthly revenue): create a project, add the
+   iOS app with its **In-App Purchase Key** from App Store Connect, import the
+   two products, create an entitlement named exactly `pro` with both attached,
+   and a **current offering** with a Monthly and an Annual package.
+3. **Keys.** The app's key is RevenueCat's public Apple key (`appl_...`):
+   ```bash
+   eas env:create --environment production --name EXPO_PUBLIC_REVENUECAT_IOS_KEY --value appl_... --visibility plaintext
+   ```
+   Add it to `.env` too for local builds. The server's key is the **secret**
+   key (`sk_...`), never shipped in the app:
+   ```bash
+   npx supabase secrets set REVENUECAT_SECRET_API_KEY=sk_... REVENUECAT_WEBHOOK_AUTH=<a long random string>
+   ```
+4. **RevenueCat → Integrations → Webhooks**: URL
+   `https://<project-ref>.supabase.co/functions/v1/revenuecat-webhook`,
+   Authorization header = the same `REVENUECAT_WEBHOOK_AUTH` value.
+5. **Deploy** the migration and the functions:
+   ```bash
+   npx supabase db push
+   npx supabase functions deploy brain-dump siri pro-sync revenuecat-webhook
+   ```
+6. **Build** with `npm run ios:testflight`. Test purchases with a Sandbox tester
+   (App Store Connect → Users and Access → Sandbox) or in TestFlight, where
+   subscriptions are free and renew every few minutes.
+
+Without `EXPO_PUBLIC_REVENUECAT_IOS_KEY` the app still runs; Settings says
+subscriptions aren't available. Without `REVENUECAT_SECRET_API_KEY` the server
+keeps the last state the webhook wrote.
+
+To turn on **AI Brain Dump for Pro**, set an AI provider as in
+[Brain Dump backend](#brain-dump-backend) and update the privacy policy first:
+free users keep the rules, and the paywall starts listing the AI line by itself.
+
 ## Tests
 
 ```bash
@@ -278,7 +361,9 @@ The clock is fixed to a Monday morning in Europe/Rome, so every run sees the
 same day. It writes a film (`e2e/output/today-journey.webm`) and a screenshot
 per step (`e2e/output/shots/`), and fails on a broken step or a console error.
 
-First run on a new machine: `npx playwright install chromium`.
+First run on a new machine: `npx playwright install chromium`. Where that
+download isn't possible, point the run at an installed Chrome with
+`E2E_CHROME_PATH=/path/to/chrome npm run e2e`.
 
 It runs against the demo backend, in a browser. What only a real iPhone has
 (notifications, haptics, the keyboard, safe areas) is still checked by hand.
@@ -422,8 +507,14 @@ supabase/migrations/       Database schema, security policies and functions
 supabase/templates/        The sign-up and sign-in emails, pasted into the Supabase dashboard
 supabase/tests/database/   pgTAP tests for the database
 supabase/functions/_shared/domain/   Pure TypeScript shared by the app and Edge Functions (`@domain/...`)
-supabase/functions/_shared/server/   Deno-only server code: AI layer, Brain Dump service
+supabase/functions/_shared/server/   Deno-only server code: AI layer, Brain Dump, Siri and Pro services
 supabase/functions/brain-dump/       The Brain Dump Edge Function
+supabase/functions/siri/             What Siri calls: add, what's next, today (Pro)
+supabase/functions/pro-sync/         Refreshes the caller's Pro state from RevenueCat
+supabase/functions/revenuecat-webhook/  RevenueCat's subscription events
+modules/pace-session-store/          Local Expo module: Keychain session store and the Swift Siri client
+native/siri/                         App Intents, Siri phrases and their EN/IT/TR strings (copied in at prebuild)
+plugins/withPaceSiri.js              Config plugin that adds native/siri to the iOS app
 supabase/functions/_eval/            AI evaluation set and runner (never deployed)
 ```
 
@@ -437,7 +528,7 @@ How the code is organised:
 - **Wording is separate.** User-facing text lives in `src/lib/*Copy.ts`, so it
   can be translated without touching logic.
 - **One creation path.** Tasks are created only through the `create_task`
-  database function, which Brain Dump shares and Siri will too.
+  database function, which Brain Dump and Siri share.
 - **Colours come from the theme.** `src/lib/theme.ts` holds every colour theme
   in light and dark; components read it through `useTheme()` and `makeStyles()`
   and never hardcode a colour.
