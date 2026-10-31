@@ -20,7 +20,7 @@ you compete only with your own past pace.
 5. [Tests](#tests)
 6. [Web demo](#web-demo)
 7. [Build for TestFlight and the App Store](#build-for-testflight-and-the-app-store)
-8. [Privacy policy and support page](#privacy-policy-and-support-page)
+8. [Website, privacy policy and support page](#website-privacy-policy-and-support-page)
 9. [Project structure](#project-structure)
 10. [Working together](#working-together)
 11. [Troubleshooting](#troubleshooting)
@@ -372,11 +372,23 @@ sender only delivers to members of the Supabase team. Set it in Supabase →
 - The interface is English-only in v1, so the Italian and Turkish listings say
   so and keep the feature names in English.
 
-## Privacy policy and support page
+## Website, privacy policy and support page
 
-`docs/` holds the public pages the app and the App Store listing link to:
-`privacy.html`, `support.html` and a small `index.html`, served for free by
-GitHub Pages.
+`docs/` holds the public pages the app and the App Store listing link to,
+served for free by GitHub Pages:
+
+- `index.html` — the landing page: a working copy of **Fit my time** (the
+  app's ranking rules, simplified, in `home.js`), a day of features with phone
+  screens, and what happens to your data. Its own styles are in `home.css`.
+- `support.html` and `privacy.html` — help and the privacy policy.
+- `site.css` — shared by all three: the app's Sunny colours, light and dark,
+  and Archivo, self-hosted in `fonts/` (OFL) so no visit reaches a font CDN.
+- `screens/` — the phone screens on the landing page, filmed from the web
+  demo. Refresh them when a screen changes:
+
+  ```bash
+  npm run site:screens
+  ```
 
 1. Replace `[YOUR FULL NAME]` and `[CONTACT EMAIL]` in `docs/privacy.html` and
    `docs/support.html`, and name the email service in the policy (search the
@@ -387,7 +399,8 @@ GitHub Pages.
    (`src/lib/links.ts`) already point there.
 
 When what the app stores changes (a new table, an AI provider, analytics),
-update `docs/privacy.html` in the same pull request.
+update `docs/privacy.html` in the same pull request. When a feature changes
+how it is used, update `docs/support.html` and the landing page with it.
 
 ## Project structure
 
@@ -399,7 +412,8 @@ store.config.json          App Store listing (EN, IT, TR) for `eas metadata:push
 assets/                    App icon, splash images, notification icon, favicon
 design/icon/               Scripts and SVG sources for the icon set
 design/store/              App Store screenshots and the script that builds them
-docs/                      Public pages (privacy policy, support) for GitHub Pages
+design/site/               Script that films the website's phone screens
+docs/                      Website for GitHub Pages: landing page, support, privacy policy
 src/screens/               TaskListScreen (Today), StatsScreen (Pace), SettingsScreen
 src/components/            Presentational pieces: sheets, cards, rows, buttons
 src/hooks/                 One hook per feature; all data access for a screen goes through these

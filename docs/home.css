@@ -1,0 +1,251 @@
+/* The landing page (index.html): the yellow hero with a working "Fit my time"
+   card, a day of stops with phone screens, and the privacy band. Tokens come from site.css. */
+
+/* Hero: continues the header's yellow band. */
+.hero { background: var(--band); color: var(--band-text); padding-block: 1.5rem 5rem; overflow: hidden; }
+.hero-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); gap: 3rem 4rem; align-items: center; }
+.hero h1 { color: var(--band-title); }
+.hero-lead { font-size: clamp(1.15rem, 1rem + 0.5vw, 1.375rem); line-height: 1.5; max-width: 34rem; margin: 1.5rem 0 2rem; }
+.get-app { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.25rem; }
+.get-app p { margin: 0; font-weight: 600; }
+
+/* "Fit my time": the app's Today hero card, with its two soft blobs. */
+.fit {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--hero-card);
+  color: var(--hero-body);
+  border-radius: 28px;
+  padding: 1.6rem 1.5rem 1.4rem;
+  box-shadow: 0 32px 60px -24px var(--shadow);
+  rotate: 1deg;
+}
+.fit::before, .fit::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  border-radius: 50%;
+  opacity: 0.8;
+}
+.fit::before { width: 13rem; height: 13rem; top: -7rem; right: -6rem; background: linear-gradient(140deg, var(--peaches), var(--poppy-fields)); }
+.fit::after { width: 11rem; height: 11rem; bottom: -6rem; right: -3rem; background: linear-gradient(140deg, var(--daffodil), var(--pool-time)); }
+.fit-title { color: var(--hero-title); font-size: 1.75rem; font-stretch: 112%; font-weight: 800; letter-spacing: -0.015em; margin-bottom: 1rem; }
+.fit-choice { border: 0; margin: 0 0 0.9rem; padding: 0; min-width: 0; }
+.fit-choice legend { padding: 0; margin-bottom: 0.4rem; font-size: 0.875rem; font-weight: 600; opacity: 0.8; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.chip { position: relative; cursor: pointer; }
+.chip input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.chip span {
+  display: block;
+  padding: 0.45rem 0.95rem;
+  border-radius: 999px;
+  border: 1.5px solid rgba(251, 246, 238, 0.35);
+  font-size: 0.95rem;
+  font-weight: 650;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+.chip:hover span { border-color: var(--hero-body); }
+.chip input:checked + span { background: var(--daffodil); border-color: var(--daffodil); color: var(--night-time); }
+.chip input:focus-visible + span { outline: 3px solid var(--poppy-fields); outline-offset: 2px; }
+
+/* The lane: the time you have, filled by the plan's tasks back to back. */
+.fit-lane {
+  display: flex;
+  gap: 3px;
+  height: 14px;
+  margin-top: 1.2rem;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(251, 246, 238, 0.14);
+}
+.fit-segment { flex: 0 0 0%; background: var(--segment); transition: flex-basis 0.7s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.fit-summary { display: flex; justify-content: space-between; gap: 1rem; margin: 0.9rem 0 0.6rem; font-size: 0.95rem; }
+.fit-summary span { font-variant-numeric: tabular-nums; opacity: 0.85; }
+.fit-plan { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.45rem; }
+.fit-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 14px;
+  background: rgba(251, 246, 238, 0.09);
+  animation: row-in 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: calc(var(--i, 0) * 70ms);
+}
+.fit-row::before { content: ""; width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(251, 246, 238, 0.55); }
+.fit-row-title { font-weight: 650; line-height: 1.25; }
+.fit-row-meta { display: flex; align-items: center; gap: 0.6rem; font-size: 0.8rem; }
+.fit-row-category { display: inline-flex; align-items: center; gap: 0.35rem; opacity: 0.8; }
+.fit-row-category::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--category); }
+.fit-row-due { color: var(--peaches); font-weight: 650; }
+.fit-minutes {
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(251, 246, 238, 0.14);
+  font-size: 0.85rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.fit-minutes.is-quick-win { background: var(--daffodil); color: var(--night-time); }
+.fit-more { margin: 0.75rem 0 0; font-size: 0.9rem; opacity: 0.8; }
+@keyframes row-in {
+  from { opacity: 0; transform: translateY(8px); }
+}
+
+/* A day with PaceTasks: one stop per moment, on a vertical track. */
+.day { padding-block: 5rem 3rem; overflow-x: clip; }
+.day-head { max-width: 40rem; margin-bottom: 2rem; }
+.day-head p { color: var(--text-secondary); font-size: 1.25rem; margin: 1rem 0 0; }
+.day-track { list-style: none; margin: 0; padding: 0; position: relative; max-width: 64rem; }
+.day-track::before {
+  content: "";
+  position: absolute;
+  top: 3rem;
+  bottom: 3rem;
+  left: 0.55rem;
+  width: 4px;
+  border-radius: 2px;
+  background: linear-gradient(var(--daffodil), var(--pool-time), var(--poppy-fields), var(--peaches), var(--baby-lavender));
+}
+.stop {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: 1fr auto auto 1fr;
+  grid-template-areas: ". phone" "time phone" "copy phone" ". phone";
+  gap: 0 4rem;
+  padding: 2.25rem 0 2.25rem 2.75rem;
+}
+.stop-time { grid-area: time; position: relative; margin: 0 0 1.25rem; }
+.stop-time::before {
+  content: "";
+  position: absolute;
+  left: -2.75rem;
+  top: 1.15rem;
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 50%;
+  background: var(--stop);
+  box-shadow: 0 0 0 5px var(--background);
+}
+.stop-time time {
+  display: block;
+  font-size: 3.5rem;
+  font-stretch: 70%;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+.stop-time span { display: block; margin-top: 0.35rem; color: var(--text-secondary); font-size: 0.95rem; font-weight: 600; }
+.stop-copy { grid-area: copy; max-width: 34rem; }
+.stop-copy h3 { font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem); font-stretch: 108%; font-weight: 800; margin-bottom: 0.75rem; }
+.stop-copy p { margin: 0 0 0.85rem; }
+.stop-copy .new-tag {
+  display: inline-block;
+  margin-bottom: 0.75rem;
+  padding: 0.15rem 0.7rem;
+  border-radius: 999px;
+  background: var(--poppy-fields);
+  color: var(--night-time);
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+.dump-sample {
+  margin: 1.25rem 0 0;
+  padding: 1rem 1.25rem;
+  border-radius: 18px;
+  background: var(--surface);
+  border: 2px dashed var(--pool-time);
+  font-size: 1.05rem;
+  font-weight: 550;
+}
+.dump-sample p { margin: 0; }
+
+/* Phone frames sit on a blob in the stop's colour, like the app's hero card. */
+.phone { grid-area: phone; align-self: center; position: relative; isolation: isolate; margin: 0; width: min(280px, 72vw); }
+.phone::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 12% -18% 8% -18%;
+  border-radius: 50%;
+  background: var(--stop);
+  opacity: var(--blob-opacity);
+}
+.phone img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 9px solid var(--phone-frame);
+  border-radius: 40px;
+  box-shadow: 0 28px 50px -22px var(--shadow);
+}
+
+/* Privacy band: night blue, the app's evening colours. */
+.promise { background: var(--night-time); color: var(--cream); padding-block: 4.5rem; }
+.promise h2 { color: var(--daffodil); max-width: 30rem; }
+.promise-list {
+  list-style: none;
+  margin: 2.5rem 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2rem 2.5rem;
+}
+.promise-list li { border-top: 3px solid var(--pool-time); padding-top: 0.9rem; line-height: 1.5; }
+.promise-list strong { display: block; color: var(--cream); font-size: 1.15rem; margin-bottom: 0.25rem; }
+.promise-more { margin: 2.5rem 0 0; }
+.promise a { color: var(--daffodil); }
+
+/* The small things and the colour themes. */
+.extras { padding-block: 4.5rem 1rem; }
+.extras-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr); gap: 3rem 4rem; align-items: start; }
+.extras-list { list-style: none; margin: 1.75rem 0 0; padding: 0; display: grid; gap: 1rem; }
+.extras-list li { padding-left: 1.25rem; border-left: 4px solid var(--daffodil); }
+.themes { background: var(--surface); border-radius: 24px; padding: 1.5rem 1.6rem; }
+.themes h3 { font-size: 1.25rem; margin-bottom: 1rem; }
+.theme-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.85rem; }
+.theme-list li { display: flex; align-items: center; gap: 1rem; font-weight: 650; }
+.swatches { display: flex; }
+.swatches i { width: 2rem; height: 2rem; border-radius: 50%; background: var(--c); border: 3px solid var(--surface); }
+.swatches i + i { margin-left: -0.6rem; }
+
+/* Closing band: back to yellow. */
+.closing { margin-top: 4rem; background: var(--band); color: var(--band-text); padding-block: 4rem; text-align: center; }
+.closing h2 { color: var(--band-title); font-size: clamp(2.25rem, 1.4rem + 3.6vw, 4rem); font-stretch: 125%; }
+.closing p { margin: 1rem 0 1.75rem; font-size: 1.2rem; font-weight: 600; }
+.home .site-footer { margin-top: 0; border-top: 0; }
+
+@media (max-width: 960px) {
+  .hero-grid { grid-template-columns: minmax(0, 1fr); }
+  .fit { rotate: 0deg; max-width: 34rem; }
+  .stop {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-template-areas: "time" "copy" "phone";
+    padding-block: 2.5rem;
+  }
+  .stop .phone { justify-self: center; margin-top: 1.5rem; }
+  .promise-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .extras-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 560px) {
+  .hero { padding-bottom: 3.5rem; }
+  .fit { padding: 1.3rem 1.1rem 1.1rem; border-radius: 24px; }
+  .fit::before { width: 8rem; height: 8rem; top: -5.5rem; right: -4.5rem; }
+  .fit::after { width: 7rem; height: 7rem; bottom: -5rem; right: -3.5rem; }
+  .fit-row { padding: 0.6rem 0.7rem; gap: 0.6rem; }
+  .stop { padding-left: 2.25rem; }
+  .stop-time::before { left: -2.25rem; }
+  .stop-time time { font-size: 3rem; }
+  .promise-list { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Motion only explains what changed; with reduced motion the plan just appears. */
+@media (prefers-reduced-motion: reduce) {
+  .fit-segment, .chip span { transition: none; }
+  .fit-row { animation: none; }
+}
