@@ -109,6 +109,13 @@ you compete only with your own past pace.
 
 ### Behind the scenes
 
+- **New version prompt** — when the app opens (and when it comes back, at most
+  every 6 hours), it asks Apple's public App Store lookup which version is
+  live. If it's newer than the one installed, a prompt shows what's new with
+  **Update now** (opens the App Store page) and **Later** (quiet for 3 days for
+  that version; a newer one shows at once). It needs no setup: it follows each
+  release as soon as Apple approves it. TestFlight builds ahead of the store,
+  the web demo and Expo Go never see it.
 - **Live sync** — changes made elsewhere appear immediately through Supabase
   Realtime, and the list reloads when the app returns to the foreground.
 - **When a task reminder fires** — a task set for a later day is reminded on
@@ -302,8 +309,11 @@ Developer Program membership and a free Expo account.
 
 ### One-time setup
 
+The npm build scripts run EAS through `npx`, so no global install is needed.
+For the one-off commands below, either install it (`npm install -g eas-cli`)
+or prefix each with `npx eas-cli@latest` instead of `eas`.
+
 ```bash
-npm install -g eas-cli
 eas login
 eas init                       # links this folder to an Expo project (writes the project id)
 # The app's Supabase address and publishable key, for builds made on EAS (.env is not uploaded):
@@ -352,7 +362,9 @@ sender only delivers to members of the Supabase team. Set it in Supabase →
   `eas device:create`. Repeat the two `eas env:create` lines with
   `--environment preview` to use it.
 - The version shown in the store is `version` in `app.json`; raise it for each
-  release. Build numbers are kept by EAS and go up by themselves.
+  release (1.0.0 → 1.0.1 → 1.1.0). Build numbers are kept by EAS and go up by
+  themselves. The new version prompt compares this version, so a release that
+  keeps the same one is never offered to people.
 - The app is iPhone-only for now (`supportsTablet: false`): no iPad layout has
   been designed, and Apple does not let iPad support be removed once shipped.
 - The icon and splash images live in `assets/`. They are drawn by
@@ -390,9 +402,9 @@ served for free by GitHub Pages:
   npm run site:screens
   ```
 
-1. Replace `[YOUR FULL NAME]` and `[CONTACT EMAIL]` in `docs/privacy.html` and
-   `docs/support.html`, and name the email service in the policy (search the
-   files for `TO CONFIRM`).
+1. The pages name Bilge Ozcanbaz as the developer and `pacetasks@bilgalog.dev`
+   as the contact address (forwarded by Cloudflare Email Routing); update both
+   files if either changes.
 2. On GitHub: **Settings → Pages → Deploy from a branch**, branch `main`,
    folder `/docs`.
 3. The pages appear at `https://bilgaaaaa.github.io/pacetasks/`. The app's links
