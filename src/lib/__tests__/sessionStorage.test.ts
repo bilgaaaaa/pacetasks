@@ -31,6 +31,14 @@ describe("createMigratingStore", () => {
     expect(asyncStorage.data.has(KEY)).toBe(false);
   });
 
+  it("lets overlapping reads share one migration, so none of them sees the session missing", async () => {
+    const keychain = memoryStore();
+    const asyncStorage = memoryStore({ [KEY]: "old-session" });
+    const store = createMigratingStore(keychain, asyncStorage);
+
+    await expect(Promise.all([store.getItem(KEY), store.getItem(KEY)])).resolves.toEqual(["old-session", "old-session"]);
+  });
+
   it("prefers the new store and writes only there", async () => {
     const keychain = memoryStore({ [KEY]: "current" });
     const asyncStorage = memoryStore({ [KEY]: "stale" });

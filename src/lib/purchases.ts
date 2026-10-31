@@ -10,7 +10,9 @@ import { isDemoMode } from "./supabase";
 // The App Store side of PaceTasks Pro behind one small interface: RevenueCat on
 // an iPhone build, an in-memory store in demo mode, and "unavailable" elsewhere.
 
-export type PurchaseOutcome = "purchased" | "cancelled";
+export type PurchaseOutcome =
+  | { status: "purchased"; entitlement: ProEntitlement | null }
+  | { status: "cancelled" };
 
 export interface ProStore {
   readonly available: boolean; // false on the web, Android, or a build without a RevenueCat key
@@ -44,9 +46,11 @@ function createRevenueCatStore(): ProStore {
         console.log("[purchases] RevenueCat configured");
         return;
       }
-      // Signing in to another account: RevenueCat moves this phone's purchases along.
+      // Another account on this phone: re-sending the Apple ID's receipt lets RevenueCat
+      // transfer its subscription to the new user (its TRANSFER webhook updates the server).
       await Purchases.logIn(userId);
-      console.log("[purchases] RevenueCat user switched");
+      await Purchases.syncPurchasesForResult();
+      console.log("[purchases] RevenueCat user switched and purchases synced");
     },
 
     async loadPlans() {
@@ -76,10 +80,11 @@ function createRevenueCatStore(): ProStore {
       const pkg = packagesByPlan.get(planId);
       if (!pkg) throw new Error(`No package loaded for the ${planId} plan`);
       try {
-        await Purchases.purchasePackage(pkg);
-        return "purchased";
+        const { customerInfo } = await Purchases.purchasePackage(pkg);
+        return { status: "purchased", entitlement: entitlementFromCustomerInfo(customerInfo) };
       } catch (e) {
-        if ((e as { code?: string }).code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) return "cancelled";
+        const error = e as { code?: string; userCancelled?: boolean | null };
+        if (error.userCancelled || error.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) return { status: "cancelled" };
         throw e;
       }
     },

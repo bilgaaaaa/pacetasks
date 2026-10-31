@@ -59,7 +59,7 @@ export async function handleRevenueCatWebhookHttp(request: Request, deps: Revenu
     console.error("[revenuecat-webhook] REVENUECAT_WEBHOOK_AUTH is not set; refusing every call");
     return errorResponse(new ApiError(500, "not_configured", "Webhook is not configured"));
   }
-  if (!timingSafeEqual(request.headers.get("authorization") ?? "", deps.expectedAuthorization)) {
+  if (!(await secretsMatch(request.headers.get("authorization") ?? "", deps.expectedAuthorization))) {
     return errorResponse(new ApiError(401, "unauthorized", "Wrong webhook authorization"));
   }
 
@@ -92,11 +92,17 @@ export function affectedUserIds(event: z.infer<typeof webhookSchema>["event"]): 
   return [...new Set(candidates.filter(isPaceUserId))];
 }
 
-// Compares secrets in constant time for equal lengths, so the check leaks nothing through timing.
-function timingSafeEqual(actual: string, expected: string): boolean {
-  if (actual.length !== expected.length) return false;
+// Compares SHA-256 digests in constant time, so timing reveals neither the secret nor its length.
+async function secretsMatch(actual: string, expected: string): Promise<boolean> {
+  const encoder = new TextEncoder();
+  const [actualDigest, expectedDigest] = await Promise.all([
+    crypto.subtle.digest("SHA-256", encoder.encode(actual)),
+    crypto.subtle.digest("SHA-256", encoder.encode(expected)),
+  ]);
+  const left = new Uint8Array(actualDigest);
+  const right = new Uint8Array(expectedDigest);
   let difference = 0;
-  for (let i = 0; i < actual.length; i++) difference |= actual.charCodeAt(i) ^ expected.charCodeAt(i);
+  for (let i = 0; i < left.length; i++) difference |= left[i] ^ right[i];
   return difference === 0;
 }
 

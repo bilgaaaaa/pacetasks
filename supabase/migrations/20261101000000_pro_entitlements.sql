@@ -17,7 +17,7 @@ drop policy if exists "pro_entitlements_select_own" on public.pro_entitlements;
 create policy "pro_entitlements_select_own" on public.pro_entitlements
   for select using (auth.uid() = user_id);
 
-revoke insert, update, delete on public.pro_entitlements from anon, authenticated;
+revoke insert, update, delete, truncate on public.pro_entitlements from anon, authenticated;
 
 -- True while the caller has an active Pro subscription (trial included).
 -- Edge Functions call it with the user's own JWT before running a Pro feature.

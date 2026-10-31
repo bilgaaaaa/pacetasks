@@ -69,31 +69,36 @@ export function ProProvider({ userId, children }: { userId: string | undefined; 
   }, []);
 
   useEffect(() => {
+    // A new user starts clean: nothing of the previous user's state or pending action stays.
     setStoreEntitlement(null);
     setServerStatus(null);
+    setBusy(null);
+    setError(null);
+    setNotice(null);
     if (!userId) return;
     let active = true;
+    let unsubscribe: () => void = () => {};
 
     (async () => {
       try {
         await proStore.identify(userId);
+        if (!active) return;
         const entitlement = await proStore.readEntitlement();
         if (active) setStoreEntitlement(entitlement);
       } catch (e) {
         console.warn("[usePro] could not read the subscription from the store", e);
       }
-      if (active) {
-        void syncServer(userId);
-        void reloadPlans();
-      }
-    })();
-
-    // Renewals, refunds and purchases made elsewhere arrive here while the app is open.
-    const unsubscribe = proStore.onEntitlementChange((entitlement) => {
       if (!active) return;
-      setStoreEntitlement(entitlement);
+      // Listening only once the store is on this user, so a late update for the previous one can't land here.
+      // Renewals, refunds and purchases made elsewhere arrive here while the app is open.
+      unsubscribe = proStore.onEntitlementChange((entitlement) => {
+        if (!active) return;
+        setStoreEntitlement(entitlement);
+        void syncServer(userId);
+      });
       void syncServer(userId);
-    });
+      void reloadPlans();
+    })();
 
     return () => {
       active = false;
@@ -109,11 +114,11 @@ export function ProProvider({ userId, children }: { userId: string | undefined; 
       setNotice(null);
       try {
         const outcome = await proStore.purchase(planId);
-        if (outcome === "cancelled") {
+        if (outcome.status === "cancelled") {
           console.log("[usePro] purchase cancelled by the user");
           return false;
         }
-        const entitlement = await proStore.readEntitlement();
+        const entitlement = outcome.entitlement;
         if (currentUserId.current !== userId) return false;
         setStoreEntitlement(entitlement);
         await syncServer(userId);
@@ -124,7 +129,7 @@ export function ProProvider({ userId, children }: { userId: string | undefined; 
         if (currentUserId.current === userId) setError(PURCHASE_FAILED);
         return false;
       } finally {
-        if (currentUserId.current === userId) setBusy(null);
+        setBusy(null); // always, or a user change mid-purchase would block every later one
       }
     },
     [userId, busy, syncServer]
@@ -148,7 +153,7 @@ export function ProProvider({ userId, children }: { userId: string | undefined; 
       if (currentUserId.current === userId) setError(PRO_LOAD_FAILED);
       return false;
     } finally {
-      if (currentUserId.current === userId) setBusy(null);
+      setBusy(null);
     }
   }, [userId, busy, syncServer]);
 

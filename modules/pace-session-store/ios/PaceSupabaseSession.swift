@@ -32,7 +32,9 @@ public enum PaceSessionError: Error {
 // Reads the session the app saved and refreshes it when it is about to expire,
 // writing the new tokens back in supabase-js's own format so the app keeps working.
 public struct PaceSupabaseSession: Sendable {
-  private static let refreshMargin: TimeInterval = 60 // refresh a token this close to expiry
+  // Siri refreshes only a token that is about to stop working. The app refreshes 90 s
+  // before expiry, so the two rarely spend the same refresh token at once.
+  private static let refreshMargin: TimeInterval = 10
   private static let logger = Logger(subsystem: "com.pacetasks.app", category: "SupabaseSession")
 
   public let config: PaceSupabaseConfig
@@ -42,19 +44,36 @@ public struct PaceSupabaseSession: Sendable {
   }
 
   public func validAccessToken() async throws -> String {
-    guard
-      let raw = PaceSessionKeychain.read(config.storageKey),
-      let session = (try? JSONSerialization.jsonObject(with: Data(raw.utf8))) as? [String: Any],
-      let accessToken = session["access_token"] as? String
-    else { throw PaceSessionError.noSession }
-
-    let expiresAt = (session["expires_at"] as? NSNumber)?.doubleValue ?? 0
-    if expiresAt - Date().timeIntervalSince1970 > Self.refreshMargin { return accessToken }
+    let session = try storedSession()
+    guard let accessToken = session["access_token"] as? String else { throw PaceSessionError.noSession }
+    if Self.secondsLeft(session) > Self.refreshMargin { return accessToken }
     return try await refresh(session)
+  }
+
+  // The session supabase-js saved; a Keychain failure throws rather than looking signed out.
+  private func storedSession() throws -> [String: Any] {
+    guard
+      let raw = try PaceSessionKeychain.read(config.storageKey),
+      let session = (try? JSONSerialization.jsonObject(with: Data(raw.utf8))) as? [String: Any]
+    else { throw PaceSessionError.noSession }
+    return session
+  }
+
+  private static func secondsLeft(_ session: [String: Any]) -> TimeInterval {
+    ((session["expires_at"] as? NSNumber)?.doubleValue ?? 0) - Date().timeIntervalSince1970
   }
 
   private func refresh(_ session: [String: Any]) async throws -> String {
     guard let refreshToken = session["refresh_token"] as? String else { throw PaceSessionError.noSession }
+
+    // The app may have refreshed while Siri was starting: use its new token instead of spending the old one.
+    let latest = try storedSession()
+    if let latestToken = latest["access_token"] as? String,
+      latest["refresh_token"] as? String != refreshToken,
+      Self.secondsLeft(latest) > Self.refreshMargin
+    {
+      return latestToken
+    }
 
     var components = URLComponents(url: config.url.appendingPathComponent("auth/v1/token"), resolvingAgainstBaseURL: false)
     components?.queryItems = [URLQueryItem(name: "grant_type", value: "refresh_token")]
@@ -85,7 +104,12 @@ public struct PaceSupabaseSession: Sendable {
       updated["expires_at"] = Int(Date().timeIntervalSince1970 + expiresIn)
     }
     if let json = String(data: try JSONSerialization.data(withJSONObject: updated), encoding: .utf8) {
-      PaceSessionKeychain.write(config.storageKey, value: json)
+      // The new token is valid either way; failing to save it only means the app refreshes again later.
+      do {
+        try PaceSessionKeychain.write(config.storageKey, value: json)
+      } catch {
+        Self.logger.error("Could not save the refreshed session: \(String(describing: error), privacy: .public)")
+      }
     }
     Self.logger.info("Session refreshed for Siri")
     return accessToken

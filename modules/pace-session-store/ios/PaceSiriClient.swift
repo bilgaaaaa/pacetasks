@@ -18,6 +18,8 @@ public enum PaceSiriClient {
     let speech: String
   }
 
+  private static let httpUnauthorized = 401
+
   public static func ask(_ action: PaceSiriAction, text: String? = nil) async -> String {
     guard let config = PaceSupabaseConfig.fromInfoPlist() else {
       logger.error("Supabase settings are missing from Info.plist")
@@ -50,8 +52,12 @@ public enum PaceSiriClient {
 
       let (data, response) = try await URLSession.shared.data(for: request)
       let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-      // The server puts the words to say in every answer, failures included.
-      let reply = try JSONDecoder().decode(Reply.self, from: data)
+      // The function puts the words to say in every answer; the gateway's own errors don't.
+      guard let reply = try? JSONDecoder().decode(Reply.self, from: data) else {
+        let preview = String(decoding: data.prefix(120), as: UTF8.self)
+        logger.error("Siri \(action.rawValue, privacy: .public) got status \(status, privacy: .public) without speech: \(preview, privacy: .public)")
+        return status == httpUnauthorized ? openAppLine() : failedLine()
+      }
       logger.info("Siri \(action.rawValue, privacy: .public) answered with status \(status, privacy: .public)")
       return reply.speech
     } catch {

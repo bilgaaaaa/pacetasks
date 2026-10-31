@@ -87,6 +87,20 @@ Deno.test("revenueCat: a cancelled plan still counts until it ends, and no entit
   assert.equal(await client.fetchProEntitlement(USER), null);
 });
 
+Deno.test("revenueCat: a billing grace period keeps Pro until it ends", async () => {
+  const { fetchFn } = fakeFetch([
+    {
+      status: 200,
+      body: subscriber(
+        { pro: { expires_date: "2026-11-01T09:00:00Z", product_identifier: "pacetasks_pro_monthly" } },
+        { pacetasks_pro_monthly: { period_type: "normal", grace_period_expires_date: "2026-11-17T09:00:00Z" } }
+      ),
+    },
+  ]);
+  const entitlement = await createRevenueCatClient("sk_test", fetchFn).fetchProEntitlement(USER);
+  assert.equal(entitlement?.expiresAt, "2026-11-17T09:00:00Z");
+});
+
 Deno.test("revenueCat: errors and odd answers become RevenueCatError", async () => {
   const { fetchFn } = fakeFetch([{ status: 500, body: "boom" }, { status: 200, body: { nope: true } }]);
   const client = createRevenueCatClient("sk_test", fetchFn);

@@ -54,7 +54,7 @@ export function createDemoProStore(): ProStore {
         expiresAt: new Date(Date.now() + lengthDays * DAY_MS).toISOString(),
         willRenew: true,
       });
-      return Promise.resolve("purchased");
+      return Promise.resolve({ status: "purchased", entitlement });
     },
     restore: () => Promise.resolve(entitlement),
     onEntitlementChange: (listener) => {

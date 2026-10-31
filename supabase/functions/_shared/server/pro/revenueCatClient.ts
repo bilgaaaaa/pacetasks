@@ -29,6 +29,7 @@ const subscriberResponseSchema = z.object({
       z.object({
         period_type: z.string().nullish(),
         unsubscribe_detected_at: z.string().nullish(),
+        grace_period_expires_date: z.string().nullish(), // set while Apple retries a failed renewal
       })
     ),
   }),
@@ -47,9 +48,16 @@ export function proEntitlementFromSubscriber(subscriber: RevenueCatSubscriber): 
   return {
     productId: entitlement.product_identifier,
     periodType,
-    expiresAt: entitlement.expires_date,
+    expiresAt: laterDate(entitlement.expires_date, subscription?.grace_period_expires_date ?? null),
     willRenew: !subscription?.unsubscribe_detected_at,
   };
+}
+
+// A billing grace period keeps Pro on until it ends, as the App Store does on the phone; null means never.
+function laterDate(expiresAt: string | null, graceEndsAt: string | null): string | null {
+  if (expiresAt === null) return null;
+  if (graceEndsAt === null) return expiresAt;
+  return new Date(graceEndsAt).getTime() > new Date(expiresAt).getTime() ? graceEndsAt : expiresAt;
 }
 
 export interface RevenueCatClient {
