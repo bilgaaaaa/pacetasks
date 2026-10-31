@@ -99,6 +99,7 @@ function taskFromDraft(draft: TaskDraft): Task {
     timing: draft.timing ?? "anytime",
     category: draft.category?.trim() || null,
     scheduled_time: draft.scheduled_time?.trim() || null,
+    reminder_minutes_before: draft.scheduled_time?.trim() ? draft.reminder_minutes_before ?? null : null,
     status: "pending",
     created_at: new Date().toISOString(),
     completed_at: null,

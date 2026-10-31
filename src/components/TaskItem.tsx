@@ -161,6 +161,9 @@ export function TaskItem({
                 onPress={() => onStartFocus(task)}
                 accessibilityLabel={`Start focus session for ${task.title}`}
               >
+                {task.reminder_minutes_before !== null && (
+                  <Ionicons name="notifications" size={12} color={theme.colors.surface} accessibilityLabel="Reminder set" />
+                )}
                 <Text style={[styles.pillText, styles.pillTextFocus]}>Focus {task.scheduled_time}</Text>
               </TouchableOpacity>
             ) : timer.isRunning ? (
@@ -325,6 +328,8 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: theme.colors.quickFill,
   },
   pillFocus: {
+    flexDirection: "row",
+    gap: 4,
     backgroundColor: theme.colors.textPrimary,
   },
   pillText: {

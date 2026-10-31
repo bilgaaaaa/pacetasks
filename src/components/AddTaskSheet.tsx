@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Keyboard,
@@ -16,31 +16,47 @@ import { Ionicons } from "@expo/vector-icons";
 import { TASK_LIMITS } from "@domain/task";
 import { TaskHistoryEntry, findExactMatch, findMatches, normalizeTitle } from "@domain/taskHistory";
 import { toLocalDateKey } from "@domain/dates";
+import { timingForHour } from "@domain/timing";
+import { DEFAULT_REMINDER_MINUTES, REMINDER_OFFSETS, taskReminderMoment } from "@domain/reminders";
 import { makeStyles, useTheme } from "../hooks/useTheme";
 import { EnergyLevel, Task, TaskDraft, TaskTiming } from "../lib/types";
 import { CATEGORIES, categoryColor, getCategory } from "../lib/categories";
 import { TIMING_LABELS } from "../lib/taskSections";
 import { ANY_ENERGY_LABEL, ENERGY_OPTIONS, energyLabel } from "../lib/energy";
-import { DEFAULT_DUE_CHOICE, DueChoice, dueChoiceSummary, resolveDueChoice } from "../lib/dueOptions";
+import { DEFAULT_DUE_CHOICE, DueChoice, dueChoiceLabel, dueChoiceSummary, resolveDueChoice } from "../lib/dueOptions";
+import { hourOf, suggestedStartTime } from "../lib/timeOptions";
+import {
+  REMINDER_PERMISSION_OFF,
+  reminderChipLabel,
+  reminderHint,
+  reminderLabel,
+  TASK_REMINDERS_SWITCHED_OFF,
+} from "../lib/reminderCopy";
+import {
+  getNotificationPermission,
+  NotificationPermission,
+  requestNotificationPermission,
+} from "../lib/notifications";
 import { TaskRhythm, describeLastDone, isLate } from "../lib/taskRhythm";
 import { DayPicker } from "./DayPicker";
+import { TimePicker } from "./TimePicker";
 
-const MINUTE_PRESETS = [2, 5, 15, 30, 60];
+const MINUTE_PRESETS = [2, 5, 10, 15, 20, 30, 45, 60, 90];
 const TIMING_VALUES: TaskTiming[] = ["anytime", "before_work", "after_work"];
 // null = no energy set, so "What can I do now?" never hides the task.
 const ENERGY_VALUES: (EnergyLevel | null)[] = [null, ...ENERGY_OPTIONS.map((option) => option.value)];
-// Half-hour presets from 6am to 10pm; a fixed time turns the task into a Focus session.
-const SCHEDULED_TIMES = Array.from({ length: 33 }, (_, i) => {
-  const totalMinutes = 6 * 60 + i * 30;
-  return `${String(Math.floor(totalMinutes / 60)).padStart(2, "0")}:${String(totalMinutes % 60).padStart(2, "0")}`;
-});
+const REMINDER_VALUES: (number | null)[] = [null, ...REMINDER_OFFSETS];
 
-type Mode = "usuals" | "new";
+// The detail panel open under the task card; only one at a time keeps the sheet short.
+type Panel = "when" | "duration" | "time" | "more";
 
 interface Props {
   visible: boolean;
   history: Map<string, TaskHistoryEntry>;
   usuals: TaskRhythm[]; // repeat tasks for one-tap adding, most overdue first
+  workStartHour: number; // picks "before work"/"after work" from a chosen time
+  workEndHour: number;
+  taskRemindersEnabled: boolean; // the Settings switch; the sheet says so when it is off
   onAdd: (draft: TaskDraft) => Promise<Task | undefined>; // undefined when saving failed
   onUndo: (taskId: string) => Promise<boolean>; // false when the delete failed
   onOpenBrainDump: () => void;
@@ -48,15 +64,17 @@ interface Props {
   onDismissed: () => void; // the sheet has fully gone (iOS): lets the screen open the next sheet
 }
 
-// The add sheet: opens on your usuals (repeat tasks, one tap adds them for
-// today, ⋯ adjusts first) with a big "What?" field on top. Typing something
-// new switches to three calm questions (what, how long, when: a day or a
-// flexible window, plus the part of the day) with optional extras tucked away.
-// After each add it returns to the usuals with an Undo.
+// The add sheet: one card with the task's name and a row of pills (day,
+// duration, start time with its reminder, more). Each pill opens its own small
+// panel below the card. With the name still empty, your usuals sit underneath,
+// one tap each. After each add it clears for the next task and offers Undo.
 export function AddTaskSheet({
   visible,
   history,
   usuals,
+  workStartHour,
+  workEndHour,
+  taskRemindersEnabled,
   onAdd,
   onUndo,
   onOpenBrainDump,
@@ -65,8 +83,8 @@ export function AddTaskSheet({
 }: Props) {
   const { theme } = useTheme();
   const styles = useStyles();
+  const inputRef = useRef<TextInput>(null);
 
-  const [mode, setMode] = useState<Mode>("usuals");
   const [title, setTitle] = useState("");
   const [minutes, setMinutes] = useState<number>(TASK_LIMITS.defaultEstimatedMinutes);
   const [timing, setTiming] = useState<TaskTiming>("anytime");
@@ -74,10 +92,12 @@ export function AddTaskSheet({
   const [category, setCategory] = useState<string | null>(null);
   const [energy, setEnergy] = useState<EnergyLevel | null>(null);
   const [scheduledTime, setScheduledTime] = useState<string | null>(null);
-  const [showExtras, setShowExtras] = useState(false);
-  // Fields the user set by hand are never overwritten by task memory.
+  const [reminder, setReminder] = useState<number | null>(null);
+  const [panel, setPanel] = useState<Panel | null>(null);
+  const [permission, setPermission] = useState<NotificationPermission>("undetermined");
+  // Fields the user set by hand are never overwritten by task memory or the chosen time.
   const [touched, setTouched] = useState({ minutes: false, timing: false, category: false, energy: false });
-  // Snapshot taken on open: an added usual becomes pending and would otherwise vanish from the grid.
+  // Snapshot taken on open: an added usual becomes pending and would otherwise vanish from the list.
   const [shownUsuals, setShownUsuals] = useState<TaskRhythm[]>(usuals);
   const [addedKeys, setAddedKeys] = useState<string[]>([]);
   // `when` is the "for Thu" part of the confirmation; null when the task has no day.
@@ -95,24 +115,35 @@ export function AddTaskSheet({
     setCategory(null);
     setEnergy(null);
     setScheduledTime(null);
-    setShowExtras(false);
+    setReminder(null);
+    setPanel(null);
     setTouched({ minutes: false, timing: false, category: false, energy: false });
   };
 
-  // Every opening starts on the usuals with nothing left over from last time.
+  // Every opening starts clean, with nothing left over from last time.
   useEffect(() => {
     if (!visible) return;
     resetDraft();
-    setMode("usuals");
     setShownUsuals(usuals);
     setAddedKeys([]);
     setLastAdded(null);
     setError(null);
   }, [visible]);
 
-  const todayKey = toLocalDateKey(new Date());
-  const exactMatch = title.trim() ? findExactMatch(history, title) : undefined;
-  const suggestions = mode === "new" && !exactMatch ? findMatches(history, title, 3) : [];
+  // The reminder panel says up front when notifications are off for the app.
+  useEffect(() => {
+    if (panel !== "time") return;
+    getNotificationPermission()
+      .then(setPermission)
+      .catch((e) => console.warn("[AddTaskSheet] permission check failed", e));
+  }, [panel]);
+
+  const now = new Date();
+  const todayKey = toLocalDateKey(now);
+  const trimmedTitle = title.trim();
+  const exactMatch = trimmedTitle ? findExactMatch(history, title) : undefined;
+  const suggestions = trimmedTitle && !exactMatch ? findMatches(history, title, 3) : [];
+  const resolvedDue = resolveDueChoice(due, todayKey);
 
   const applyMemory = (
     entry: Pick<TaskHistoryEntry, "lastMinutes" | "timing" | "category" | "energyLevel">,
@@ -127,7 +158,6 @@ export function AddTaskSheet({
   const handleTitleChange = (text: string) => {
     setTitle(text);
     setError(null);
-    setMode("new");
     const match = findExactMatch(history, text);
     if (match) applyMemory(match, false);
   };
@@ -137,7 +167,41 @@ export function AddTaskSheet({
     applyMemory(entry, true);
   };
 
-  // Shared by one-tap usuals and the "new" form; returns true when the task was saved.
+  const togglePanel = (next: Panel) => {
+    Keyboard.dismiss();
+    setPanel((current) => (current === next ? null : next));
+  };
+
+  // A chosen time also places the task before/after work, unless that was set by hand.
+  const changeTime = (time: string) => {
+    setScheduledTime(time);
+    if (!touched.timing) setTiming(timingForHour(hourOf(time), workStartHour, workEndHour));
+  };
+
+  const removeTime = () => {
+    setScheduledTime(null);
+    setReminder(null);
+    if (!touched.timing) setTiming("anytime");
+  };
+
+  // Picking a reminder is the natural moment for iOS to ask about notifications.
+  const changeReminder = async (value: number | null) => {
+    setReminder(value);
+    if (value === null || permission === "granted" || !taskRemindersEnabled) return;
+    const granted = await requestNotificationPermission().catch((e) => {
+      console.warn("[AddTaskSheet] permission request failed", e);
+      return false;
+    });
+    setPermission(granted ? "granted" : await getNotificationPermission());
+  };
+
+  // The first time a task gets a start time it also gets the default nudge.
+  const addTime = () => {
+    changeTime(suggestedStartTime(now));
+    changeReminder(DEFAULT_REMINDER_MINUTES);
+  };
+
+  // Shared by one-tap usuals and the form; returns true when the task was saved.
   const save = async (draft: TaskDraft, when: string | null = null): Promise<boolean> => {
     setSaving(true);
     setError(null);
@@ -171,30 +235,29 @@ export function AddTaskSheet({
     resetDraft();
     setTitle(rhythm.title);
     applyMemory({ ...rhythm, energyLevel: findExactMatch(history, rhythm.title)?.energyLevel ?? null }, true);
-    setMode("new");
+    inputRef.current?.focus();
   };
 
-  const submitNew = async () => {
-    const trimmed = title.trim();
-    if (!trimmed || saving) return;
+  const submit = async () => {
+    if (!trimmedTitle || saving) return;
     const saved = await save(
       {
-        title: trimmed.slice(0, TASK_LIMITS.titleMaxLength),
+        title: trimmedTitle.slice(0, TASK_LIMITS.titleMaxLength),
         estimated_minutes: Math.min(TASK_LIMITS.maxEstimatedMinutes, Math.max(TASK_LIMITS.minEstimatedMinutes, minutes)),
         timing,
         category,
         energy_level: energy,
         scheduled_time: scheduledTime,
-        ...resolveDueChoice(due, todayKey),
+        reminder_minutes_before: scheduledTime ? reminder : null,
+        ...resolvedDue,
         source: "app",
       },
       dueChoiceSummary(due, todayKey)
     );
     if (saved) {
-      // Back to the usuals, so the next thought is one tap or one word away.
+      // Cleared for the next thought: usuals and Undo are back in view.
       Keyboard.dismiss();
       resetDraft();
-      setMode("usuals");
     }
   };
 
@@ -214,17 +277,29 @@ export function AddTaskSheet({
     });
   };
 
-  const backToUsuals = () => {
-    Keyboard.dismiss();
-    resetDraft();
-    setMode("usuals");
-    setError(null);
-  };
+  // When the reminder would go off for the draft as it stands now.
+  const reminderPlan =
+    scheduledTime && reminder !== null
+      ? taskReminderMoment(
+          {
+            id: "draft",
+            status: "pending",
+            scheduled_time: scheduledTime,
+            reminder_minutes_before: reminder,
+            due_date: resolvedDue.due_date,
+            due_kind: resolvedDue.due_kind,
+          },
+          now
+        )
+      : null;
 
   const durationChoices = Array.from(new Set([...MINUTE_PRESETS, minutes])).sort((a, b) => a - b);
+  const moreIsSet = category !== null || energy !== null || (touched.timing && timing !== "anytime");
+  // "More" stays a small icon until it holds something worth naming.
+  const moreLabel = category ? getCategory(category).label : energy ? energyLabel(energy) : moreIsSet ? TIMING_LABELS[timing] : null;
 
   const renderChips = <T,>(values: T[], selected: T, label: (value: T) => string, onPick: (value: T) => void) => (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow} keyboardShouldPersistTaps="handled">
+    <View style={styles.chipWrap} accessibilityRole="radiogroup">
       {values.map((value) => {
         const isSelected = value === selected;
         return (
@@ -239,8 +314,121 @@ export function AddTaskSheet({
           </TouchableOpacity>
         );
       })}
-    </ScrollView>
+    </View>
   );
+
+  const renderPill = (
+    id: Panel,
+    icon: React.ComponentProps<typeof Ionicons>["name"],
+    label: string | null,
+    isSet: boolean,
+    a11y: string,
+    trailingIcon?: React.ComponentProps<typeof Ionicons>["name"]
+  ) => {
+    const open = panel === id;
+    const color = open ? theme.colors.onAccent : isSet ? theme.colors.accentDark : theme.colors.textSecondary;
+    return (
+      <TouchableOpacity
+        style={[styles.pill, !label && styles.pillIconOnly, isSet && styles.pillSet, open && styles.pillOpen]}
+        onPress={() => togglePanel(id)}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        accessibilityLabel={a11y}
+      >
+        <Ionicons name={icon} size={16} color={color} />
+        {label && (
+          <Text style={[styles.pillText, isSet && styles.pillTextSet, open && styles.pillTextOpen]} numberOfLines={1}>
+            {label}
+          </Text>
+        )}
+        {trailingIcon && <Ionicons name={trailingIcon} size={14} color={color} />}
+      </TouchableOpacity>
+    );
+  };
+
+  const renderPanel = () => {
+    switch (panel) {
+      case "when":
+        return <DayPicker todayKey={todayKey} value={due} onChange={setDue} />;
+      case "duration":
+        return (
+          <>
+            <Text style={styles.panelTitle}>HOW LONG, HONESTLY?</Text>
+            {renderChips(durationChoices, minutes, (value) => `${value} min`, (value) => {
+              setMinutes(value);
+              setTouched((t) => ({ ...t, minutes: true }));
+            })}
+          </>
+        );
+      case "time":
+        return scheduledTime ? (
+          <>
+            <View style={styles.panelHeader}>
+              <Text style={styles.panelTitle}>STARTS AT</Text>
+              <TouchableOpacity style={styles.textButton} onPress={removeTime} accessibilityRole="button">
+                <Text style={styles.textButtonText}>Remove time</Text>
+              </TouchableOpacity>
+            </View>
+            <TimePicker value={scheduledTime} now={now} onChange={changeTime} />
+            <Text style={[styles.panelTitle, styles.panelTitleSpaced]}>REMIND ME · BEFORE IT STARTS</Text>
+            {renderChips(REMINDER_VALUES, reminder, reminderChipLabel, changeReminder)}
+            {reminder !== null && (
+              <Text style={styles.hint}>
+                {!taskRemindersEnabled
+                  ? TASK_REMINDERS_SWITCHED_OFF
+                  : permission === "denied"
+                  ? REMINDER_PERMISSION_OFF
+                  : reminderHint(reminderPlan, now)}
+              </Text>
+            )}
+          </>
+        ) : (
+          <View style={styles.emptyPanel}>
+            <Text style={styles.hint}>
+              Give it a start time and PaceTasks can nudge you when it's time. It also unlocks a Focus session.
+            </Text>
+            <TouchableOpacity style={styles.secondaryButton} onPress={addTime} accessibilityRole="button">
+              <Ionicons name="time-outline" size={18} color={theme.colors.accentDark} />
+              <Text style={styles.secondaryButtonText}>Set a start time</Text>
+            </TouchableOpacity>
+          </View>
+        );
+      case "more":
+        return (
+          <>
+            <Text style={styles.panelTitle}>PART OF THE DAY</Text>
+            {renderChips(TIMING_VALUES, timing, (value) => TIMING_LABELS[value], (value) => {
+              setTiming(value);
+              setTouched((t) => ({ ...t, timing: true }));
+            })}
+            <Text style={[styles.panelTitle, styles.panelTitleSpaced]}>CATEGORY</Text>
+            {renderChips<string | null>(
+              [null, ...CATEGORIES.map((c) => c.id)],
+              category,
+              (value) => (value ? getCategory(value).label : "None"),
+              (value) => {
+                setCategory(value);
+                setTouched((t) => ({ ...t, category: true }));
+              }
+            )}
+            <Text style={[styles.panelTitle, styles.panelTitleSpaced]}>ENERGY IT NEEDS</Text>
+            {renderChips(
+              ENERGY_VALUES,
+              energy,
+              (value) => (value ? energyLabel(value) : ANY_ENERGY_LABEL),
+              (value) => {
+                setEnergy(value);
+                setTouched((t) => ({ ...t, energy: true }));
+              }
+            )}
+          </>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const showUsuals = !trimmedTitle && panel === null;
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} onDismiss={onDismissed}>
@@ -250,14 +438,7 @@ export function AddTaskSheet({
           <View style={styles.handle} />
 
           <View style={styles.header}>
-            {mode === "new" ? (
-              <TouchableOpacity style={styles.pillButton} onPress={backToUsuals} accessibilityLabel="Back to your usuals">
-                <Ionicons name="chevron-back" size={18} color={theme.colors.textPrimary} />
-                <Text style={styles.pillButtonText}>Usuals</Text>
-              </TouchableOpacity>
-            ) : (
-              <Text style={styles.eyebrow}>ADD TO TODAY</Text>
-            )}
+            <Text style={styles.heading}>New task</Text>
             <View style={styles.headerActions}>
               <TouchableOpacity
                 style={styles.iconButton}
@@ -266,28 +447,28 @@ export function AddTaskSheet({
               >
                 <Ionicons name="mic-outline" size={20} color={theme.colors.textPrimary} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.pillButton} onPress={onClose}>
-                <Text style={styles.pillButtonText}>Done</Text>
+              <TouchableOpacity style={styles.iconButton} onPress={onClose} accessibilityLabel="Close">
+                <Ionicons name="close" size={22} color={theme.colors.textPrimary} />
               </TouchableOpacity>
             </View>
           </View>
 
           <ScrollView style={styles.flex} contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
-            <View style={styles.whatBlock}>
-              <Text style={styles.questionLabel}>What?</Text>
+            <View style={styles.card}>
               <TextInput
-                style={[styles.whatInput, mode === "new" && styles.whatInputActive]}
+                ref={inputRef}
+                style={styles.titleInput}
                 value={title}
                 onChangeText={handleTitleChange}
-                onFocus={() => setMode("new")}
-                placeholder="Something new…"
+                onFocus={() => setPanel(null)}
+                placeholder="What needs doing?"
                 placeholderTextColor={theme.colors.textTertiary}
                 returnKeyType="done"
-                onSubmitEditing={submitNew}
+                onSubmitEditing={submit}
                 maxLength={TASK_LIMITS.titleMaxLength}
                 accessibilityLabel="What do you need to do?"
               />
-              {exactMatch && mode === "new" && (
+              {exactMatch && (
                 <Text style={styles.memoryText}>
                   {exactMatch.timesCompleted > 0 && exactMatch.minMinutes !== null && exactMatch.maxMinutes !== null
                     ? `Done ${exactMatch.timesCompleted}× before · usually ${
@@ -300,59 +481,95 @@ export function AddTaskSheet({
               )}
               {suggestions.length > 0 && (
                 <View style={styles.suggestions}>
-                  {suggestions.map((entry, i) => (
+                  {suggestions.map((entry) => (
                     <TouchableOpacity
                       key={entry.title}
-                      style={[styles.suggestionRow, i > 0 && styles.suggestionDivider]}
+                      style={styles.suggestionRow}
                       onPress={() => selectSuggestion(entry)}
+                      accessibilityLabel={`Use ${entry.title}`}
                     >
+                      <Ionicons name="time-outline" size={14} color={theme.colors.textTertiary} />
                       <Text style={styles.suggestionText} numberOfLines={1}>{entry.title}</Text>
                       <Text style={styles.suggestionMeta}>{entry.lastMinutes} min</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
               )}
+
+              <View style={styles.pillRow}>
+                {renderPill(
+                  "when",
+                  "calendar-outline",
+                  dueChoiceLabel(due, todayKey),
+                  !(due.kind === "flexible" && due.when === "any"),
+                  `Day: ${dueChoiceLabel(due, todayKey)}`
+                )}
+                {renderPill("duration", "hourglass-outline", `${minutes} min`, touched.minutes || !!exactMatch, `Duration: ${minutes} minutes`)}
+                {renderPill(
+                  "time",
+                  "time-outline",
+                  scheduledTime ?? "Time",
+                  scheduledTime !== null,
+                  scheduledTime
+                    ? `Start time ${scheduledTime}, ${reminderLabel(reminder).toLowerCase()}`
+                    : "Start time and reminder",
+                  scheduledTime && reminder !== null ? "notifications" : undefined
+                )}
+                {renderPill("more", "options-outline", moreLabel, moreIsSet, "More: part of the day, category, energy")}
+              </View>
             </View>
+
+            {panel && <View style={styles.panel}>{renderPanel()}</View>}
 
             {error && <Text style={styles.errorText}>{error}</Text>}
 
-            {mode === "usuals" ? (
-              <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>OR ONE TAP · YOUR USUALS</Text>
-                  {shownUsuals.length > 0 && <Text style={styles.sectionHint}>⋯ to adjust</Text>}
-                </View>
+            {showUsuals && (
+              <View style={styles.usuals}>
+                <Text style={styles.sectionTitle}>YOUR USUALS · ONE TAP ADDS FOR TODAY</Text>
                 {shownUsuals.length === 0 ? (
                   <Text style={styles.emptyText}>
                     Tasks you do more than once show up here, ready to add again in one tap.
                   </Text>
                 ) : (
-                  <View style={styles.grid}>
-                    {shownUsuals.map((rhythm) => {
+                  <View style={styles.usualList}>
+                    {shownUsuals.map((rhythm, index) => {
                       const added = addedKeys.includes(rhythm.key);
                       const late = isLate(rhythm);
                       return (
-                        <View key={rhythm.key} style={styles.tileSlot}>
+                        <View key={rhythm.key} style={[styles.usualRow, index > 0 && styles.usualDivider]}>
                           <TouchableOpacity
-                            style={[styles.tile, added && styles.tileAdded]}
+                            style={styles.usualMain}
                             onPress={() => addUsual(rhythm)}
                             disabled={saving || added}
                             accessibilityState={{ disabled: saving || added }}
                             accessibilityLabel={added ? `${rhythm.title}, added for today` : `Add ${rhythm.title} for today`}
                           >
-                            <View style={styles.tileTop}>
-                              <View
-                                style={[styles.tileDot, { backgroundColor: categoryColor(getCategory(rhythm.category), theme) }]}
+                            <View
+                              style={[styles.usualIcon, added && styles.usualIconAdded]}
+                            >
+                              <Ionicons
+                                name={added ? "checkmark" : "add"}
+                                size={18}
+                                color={added ? theme.colors.onAccent : theme.colors.accentDark}
                               />
-                              <Text style={styles.tileMinutes}>{rhythm.lastMinutes} min</Text>
                             </View>
-                            <Text style={styles.tileTitle} numberOfLines={2}>{rhythm.title}</Text>
-                            <Text style={[styles.tileNote, late && styles.tileNoteLate, added && styles.tileNoteAdded]}>
-                              {added ? "Added for today" : describeLastDone(rhythm)}
-                            </Text>
+                            <View style={styles.usualText}>
+                              <Text style={styles.usualTitle} numberOfLines={1}>{rhythm.title}</Text>
+                              <View style={styles.usualMetaRow}>
+                                <View
+                                  style={[styles.usualDot, { backgroundColor: categoryColor(getCategory(rhythm.category), theme) }]}
+                                />
+                                <Text
+                                  style={[styles.usualMeta, late && !added && styles.usualMetaLate, added && styles.usualMetaAdded]}
+                                  numberOfLines={1}
+                                >
+                                  {added ? "Added for today" : `${rhythm.lastMinutes} min · ${describeLastDone(rhythm)}`}
+                                </Text>
+                              </View>
+                            </View>
                           </TouchableOpacity>
                           <TouchableOpacity
-                            style={styles.tileAdjust}
+                            style={styles.usualAdjust}
                             onPress={() => adjustUsual(rhythm)}
                             accessibilityLabel={`Adjust ${rhythm.title} before adding`}
                           >
@@ -364,103 +581,38 @@ export function AddTaskSheet({
                   </View>
                 )}
               </View>
-            ) : (
-              <>
-                <View style={styles.section}>
-                  <Text style={styles.questionLabel}>How long, honestly?</Text>
-                  <View style={styles.durationRow} accessibilityRole="radiogroup">
-                    {durationChoices.map((value) => {
-                      const isSelected = value === minutes;
-                      return (
-                        <TouchableOpacity
-                          key={value}
-                          style={[styles.durationCircle, isSelected && styles.durationSelected]}
-                          onPress={() => {
-                            setMinutes(value);
-                            setTouched((t) => ({ ...t, minutes: true }));
-                          }}
-                          accessibilityRole="radio"
-                          accessibilityState={{ selected: isSelected }}
-                          accessibilityLabel={`${value} minutes`}
-                        >
-                          <Text style={[styles.durationValue, isSelected && styles.textOnAccent]}>{value}</Text>
-                          <Text style={[styles.durationUnit, isSelected && styles.textOnAccent]}>min</Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                </View>
-
-                <View style={styles.section}>
-                  <Text style={styles.questionLabel}>When?</Text>
-                  <DayPicker todayKey={todayKey} value={due} onChange={setDue} />
-                  <Text style={styles.extrasLabel}>PART OF THE DAY</Text>
-                  {renderChips(TIMING_VALUES, timing, (value) => TIMING_LABELS[value], (value) => {
-                    setTiming(value);
-                    setTouched((t) => ({ ...t, timing: true }));
-                  })}
-                </View>
-
-                <TouchableOpacity style={styles.extrasToggle} onPress={() => setShowExtras((v) => !v)}>
-                  <Text style={styles.extrasToggleText}>
-                    {showExtras ? "− Fewer options" : "+ Category, energy, fixed time"}
-                  </Text>
-                </TouchableOpacity>
-
-                {showExtras && (
-                  <View style={styles.extras}>
-                    <Text style={styles.extrasLabel}>CATEGORY</Text>
-                    {renderChips<string | null>(
-                      [null, ...CATEGORIES.map((c) => c.id)],
-                      category,
-                      (value) => (value ? getCategory(value).label : "None"),
-                      (value) => {
-                        setCategory(value);
-                        setTouched((t) => ({ ...t, category: true }));
-                      }
-                    )}
-                    <Text style={styles.extrasLabel}>ENERGY IT NEEDS</Text>
-                    {renderChips(
-                      ENERGY_VALUES,
-                      energy,
-                      (value) => (value ? energyLabel(value) : ANY_ENERGY_LABEL),
-                      (value) => {
-                        setEnergy(value);
-                        setTouched((t) => ({ ...t, energy: true }));
-                      }
-                    )}
-                    <Text style={styles.extrasLabel}>FIXED START (FOCUS SESSION)</Text>
-                    {renderChips<string | null>([null, ...SCHEDULED_TIMES], scheduledTime, (value) => value ?? "None", setScheduledTime)}
-                  </View>
-                )}
-              </>
             )}
           </ScrollView>
 
           <View style={styles.footer}>
-            {mode === "new" ? (
+            {lastAdded && !trimmedTitle && (
+              <View style={styles.toast} accessibilityLiveRegion="polite">
+                <Ionicons name="checkmark" size={16} color={theme.colors.quickText} />
+                <Text style={styles.toastText} numberOfLines={1}>
+                  Added “{lastAdded.title}”{lastAdded.when ? ` ${lastAdded.when}` : ""}
+                </Text>
+                <TouchableOpacity
+                  style={styles.toastUndo}
+                  onPress={undoLastAdd}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Undo adding ${lastAdded.title}`}
+                >
+                  <Text style={styles.toastUndoText}>Undo</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            {(trimmedTitle || !lastAdded) && (
               <TouchableOpacity
-                style={[styles.addButton, (!title.trim() || saving) && styles.addButtonDisabled]}
-                onPress={submitNew}
-                disabled={!title.trim() || saving}
+                style={[styles.addButton, (!trimmedTitle || saving) && styles.addButtonDisabled]}
+                onPress={submit}
+                disabled={!trimmedTitle || saving}
+                accessibilityRole="button"
               >
                 {saving && <ActivityIndicator color={theme.colors.onAccent} />}
                 <Text style={styles.addButtonText} numberOfLines={1}>
-                  {title.trim() ? `Add “${title.trim()}”` : "Add task"}
+                  {trimmedTitle ? `Add “${trimmedTitle}”` : "Add task"}
                 </Text>
               </TouchableOpacity>
-            ) : (
-              lastAdded && (
-                <View style={styles.toast} accessibilityLiveRegion="polite">
-                  <Ionicons name="checkmark" size={16} color={theme.colors.quickText} />
-                  <Text style={styles.toastText} numberOfLines={1}>
-                    Added “{lastAdded.title}”{lastAdded.when ? ` ${lastAdded.when}` : ""}
-                  </Text>
-                  <TouchableOpacity style={styles.toastUndo} onPress={undoLastAdd}>
-                    <Text style={styles.toastUndoText}>Undo</Text>
-                  </TouchableOpacity>
-                </View>
-              )
             )}
           </View>
         </View>
@@ -499,11 +651,10 @@ const useStyles = makeStyles((theme) => ({
     alignItems: "center",
     paddingHorizontal: 20,
   },
-  eyebrow: {
-    color: theme.colors.textSecondary,
-    fontSize: theme.typography.eyebrow.fontSize,
-    fontWeight: theme.typography.eyebrow.fontWeight,
-    letterSpacing: theme.typography.eyebrow.letterSpacing,
+  heading: {
+    color: theme.colors.textPrimary,
+    fontSize: 24,
+    fontFamily: theme.fonts.display,
   },
   headerActions: {
     flexDirection: "row",
@@ -518,73 +669,46 @@ const useStyles = makeStyles((theme) => ({
     alignItems: "center",
     justifyContent: "center",
   },
-  pillButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 2,
-    height: 44,
-    paddingHorizontal: theme.spacing.md,
-    borderRadius: theme.radius.pill,
-    backgroundColor: theme.colors.surfaceAlt,
-  },
-  pillButtonText: {
-    color: theme.colors.textPrimary,
-    fontSize: 15,
-    fontWeight: "600",
-  },
   body: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingTop: theme.spacing.md,
     paddingBottom: theme.spacing.lg,
-    gap: 22,
+    gap: 14,
   },
-  whatBlock: {
-    gap: theme.spacing.sm,
-  },
-  questionLabel: {
-    color: theme.colors.textSecondary,
-    fontSize: theme.typography.footnote.fontSize,
-    fontWeight: "600",
-  },
-  whatInput: {
-    color: theme.colors.textPrimary,
-    fontSize: 28,
-    fontFamily: theme.fonts.display,
-    paddingVertical: theme.spacing.sm,
-    borderBottomWidth: 2,
-    borderBottomColor: theme.colors.border,
-    outlineWidth: 0, // web: the underline already shows focus
-  },
-  whatInputActive: {
-    borderBottomColor: theme.colors.accentDark,
-  },
-  memoryText: {
-    color: theme.colors.textSecondary,
-    fontSize: theme.typography.subhead.fontSize,
-  },
-  suggestions: {
-    borderRadius: 16,
+  card: {
+    padding: theme.spacing.md,
+    paddingTop: 6,
+    borderRadius: 22,
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    overflow: "hidden",
+    gap: 10,
+  },
+  titleInput: {
+    color: theme.colors.textPrimary,
+    fontSize: 22,
+    fontFamily: theme.fonts.display,
+    paddingVertical: theme.spacing.sm,
+    outlineWidth: 0, // web: the card already frames the field
+  },
+  memoryText: {
+    color: theme.colors.textSecondary,
+    fontSize: theme.typography.footnote.fontSize,
+    marginTop: -6,
+  },
+  suggestions: {
+    marginTop: -4,
   },
   suggestionRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     gap: theme.spacing.sm,
-    minHeight: 48,
-    paddingHorizontal: theme.spacing.md,
-  },
-  suggestionDivider: {
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
+    minHeight: 40,
   },
   suggestionText: {
     flex: 1,
     color: theme.colors.textPrimary,
-    fontSize: theme.typography.body.fontSize,
+    fontSize: theme.typography.subhead.fontSize,
   },
   suggestionMeta: {
     color: theme.colors.textSecondary,
@@ -592,27 +716,147 @@ const useStyles = makeStyles((theme) => ({
     fontFamily: theme.fonts.mono,
     fontVariant: ["tabular-nums"],
   },
+  pillRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+  },
+  pill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    height: 36,
+    maxWidth: "100%",
+    paddingHorizontal: 11,
+    borderRadius: theme.radius.pill,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surfaceAlt,
+  },
+  pillIconOnly: {
+    width: 36,
+    paddingHorizontal: 0,
+    justifyContent: "center",
+  },
+  pillSet: {
+    borderColor: theme.colors.accentDark,
+    backgroundColor: theme.colors.surface,
+  },
+  pillOpen: {
+    borderColor: theme.colors.accentDark,
+    backgroundColor: theme.colors.accentDark,
+  },
+  pillText: {
+    color: theme.colors.textSecondary,
+    fontSize: theme.typography.subhead.fontSize,
+    fontWeight: "600",
+    fontVariant: ["tabular-nums"],
+  },
+  pillTextSet: {
+    color: theme.colors.accentDark,
+  },
+  pillTextOpen: {
+    color: theme.colors.onAccent,
+  },
+  panel: {
+    padding: theme.spacing.md,
+    borderRadius: 22,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    gap: 10,
+  },
+  panelHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  panelTitle: {
+    color: theme.colors.textSecondary,
+    fontSize: theme.typography.caption.fontSize,
+    fontWeight: "700",
+    letterSpacing: 0.8,
+  },
+  panelTitleSpaced: {
+    marginTop: theme.spacing.xs,
+  },
+  textButton: {
+    minHeight: 32,
+    justifyContent: "center",
+  },
+  textButtonText: {
+    color: theme.colors.danger,
+    fontSize: theme.typography.footnote.fontSize,
+    fontWeight: "600",
+  },
+  emptyPanel: {
+    gap: 12,
+  },
+  secondaryButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: theme.spacing.sm,
+    height: 48,
+    borderRadius: theme.radius.pill,
+    borderWidth: 1.5,
+    borderColor: theme.colors.accentDark,
+  },
+  secondaryButtonText: {
+    color: theme.colors.accentDark,
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  hint: {
+    color: theme.colors.textSecondary,
+    fontSize: theme.typography.footnote.fontSize,
+    lineHeight: 18,
+  },
+  chipWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+  },
+  chip: {
+    height: 38,
+    paddingHorizontal: 14,
+    borderRadius: theme.radius.pill,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surfaceAlt,
+    justifyContent: "center",
+  },
+  chipSelected: {
+    borderColor: theme.colors.accentDark,
+    backgroundColor: theme.colors.accentDark,
+  },
+  chipText: {
+    color: theme.colors.textPrimary,
+    fontSize: theme.typography.subhead.fontSize,
+    fontWeight: "500",
+    fontVariant: ["tabular-nums"],
+  },
+  chipTextSelected: {
+    color: theme.colors.onAccent,
+  },
   errorText: {
     color: theme.colors.danger,
     fontSize: theme.typography.footnote.fontSize,
+    paddingHorizontal: 4,
   },
-  section: {
-    gap: 12,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "baseline",
+  usuals: {
+    gap: theme.spacing.sm,
+    marginTop: theme.spacing.xs,
   },
   sectionTitle: {
     color: theme.colors.textSecondary,
     fontSize: theme.typography.eyebrow.fontSize,
     fontWeight: theme.typography.eyebrow.fontWeight,
     letterSpacing: theme.typography.eyebrow.letterSpacing,
-  },
-  sectionHint: {
-    color: theme.colors.textSecondary,
-    fontSize: theme.typography.eyebrow.fontSize,
+    paddingHorizontal: 4,
   },
   emptyText: {
     color: theme.colors.textSecondary,
@@ -624,158 +868,91 @@ const useStyles = makeStyles((theme) => ({
     borderStyle: "dashed",
     borderColor: theme.colors.border,
   },
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    rowGap: theme.spacing.sm,
-  },
-  tileSlot: {
-    width: "48.5%",
-  },
-  tile: {
-    minHeight: 108,
-    padding: 14,
-    borderRadius: 18,
-    borderWidth: 1.5,
-    borderColor: theme.colors.border,
+  usualList: {
+    borderRadius: 22,
     backgroundColor: theme.colors.surface,
-    justifyContent: "space-between",
-    gap: 6,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    overflow: "hidden",
   },
-  tileAdded: {
-    borderColor: theme.colors.accentDark,
-    backgroundColor: theme.colors.quickFill,
-  },
-  tileTop: {
+  usualRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
   },
-  tileDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+  usualDivider: {
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
   },
-  tileMinutes: {
-    color: theme.colors.textSecondary,
-    fontSize: 12,
-    fontFamily: theme.fonts.mono,
-    fontVariant: ["tabular-nums"],
+  usualMain: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    minHeight: 60,
+    paddingLeft: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
   },
-  tileTitle: {
+  usualIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: theme.colors.accentDark,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  usualIconAdded: {
+    backgroundColor: theme.colors.accentDark,
+  },
+  usualText: {
+    flex: 1,
+    gap: 2,
+  },
+  usualTitle: {
     color: theme.colors.textPrimary,
     fontSize: theme.typography.body.fontSize,
     fontWeight: "600",
-    paddingRight: 20,
   },
-  tileNote: {
-    color: theme.colors.textSecondary,
-    fontSize: theme.typography.footnote.fontSize,
-    fontWeight: "600",
-  },
-  tileNoteLate: {
-    color: theme.colors.danger,
-  },
-  tileNoteAdded: {
-    color: theme.colors.quickText,
-  },
-  tileAdjust: {
-    position: "absolute",
-    top: 2,
-    right: 2,
-    width: 44,
-    height: 44,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  durationRow: {
+  usualMetaRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  durationCircle: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    borderWidth: 1.5,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surface,
     alignItems: "center",
-    justifyContent: "center",
-  },
-  durationSelected: {
-    borderColor: theme.colors.accentDark,
-    backgroundColor: theme.colors.accentDark,
-  },
-  durationValue: {
-    color: theme.colors.textPrimary,
-    fontSize: 16,
-    fontFamily: theme.fonts.mono,
-    fontVariant: ["tabular-nums"],
-  },
-  durationUnit: {
-    color: theme.colors.textSecondary,
-    fontSize: 10,
-  },
-  textOnAccent: {
-    color: theme.colors.onAccent,
-  },
-  extrasToggle: {
-    alignSelf: "flex-start",
-    minHeight: 44,
-    justifyContent: "center",
-  },
-  extrasToggleText: {
-    color: theme.colors.accentDark,
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  extras: {
-    gap: theme.spacing.sm,
-    marginTop: -theme.spacing.sm,
-  },
-  extrasLabel: {
-    color: theme.colors.textSecondary,
-    fontSize: theme.typography.caption.fontSize,
-    fontWeight: "700",
-    letterSpacing: 0.8,
-    marginTop: theme.spacing.xs,
-  },
-  chipRow: {
     gap: 6,
   },
-  chip: {
-    height: 40,
-    paddingHorizontal: 14,
-    borderRadius: theme.radius.pill,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surface,
+  usualDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  usualMeta: {
+    flex: 1,
+    color: theme.colors.textSecondary,
+    fontSize: theme.typography.footnote.fontSize,
+  },
+  usualMetaLate: {
+    color: theme.colors.danger,
+  },
+  usualMetaAdded: {
+    color: theme.colors.quickText,
+    fontWeight: "600",
+  },
+  usualAdjust: {
+    width: 48,
+    height: 60,
+    alignItems: "center",
     justifyContent: "center",
   },
-  chipSelected: {
-    borderColor: theme.colors.accentDark,
-    backgroundColor: theme.colors.accentDark,
-  },
-  chipText: {
-    color: theme.colors.textPrimary,
-    fontSize: theme.typography.subhead.fontSize,
-    fontWeight: "500",
-  },
-  chipTextSelected: {
-    color: theme.colors.onAccent,
-  },
   footer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingTop: theme.spacing.sm,
     paddingBottom: theme.spacing.lg,
+    gap: theme.spacing.sm,
   },
   addButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: theme.spacing.sm,
-    height: 60,
+    height: 56,
     paddingHorizontal: theme.spacing.lg,
     borderRadius: theme.radius.pill,
     backgroundColor: theme.colors.accentDark,

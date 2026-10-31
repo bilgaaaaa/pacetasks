@@ -1,4 +1,11 @@
-import { DEFAULT_DUE_CHOICE, DueChoice, dueChoiceSummary, isSameDueChoice, resolveDueChoice } from "../dueOptions";
+import {
+  DEFAULT_DUE_CHOICE,
+  DueChoice,
+  dueChoiceLabel,
+  dueChoiceSummary,
+  isSameDueChoice,
+  resolveDueChoice,
+} from "../dueOptions";
 
 const MONDAY = "2026-09-28";
 const SUNDAY = "2026-10-04";
@@ -45,5 +52,14 @@ describe("dueChoiceSummary", () => {
     expect(dueChoiceSummary(day("2026-09-29"), MONDAY)).toBe("for tomorrow");
     expect(dueChoiceSummary(day("2026-10-01"), MONDAY)).toBe("for Thu");
     expect(dueChoiceSummary(day("2026-11-17"), MONDAY)).toBe("for 17 Nov");
+  });
+});
+
+describe("dueChoiceLabel", () => {
+  it("names flexible choices and exact days briefly", () => {
+    expect(dueChoiceLabel(flexible("any"), MONDAY)).toBe("Any day");
+    expect(dueChoiceLabel(flexible("next_week"), MONDAY)).toBe("Next week");
+    expect(dueChoiceLabel(day(MONDAY), MONDAY)).toBe("Today");
+    expect(dueChoiceLabel(day("2026-10-01"), MONDAY)).toBe("Thu");
   });
 });

@@ -51,6 +51,7 @@ export class InMemoryBrainDumpRepository implements BrainDumpRepository {
       timing: draft.timing ?? "anytime",
       category: draft.category ?? null,
       scheduled_time: draft.scheduled_time ?? null,
+      reminder_minutes_before: draft.reminder_minutes_before ?? null,
       status: "pending",
       created_at: "2026-09-28T20:00:00.000Z",
       completed_at: null,

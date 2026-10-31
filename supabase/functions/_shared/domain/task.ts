@@ -23,6 +23,7 @@ export const TASK_LIMITS = {
   maxEstimatedMinutes: 480,
   maxTags: 20,
   defaultEstimatedMinutes: 5,
+  maxReminderMinutesBefore: 1440,
 } as const;
 
 export interface Task {
@@ -34,6 +35,7 @@ export interface Task {
   timing: TaskTiming;
   category: string | null; // Category id from src/lib/categories.ts, or null for "No category"
   scheduled_time: string | null; // "HH:MM", 24h — a fixed start time enables Focus/Pomodoro mode
+  reminder_minutes_before: number | null; // notify this many minutes before scheduled_time; null = no reminder
   status: TaskStatus;
   created_at: string;
   completed_at: string | null;
@@ -58,6 +60,7 @@ export interface TaskDraft {
   timing?: TaskTiming;
   category?: string | null;
   scheduled_time?: string | null;
+  reminder_minutes_before?: number | null; // needs scheduled_time
   due_date?: string | null;
   due_kind?: DueKind | null;
   notes?: string | null;
