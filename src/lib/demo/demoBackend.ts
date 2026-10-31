@@ -1,5 +1,6 @@
 import type { TaskDraft } from "@domain/task";
 import { commitDemoBrainDump, discardDemoBrainDump, invokeDemoBrainDump } from "./demoBrainDump";
+import { getDemoProStatus } from "./demoPro";
 import {
   createDemoTask,
   deleteDemoAccount,
@@ -12,7 +13,7 @@ import {
 
 // In-memory stand-in for the Supabase client, used only when EXPO_PUBLIC_DEMO_MODE=1
 // so the web preview runs without real keys. It covers exactly the surface the app
-// uses (tables, RPCs, the brain-dump function, Realtime, anonymous auth) — extend
+// uses (tables, RPCs, the brain-dump and pro-sync functions, Realtime, anonymous auth) — extend
 // it here whenever src/lib/*Api.ts or the hooks start calling something new.
 
 type Filter = { column: string; value: unknown };
@@ -279,6 +280,7 @@ export function createDemoClient() {
     functions: {
       invoke: async (functionName: string, options: { body?: unknown } = {}) => {
         if (functionName === "brain-dump") return invokeDemoBrainDump(options.body);
+        if (functionName === "pro-sync") return { data: getDemoProStatus(), error: null };
         return { data: null, error: { message: `Demo mode has no function named ${functionName}` } };
       },
     },

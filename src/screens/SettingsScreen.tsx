@@ -15,15 +15,27 @@ import { makeStyles, useTheme } from "../hooks/useTheme";
 import { useSettings } from "../hooks/useSettings";
 import { useAccount } from "../hooks/useAccount";
 import { useNotificationPermission } from "../hooks/useNotificationPermission";
+import { usePro } from "../hooks/usePro";
 import { AccountCard } from "../components/AccountCard";
 import { AccountSheet } from "../components/AccountSheet";
 import { DataCard } from "../components/DataCard";
 import { DeleteAccountSheet } from "../components/DeleteAccountSheet";
+import { ProCard } from "../components/ProCard";
+import { ProSheet } from "../components/ProSheet";
 import { Button } from "../components/Button";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { Stepper } from "../components/Stepper";
 import { DATA_SECTION_LABEL } from "../lib/accountCopy";
-import { openAppSettings, openExternalLink, PRIVACY_POLICY_URL, SUPPORT_URL } from "../lib/links";
+import {
+  MANAGE_SUBSCRIPTIONS_URL,
+  openAppSettings,
+  openExternalLink,
+  PRIVACY_POLICY_URL,
+  SUPPORT_URL,
+  TERMS_OF_USE_URL,
+} from "../lib/links";
+import { PRO_SECTION_LABEL } from "../lib/proCopy";
+import { DEFAULT_PRO_PLAN } from "../lib/proPlans";
 import { requestNotificationPermission } from "../lib/notifications";
 import {
   CHECK_IN_TITLE,
@@ -77,7 +89,8 @@ function themePreviews(palette: PaletteId): Record<ThemeMode, [PreviewColors, Pr
   return { system: [light, dark], light: [light, light], dark: [dark, dark] };
 }
 
-// The account (create one, sign in, email consent, sign out), then "Make it
+// The account (create one, sign in, email consent, sign out), PaceTasks Pro
+// (paywall, or the plan and Siri phrases for subscribers), then "Make it
 // yours" (theme, accent, Today's sections, quick-win size — saved on this
 // phone), the work schedule (feeds the before/after-work labels), the
 // reminders, the two vibrations (timer buzz, completion tap; see
@@ -89,6 +102,12 @@ export function SettingsScreen({ userId, session }: Props) {
   const { settings, loading, error, refresh, save } = useSettings();
   const account = useAccount(session);
   const [accountSheetOpen, setAccountSheetOpen] = useState(false);
+  const pro = usePro();
+  const [proSheetOpen, setProSheetOpen] = useState(false);
+  const closeProSheet = () => {
+    setProSheetOpen(false);
+    pro.clearMessages();
+  };
   const [reminderHour, setReminderHour] = useState(18);
   const [reminderMinute, setReminderMinute] = useState(30);
 
@@ -158,6 +177,23 @@ export function SettingsScreen({ userId, session }: Props) {
         onConfirm={account.confirmDeletion}
         onClose={account.closeDeletion}
       />
+      <ProSheet
+        visible={proSheetOpen}
+        available={pro.available}
+        isPro={pro.isPro}
+        aiBrainDump={pro.aiBrainDump}
+        plans={pro.plans}
+        plansState={pro.plansState}
+        busy={pro.busy}
+        errorMessage={pro.error}
+        notice={pro.notice}
+        onPurchase={(planId) => void pro.purchase(planId)}
+        onRestore={() => void pro.restore()}
+        onReloadPlans={() => void pro.reloadPlans()}
+        onOpenTerms={() => openExternalLink(TERMS_OF_USE_URL)}
+        onOpenPrivacyPolicy={() => openExternalLink(PRIVACY_POLICY_URL)}
+        onClose={closeProSheet}
+      />
     </>
   );
 
@@ -210,6 +246,18 @@ export function SettingsScreen({ userId, session }: Props) {
             }}
             onChangeMarketingOptIn={account.changeMarketingOptIn}
             onSignOut={account.signOut}
+          />
+
+          <Text style={styles.sectionLabel}>{PRO_SECTION_LABEL}</Text>
+          <ProCard
+            isPro={pro.isPro}
+            entitlement={pro.entitlement}
+            trialDays={(pro.plans.find((plan) => plan.id === DEFAULT_PRO_PLAN) ?? pro.plans[0])?.trialDays ?? null}
+            onOpenPaywall={() => {
+              if (pro.plansState === "failed") void pro.reloadPlans();
+              setProSheetOpen(true);
+            }}
+            onManage={() => openExternalLink(MANAGE_SUBSCRIPTIONS_URL)}
           />
 
           <Text style={styles.sectionLabel}>THEME</Text>
