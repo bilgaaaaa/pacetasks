@@ -65,7 +65,8 @@ export async function runJourney(journeyName, defineSteps) {
   await mkdir(SHOTS_DIR, { recursive: true });
 
   const { server, baseUrl } = await startStaticServer();
-  const browser = await chromium.launch();
+  // E2E_CHROME_PATH runs an already installed Chrome where Playwright's own download isn't possible.
+  const browser = await chromium.launch({ executablePath: process.env.E2E_CHROME_PATH || undefined });
   const context = await browser.newContext({
     viewport: VIEWPORT,
     deviceScaleFactor: 2,

@@ -8,7 +8,7 @@ import { runBrainDump } from "./brainDumpService.ts";
 
 export interface BrainDumpHandlerDeps {
   createRepository: (authorizationHeader: string) => BrainDumpRepository;
-  createAI: () => AIProvider;
+  createAI: (isPro: boolean) => AIProvider;
   now: () => Date;
   dailyLimit: number;
 }
@@ -52,7 +52,7 @@ export async function handleBrainDumpHttp(request: Request, deps: BrainDumpHandl
 
     const proposal = await runBrainDump(parsed.data, {
       repository: deps.createRepository(authorization),
-      ai: deps.createAI(),
+      createAI: deps.createAI,
       now: deps.now,
       dailyLimit: deps.dailyLimit,
     });

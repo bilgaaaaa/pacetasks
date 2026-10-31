@@ -8,7 +8,8 @@ export const BRAIN_DUMP_CHANNELS = ["app", "siri", "shortcut"] as const;
 export type BrainDumpChannel = (typeof BRAIN_DUMP_CHANNELS)[number];
 
 // "propose" always returns a proposal for review; "auto" also creates the tasks
-// when the review policy allows it and the user enabled auto-create.
+// when the review policy allows it and the user enabled auto-create, and always
+// for Siri and Shortcuts (they have no screen to review on).
 export const BRAIN_DUMP_MODES = ["propose", "auto"] as const;
 
 // The HTTP contract of POST /functions/v1/brain-dump.

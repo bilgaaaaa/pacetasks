@@ -1,0 +1,242 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Add to PaceTasks": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi a PaceTasks"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PaceTasks'a ekle"
+          }
+        }
+      }
+    },
+    "Add one or more tasks by voice, in English, Italian or Turkish.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi una o più attività a voce, in italiano, inglese o turco."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bir veya birkaç görevi sesle ekle: Türkçe, İngilizce ya da İtalyanca."
+          }
+        }
+      }
+    },
+    "Tasks": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Attività"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Görevler"
+          }
+        }
+      }
+    },
+    "What should I add?": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cosa aggiungo?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ne ekleyeyim?"
+          }
+        }
+      }
+    },
+    "Add ${text} to PaceTasks": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi ${text} a PaceTasks"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "${text} PaceTasks'a eklensin"
+          }
+        }
+      }
+    },
+    "What's next in PaceTasks": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cosa c'è dopo in PaceTasks"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PaceTasks'ta sırada ne var"
+          }
+        }
+      }
+    },
+    "Hear the one task to do now.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ascolta l'attività da fare adesso."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Şimdi yapılacak tek görevi dinle."
+          }
+        }
+      }
+    },
+    "What's on today in PaceTasks": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cosa c'è oggi in PaceTasks"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PaceTasks'ta bugün ne var"
+          }
+        }
+      }
+    },
+    "Hear how many tasks are left today and how long they take.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ascolta quante attività restano oggi e quanto tempo richiedono."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bugün kaç görev kaldığını ve ne kadar süreceğini dinle."
+          }
+        }
+      }
+    },
+    "Add tasks": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi attività"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Görev ekle"
+          }
+        }
+      }
+    },
+    "What's next": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cosa c'è dopo"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sıradaki"
+          }
+        }
+      }
+    },
+    "Today": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oggi"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bugün"
+          }
+        }
+      }
+    },
+    "siri.failed": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Al momento non è stato possibile. Riprova tra poco."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Şu anda bunu yapamadım. Birazdan tekrar dene."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PaceTasks couldn't do that right now. Try again in a moment."
+          }
+        }
+      }
+    },
+    "siri.openApp": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apri PaceTasks una volta, così Siri può raggiungere le tue attività."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Siri'nin görevlerine ulaşabilmesi için PaceTasks'ı bir kez aç."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open PaceTasks once so Siri can reach your tasks."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

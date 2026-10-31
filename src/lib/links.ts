@@ -7,6 +7,11 @@ export const SITE_URL = "https://bilgaaaaa.github.io/pacetasks";
 export const PRIVACY_POLICY_URL = `${SITE_URL}/privacy.html`;
 export const SUPPORT_URL = `${SITE_URL}/support.html`;
 
+// Apple's standard licence agreement (EULA), which App Store subscriptions must link to.
+export const TERMS_OF_USE_URL = "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/";
+// Where iPhone users see, change or cancel their App Store subscriptions.
+export const MANAGE_SUBSCRIPTIONS_URL = "https://apps.apple.com/account/subscriptions";
+
 // Opens PaceTasks' page in the phone's Settings, where notifications are allowed or blocked.
 export async function openAppSettings(): Promise<void> {
   try {

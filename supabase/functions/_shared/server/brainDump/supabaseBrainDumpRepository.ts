@@ -29,6 +29,12 @@ export function createSupabaseBrainDumpRepository(options: {
       return data.user.id;
     },
 
+    async isPro() {
+      const { data, error } = await supabase.rpc("is_pro");
+      if (error) throw error;
+      return data === true;
+    },
+
     async incrementUsage(feature) {
       const { data, error } = await supabase.rpc("increment_ai_usage", { feature });
       if (error) throw error;

@@ -11,7 +11,7 @@ import type { BrainDumpChannel, BrainDumpRequest } from "./brainDumpRequest.ts";
 
 export interface BrainDumpServiceDeps {
   repository: BrainDumpRepository;
-  ai: AIProvider;
+  createAI: (isPro: boolean) => AIProvider; // Pro users get the configured AI, everyone else the free rules
   now: () => Date;
   dailyLimit: number;
 }
@@ -22,15 +22,23 @@ const TASK_SOURCE_BY_CHANNEL: Record<BrainDumpChannel, TaskSource> = {
   shortcut: "shortcut",
 };
 
+// Siri and Shortcuts have no screen to review on: in "auto" mode whatever was understood is added right away.
+const VOICE_CHANNELS: ReadonlySet<BrainDumpChannel> = new Set(["siri", "shortcut"]);
+
 // The Brain Dump use case shared by the app, Siri and Shortcuts:
-// quota → AI interpretation → validation/normalization → review decision →
-// saved proposal → (optionally) creation through commit_brain_dump.
+// Pro check → quota → AI interpretation → validation/normalization → review
+// decision → saved proposal → (optionally) creation through commit_brain_dump.
 // The AI never writes; only commit_brain_dump → create_task does.
 export async function runBrainDump(request: BrainDumpRequest, deps: BrainDumpServiceDeps): Promise<BrainDumpProposal> {
-  const { repository, ai } = deps;
+  const { repository } = deps;
 
   const userId = await repository.getUserId();
   if (!userId) throw new ApiError(401, "unauthorized", "Sign in to use Brain Dump");
+
+  const isPro = await repository.isPro();
+  if (VOICE_CHANNELS.has(request.channel) && !isPro) {
+    throw new ApiError(402, "pro_required", "Siri and Shortcuts are part of PaceTasks Pro");
+  }
 
   const usedToday = await repository.incrementUsage("brain_dump");
   if (usedToday > deps.dailyLimit) {
@@ -42,7 +50,7 @@ export async function runBrainDump(request: BrainDumpRequest, deps: BrainDumpSer
   const todayKey = toLocalDateKey(deps.now(), request.timeZone);
   const userContext = await repository.loadUserContext();
 
-  const interpretation = await ai.parseBrainDump({
+  const interpretation = await deps.createAI(isPro).parseBrainDump({
     text: request.text,
     todayKey,
     timeZone: request.timeZone,
@@ -75,7 +83,10 @@ export async function runBrainDump(request: BrainDumpRequest, deps: BrainDumpSer
     usage: interpretation.usage,
   });
 
-  const shouldAutoCreate = request.mode === "auto" && !review.needsReview && userContext.autoCreateEnabled;
+  const shouldAutoCreate =
+    request.mode === "auto" &&
+    normalized.candidates.length > 0 &&
+    (VOICE_CHANNELS.has(request.channel) || (!review.needsReview && userContext.autoCreateEnabled));
   let createdTasks: Task[] = [];
   if (shouldAutoCreate) {
     createdTasks = await repository.commitSession(
@@ -90,6 +101,7 @@ export async function runBrainDump(request: BrainDumpRequest, deps: BrainDumpSer
       sessionId,
       channel: request.channel,
       mode: request.mode,
+      isPro,
       candidates: normalized.candidates.length,
       needsReview: review.needsReview,
       reviewReasons: review.reasons,

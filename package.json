@@ -37,6 +37,7 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.86.3",
+    "react-native-purchases": "^11.0.0",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
     "react-native-url-polyfill": "^2.0.0",
@@ -53,7 +54,8 @@
     "jest-expo": "~57.0.5",
     "playwright": "^1.56.0",
     "supabase": "^2.118.0",
-    "typescript": "~5.9.2"
+    "typescript": "~5.9.2",
+    "xcode": "^3.0.1"
   },
   "private": true,
   "jest": {
