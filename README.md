@@ -9,7 +9,7 @@ you compete only with your own past pace.
 
 - **App:** Expo SDK 57 (React Native 0.86, TypeScript)
 - **Backend:** Supabase (Postgres with row-level security, Auth, Realtime, one Edge Function)
-- **Status:** preparing the first TestFlight build; iPhone only for v1
+- **Status:** ready for the first TestFlight build; iPhone only for v1
 
 ## Contents
 
@@ -282,32 +282,62 @@ EXPO_PUBLIC_DEMO_MODE=1 npx expo export --platform web
 
 ## Build for TestFlight and the App Store
 
-Builds run on Expo's servers (EAS). Needs an Apple Developer Program membership
-and a free Expo account.
+Builds run on Expo's servers (EAS), so no Xcode is needed. Needs the Apple
+Developer Program membership and a free Expo account.
 
-One-time setup:
+### One-time setup
 
 ```bash
 npm install -g eas-cli
 eas login
-eas init                       # links this folder to an Expo project
+eas init                       # links this folder to an Expo project (writes the project id)
 # The app's Supabase address and publishable key, for builds made on EAS (.env is not uploaded):
 eas env:create --environment production --name EXPO_PUBLIC_SUPABASE_URL --value https://<your-project-ref>.supabase.co --visibility plaintext
 eas env:create --environment production --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value sb_publishable_... --visibility plaintext
 ```
 
-Every release:
+`app.config.js` stops an EAS build at its first step when either value is
+missing (or when demo mode is set), so a broken build never reaches a phone.
+
+### Put the app on your iPhone (TestFlight)
 
 ```bash
-eas build --platform ios --profile production    # the build number goes up by itself
-eas submit --platform ios --profile production   # uploads to App Store Connect / TestFlight
+npm run ios:testflight         # builds, then uploads to App Store Connect by itself
 ```
 
-- `eas.json` holds two profiles: `production` (App Store and TestFlight) and
-  `preview` (installs directly on registered test phones; repeat the two
-  `eas env:create` lines with `--environment preview` to use it).
+The first run asks you to sign in with your Apple ID and lets EAS create the
+certificate, the profile and the App Store Connect app for `com.pacetasks.app`.
+About 15–30 minutes later the build appears in **App Store Connect → TestFlight**.
+Add yourself under **Internal Testing**, install the **TestFlight** app on the
+phone and accept the invite. Internal builds need no review.
+
+### Send it to friends
+
+1. Publish the privacy policy first (next section): Apple asks for its link.
+2. App Store Connect → TestFlight → **External Testing** → create a group, add
+   the build, and fill in the test info (what to test, feedback email).
+3. The first build goes through a short Beta App Review (usually under a day).
+4. Turn on **Public Link** for the group and send the link. Friends install
+   TestFlight, open the link, and get every new build automatically.
+
+Each build expires after 90 days; `npm run ios:testflight` again replaces it.
+
+### Accounts for testers
+
+The app works without an account (every phone gets an anonymous session). For
+friends to create one, Supabase needs a custom SMTP server: the built-in email
+sender only delivers to members of the Supabase team. Set it in Supabase →
+**Authentication → Emails → SMTP Settings**, then name the service in
+`docs/privacy.html`.
+
+### Notes
+
+- `npm run ios:preview` builds the `preview` profile instead: it installs
+  straight from a link, but only on phones registered with
+  `eas device:create`. Repeat the two `eas env:create` lines with
+  `--environment preview` to use it.
 - The version shown in the store is `version` in `app.json`; raise it for each
-  release. Build numbers are kept by EAS.
+  release. Build numbers are kept by EAS and go up by themselves.
 - The app is iPhone-only for now (`supportsTablet: false`): no iPad layout has
   been designed, and Apple does not let iPad support be removed once shipped.
 - The icon and splash images live in `assets/`. They are drawn by
@@ -349,6 +379,7 @@ update `docs/privacy.html` in the same pull request.
 ```
 App.tsx                    Root: theme provider, session, the three tabs
 app.json, eas.json         Expo config and EAS build profiles
+app.config.js              stops an EAS build that has no Supabase settings
 store.config.json          App Store listing (EN, IT, TR) for `eas metadata:push`
 assets/                    App icon, splash images, notification icon, favicon
 design/icon/               Scripts and SVG sources for the icon set
@@ -420,5 +451,9 @@ The full conventions are in `.cursor/rules/pacetasks.mdc`.
 - **Tasks added elsewhere don't appear live** — check that Realtime is enabled
   for the `tasks` table (Dashboard → Database → Publications →
   `supabase_realtime`).
+- **EAS build fails at "Read app config" with "Missing EXPO_PUBLIC_SUPABASE_…"**
+  — the EAS environment for that profile has no Supabase values. Run the two
+  `eas env:create` lines from [Build for TestFlight](#build-for-testflight-and-the-app-store)
+  with that profile's `--environment`.
 - **The privacy or support link opens "not found"** — GitHub Pages is not
   enabled yet. See [Privacy policy and support page](#privacy-policy-and-support-page).
