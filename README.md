@@ -309,8 +309,11 @@ Developer Program membership and a free Expo account.
 
 ### One-time setup
 
+The npm build scripts run EAS through `npx`, so no global install is needed.
+For the one-off commands below, either install it (`npm install -g eas-cli`)
+or prefix each with `npx eas-cli@latest` instead of `eas`.
+
 ```bash
-npm install -g eas-cli
 eas login
 eas init                       # links this folder to an Expo project (writes the project id)
 # The app's Supabase address and publishable key, for builds made on EAS (.env is not uploaded):
@@ -387,9 +390,9 @@ sender only delivers to members of the Supabase team. Set it in Supabase →
 `privacy.html`, `support.html` and a small `index.html`, served for free by
 GitHub Pages.
 
-1. Replace `[YOUR FULL NAME]` and `[CONTACT EMAIL]` in `docs/privacy.html` and
-   `docs/support.html`, and name the email service in the policy (search the
-   files for `TO CONFIRM`).
+1. The pages name Bilge Ozcanbaz as the developer and `pacetasks@bilgalog.dev`
+   as the contact address (forwarded by Cloudflare Email Routing); update both
+   files if either changes.
 2. On GitHub: **Settings → Pages → Deploy from a branch**, branch `main`,
    folder `/docs`.
 3. The pages appear at `https://bilgaaaaa.github.io/pacetasks/`. The app's links
