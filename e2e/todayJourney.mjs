@@ -194,6 +194,19 @@ const passed = await runJourney("today-journey", async ({ page, baseUrl, step, s
     await page.getByLabel("Theme", { exact: true }).waitFor();
   });
 
+  await step("Start the PaceTasks Pro free trial", async () => {
+    await page.getByText("See Pro", { exact: true }).click();
+    await page.getByText("Your tasks, hands-free").waitFor();
+    await page.getByText("Save 37%").waitFor();
+    await snapshot("Pro paywall");
+    await page.getByText("Start my 7-day free trial", { exact: true }).click();
+    await page.getByText("Welcome to Pro").waitFor();
+    await snapshot("Pro welcome");
+    await page.getByText("Done", { exact: true }).last().click(); // the sheet's button, above the screen behind it
+    await page.getByText("Manage subscription", { exact: true }).waitFor();
+    await page.getByText(/^Free trial · 7 days left/).waitFor();
+  });
+
   await step("Each colour theme applies", async () => {
     for (const colorTheme of COLOR_THEMES) {
       await page.getByLabel(colorTheme, { exact: true }).click();
