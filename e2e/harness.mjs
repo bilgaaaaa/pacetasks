@@ -35,8 +35,7 @@ const MIME_TYPES = {
 };
 
 // Serves the static export on a free local port; unknown paths fall back to index.html.
-// Also used by design/site/buildSiteScreens.mjs to film the website's phone screens.
-export async function startStaticServer() {
+async function startStaticServer() {
   const server = createServer(async (request, response) => {
     const pathname = decodeURIComponent(new URL(request.url, "http://localhost").pathname);
     const filePath = resolve(WEB_DIR, `.${normalize(pathname)}`);

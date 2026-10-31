@@ -15,8 +15,8 @@
     "typecheck": "tsc --noEmit",
     "db:test": "supabase test db",
     "e2e": "npm run web:demo:export && node e2e/todayJourney.mjs",
-    "verify": "npm run typecheck && npm test && npm run e2e",
-    "site:screens": "npm run web:demo:export && node design/site/buildSiteScreens.mjs"
+    "site:screens": "npm run web:demo:export && node e2e/siteScreens.mjs",
+    "verify": "npm run typecheck && npm test && npm run e2e"
   },
   "dependencies": {
     "@expo/metro-runtime": "~57.0.15",

@@ -20,7 +20,7 @@ you compete only with your own past pace.
 5. [Tests](#tests)
 6. [Web demo](#web-demo)
 7. [Build for TestFlight and the App Store](#build-for-testflight-and-the-app-store)
-8. [Website, privacy policy and support page](#website-privacy-policy-and-support-page)
+8. [Privacy policy and support page](#privacy-policy-and-support-page)
 9. [Project structure](#project-structure)
 10. [Working together](#working-together)
 11. [Troubleshooting](#troubleshooting)
@@ -302,6 +302,16 @@ reload. To export a static build:
 EXPO_PUBLIC_DEMO_MODE=1 npx expo export --platform web
 ```
 
+The website ([bilgaaaaa/PaceTasksWebsite](https://github.com/bilgaaaaa/PaceTasksWebsite))
+builds this export every day and serves it at `/PaceTasksWebsite/demo/`. It sets
+`WEB_BASE_URL` to that path, which `app.config.js` turns into the export's base
+URL so its scripts load from there. After a UI change, refresh the website's
+screenshots with both repositories cloned side by side:
+
+```bash
+npm run site:screens -- ../PaceTasksWebsite/screens
+```
+
 ## Build for TestFlight and the App Store
 
 Builds run on Expo's servers (EAS), so no Xcode is needed. Needs the Apple
@@ -384,23 +394,11 @@ sender only delivers to members of the Supabase team. Set it in Supabase →
 - The interface is English-only in v1, so the Italian and Turkish listings say
   so and keep the feature names in English.
 
-## Website, privacy policy and support page
+## Privacy policy and support page
 
-`docs/` holds the public pages the app and the App Store listing link to,
-served for free by GitHub Pages:
-
-- `index.html` — the landing page: a working copy of **Fit my time** (the
-  app's ranking rules, simplified, in `home.js`), a day of features with phone
-  screens, and what happens to your data. Its own styles are in `home.css`.
-- `support.html` and `privacy.html` — help and the privacy policy.
-- `site.css` — shared by all three: the app's Sunny colours, light and dark,
-  and Archivo, self-hosted in `fonts/` (OFL) so no visit reaches a font CDN.
-- `screens/` — the phone screens on the landing page, filmed from the web
-  demo. Refresh them when a screen changes:
-
-  ```bash
-  npm run site:screens
-  ```
+`docs/` holds the public pages the app and the App Store listing link to:
+`privacy.html`, `support.html` and a small `index.html`, served for free by
+GitHub Pages.
 
 1. The pages name Bilge Ozcanbaz as the developer and `pacetasks@bilgalog.dev`
    as the contact address (forwarded by Cloudflare Email Routing); update both
@@ -411,8 +409,7 @@ served for free by GitHub Pages:
    (`src/lib/links.ts`) already point there.
 
 When what the app stores changes (a new table, an AI provider, analytics),
-update `docs/privacy.html` in the same pull request. When a feature changes
-how it is used, update `docs/support.html` and the landing page with it.
+update `docs/privacy.html` in the same pull request.
 
 ## Project structure
 
@@ -424,8 +421,7 @@ store.config.json          App Store listing (EN, IT, TR) for `eas metadata:push
 assets/                    App icon, splash images, notification icon, favicon
 design/icon/               Scripts and SVG sources for the icon set
 design/store/              App Store screenshots and the script that builds them
-design/site/               Script that films the website's phone screens
-docs/                      Website for GitHub Pages: landing page, support, privacy policy
+docs/                      Public pages (privacy policy, support) for GitHub Pages
 src/screens/               TaskListScreen (Today), StatsScreen (Pace), SettingsScreen
 src/components/            Presentational pieces: sheets, cards, rows, buttons
 src/hooks/                 One hook per feature; all data access for a screen goes through these
