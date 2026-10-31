@@ -302,6 +302,16 @@ reload. To export a static build:
 EXPO_PUBLIC_DEMO_MODE=1 npx expo export --platform web
 ```
 
+The website ([bilgaaaaa/PaceTasksWebsite](https://github.com/bilgaaaaa/PaceTasksWebsite))
+builds this export every day and serves it at `/PaceTasksWebsite/demo/`. It sets
+`WEB_BASE_URL` to that path, which `app.config.js` turns into the export's base
+URL so its scripts load from there. After a UI change, refresh the website's
+screenshots with both repositories cloned side by side:
+
+```bash
+npm run site:screens -- ../PaceTasksWebsite/screens
+```
+
 ## Build for TestFlight and the App Store
 
 Builds run on Expo's servers (EAS), so no Xcode is needed. Needs the Apple

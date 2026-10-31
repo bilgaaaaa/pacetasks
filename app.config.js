@@ -17,7 +17,14 @@ function assertBuildEnv(env) {
   console.log(`[app.config] Supabase settings found for the "${env.EAS_BUILD_PROFILE}" build.`);
 }
 
+// The website (bilgaaaaa/PaceTasksWebsite) serves the web demo from a subpath such as
+// /PaceTasksWebsite/demo; WEB_BASE_URL makes the export's own links start there.
+function withWebBaseUrl(config, baseUrl) {
+  if (!baseUrl) return config;
+  return { ...config, experiments: { ...config.experiments, baseUrl } };
+}
+
 module.exports = ({ config }) => {
   if (process.env.EAS_BUILD === "true") assertBuildEnv(process.env);
-  return config;
+  return withWebBaseUrl(config, process.env.WEB_BASE_URL);
 };
