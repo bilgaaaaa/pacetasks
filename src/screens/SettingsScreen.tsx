@@ -32,7 +32,7 @@ import {
   REMINDERS_BLOCKED_MESSAGE,
   REMINDERS_SECTION_LABEL,
   TASK_REMINDER_TITLE,
-  taskReminderSubtitle,
+  TASK_REMINDER_SUBTITLE,
 } from "../lib/reminderCopy";
 import { REMINDER_POLICY } from "../lib/reminderPlan";
 import {
@@ -413,7 +413,7 @@ export function SettingsScreen({ userId, session }: Props) {
           <View style={styles.toggleRow}>
             <View style={styles.toggleText}>
               <Text style={styles.toggleTitle}>{TASK_REMINDER_TITLE}</Text>
-              <Text style={styles.toggleSubtitle}>{taskReminderSubtitle(REMINDER_POLICY.taskLeadMinutes)}</Text>
+              <Text style={styles.toggleSubtitle}>{TASK_REMINDER_SUBTITLE}</Text>
             </View>
             <Switch
               value={settings.task_reminder_enabled ?? true}

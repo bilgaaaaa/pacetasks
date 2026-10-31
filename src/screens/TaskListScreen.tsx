@@ -384,6 +384,9 @@ export function TaskListScreen({ userId }: Props) {
           visible={addOpen}
           history={history}
           usuals={usuals}
+          workStartHour={workStartHour}
+          workEndHour={workEndHour}
+          taskRemindersEnabled={settings?.task_reminder_enabled ?? true}
           onAdd={create}
           onUndo={remove}
           onOpenBrainDump={openBrainDumpFromAdd}

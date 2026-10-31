@@ -1,6 +1,6 @@
 -- pgTAP tests for public.create_task. Run with `npx supabase test db` (needs the local stack: `npx supabase start`).
 begin;
-select plan(14);
+select plan(17);
 
 insert into auth.users (id) values
   ('11111111-1111-1111-1111-111111111111'),
@@ -49,6 +49,21 @@ select throws_ok($$ select public.create_task('{"title": "x", "priority": "urgen
 select throws_ok($$ select public.create_task('{"title": "x", "due_kind": "by"}') $$, '23514', null, 'rejects due_kind without due_date');
 select throws_ok($$ select public.create_task('{"title": "x", "scheduled_time": "25:00"}') $$, '23514', null, 'rejects an invalid time');
 select throws_ok($$ select public.create_task('{"title": "x", "ai_confidence": 1.5}') $$, '23514', null, 'rejects confidence above 1');
+
+select is(
+  (select reminder_minutes_before from public.create_task(
+    '{"title": "call the dentist", "scheduled_time": "15:00", "reminder_minutes_before": 15}')),
+  15::smallint,
+  'keeps a reminder for a task with a time'
+);
+select throws_ok(
+  $$ select public.create_task('{"title": "x", "reminder_minutes_before": 15}') $$,
+  '23514', null, 'rejects a reminder without a time'
+);
+select throws_ok(
+  $$ select public.create_task('{"title": "x", "scheduled_time": "09:00", "reminder_minutes_before": -5}') $$,
+  '23514', null, 'rejects a negative reminder'
+);
 
 -- User 2 must not see user 1's tasks.
 set local request.jwt.claims = '{"sub": "22222222-2222-2222-2222-222222222222", "role": "authenticated"}';

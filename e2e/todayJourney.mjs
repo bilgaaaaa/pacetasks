@@ -47,26 +47,34 @@ const passed = await runJourney("today-journey", async ({ page, baseUrl, step, s
 
   await step("Add a new task", async () => {
     await page.getByLabel("Add a task").click();
-    await snapshot("Add sheet opens on the usuals");
-    await page.getByPlaceholder("Something new…").fill(NEW_TASK_TITLE);
-    await page.getByLabel("15 minutes").click();
-    await snapshot("New task form");
+    await snapshot("Add sheet opens with your usuals");
+    await page.getByPlaceholder("What needs doing?").fill(NEW_TASK_TITLE);
+    await page.getByLabel("Duration: 5 minutes").click();
+    await page.getByRole("radio", { name: "15 min", exact: true }).click();
+    await snapshot("Duration panel");
+    await page.getByLabel("Start time and reminder").click();
+    await page.getByText("Set a start time").click();
+    await page.getByLabel("At 18:00").click();
+    await page.getByRole("radio", { name: "15 min", exact: true }).last().click();
+    await page.getByText("We'll nudge you at 17:45 today.").waitFor();
+    await snapshot("Start time with a reminder");
     await page.getByText(`Add “${NEW_TASK_TITLE}”`).click();
     await page.getByText(`Added “${NEW_TASK_TITLE}”`).waitFor();
     await snapshot("Added, with Undo");
-    // The sheet stays open for more tasks; Done closes it.
-    await page.getByText("Done", { exact: true }).last().click();
-    await page.getByLabel(`Complete ${NEW_TASK_TITLE}`).waitFor();
+    // The sheet stays open for more tasks; the close button ends it.
+    await page.getByLabel("Close", { exact: true }).click();
+    await page.getByLabel(`Start focus session for ${NEW_TASK_TITLE}`).waitFor();
   });
 
   await step("Add a task for a later day", async () => {
     await page.getByLabel("Add a task").click();
-    await page.getByPlaceholder("Something new…").fill(LATER_TASK_TITLE);
+    await page.getByPlaceholder("What needs doing?").fill(LATER_TASK_TITLE);
+    await page.getByLabel("Day: Any day").click();
     await page.getByLabel(LATER_DAY.pickerLabel).click();
     await snapshot("New task set for Thursday");
     await page.getByText(`Add “${LATER_TASK_TITLE}”`).click();
     await page.getByText(`Added “${LATER_TASK_TITLE}” for Thu`).waitFor();
-    await page.getByText("Done", { exact: true }).last().click();
+    await page.getByLabel("Close", { exact: true }).click();
     // Set for Thursday, so Today does not list it.
     await page.getByText(/^Upcoming · \d+$/).waitFor();
     await page.getByLabel(`Complete ${LATER_TASK_TITLE}`).waitFor({ state: "detached" });

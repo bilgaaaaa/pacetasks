@@ -45,14 +45,23 @@ you compete only with your own past pace.
   Tomorrow, the Weekend or Someday. Change any of them, then apply.
 - **Quick filters** — All, Quick wins, Due today. The filter button next to
   them groups the list by size, place, category or time of day.
-- **Add a task** — the bar at the bottom opens on **your usuals**: tasks you
-  have done before, one tap to add (with Undo). Typing something new asks what,
-  how long and when. A name you have used before fills in its usual details.
+- **Add a task** — the bar at the bottom opens a short sheet: one card with
+  the name and a row of pills (**day**, **duration**, **time**, and a small
+  options pill for part of the day, category and energy). Each pill opens its
+  own panel under the card, one at a time. With the name still empty, **your
+  usuals** sit underneath: tasks you have done before, one tap to add (with
+  Undo). A name you have used before fills in its usual details.
 - **When** — pick a day from the next seven, or open **Whole month** for any
   later date. Or choose no exact day: **Any day** (stays on Today until done),
   **This week** or **Next week** (a deadline on that week's Sunday). A task set
   for one exact later day stays out of Today until that day; a task with a
   deadline shows on Today right away, because it can be done any day before it.
+- **Start time and reminder** — the time pill sets an hour (arrows in
+  5-minute steps, or one tap: In 1 hour, 09:00, 12:30, 18:00, 20:30) and a
+  nudge before it starts (Off, at start, 5, 10, 15, 30 minutes or 1 hour; 10
+  minutes by default). The time also places the task before or after work, and
+  turns on its Focus session. iOS asks for notification permission the first
+  time a reminder is picked.
 - **Brain Dump** — the microphone button. Type or dictate everything on your
   mind in English, Italian, Turkish or a mix; PaceTasks shows the tasks it
   understood before anything is added.
@@ -90,9 +99,10 @@ you compete only with your own past pace.
 - **Look** — theme (Match phone, Light, Dark) and colour theme (Sage, Pastel
   Night, Sunny). Sage also lets you pick an accent. These are saved on the phone.
 - **Reminders** — a **daily check-in** at the time you choose, sent only when
-  tasks are still open and without a sound, and a heads-up 10 minutes **before
-  a timed task**. Both are scheduled on the phone and planned a few days ahead,
-  so they stop by themselves if the app stays closed.
+  tasks are still open and without a sound, and **task reminders**: the nudge
+  picked on each task with a start time (one switch turns them all off). Both
+  are scheduled on the phone and planned a few days ahead, so they stop by
+  themselves if the app stays closed.
 - **Work schedule, timer chime, haptics, Pomodoro length.**
 - **Your data** — privacy policy, help and support, and **Delete account**
   (or **Delete my data** before sign-up), which erases everything on the server.
@@ -101,6 +111,11 @@ you compete only with your own past pace.
 
 - **Live sync** — changes made elsewhere appear immediately through Supabase
   Realtime, and the list reloads when the app returns to the foreground.
+- **When a task reminder fires** — a task set for a later day is reminded on
+  that day; one with no day, a deadline or overdue on the next time its hour
+  comes (today, or tomorrow once today's moment has passed), never after a
+  deadline that is still ahead. Done or parked tasks are never reminded. The
+  rule lives in `@domain/reminders`.
 - **"Today" comes from the phone** — its local calendar day, never the server's.
 
 ## Quick start

@@ -58,3 +58,9 @@ export function dueChoiceSummary(choice: DueChoice, todayKey: string): string | 
   const label = formatDueLabel(choice.dateKey, "on", todayKey);
   return `for ${label === "Today" || label === "Tomorrow" ? label.toLowerCase() : label}`;
 }
+
+// Short label for the add sheet's day pill: "Any day", "This week", "Today", "Thu", "2 Nov".
+export function dueChoiceLabel(choice: DueChoice, todayKey: string): string {
+  if (choice.kind === "flexible") return FLEXIBLE_DUE_LABELS[choice.when].label;
+  return formatDueLabel(choice.dateKey, "on", todayKey);
+}
