@@ -6,7 +6,9 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "assetBundlePatterns": ["assets/*"],
+    "assetBundlePatterns": [
+      "assets/*"
+    ],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.pacetasks.app",
@@ -48,6 +50,12 @@
           "color": "#3F7446"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "4b7e2dbc-8401-4288-85fc-bbb367fc9296"
+      }
+    },
+    "owner": "bilgaaaa"
   }
 }
