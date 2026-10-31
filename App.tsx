@@ -5,6 +5,8 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { StatusBar } from "expo-status-bar";
 import { ThemeProvider, makeStyles, useTheme } from "./src/hooks/useTheme";
 import { useSession } from "./src/hooks/useSession";
+import { useAppUpdate } from "./src/hooks/useAppUpdate";
+import { UpdateSheet } from "./src/components/UpdateSheet";
 import { SettingsProvider } from "./src/hooks/useSettings";
 import { TasksProvider } from "./src/hooks/useTasks";
 import { Button } from "./src/components/Button";
@@ -65,10 +67,12 @@ function PillTabBar({ state, descriptors, navigation, insets }: any) {
 
 // Waits for the anonymous Supabase session and the saved appearance, loads the
 // user's settings and tasks once (SettingsProvider, TasksProvider), then wires the three tabs (Today / Pace / Settings) behind the pill tab bar.
+// A newer App Store version is offered on top, once the app is ready.
 function AppContent() {
   const { theme, appearanceLoaded } = useTheme();
   const styles = useStyles();
   const { session, loading, failed, retry } = useSession();
+  const appUpdate = useAppUpdate();
 
   const navigationTheme = useMemo(() => {
     const base = theme.isDark ? DarkTheme : DefaultTheme;
@@ -127,6 +131,7 @@ function AppContent() {
             </Tab.Screen>
           </Tab.Navigator>
         </NavigationContainer>
+        <UpdateSheet update={appUpdate.update} onUpdateNow={appUpdate.updateNow} onLater={appUpdate.later} />
       </TasksProvider>
     </SettingsProvider>
   );
