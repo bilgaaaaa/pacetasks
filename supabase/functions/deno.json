@@ -5,10 +5,12 @@
   },
   "tasks": {
     "test": "deno test --allow-env --no-prompt",
-    "check": "deno check brain-dump/index.ts _eval/brainDump/run.ts",
+    "check": "deno check brain-dump/index.ts siri/index.ts pro-sync/index.ts revenuecat-webhook/index.ts _eval/brainDump/run.ts",
     "eval": "deno run --allow-env --allow-net --allow-read --allow-write=_eval/brainDump/results _eval/brainDump/run.ts"
   },
   "test": {
-    "exclude": ["_shared/domain/"]
+    "exclude": [
+      "_shared/domain/"
+    ]
   }
 }

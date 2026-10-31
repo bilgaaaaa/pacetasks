@@ -32,6 +32,7 @@ export interface NewBrainDumpSession {
 // user (RLS applies). An interface so the service is tested without a database.
 export interface BrainDumpRepository {
   getUserId(): Promise<string | null>;
+  isPro(): Promise<boolean>; // active PaceTasks Pro subscription, trial included
   incrementUsage(feature: "brain_dump"): Promise<number>; // today's count after this request
   loadUserContext(): Promise<BrainDumpUserContext>;
   createSession(session: NewBrainDumpSession): Promise<string>;

@@ -22,3 +22,13 @@ export function createAIProvider(
   if (usesRulesProvider(env)) return createRulesAIProvider();
   return createPaceAIProvider(createLLMClient(readAIConfig(env, feature), fetchFn));
 }
+
+// The AI model is a Pro feature: free users always get the rule-based parser.
+export function createAIProviderForUser(
+  env: (name: string) => string | undefined,
+  feature: AIFeature,
+  isPro: boolean,
+  fetchFn?: FetchFn
+): AIProvider {
+  return isPro ? createAIProvider(env, feature, fetchFn) : createRulesAIProvider();
+}

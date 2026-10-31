@@ -10,11 +10,16 @@ export class InMemoryBrainDumpRepository implements BrainDumpRepository {
 
   constructor(
     private readonly userId: string | null,
-    private readonly context: BrainDumpUserContext
+    private readonly context: BrainDumpUserContext,
+    private readonly pro = false
   ) {}
 
   getUserId() {
     return Promise.resolve(this.userId);
+  }
+
+  isPro() {
+    return Promise.resolve(this.pro);
   }
 
   incrementUsage() {

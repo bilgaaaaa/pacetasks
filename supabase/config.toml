@@ -419,3 +419,21 @@ enabled = true
 enabled = true
 verify_jwt = true
 import_map = "./functions/import_map.json"
+
+# Siri's App Intents: add by voice, "what's next?", "what's on today?" (Pro only).
+[functions.siri]
+enabled = true
+verify_jwt = true
+import_map = "./functions/import_map.json"
+
+# Refreshes the caller's PaceTasks Pro state from RevenueCat after a purchase or restore.
+[functions.pro-sync]
+enabled = true
+verify_jwt = true
+import_map = "./functions/import_map.json"
+
+# Called by RevenueCat, not by a signed-in user: REVENUECAT_WEBHOOK_AUTH guards it instead of a JWT.
+[functions.revenuecat-webhook]
+enabled = true
+verify_jwt = false
+import_map = "./functions/import_map.json"
