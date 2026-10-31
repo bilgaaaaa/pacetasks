@@ -1,11 +1,13 @@
-import { normalizeEmail } from "@domain/account";
+import { normalizeEmail, providerName } from "@domain/account";
+import { requestAppleCredential } from "./appleAuth";
 import { clearRolloverDismissedDay } from "./rolloverStorage";
 import { ensureSession, supabase } from "./supabase";
+import { clearKeptResetTasks } from "./weeklyResetStorage";
 
 // The only file that talks to Supabase about accounts. PaceTasks is
-// passwordless: an account is an email proven with a one-time code. Signing up
-// attaches that email to the anonymous user the phone already has, so every
-// task made before signing up stays with the account.
+// passwordless: an account is an email proven with a one-time code, or an Apple
+// ID proven by Apple. Signing up attaches that proof to the anonymous user the
+// phone already has, so every task made before signing up stays with the account.
 
 export interface Profile {
   user_id: string;
@@ -22,11 +24,16 @@ export type ProfileInput = Pick<Profile, "first_name" | "last_name" | "marketing
 // "sign_up" turns this phone's anonymous user into an account; "sign_in" opens an existing account.
 export type AccountMode = "sign_up" | "sign_in";
 
+// How a provider sign-in ended: "linked" made this phone's user an account (tasks kept),
+// "signed_in" opened an account that already existed, "canceled" means the user closed the provider's screen.
+export type ProviderOutcome = "linked" | "signed_in" | "canceled";
+
 export type AccountErrorCode =
   | "email_taken"
   | "no_account"
   | "wrong_code"
   | "too_many_requests"
+  | "apple_failed"
   | "network"
   | "unknown";
 
@@ -46,6 +53,7 @@ const ERROR_MESSAGES: Record<AccountErrorCode, string> = {
   no_account: "There's no account with that email. Create one instead.",
   wrong_code: "That code is wrong or has expired. Check it or ask for a new one.",
   too_many_requests: "Too many tries. Wait a minute, then try again.",
+  apple_failed: "Sign in with Apple didn't work. Try again, or use your email instead.",
   network: "Couldn't reach the server. Check your connection and try again.",
   unknown: "Something went wrong. Try again.",
 };
@@ -61,10 +69,13 @@ const SUPABASE_ERROR_CODES: Record<string, AccountErrorCode> = {
   over_email_send_rate_limit: "too_many_requests",
   over_request_rate_limit: "too_many_requests",
 };
+// Link failures that mean "this Apple ID, or its email, already has an account": that account is opened instead.
+const EXISTING_ACCOUNT_CODES = new Set(["identity_already_exists", "email_exists"]);
 const HTTP_TOO_MANY_REQUESTS = 429;
 const NETWORK_FAILURE_PATTERN = /network request failed|failed to fetch|load failed/i;
 
-function toAccountError(action: string, error: unknown): AccountError {
+// `fallback` is what a failure is called when nothing more specific is known about it.
+function toAccountError(action: string, error: unknown, fallback: AccountErrorCode = "unknown"): AccountError {
   console.warn(`[accountApi] ${action} failed`, error);
   const { code, status, name, message } = (error ?? {}) as {
     code?: string;
@@ -76,7 +87,7 @@ function toAccountError(action: string, error: unknown): AccountError {
   const isNetworkFailure = name === "AuthRetryableFetchError" || NETWORK_FAILURE_PATTERN.test(message ?? "");
   const mapped: AccountErrorCode =
     (code && SUPABASE_ERROR_CODES[code]) ||
-    (status === HTTP_TOO_MANY_REQUESTS ? "too_many_requests" : isNetworkFailure ? "network" : "unknown");
+    (status === HTTP_TOO_MANY_REQUESTS ? "too_many_requests" : isNetworkFailure ? "network" : fallback);
   return new AccountError(mapped, ERROR_MESSAGES[mapped]);
 }
 
@@ -122,6 +133,53 @@ export async function verifyEmailCode(mode: AccountMode, email: string, code: st
   if (error) throw toAccountError(`verify ${mode} code`, error);
 }
 
+// Signs in with the phone's Apple ID. An anonymous user becomes the account
+// (their tasks stay); if that Apple ID already has an account, that one opens
+// instead and this phone's unsaved tasks stay behind, as with an email sign-in.
+// Apple shares the name only the first time, so it is stored on the user at
+// once: useAccount creates the profile from it, as it does for an email sign-up.
+// `typedDetails` is what the sign-up form holds, used when Apple sends no name; null when signing in.
+export async function signInWithApple(typedDetails: ProfileInput | null): Promise<ProviderOutcome> {
+  let credential;
+  try {
+    credential = await requestAppleCredential();
+  } catch (e) {
+    throw toAccountError("request Apple credential", e, "apple_failed");
+  }
+  if (!credential) return "canceled";
+
+  const idToken = { provider: "apple", token: credential.identityToken, nonce: credential.rawNonce };
+  const { data: current } = await supabase.auth.getSession();
+  let outcome: ProviderOutcome = "signed_in";
+
+  if (current.session?.user.is_anonymous) {
+    const { error } = await supabase.auth.linkIdentity(idToken);
+    if (!error) outcome = "linked";
+    else if (!EXISTING_ACCOUNT_CODES.has(error.code ?? "")) throw toAccountError("link Apple ID", error, "apple_failed");
+    else console.log(`[accountApi] Apple ID already has an account (${error.code}); signing in to it`);
+  }
+  if (outcome === "signed_in") {
+    const { error } = await supabase.auth.signInWithIdToken(idToken);
+    if (error) throw toAccountError("sign in with Apple", error, "apple_failed");
+  }
+  console.log(`[accountApi] Apple sign-in finished: ${outcome}`);
+
+  // From here the user is signed in, so a name that fails to save must not report the sign-in as failed.
+  const appleName = providerName(credential.givenName, credential.familyName);
+  const typedName = providerName(typedDetails?.first_name, typedDetails?.last_name);
+  const name = appleName ?? typedName;
+  if (name) {
+    const details: ProfileInput = {
+      first_name: name.firstName,
+      last_name: name.lastName,
+      marketing_opt_in: typedDetails?.marketing_opt_in === true,
+    };
+    const { error } = await supabase.auth.updateUser({ data: details });
+    if (error) console.warn("[accountApi] saving the Apple name failed; the account has no profile yet", error);
+  }
+  return outcome;
+}
+
 export async function fetchProfile(userId: string): Promise<Profile | null> {
   const { data, error } = await supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle();
   if (error) throw toAccountError("fetch profile", error);
@@ -140,11 +198,24 @@ export async function saveProfile(userId: string, input: ProfileInput): Promise<
 }
 
 // Leaves the account on this phone and starts a fresh anonymous session, so the
-// app keeps working. The account and its tasks stay on the server.
+// app keeps working. The account and its tasks stay on the server, and the
+// user's other devices stay signed in (the default scope would sign them all out).
+// A "local" sign-out clears this phone's session even when the request never
+// reached the server, so a dropped connection is not a failure: the phone is
+// signed out either way. Offline, the fresh session cannot start yet; the app's
+// own "couldn't connect" screen says so and retries.
 export async function signOut(): Promise<void> {
-  const { error } = await supabase.auth.signOut();
-  if (error) throw toAccountError("sign out", error);
-  await ensureSession();
+  const { error } = await supabase.auth.signOut({ scope: "local" });
+  if (error) {
+    const accountError = toAccountError("sign out", error);
+    if (accountError.code !== "network") throw accountError;
+    console.warn("[accountApi] signed out on this phone only: the server could not be reached");
+  }
+  try {
+    await ensureSession();
+  } catch (e) {
+    console.warn("[accountApi] starting a fresh session after sign-out failed; retried from the session screen", e);
+  }
 }
 
 // Erases the current user and everything they own on the server, then starts this
@@ -158,7 +229,7 @@ export async function deleteAccount(): Promise<void> {
   // The user no longer exists on the server: only this phone's copy of the session is cleared.
   const { error: signOutError } = await supabase.auth.signOut({ scope: "local" });
   if (signOutError) console.warn("[accountApi] clearing the session after deletion failed", signOutError);
-  await clearRolloverDismissedDay();
+  await Promise.all([clearRolloverDismissedDay(), clearKeptResetTasks()]);
   try {
     await ensureSession();
   } catch (e) {

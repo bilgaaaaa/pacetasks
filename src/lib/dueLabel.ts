@@ -22,3 +22,9 @@ export function formatDueLabel(dueDate: string, dueKind: DueKind | null, todayKe
 
   return dueKind === "by" ? `by ${day === "Today" || day === "Tomorrow" ? day.toLowerCase() : day}` : day;
 }
+
+// A calendar day spelled out for a list of past days: "Mon 12 Oct".
+export function formatDayLabel(dateKey: string): string {
+  const date = new Date(`${dateKey}T00:00:00Z`);
+  return `${WEEKDAY_SHORT[date.getUTCDay()]} ${date.getUTCDate()} ${MONTH_SHORT[date.getUTCMonth()]}`;
+}

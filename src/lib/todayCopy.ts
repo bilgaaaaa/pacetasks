@@ -3,13 +3,6 @@ import type { TodayFilter } from "./taskSections";
 // UI copy for the Today header and filters. Counts come from summarizePending,
 // so every number shown is computed from the real pending list.
 
-// The headline under "Today": what can be knocked out fast. Null when there
-// is nothing quick, so the header shows only the secondary totals.
-export function quickWinsMessage(quickWinCount: number): string | null {
-  if (quickWinCount <= 0) return null;
-  return quickWinCount === 1 ? "1 quick win available" : `${quickWinCount} quick wins available`;
-}
-
 // Hours at which the greeting changes. The night (before 5) stays "Good evening":
 // someone still up at 1 am is ending their day, not starting it.
 const MORNING_START_HOUR = 5;
@@ -35,6 +28,9 @@ export const TODAY_FILTER_LABELS: Record<TodayFilter, string> = {
   quick: "Quick wins",
   due: "Due today",
 };
+
+// The grouping panel's heading, and the name VoiceOver reads for the button that opens it.
+export const GROUP_PANEL_TITLE = "Group the list";
 
 // Shown in place of the list when a filter leaves nothing.
 export function emptyFilterMessage(filter: TodayFilter): string {

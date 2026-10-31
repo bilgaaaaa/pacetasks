@@ -1,4 +1,4 @@
-import { daysBetween, toLocalDateKey } from "./dates.ts";
+import { daysBetween, isValidDateKey, startOfWeek, toLocalDateKey } from "./dates.ts";
 import { ROLLOVER_DESTINATIONS, rolloverPatch } from "./rollover.ts";
 import type { RolloverDestination } from "./rollover.ts";
 import type { Task } from "./task.ts";
@@ -28,8 +28,19 @@ export type ResetAction = (typeof RESET_ACTIONS)[number];
 // How a decision is counted in the closing summary.
 export type ResetOutcome = "scheduled" | "parked" | "deleted" | "kept";
 
+// The tasks the user chose to keep as they are, and the week (its Monday) they
+// said so in: a kept task is not offered again until the next week starts.
+export interface KeptResetTasks {
+  weekStart: string;
+  taskIds: string[];
+}
+
+export interface ResetSelectionOptions {
+  keptIds?: readonly string[]; // tasks already kept this week (see keptIdsThisWeek)
+  timeZone?: string; // the phone's zone when called from a server; the app omits it
+}
+
 // The first reason that applies, most pressing first; null when the task is fine.
-// `timeZone` is the phone's zone when called from a server; the app omits it.
 function resetReason(task: Task, todayKey: string, timeZone?: string): ResetReason | null {
   if (task.status !== "pending") return null;
   if (task.due_date !== null && task.due_date < todayKey) return "overdue";
@@ -45,10 +56,16 @@ function resetReason(task: Task, todayKey: string, timeZone?: string): ResetReas
 
 // Every task worth a decision this week, each listed once: overdue first, then
 // repeatedly postponed (and not already scheduled ahead), then long-undated;
-// oldest first within each group.
-export function selectResetItems(tasks: Task[], todayKey: string, timeZone?: string): ResetItem[] {
+// oldest first within each group. Tasks already kept this week are left out.
+export function selectResetItems(
+  tasks: Task[],
+  todayKey: string,
+  { keptIds = [], timeZone }: ResetSelectionOptions = {}
+): ResetItem[] {
   const reasonOrder: ResetReason[] = ["overdue", "postponed_often", "undated_old"];
+  const kept = new Set(keptIds);
   return tasks
+    .filter((task) => !kept.has(task.id))
     .map((task) => ({ task, reason: resetReason(task, todayKey, timeZone) }))
     .filter((item): item is ResetItem => item.reason !== null)
     .sort(
@@ -57,6 +74,36 @@ export function selectResetItems(tasks: Task[], todayKey: string, timeZone?: str
         (a.task.due_date ?? "").localeCompare(b.task.due_date ?? "") ||
         a.task.created_at.localeCompare(b.task.created_at)
     );
+}
+
+// The ids kept during the week `todayKey` falls in; a record from an earlier week no longer counts.
+export function keptIdsThisWeek(kept: KeptResetTasks | null, todayKey: string): string[] {
+  return kept?.weekStart === startOfWeek(todayKey) ? kept.taskIds : [];
+}
+
+// The record after keeping one more task. It starts again from this week's
+// ids alone, so earlier weeks never pile up.
+export function keepResetTask(kept: KeptResetTasks | null, taskId: string, todayKey: string): KeptResetTasks {
+  const taskIds = keptIdsThisWeek(kept, todayKey);
+  return {
+    weekStart: startOfWeek(todayKey),
+    taskIds: taskIds.includes(taskId) ? taskIds : [...taskIds, taskId],
+  };
+}
+
+// Reads a stored record back; anything that is not one (missing, damaged, an
+// older shape) counts as nothing kept.
+export function parseKeptResetTasks(raw: string | null): KeptResetTasks | null {
+  if (!raw) return null;
+  try {
+    const data: unknown = JSON.parse(raw);
+    if (!data || typeof data !== "object") return null;
+    const { weekStart, taskIds } = data as Record<string, unknown>;
+    if (typeof weekStart !== "string" || !isValidDateKey(weekStart) || !Array.isArray(taskIds)) return null;
+    return { weekStart, taskIds: taskIds.filter((id): id is string => typeof id === "string") };
+  } catch {
+    return null;
+  }
 }
 
 // How many items there are for each reason, for the opening summary.

@@ -11,12 +11,12 @@ export const GROUP_BY_OPTIONS = ["all", "size", "place", "category", "when"] as 
 export type GroupBy = (typeof GROUP_BY_OPTIONS)[number];
 
 // `label`/`hint` describe each grouping in the Today filter sheet and the Settings radio list.
-export const GROUP_BY_LABELS: Record<GroupBy, { short: string; label: string; hint: string }> = {
-  all: { short: "All", label: "All in one list", hint: "Everything together, in the order you'll do it" },
-  size: { short: "Size", label: "By size", hint: "Quick wins first, then the longer ones" },
-  place: { short: "Place", label: "By place", hint: "At home · Out & about · At work · Anywhere" },
-  category: { short: "Category", label: "By category", hint: "Work · Personal · Shopping · Home · Health" },
-  when: { short: "When", label: "By time of day", hint: "Before work · Anytime · After work" },
+export const GROUP_BY_LABELS: Record<GroupBy, { label: string; hint: string }> = {
+  all: { label: "All in one list", hint: "Everything together, in the order you'll do it" },
+  size: { label: "By size", hint: "Quick wins first, then the longer ones" },
+  place: { label: "By place", hint: "At home · Out & about · At work · Anywhere" },
+  category: { label: "By category", hint: "Work · Personal · Shopping · Home · Health" },
+  when: { label: "By time of day", hint: "Before work · Anytime · After work" },
 };
 
 export const THEME_MODE_LABELS: Record<ThemeMode, string> = {

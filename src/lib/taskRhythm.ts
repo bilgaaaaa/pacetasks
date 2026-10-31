@@ -75,9 +75,9 @@ export function isLate(rhythm: TaskRhythm): boolean {
   return rhythm.lateByDays !== null && rhythm.lateByDays > 0;
 }
 
-// "Today", "Yesterday", or "9 days ago", plus "· usually 7" when a rhythm is known.
+// "Today", "Yesterday", or "9 days ago", plus "· usually 7 days" (the usual gap) when a rhythm is known.
 export function describeLastDone(rhythm: TaskRhythm): string {
   const when =
     rhythm.daysSince <= 0 ? "Today" : rhythm.daysSince === 1 ? "Yesterday" : `${rhythm.daysSince} days ago`;
-  return rhythm.usualGapDays !== null && rhythm.usualGapDays > 1 ? `${when} · usually ${rhythm.usualGapDays}` : when;
+  return rhythm.usualGapDays !== null && rhythm.usualGapDays > 1 ? `${when} · usually ${rhythm.usualGapDays} days` : when;
 }

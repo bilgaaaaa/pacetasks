@@ -56,6 +56,12 @@ export function weekdayIndex(dateKey: string): number {
   return new Date(`${dateKey}T00:00:00Z`).getUTCDay();
 }
 
+// The Monday of the Monday-to-Sunday week `dateKey` falls in; it names that week.
+export function startOfWeek(dateKey: string): string {
+  const daysSinceMonday = (weekdayIndex(dateKey) + 6) % 7;
+  return addDays(dateKey, -daysSinceMonday);
+}
+
 // The first Saturday or Sunday strictly after `dateKey`: "this weekend" seen from
 // a weekday, tomorrow from a Saturday, next Saturday from a Sunday.
 export function nextWeekendDay(dateKey: string): string {

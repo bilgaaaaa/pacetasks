@@ -141,8 +141,8 @@ export interface TodaySummary {
   dueCount: number;
 }
 
-// Numbers for the Today header ("2 quick wins available", "13 tasks · about
-// 343 min") and the filter counts, all from the same pending list.
+// Numbers for the Today hero ("2 tasks take 5 minutes or less", "13 tasks ·
+// about 343 min") and the filter counts, all from the same pending list.
 export function summarizePending(pending: Task[], quickWinMinutes: number, todayKey: string): TodaySummary {
   return {
     count: pending.length,

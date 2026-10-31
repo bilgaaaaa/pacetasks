@@ -1,36 +1,41 @@
-import { addDays } from "@domain/dates";
+import { addDays, startOfWeek } from "@domain/dates";
+import { isUpcoming } from "@domain/todayTasks";
+import { GRID_WEEKDAYS } from "./dayPicker";
 import { Task } from "./types";
-
-const WEEKDAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export interface WeekDay {
   key: string; // "YYYY-MM-DD"
-  weekday: string; // "Sun"
+  weekday: string; // "Mon"
   dayOfMonth: number;
   isToday: boolean;
-  dueCount: number; // pending tasks due on this exact day
+  dueCount: number; // what the dot stands for: see buildWeek
+  opensUpcoming: boolean; // a later day with tasks waiting in the Upcoming list
 }
 
-// The Sunday-to-Saturday week around `todayKey` for the Today screen's day
-// strip, with how many pending tasks are due on each day. Pure calendar math
-// on date keys, so it ignores time zones and DST.
-export function buildWeek(todayKey: string, tasks: Pick<Task, "status" | "due_date">[]): WeekDay[] {
-  const todayIndex = new Date(`${todayKey}T00:00:00Z`).getUTCDay();
-  const sunday = addDays(todayKey, -todayIndex);
+// The Monday-to-Sunday week around `todayKey` for the Today screen's day strip
+// (the same week as "This week" in the add sheet and the month grid), with how
+// many pending tasks are due on each day. Up to today that is every pending task
+// dated that day; a later day counts only what waits in the Upcoming list
+// (isUpcoming), because a "by" deadline is already on Today and a tap on that
+// day would open an empty list. Pure calendar math on date keys.
+export function buildWeek(todayKey: string, tasks: Pick<Task, "status" | "due_date" | "due_kind">[]): WeekDay[] {
+  const monday = startOfWeek(todayKey);
   const dueByDay = new Map<string, number>();
   for (const task of tasks) {
-    if (task.status === "pending" && task.due_date) {
+    if (task.status !== "pending" || !task.due_date) continue;
+    if (task.due_date <= todayKey || isUpcoming(task, todayKey)) {
       dueByDay.set(task.due_date, (dueByDay.get(task.due_date) ?? 0) + 1);
     }
   }
-  return WEEKDAY_SHORT.map((weekday, index) => {
-    const key = addDays(sunday, index);
+  return GRID_WEEKDAYS.map((weekday, index) => {
+    const key = addDays(monday, index);
     return {
       key,
       weekday,
       dayOfMonth: Number(key.slice(8, 10)),
       isToday: key === todayKey,
       dueCount: dueByDay.get(key) ?? 0,
+      opensUpcoming: key > todayKey && dueByDay.has(key),
     };
   });
 }

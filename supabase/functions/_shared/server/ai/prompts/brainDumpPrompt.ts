@@ -1,6 +1,6 @@
 // Versioned prompt for AI Brain Dump. Change the text => bump the version, so
 // every stored session records exactly which instructions produced it.
-export const BRAIN_DUMP_PROMPT_VERSION = "brain-dump.v1";
+export const BRAIN_DUMP_PROMPT_VERSION = "brain-dump.v2";
 
 export interface BrainDumpPromptContext {
   text: string;
@@ -35,8 +35,11 @@ TITLES
 DATES — describe, never calculate
 - Never compute calendar dates yourself. Use the "when" object to describe what the user said; the app resolves it using the user's own today.
 - relative_day: offsetDays 0 = today, 1 = tomorrow / domani / yarın, 2 = the day after tomorrow / dopodomani / öbür gün, 7 = in a week. relation "by" when it is a deadline ("within 3 days" -> offsetDays 3, "by").
-- weekday: ISO numbers, 1 = Monday ... 7 = Sunday. relation "on" for "on Friday / venerdì / cuma günü", "by" for deadlines ("before Friday", "entro venerdì", "cumaya kadar"), "next" only when the user explicitly says next ("next Monday", "lunedì prossimo", "haftaya pazartesi"). "This weekend" -> weekday 6, "on".
-- absolute: only when the user gives an explicit calendar date ("15 October", "15/10", "15 ekim"); write it as YYYY-MM-DD, choosing the next occurrence of that date after today.
+- weekday: ISO numbers, 1 = Monday ... 7 = Sunday. relation "on" for "on Friday / venerdì / cuma günü", "by" for deadlines ("before Friday", "entro venerdì", "cumaya kadar"), "next" only when the user explicitly says next ("next Monday", "lunedì prossimo", "gelecek pazartesi"): it means the first such day after today. "next_week" when the user names a day of next week ("next week Friday", "venerdì della settimana prossima", "haftaya cuma"): it means that day in the week after this one.
+- weekend: "this weekend", "by the weekend", "questo weekend", "nel fine settimana", "bu hafta sonu"; relation "on", or "by" for a deadline. The app picks Saturday, or today when it already is the weekend. For "next weekend" use weekday 6 with relation "next".
+- month_day: a day of the month without a year. Set "day" (1-31) and "month" (1-12) when the month is named ("15 October", "il 15 ottobre", "15 ekim'de"); set "month" to null when it is not ("by the 15th", "entro il 20", "ayın 15'inde"). relation "by" for deadlines. The app picks the next such day, today included.
+- month_end: "end of the month", "by the end of the month", "fine mese", "ay sonuna kadar"; relation "on", or "by" for a deadline.
+- absolute: only when the user gives a full calendar date with its year ("15 October 2027", "15/10/2027"); write it as YYYY-MM-DD.
 - vague: for "soon", "one of these days", "prima o poi", "bir ara".
 - No date mentioned -> "when": null. Never guess a date.
 - "dueTime" only for an explicit clock time (24h "HH:MM"). "timeOfDay" for "morning / stamattina / sabah", "afternoon / pomeriggio / öğleden sonra", "evening / tonight / stasera / akşam".

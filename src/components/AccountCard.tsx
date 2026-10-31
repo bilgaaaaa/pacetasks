@@ -1,7 +1,7 @@
 import React from "react";
 import { Switch, Text, View } from "react-native";
 import type { AccountMode, Profile } from "../lib/accountApi";
-import { MARKETING_CONSENT_LABEL } from "../lib/accountCopy";
+import { accountEmailLabel, MARKETING_CONSENT_HINT, MARKETING_CONSENT_LABEL } from "../lib/accountCopy";
 import { makeStyles, useTheme } from "../hooks/useTheme";
 import { Button } from "./Button";
 import { ErrorBanner } from "./ErrorBanner";
@@ -55,11 +55,14 @@ export function AccountCard({
   return (
     <View style={styles.card}>
       <Text style={styles.title}>{profile ? `${profile.first_name} ${profile.last_name}` : "Your account"}</Text>
-      <Text style={styles.subtitle}>{email}</Text>
+      <Text style={styles.subtitle}>{accountEmailLabel(email)}</Text>
 
       {profile && (
         <View style={styles.consentRow}>
-          <Text style={styles.consentLabel}>{MARKETING_CONSENT_LABEL}</Text>
+          <View style={styles.consentText}>
+            <Text style={styles.consentLabel}>{MARKETING_CONSENT_LABEL}</Text>
+            <Text style={styles.consentHint}>{MARKETING_CONSENT_HINT}</Text>
+          </View>
           <Switch
             value={profile.marketing_opt_in}
             disabled={busy}
@@ -109,10 +112,17 @@ const useStyles = makeStyles((theme) => ({
     gap: theme.spacing.sm,
     marginTop: theme.spacing.xs,
   },
-  consentLabel: {
+  consentText: {
     flex: 1,
+    gap: 2,
+  },
+  consentLabel: {
     color: theme.colors.textPrimary,
     fontSize: theme.typography.subhead.fontSize,
+  },
+  consentHint: {
+    color: theme.colors.textTertiary,
+    fontSize: theme.typography.caption.fontSize,
   },
   actions: {
     gap: theme.spacing.sm,
