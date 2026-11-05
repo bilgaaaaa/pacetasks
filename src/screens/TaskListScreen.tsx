@@ -16,6 +16,7 @@ import { Task } from "../lib/types";
 import { useTasks } from "../hooks/useTasks";
 import { useSettings } from "../hooks/useSettings";
 import { useReminders } from "../hooks/useReminders";
+import { useDeskfocusWidget } from "../hooks/useDeskfocusWidget";
 import { useBrainDump } from "../hooks/useBrainDump";
 import { useSheetHandoff } from "../hooks/useSheetHandoff";
 import { useHaptics } from "../hooks/useHaptics";
@@ -90,7 +91,9 @@ export function TaskListScreen({ userId }: Props) {
     useTasks();
   const { settings } = useSettings();
   // An empty list after a failed load is not "no tasks": reminders wait for a real one.
-  useReminders(userId, tasks, !loading && (tasks.length > 0 || !error));
+  const tasksReady = !loading && (tasks.length > 0 || !error);
+  useReminders(userId, tasks, tasksReady);
+  useDeskfocusWidget(tasks, tasksReady, complete);
   const [focusTask, setFocusTask] = useState<Task | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [brainDumpOpen, setBrainDumpOpen] = useState(false);

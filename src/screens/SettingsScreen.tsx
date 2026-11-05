@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   SafeAreaView,
@@ -15,6 +15,7 @@ import { makeStyles, useTheme } from "../hooks/useTheme";
 import { useSettings } from "../hooks/useSettings";
 import { useAccount } from "../hooks/useAccount";
 import { useNotificationPermission } from "../hooks/useNotificationPermission";
+import { useCalendarAccess } from "../hooks/useCalendarAccess";
 import { AccountCard } from "../components/AccountCard";
 import { AccountSheet } from "../components/AccountSheet";
 import { DataCard } from "../components/DataCard";
@@ -39,6 +40,13 @@ import {
   BRAIN_DUMP_AUTO_CREATE_TITLE,
   COMPLETION_TAP_SUBTITLE,
   COMPLETION_TAP_TITLE,
+  DESKFOCUS_ALLOW_ACTION,
+  DESKFOCUS_CARD_SUBTITLE,
+  DESKFOCUS_CARD_TITLE,
+  DESKFOCUS_DENIED_ACTION,
+  DESKFOCUS_DENIED_MESSAGE,
+  DESKFOCUS_GRANTED_MESSAGE,
+  DESKFOCUS_SECTION_LABEL,
   TIMER_BUZZ_SUBTITLE,
   TIMER_BUZZ_TITLE,
 } from "../lib/settingsCopy";
@@ -103,6 +111,14 @@ export function SettingsScreen({ userId, session }: Props) {
   // Turning a reminder on is the moment to ask iOS for permission; the phone's
   // schedule itself follows the saved settings through useReminders.
   const notifications = useNotificationPermission();
+  const calendarAccess = useCalendarAccess();
+  // The widget's focus timer alerts through notifications, so the card asks for them with the calendar.
+  const deskfocusNeedsAccess = calendarAccess.access === "undetermined" || notifications.permission === "undetermined";
+  const allowDeskfocusAccess = useCallback(async () => {
+    await calendarAccess.request();
+    await requestNotificationPermission().catch((e) => console.warn("[SettingsScreen] permission request failed", e));
+    notifications.refresh();
+  }, [calendarAccess.request, notifications.refresh]);
   const saveReminderSwitch = async (patch: { reminder_enabled?: boolean; task_reminder_enabled?: boolean }) => {
     const saved = await save(patch);
     if (!saved || !(patch.reminder_enabled || patch.task_reminder_enabled)) return;
@@ -422,6 +438,26 @@ export function SettingsScreen({ userId, session }: Props) {
               {...switchColors}
             />
           </View>
+
+          {calendarAccess.access !== "unavailable" && (
+            <>
+              <Text style={styles.sectionLabel}>{DESKFOCUS_SECTION_LABEL}</Text>
+              <View style={styles.card}>
+                <Text style={styles.cardTitle}>{DESKFOCUS_CARD_TITLE}</Text>
+                <Text style={styles.cardSubtitle}>{DESKFOCUS_CARD_SUBTITLE}</Text>
+                {calendarAccess.access === "granted" && <Text style={styles.cardSubtitle}>{DESKFOCUS_GRANTED_MESSAGE}</Text>}
+                {deskfocusNeedsAccess && calendarAccess.access !== "denied" && (
+                  <Button label={DESKFOCUS_ALLOW_ACTION} variant="secondary" onPress={allowDeskfocusAccess} />
+                )}
+                {calendarAccess.access === "denied" && (
+                  <>
+                    <Text style={styles.cardSubtitle}>{DESKFOCUS_DENIED_MESSAGE}</Text>
+                    <Button label={DESKFOCUS_DENIED_ACTION} variant="secondary" onPress={openAppSettings} />
+                  </>
+                )}
+              </View>
+            </>
+          )}
 
           <Text style={styles.sectionLabel}>WHILE YOU WORK</Text>
           <View style={styles.toggleRow}>
