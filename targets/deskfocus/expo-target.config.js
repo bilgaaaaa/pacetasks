@@ -1,5 +1,6 @@
 // Deskfocus widget and focus Live Activity, generated into ios/ by @bacons/apple-targets on prebuild.
 // Files in _shared/ are compiled into PaceTasks too, so the widget's buttons can run in the app's process.
+// Keep _shared/ flat: the plugin links only its top-level files to the app, not files in subfolders.
 /** @type {import('@bacons/apple-targets/app.plugin').ConfigFunction} */
 module.exports = (config) => ({
   type: "widget",

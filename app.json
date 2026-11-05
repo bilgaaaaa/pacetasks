@@ -21,7 +21,8 @@
         "com.apple.security.application-groups": [
           "group.com.pacetasks.app"
         ]
-      }
+      },
+      "appleTeamId": "835R3WR9AL"
     },
     "android": {
       "package": "com.pacetasks.app",
