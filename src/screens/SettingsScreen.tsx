@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   SafeAreaView,
@@ -112,6 +112,13 @@ export function SettingsScreen({ userId, session }: Props) {
   // schedule itself follows the saved settings through useReminders.
   const notifications = useNotificationPermission();
   const calendarAccess = useCalendarAccess();
+  // The widget's focus timer alerts through notifications, so the card asks for them with the calendar.
+  const deskfocusNeedsAccess = calendarAccess.access === "undetermined" || notifications.permission === "undetermined";
+  const allowDeskfocusAccess = useCallback(async () => {
+    await calendarAccess.request();
+    await requestNotificationPermission().catch((e) => console.warn("[SettingsScreen] permission request failed", e));
+    notifications.refresh();
+  }, [calendarAccess.request, notifications.refresh]);
   const saveReminderSwitch = async (patch: { reminder_enabled?: boolean; task_reminder_enabled?: boolean }) => {
     const saved = await save(patch);
     if (!saved || !(patch.reminder_enabled || patch.task_reminder_enabled)) return;
@@ -439,8 +446,8 @@ export function SettingsScreen({ userId, session }: Props) {
                 <Text style={styles.cardTitle}>{DESKFOCUS_CARD_TITLE}</Text>
                 <Text style={styles.cardSubtitle}>{DESKFOCUS_CARD_SUBTITLE}</Text>
                 {calendarAccess.access === "granted" && <Text style={styles.cardSubtitle}>{DESKFOCUS_GRANTED_MESSAGE}</Text>}
-                {calendarAccess.access === "undetermined" && (
-                  <Button label={DESKFOCUS_ALLOW_ACTION} variant="secondary" onPress={calendarAccess.request} />
+                {deskfocusNeedsAccess && calendarAccess.access !== "denied" && (
+                  <Button label={DESKFOCUS_ALLOW_ACTION} variant="secondary" onPress={allowDeskfocusAccess} />
                 )}
                 {calendarAccess.access === "denied" && (
                   <>

@@ -13,13 +13,33 @@ enum PaceTasksFeed {
         let estimatedMinutes: Int
         /// Fixed start time, "HH:MM" in 24 hours.
         let scheduledTime: String?
+        /// "YYYY-MM-DD" in the phone's calendar; nil for undated tasks.
+        let dueDate: String?
+        /// "on" for that day only, "by" for a deadline that can be met any day before it.
+        let dueKind: String?
+
+        /// The same rule as `isPendingToday` in supabase/functions/_shared/domain/todayTasks.ts.
+        func isDue(onDayKey dayKey: String) -> Bool {
+            guard let dueDate else { return true }
+            return dueKind == "by" || dueDate <= dayKey
+        }
     }
+
+    /// "YYYY-MM-DD" keys, compared as text like the app does.
+    private static let dayKeyFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
+    }()
 
     private static var defaults: UserDefaults? {
         UserDefaults(suiteName: DeskfocusConstants.appGroupIdentifier)
     }
 
-    /// Today's tasks from the last time the app wrote them; empty before the first write or when the JSON is unreadable.
+    /// Today's tasks from the last list the app wrote, which also holds tomorrow's so the widget is right after midnight
+    /// before the app is opened; empty before the first write or when the JSON is unreadable.
     static func tasks(now: Date) -> [DeskTask] {
         guard let json = defaults?.string(forKey: DeskfocusConstants.paceTasksKey), let data = json.data(using: .utf8) else {
             Log.sync.debug("No PaceTasks tasks written yet")
@@ -27,7 +47,8 @@ enum PaceTasksFeed {
         }
         do {
             let payloads = try JSONDecoder().decode([Payload].self, from: data)
-            return payloads.map { task(from: $0, now: now) }
+            let todayKey = dayKeyFormatter.string(from: now)
+            return payloads.filter { $0.isDue(onDayKey: todayKey) }.map { task(from: $0, now: now) }
         } catch {
             Log.sync.error("Could not read PaceTasks tasks: \(error.localizedDescription, privacy: .public)")
             return []

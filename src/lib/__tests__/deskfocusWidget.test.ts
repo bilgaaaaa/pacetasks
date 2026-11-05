@@ -11,9 +11,20 @@ describe("widgetPaceTasks", () => {
       makeTask({ id: "anytime", title: "Call the bank", timing: "anytime", due_date: TODAY, due_kind: "on" }),
     ];
     expect(widgetPaceTasks(tasks, TODAY)).toEqual([
-      { id: "before", title: "Walk Bruno", estimatedMinutes: 5, scheduledTime: "07:30" },
-      { id: "anytime", title: "Call the bank", estimatedMinutes: 5, scheduledTime: null },
-      { id: "after", title: "Gym", estimatedMinutes: 45, scheduledTime: null },
+      { id: "before", title: "Walk Bruno", estimatedMinutes: 5, scheduledTime: "07:30", dueDate: null, dueKind: null },
+      { id: "anytime", title: "Call the bank", estimatedMinutes: 5, scheduledTime: null, dueDate: TODAY, dueKind: "on" },
+      { id: "after", title: "Gym", estimatedMinutes: 45, scheduledTime: null, dueDate: null, dueKind: null },
+    ]);
+  });
+
+  it("adds tomorrow's tasks after today's, with their date, so the widget is right after midnight", () => {
+    const tasks = [
+      makeTask({ id: "tomorrow", timing: "before_work", due_date: "2026-11-06", due_kind: "on" }),
+      makeTask({ id: "today", timing: "after_work" }),
+    ];
+    expect(widgetPaceTasks(tasks, TODAY).map((task) => [task.id, task.dueDate])).toEqual([
+      ["today", null],
+      ["tomorrow", "2026-11-06"],
     ]);
   });
 

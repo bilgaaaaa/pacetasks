@@ -3,7 +3,7 @@
 import { Platform } from "react-native";
 import type { WidgetPaceTask } from "./deskfocusWidget";
 
-// Must match DeskfocusConstants in targets/deskfocus/_shared/Support/DeskfocusConstants.swift.
+// Must match DeskfocusConstants in targets/deskfocus/_shared/DeskfocusConstants.swift.
 const APP_GROUP = "group.com.pacetasks.app";
 const WIDGET_KIND = "DeskfocusWidget";
 const PACE_TASKS_KEY = "deskfocus.paceTasks";

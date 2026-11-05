@@ -14,14 +14,18 @@ enum WidgetTaskSync {
         let today = DateInterval.day(containing: now)
 
         let snapshot = SharedStore.shared.update { snapshot in
+            let focusTaskId = snapshot.focus?.taskId
+            // Items still needed after they leave today's list: completions not yet applied, and the focus task.
+            let stillNeeded = snapshot.tasks.filter { snapshot.pendingCompletionIds.contains($0.id) || $0.id == focusTaskId }
             snapshot.tasks = tasks
-            // A PaceTasks task leaves the app's list once Supabase has it done, which settles its completion.
+            stillNeeded.forEach { snapshot.reference($0) }
+            // A PaceTasks task leaves the app's list once Supabase has it done (or it moved to another day),
+            // which settles its completion: it must not be completed again later.
             let settled = snapshot.pendingCompletionIds.filter { id in
                 snapshot.task(withId: id)?.source == .paceTasks && !paceTaskIds.contains(id)
             }
             snapshot.pendingCompletionIds.subtract(settled)
             let pending = snapshot.pendingCompletionIds
-            let focusTaskId = snapshot.focus?.taskId
             snapshot.referencedTasks = snapshot.referencedTasks.filter { pending.contains($0.id) || $0.id == focusTaskId }
             snapshot.completedTaskIds = snapshot.completedTaskIds.filter { taskIds.contains($0) || pending.contains($0) }
             snapshot.completionDates = snapshot.completionDates.filter { $0.value >= today.start }
@@ -36,7 +40,7 @@ enum WidgetTaskSync {
         return snapshot
     }
 
-    /// Completes reminders checked off in the widget; failures stay queued for the next press or launch.
+    /// Completes reminders checked off in the widget; failures stay queued for the next button press.
     /// PaceTasks tasks are left to the app, which completes them in Supabase.
     static func completePendingReminders() {
         let snapshot = SharedStore.shared.load()

@@ -15,8 +15,8 @@ export const BRAIN_DUMP_AUTO_CREATE_TITLE = "Add clear brain dumps directly";
 export const DESKFOCUS_SECTION_LABEL = "DESKFOCUS WIDGET";
 export const DESKFOCUS_CARD_TITLE = "Calendar and Reminders";
 export const DESKFOCUS_CARD_SUBTITLE =
-  "The Deskfocus widget shows today's tasks with ▶ to focus. Allow access to add your calendar events and reminders.";
-export const DESKFOCUS_ALLOW_ACTION = "Show my calendar";
+  "The Deskfocus widget shows today's tasks with ▶ to focus. Allow access to add your calendar events and reminders, and to hear when focus time is up.";
+export const DESKFOCUS_ALLOW_ACTION = "Allow calendar and alerts";
 export const DESKFOCUS_GRANTED_MESSAGE = "Today's events and reminders show in the widget.";
 export const DESKFOCUS_DENIED_MESSAGE = "Turn on Calendars and Reminders for PaceTasks in Settings to see them in the widget.";
 export const DESKFOCUS_DENIED_ACTION = "Open Settings";
