@@ -14,7 +14,13 @@
       "bundleIdentifier": "com.pacetasks.app",
       "usesAppleSignIn": true,
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSSupportsLiveActivities": true
+      },
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "group.com.pacetasks.app"
+        ]
       }
     },
     "android": {
@@ -49,7 +55,23 @@
           "icon": "./assets/notification-icon.png",
           "color": "#3F7446"
         }
-      ]
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "17.0"
+          }
+        }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "PaceTasks shows today's calendar events in the Deskfocus widget.",
+          "remindersPermission": "PaceTasks shows today's reminders in the Deskfocus widget and checks them off when you do."
+        }
+      ],
+      "@bacons/apple-targets"
     ],
     "extra": {
       "eas": {
