@@ -391,6 +391,10 @@ One-time setup:
 4. Add the public iOS key: `.env` for local builds, and on EAS
    `eas env:create --environment production --name EXPO_PUBLIC_REVENUECAT_IOS_KEY --value appl_... --visibility plaintext`.
 
+`react-native-purchases` is pinned to 10.12.1: later versions need native libraries that CocoaPods
+no longer receives, so `pod install` (and EAS) can't find them. Before upgrading, check with
+`pod trunk info PurchasesHybridCommon` that the version its podspec asks for exists.
+
 Without the key (web demo, Android, a local build without it) nobody can buy, and Pro is unlocked for
 everyone. So set it before any App Store release. Sandbox tests: buy, then restore on a fresh install,
 cancel the trial, lifetime shows "You're Pro", and offline keeps Pro (the last status is kept a few days
