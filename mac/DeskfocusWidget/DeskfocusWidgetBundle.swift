@@ -1,14 +1,11 @@
 import SwiftUI
 import WidgetKit
 
-/// The Mac and iPhone widget extensions share this bundle; the iPhone adds the focus timer's Live Activity.
+/// The desktop widget extension's widgets.
 @main
 struct DeskfocusWidgetBundle: WidgetBundle {
     var body: some Widget {
         DeskfocusWidget()
-        #if os(iOS)
-        FocusLiveActivityWidget()
-        #endif
     }
 }
 

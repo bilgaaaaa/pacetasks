@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The Google section of Settings on Mac and iPhone: connect or disconnect, ask to reconnect after Google ended
+/// The Google section of Settings: connect or disconnect, ask to reconnect after Google ended
 /// the session and, in public builds before Google's verification, "Coming soon" instead of the button.
 struct GoogleAccountSection: View {
     @Environment(AppModel.self) private var model
