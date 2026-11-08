@@ -421,6 +421,8 @@ When what either app stores changes (a new table, an AI provider, analytics),
 update `docs/privacy.html` in the same pull request. When PaceTasks is live,
 replace "coming soon to iPhone" in `index.html` with the App Store link, and add
 the bundle price where the comment in its "Two apps, sold together" section says.
+Once DeskFocus shows PaceTasks tasks, remove the "coming soon" wording from
+`index.html` (search for "coming soon").
 
 ## Project structure
 

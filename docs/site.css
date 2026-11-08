@@ -459,6 +459,17 @@ p { text-wrap: pretty; }
   font-weight: 600;
 }
 .source-list li::before { width: 0.65rem; height: 0.65rem; }
+/* Marks a source DeskFocus doesn't read yet. */
+.soon-tag {
+  margin-left: auto;
+  padding: 0.1rem 0.5rem;
+  border: 1px solid var(--desk-hairline);
+  border-radius: 999px;
+  color: var(--desk-text-secondary);
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
 .source-arrow { display: block; margin: 0.6rem auto; fill: none; stroke: var(--desk-text-secondary); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .source-merge { margin: 0; padding: 0.75rem; border-radius: 14px; background: var(--ember); color: var(--desk-ink); font-weight: 700; text-align: center; }
 .app-switches { clear: both; display: grid; gap: 0.15rem; }
