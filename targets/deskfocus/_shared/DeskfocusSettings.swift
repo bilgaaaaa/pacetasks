@@ -128,6 +128,8 @@ struct DeskfocusSettings: Codable, Equatable {
     var hiddenContainerKeys: Set<String> = []
     /// False until the welcome guide was finished or closed once.
     var hasCompletedOnboarding: Bool = false
+    /// Whether "time is up" plays a sound; PaceTasks mirrors its own timer sound setting here.
+    var timerSoundEnabled: Bool = true
 
     init() {}
 
@@ -149,6 +151,7 @@ struct DeskfocusSettings: Codable, Equatable {
         language = (try? container.decodeIfPresent(AppLanguage.self, forKey: .language)) ?? defaults.language
         hiddenContainerKeys = try container.decodeIfPresent(Set<String>.self, forKey: .hiddenContainerKeys) ?? defaults.hiddenContainerKeys
         hasCompletedOnboarding = try container.decodeIfPresent(Bool.self, forKey: .hasCompletedOnboarding) ?? defaults.hasCompletedOnboarding
+        timerSoundEnabled = try container.decodeIfPresent(Bool.self, forKey: .timerSoundEnabled) ?? defaults.timerSoundEnabled
     }
 
     /// True unless the user switched this calendar or list off in Settings.

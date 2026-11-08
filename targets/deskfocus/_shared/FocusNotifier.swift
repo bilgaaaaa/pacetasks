@@ -25,15 +25,15 @@ enum FocusNotifier {
     }
 
     /// Posts "time is up" now; the Mac app calls it when its end timer fires.
-    static func notifyFinished(_ session: FocusSession) {
-        post(identifier: session.id.uuidString, content: finishedContent(for: session), trigger: nil)
+    static func notifyFinished(_ session: FocusSession, playsSound: Bool = true) {
+        post(identifier: session.id.uuidString, content: finishedContent(for: session, playsSound: playsSound), trigger: nil)
     }
 
     /// Schedules "time is up" for the session's end, because iOS suspends the app long before a timer of its own could fire.
-    static func scheduleFinished(_ session: FocusSession, at endDate: Date, now: Date = .now) {
+    static func scheduleFinished(_ session: FocusSession, at endDate: Date, playsSound: Bool, now: Date = .now) {
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: max(1, endDate.timeIntervalSince(now)), repeats: false)
-        post(identifier: scheduledFinishIdentifier, content: finishedContent(for: session), trigger: trigger)
-        Log.focus.debug("Time-is-up alert scheduled")
+        post(identifier: scheduledFinishIdentifier, content: finishedContent(for: session, playsSound: playsSound), trigger: trigger)
+        Log.focus.debug("Time-is-up alert scheduled, sound \(playsSound)")
     }
 
     /// Withdraws the scheduled alert, e.g. when the session is paused, ended or completed early.
@@ -51,11 +51,11 @@ enum FocusNotifier {
         post(identifier: "blocked-\(appName)", content: content, trigger: nil)
     }
 
-    private static func finishedContent(for session: FocusSession) -> UNMutableNotificationContent {
+    private static func finishedContent(for session: FocusSession, playsSound: Bool) -> UNMutableNotificationContent {
         let content = UNMutableNotificationContent()
         content.title = String(localized: "Focus time is up")
         content.body = String(localized: "\(session.taskTitle) — mark it done or start another round.")
-        content.sound = .default
+        content.sound = playsSound ? .default : nil
         return content
     }
 

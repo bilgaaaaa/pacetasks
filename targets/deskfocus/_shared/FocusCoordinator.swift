@@ -10,8 +10,8 @@ final class FocusCoordinator {
 
     private let liveActivity = FocusLiveActivity()
     @ObservationIgnored private var endTimer: Timer?
-    /// Session and end the alert is scheduled for, so repeated calls leave it alone.
-    @ObservationIgnored private var scheduledFinish: (sessionId: UUID, endDate: Date)?
+    /// Session, end and sound the alert is scheduled with, so repeated calls leave it alone.
+    @ObservationIgnored private var scheduledFinish: (sessionId: UUID, endDate: Date, playsSound: Bool)?
 
     /// Reads the shared state and brings the alert, the Live Activity and the end timer in line with it; safe to call any number of times.
     func reconcile(now: Date = .now) {
@@ -24,7 +24,7 @@ final class FocusCoordinator {
         switch snapshot.focus?.phase(at: now) {
         case .running(let endDate):
             if let session = snapshot.focus {
-                scheduleFinishAlert(for: session, at: endDate, now: now)
+                scheduleFinishAlert(for: session, at: endDate, playsSound: snapshot.settings.timerSoundEnabled, now: now)
             }
             scheduleEnd(at: endDate)
         case .finished:
@@ -45,10 +45,11 @@ final class FocusCoordinator {
         await liveActivity.pendingUpdate?.value
     }
 
-    private func scheduleFinishAlert(for session: FocusSession, at endDate: Date, now: Date) {
-        if let scheduledFinish, scheduledFinish.sessionId == session.id, scheduledFinish.endDate == endDate { return }
-        FocusNotifier.scheduleFinished(session, at: endDate, now: now)
-        scheduledFinish = (session.id, endDate)
+    private func scheduleFinishAlert(for session: FocusSession, at endDate: Date, playsSound: Bool, now: Date) {
+        if let scheduledFinish, scheduledFinish.sessionId == session.id, scheduledFinish.endDate == endDate,
+           scheduledFinish.playsSound == playsSound { return }
+        FocusNotifier.scheduleFinished(session, at: endDate, playsSound: playsSound, now: now)
+        scheduledFinish = (session.id, endDate, playsSound)
     }
 
     /// Flips the session to "time's up" while the app is open; when it is not, the next launch or button does it.

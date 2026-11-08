@@ -18,6 +18,8 @@ enum FocusRuntime {
         WidgetTaskSync.completePendingReminders()
         PaceTasksFeed.publishPendingCompletions(of: SharedStore.shared.load())
         coordinator.reconcile()
+        // PaceTasks' JavaScript reads the completions published above only once told they are there.
+        DarwinNotifier.post(DeskfocusConstants.stateChangedNotification)
         // The app may be suspended right after the intent returns, so let the Live Activity change finish first.
         await coordinator.waitForLiveActivity()
     }

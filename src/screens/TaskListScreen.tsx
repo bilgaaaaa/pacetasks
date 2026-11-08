@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   RefreshControl,
@@ -17,6 +17,7 @@ import { useTasks } from "../hooks/useTasks";
 import { useSettings } from "../hooks/useSettings";
 import { useReminders } from "../hooks/useReminders";
 import { useDeskfocusWidget } from "../hooks/useDeskfocusWidget";
+import { useFocusSession } from "../hooks/useFocusSession";
 import { useBrainDump } from "../hooks/useBrainDump";
 import { useSheetHandoff } from "../hooks/useSheetHandoff";
 import { useHaptics } from "../hooks/useHaptics";
@@ -94,7 +95,8 @@ export function TaskListScreen({ userId }: Props) {
   const tasksReady = !loading && (tasks.length > 0 || !error);
   useReminders(userId, tasks, tasksReady);
   useDeskfocusWidget(tasks, tasksReady, complete);
-  const [focusTask, setFocusTask] = useState<Task | null>(null);
+  // The task the Focus screen shows; the session itself lives in useFocusSession, shared with the widget on iOS.
+  const [focusTaskId, setFocusTaskId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [brainDumpOpen, setBrainDumpOpen] = useState(false);
   const [doNowOpen, setDoNowOpen] = useState(false);
@@ -117,6 +119,42 @@ export function TaskListScreen({ userId }: Props) {
     if (saved && !silent) haptics.play("taskCompleted");
     return saved;
   };
+  const workMinutes = settings?.pomodoro_work_minutes ?? DEFAULT_SETTINGS.pomodoro_work_minutes;
+  const focusTaskIdRef = useRef(focusTaskId);
+  focusTaskIdRef.current = focusTaskId;
+  // A session run to its end on the Focus screen completes its task with the planned minutes, as before the widget existed.
+  const focus = useFocusSession({
+    timerSoundEnabled: settings?.timer_chime_enabled ?? DEFAULT_SETTINGS.timer_chime_enabled,
+    onTimeUp: (session) => {
+      if (!session.paceTaskId || session.paceTaskId !== focusTaskIdRef.current) return;
+      haptics.play("timerEnded");
+      void completeTask(session.paceTaskId, session.plannedMinutes, true);
+      focus.end();
+      setFocusTaskId(null);
+    },
+  });
+  const focusTask = useMemo(
+    () => (focusTaskId ? tasks.find((task) => task.id === focusTaskId) ?? null : null),
+    [tasks, focusTaskId]
+  );
+
+  const openFocus = (task: Task) => {
+    setFocusTaskId(task.id);
+    void focus.start(task.id, task.title, workMinutes);
+  };
+
+  // Closing the Focus screen ends its session, so it never keeps running unseen.
+  const closeFocus = () => {
+    if (focus.session?.paceTaskId === focusTaskId) focus.end();
+    setFocusTaskId(null);
+  };
+
+  const completeFocusEarly = (taskId: string, actualMinutes: number) => {
+    void completeTask(taskId, actualMinutes);
+    if (focus.session?.paceTaskId === taskId) focus.end();
+    setFocusTaskId(null);
+  };
+
   const oneThing = useOneThing({ tasks, energy: doNow.energy, workStartHour, workEndHour, onComplete: completeTask });
   const rollover = useRollover({ tasks, onApply: updateMany });
   const weeklyReset = useWeeklyReset({ tasks, onUpdate: update, onRemove: remove });
@@ -147,7 +185,37 @@ export function TaskListScreen({ userId }: Props) {
 
   // A Focus pill tapped inside "Fit my time": that sheet has to go before the session can show.
   const startFocusFromDoNow = (task: Task) =>
-    sheetHandoff.handOff(() => setDoNowOpen(false), () => setFocusTask(task));
+    sheetHandoff.handOff(() => setDoNowOpen(false), () => openFocus(task));
+
+  // Another sheet still on screen would swallow the Focus screen (iOS shows only one at a time).
+  const otherSheetOpen =
+    addOpen || brainDumpOpen || doNowOpen || oneThingOpen || pickOpen || somedayOpen || weeklyResetOpen || upcoming.open;
+
+  // A session started in the widget or the Live Activity opens the Focus screen on its task, once per session.
+  const shownSessionId = useRef<string | null>(null);
+  const sharedSession = focus.session;
+  useEffect(() => {
+    if (!sharedSession?.paceTaskId || sharedSession.phase === "finished") return;
+    if (shownSessionId.current === sharedSession.sessionId) return;
+    if (focusTaskId === sharedSession.paceTaskId) {
+      shownSessionId.current = sharedSession.sessionId;
+      return;
+    }
+    if (focusTaskId || otherSheetOpen) return;
+    const taskId = sharedSession.paceTaskId;
+    if (!tasks.some((task) => task.id === taskId && task.status === "pending")) return;
+    shownSessionId.current = sharedSession.sessionId;
+    console.log("[TaskListScreen] showing a focus session started in the widget");
+    setFocusTaskId(taskId);
+  }, [sharedSession?.sessionId, sharedSession?.paceTaskId, sharedSession?.phase, focusTaskId, otherSheetOpen, tasks]);
+
+  // The session ended or moved to another task elsewhere (widget ✓ or ■, another ▶): the Focus screen follows.
+  useEffect(() => {
+    if (!focusTaskId || focus.isStarting) return;
+    if (sharedSession?.paceTaskId === focusTaskId) return; // a finished one is completed by onTimeUp
+    console.log("[TaskListScreen] focus session ended elsewhere, closing the Focus screen");
+    setFocusTaskId(null);
+  }, [focusTaskId, focus.isStarting, sharedSession?.paceTaskId]);
 
   const history = useMemo(() => buildTaskHistory(tasks), [tasks]);
   const stats = useMemo(() => computeStats(tasks), [tasks]);
@@ -207,7 +275,7 @@ export function TaskListScreen({ userId }: Props) {
   // which passes its own way of starting Focus (it has to close first).
   // The range timer's suggested min/max come from this task's own history
   // (see taskHistory.ts); with no completed history yet, both ends are its estimate.
-  const renderTaskItem = (task: Task, onStartFocus: (task: Task) => void = setFocusTask) => {
+  const renderTaskItem = (task: Task, onStartFocus: (task: Task) => void = openFocus) => {
     const historyEntry = findExactMatch(history, task.title);
     const suggestedMin = historyEntry?.minMinutes ?? task.estimated_minutes;
     const suggestedMax = historyEntry?.maxMinutes ?? task.estimated_minutes;
@@ -490,15 +558,15 @@ export function TaskListScreen({ userId }: Props) {
 
         <FocusSessionModal
           task={focusTask}
+          session={focus.session?.paceTaskId === focusTaskId ? focus.session : null}
           sessionIndex={focusSessionIndex}
           sessionTotal={focusTasksToday.length}
-          workMinutes={settings?.pomodoro_work_minutes ?? DEFAULT_SETTINGS.pomodoro_work_minutes}
+          workMinutes={workMinutes}
           breakMinutes={settings?.pomodoro_break_minutes ?? DEFAULT_SETTINGS.pomodoro_break_minutes}
-          onClose={() => setFocusTask(null)}
-          onComplete={(taskId, actualMinutes, endedByTimer) => {
-            completeTask(taskId, actualMinutes, endedByTimer);
-            setFocusTask(null);
-          }}
+          onClose={closeFocus}
+          onPause={focus.pause}
+          onResume={focus.resume}
+          onDoneEarly={completeFocusEarly}
         />
       </SafeAreaView>
     </LinearGradient>

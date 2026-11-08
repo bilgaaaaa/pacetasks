@@ -47,8 +47,8 @@ import {
   DESKFOCUS_DENIED_MESSAGE,
   DESKFOCUS_GRANTED_MESSAGE,
   DESKFOCUS_SECTION_LABEL,
-  TIMER_BUZZ_SUBTITLE,
-  TIMER_BUZZ_TITLE,
+  TIMER_SOUND_SUBTITLE,
+  TIMER_SOUND_TITLE,
 } from "../lib/settingsCopy";
 import { reviveSession } from "../lib/supabase";
 import { formatTimeOfDay, parseTimeOfDay } from "../lib/timeFormat";
@@ -88,8 +88,8 @@ function themePreviews(palette: PaletteId): Record<ThemeMode, [PreviewColors, Pr
 // The account (create one, sign in, email consent, sign out), then "Make it
 // yours" (theme, accent, Today's sections, quick-win size — saved on this
 // phone), the work schedule (feeds the before/after-work labels), the
-// reminders, the two vibrations (timer buzz, completion tap; see
-// src/lib/haptics.ts), Brain Dump auto-create, the Pomodoro length, and "Your data" (privacy policy, help,
+// reminders, the timer sound and the completion tap (see src/lib/haptics.ts and
+// src/hooks/useTimerAlert.ts), Brain Dump auto-create, the Pomodoro length, and "Your data" (privacy policy, help,
 // delete the account).
 export function SettingsScreen({ userId, session }: Props) {
   const { theme, appearance, updateAppearance } = useTheme();
@@ -462,13 +462,13 @@ export function SettingsScreen({ userId, session }: Props) {
           <Text style={styles.sectionLabel}>WHILE YOU WORK</Text>
           <View style={styles.toggleRow}>
             <View style={styles.toggleText}>
-              <Text style={styles.toggleTitle}>{TIMER_BUZZ_TITLE}</Text>
-              <Text style={styles.toggleSubtitle}>{TIMER_BUZZ_SUBTITLE}</Text>
+              <Text style={styles.toggleTitle}>{TIMER_SOUND_TITLE}</Text>
+              <Text style={styles.toggleSubtitle}>{TIMER_SOUND_SUBTITLE}</Text>
             </View>
             <Switch
               value={settings.timer_chime_enabled}
               onValueChange={(enabled) => void save({ timer_chime_enabled: enabled })}
-              accessibilityLabel={TIMER_BUZZ_TITLE}
+              accessibilityLabel={TIMER_SOUND_TITLE}
               {...switchColors}
             />
           </View>

@@ -1,14 +1,16 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Alert, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { makeStyles, useTheme } from "../hooks/useTheme";
 import { useCountdown } from "../hooks/useCountdown";
 import { useHaptics } from "../hooks/useHaptics";
+import { useTimerAlert } from "../hooks/useTimerAlert";
 import { Task } from "../lib/types";
 import { categoryColor, getCategory } from "../lib/categories";
 import { formatClock } from "../lib/countdown";
 import { formatDueLabel } from "../lib/dueLabel";
 import { TIMING_LABELS } from "../lib/taskSections";
+import { rangeTimeUpCopy } from "../lib/timerAlertCopy";
 import { isQuickWin } from "@domain/todayTasks";
 import { toLocalDateKey } from "@domain/dates";
 
@@ -68,9 +70,39 @@ export function TaskItem({
   const elapsedSeconds = maxSeconds - timer.remainingSeconds;
   const inRange = elapsedSeconds >= minSeconds;
 
+  // The alert at the timer's end sounds even with the phone locked, when the buzz above cannot run.
+  const timerAlert = useTimerAlert();
+  const alertKey = `range-${task.id}`;
+  const startRangeTimer = () => {
+    timer.start(maxSeconds);
+    timerAlert.schedule(alertKey, maxSeconds, rangeTimeUpCopy(task.title, Math.round(maxSeconds / 60)));
+  };
+  const stopRangeTimer = () => {
+    timer.stop();
+    timerAlert.cancel(alertKey);
+  };
+
+  // A row that goes away mid-timer (deleted, filtered out) takes its timer along, so its alert must go too.
+  const runningRef = useRef(false);
+  runningRef.current = timer.isRunning;
+  const { cancel: cancelAlert } = timerAlert;
+  useEffect(
+    () => () => {
+      if (runningRef.current) cancelAlert(alertKey);
+    },
+    [alertKey, cancelAlert]
+  );
+
+  // Done elsewhere (the widget, another phone) while its timer runs: nothing is left to time.
+  useEffect(() => {
+    if (!isDone || !runningRef.current) return;
+    timer.stop();
+    cancelAlert(alertKey);
+  }, [isDone, timer.stop, cancelAlert, alertKey]);
+
   const openConfirm = () => {
     if (timer.isRunning) {
-      timer.stop();
+      stopRangeTimer();
       setConfirmingMinutes(Math.max(1, Math.round(elapsedSeconds / 60)));
     }
     setIsConfirming(true);
@@ -169,7 +201,7 @@ export function TaskItem({
             ) : timer.isRunning ? (
               <TouchableOpacity
                 style={[styles.pill, inRange && styles.pillQuick]}
-                onPress={timer.stop}
+                onPress={stopRangeTimer}
                 accessibilityLabel="Stop timer"
               >
                 <Text style={[styles.pillText, inRange && styles.pillTextQuick]}>
@@ -179,7 +211,7 @@ export function TaskItem({
             ) : (
               <TouchableOpacity
                 style={[styles.pill, quickWin && styles.pillQuick]}
-                onPress={() => timer.start(maxSeconds)}
+                onPress={startRangeTimer}
                 accessibilityLabel={`Start ${task.estimated_minutes} minute timer`}
               >
                 <Text style={[styles.pillText, quickWin && styles.pillTextQuick]}>{task.estimated_minutes} min</Text>
