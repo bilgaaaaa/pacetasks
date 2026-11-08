@@ -1,4 +1,4 @@
-// Pure rules for the Focus session the app shares with the Deskfocus widget (see src/hooks/useFocusSession.ts).
+// Pure rules for the Focus session the app shares with the DeskFocus widget (see src/hooks/useFocusSession.ts).
 // The native side owns the session; these functions read its replies and derive what the Focus screen shows.
 import { remainingSeconds as secondsUntil } from "./countdown";
 

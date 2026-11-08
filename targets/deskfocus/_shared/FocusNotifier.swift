@@ -1,6 +1,6 @@
 import UserNotifications
 
-/// Sends Deskfocus' own notifications, such as "time is up".
+/// Sends DeskFocus' own notifications, such as "time is up".
 enum FocusNotifier {
     /// The scheduled "time is up" alert on iPhone; there is only ever one, so scheduling again replaces it.
     private static let scheduledFinishIdentifier = "deskfocus.focus.finished"

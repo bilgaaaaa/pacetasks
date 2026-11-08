@@ -2,7 +2,7 @@
 Pod::Spec.new do |s|
   s.name           = 'DeskfocusBridge'
   s.version        = '1.0.0'
-  s.summary        = "Lets PaceTasks' JavaScript drive the Deskfocus focus session shared with the widget"
+  s.summary        = "Lets PaceTasks' JavaScript drive the DeskFocus focus session shared with the widget"
   s.author         = 'PaceTasks'
   s.homepage       = 'https://github.com/bilgaaaaa/pacetasks'
   s.license        = { :type => 'Proprietary' }

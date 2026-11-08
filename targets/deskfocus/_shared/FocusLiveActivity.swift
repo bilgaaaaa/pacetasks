@@ -34,7 +34,7 @@ final class FocusLiveActivity {
 
     private func start(_ session: FocusSession, settings: DeskfocusSettings, now: Date) {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else {
-            Log.focus.info("Live Activities are turned off for Deskfocus")
+            Log.focus.info("Live Activities are turned off for DeskFocus")
             return
         }
         let attributes = FocusActivityAttributes(

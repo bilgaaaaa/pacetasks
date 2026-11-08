@@ -1,4 +1,4 @@
-// Calendar and Reminders access for the Deskfocus widget, which reads them itself with the app's permission.
+// Calendar and Reminders access for the DeskFocus widget, which reads them itself with the app's permission.
 // Only iOS has the widget, so everywhere else access reads as "unavailable" and nothing is asked.
 import { Platform } from "react-native";
 

@@ -1,4 +1,4 @@
-// The App Group shared with the Deskfocus widget (targets/deskfocus). Only iOS builds have it: everywhere
+// The App Group shared with the DeskFocus widget (targets/deskfocus). Only iOS builds have it: everywhere
 // else (web demo, tests, Android) every call is a quiet no-op.
 import { Platform } from "react-native";
 import type { WidgetPaceTask } from "./deskfocusWidget";

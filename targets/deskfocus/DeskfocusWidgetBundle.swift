@@ -1,7 +1,7 @@
 import SwiftUI
 import WidgetKit
 
-/// The Deskfocus widget inside PaceTasks, and the focus timer's Live Activity.
+/// The DeskFocus widget inside PaceTasks, and the focus timer's Live Activity.
 @main
 struct DeskfocusWidgetBundle: WidgetBundle {
     var body: some Widget {
@@ -16,12 +16,12 @@ struct DeskfocusWidget: Widget {
         StaticConfiguration(kind: DeskfocusConstants.widgetKind, provider: DeskfocusTimelineProvider()) { entry in
             DeskfocusWidgetView(entry: entry)
                 .containerBackground(for: .widget) {
-                    // Deskfocus' glass color, the same as on the Mac.
+                    // DeskFocus' glass color, the same as on the Mac.
                     entry.snapshot.settings.glassTint.gradient
                 }
                 .environment(\.colorScheme, .dark)
         }
-        .configurationDisplayName("Deskfocus")
+        .configurationDisplayName("DeskFocus")
         .description("Today's PaceTasks tasks, calendar and reminders, with a focus timer.")
         .supportedFamilies([.systemMedium, .systemLarge])
     }

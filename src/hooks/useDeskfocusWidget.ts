@@ -8,7 +8,7 @@ import { Task } from "../lib/types";
 
 const WRITE_DELAY_MS = 500; // lets a burst of task changes settle into one widget update
 
-// Keeps the Deskfocus widget in step with PaceTasks: writes today's tasks whenever they change and, when the app
+// Keeps the DeskFocus widget in step with PaceTasks: writes today's tasks whenever they change and, when the app
 // comes to the front or the widget changes something, completes the tasks checked off in the widget. `tasksReady` is false while tasks are loading
 // or failed to load, so an empty list that is not real never empties the widget.
 export function useDeskfocusWidget(

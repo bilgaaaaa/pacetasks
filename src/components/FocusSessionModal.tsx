@@ -25,7 +25,7 @@ const LONG_TITLE_MIN_SCALE = 0.6;
 
 // Full-screen Pomodoro countdown, opened by tapping a task's Focus pill or by a session started in the widget.
 // It only shows the session from useFocusSession, which keeps time while the phone is locked, schedules the
-// "time is up" alert and, on iOS, shares the session with the Deskfocus widget and the Live Activity.
+// "time is up" alert and, on iOS, shares the session with the DeskFocus widget and the Live Activity.
 export function FocusSessionModal({
   task,
   session,

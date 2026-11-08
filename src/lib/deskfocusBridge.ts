@@ -1,5 +1,5 @@
 // The only caller of the DeskfocusBridge native module (modules/deskfocus-bridge), which runs Focus through the same
-// session the Deskfocus widget uses. Only iOS builds have it: elsewhere `isFocusBridgeAvailable()` is false and
+// session the DeskFocus widget uses. Only iOS builds have it: elsewhere `isFocusBridgeAvailable()` is false and
 // the Focus screen keeps its own countdown.
 import { Platform } from "react-native";
 import { requireOptionalNativeModule } from "expo";

@@ -12,7 +12,7 @@ interface Options {
   completeTask: (taskId: string, actualMinutes: number, silent?: boolean) => Promise<boolean>;
 }
 
-// Which task the Focus screen shows, kept in step with the one Focus session the app shares with the Deskfocus widget.
+// Which task the Focus screen shows, kept in step with the one Focus session the app shares with the DeskFocus widget.
 // A session the app started is a Pomodoro: run to its end on screen, it completes the task with its planned minutes.
 // A session started in the widget opens the screen once, and its end is left to the widget and its alert.
 export function useFocusScreen({ tasks, tasksReady, workMinutes, timerSoundEnabled, otherSheetOpen, completeTask }: Options) {

@@ -1,6 +1,6 @@
 import Foundation
 
-/// Identifiers shared by PaceTasks and its Deskfocus widget extension.
+/// Identifiers shared by PaceTasks and its DeskFocus widget extension.
 enum DeskfocusConstants {
     /// App Group both processes can read and write; must match `ios.entitlements` in app.json.
     static let appGroupIdentifier = "group.com.pacetasks.app"

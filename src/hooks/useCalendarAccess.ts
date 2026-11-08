@@ -3,7 +3,7 @@ import { AppState } from "react-native";
 import { CalendarAccess, getCalendarAccess, requestCalendarAccess } from "../lib/calendarAccess";
 import { reloadWidget } from "../lib/deskfocusWidgetStorage";
 
-// Calendar and Reminders access for the Deskfocus widget, re-read whenever the app returns
+// Calendar and Reminders access for the DeskFocus widget, re-read whenever the app returns
 // (the user may have changed it in the phone's Settings). The widget redraws once access changes.
 export function useCalendarAccess() {
   const [access, setAccess] = useState<CalendarAccess>("unavailable");

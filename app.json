@@ -95,8 +95,8 @@
       [
         "expo-calendar",
         {
-          "calendarPermission": "PaceTasks shows today's calendar events in the Deskfocus widget.",
-          "remindersPermission": "PaceTasks shows today's reminders in the Deskfocus widget and checks them off when you do."
+          "calendarPermission": "PaceTasks shows today's calendar events in the DeskFocus widget.",
+          "remindersPermission": "PaceTasks shows today's reminders in the DeskFocus widget and checks them off when you do."
         }
       ],
       "@bacons/apple-targets"

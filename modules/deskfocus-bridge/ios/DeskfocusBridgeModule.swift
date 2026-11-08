@@ -1,7 +1,7 @@
 import ExpoModulesCore
 import Foundation
 
-/// Lets PaceTasks' JavaScript start and follow the focus session the Deskfocus widget also drives.
+/// Lets PaceTasks' JavaScript start and follow the focus session the DeskFocus widget also drives.
 /// The work happens in DeskfocusBridgeHandler (targets/deskfocus/_shared), found by name because this pod
 /// cannot see the app target's Swift types.
 public final class DeskfocusBridgeModule: Module {
@@ -26,7 +26,7 @@ public final class DeskfocusBridgeModule: Module {
         AsyncFunction("send") { (command: String, promise: Promise) in
             guard let handler = Self.handler() else {
                 NSLog("[DeskfocusBridge] handler missing from this build")
-                promise.reject("ERR_DESKFOCUS_HANDLER", "The Deskfocus focus handler is not part of this build")
+                promise.reject("ERR_DESKFOCUS_HANDLER", "The DeskFocus focus handler is not part of this build")
                 return
             }
             let completion: @convention(block) @Sendable (NSString) -> Void = { reply in

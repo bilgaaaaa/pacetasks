@@ -2,5 +2,5 @@
   "name": "deskfocus-bridge",
   "version": "1.0.0",
   "private": true,
-  "description": "Lets PaceTasks' JavaScript drive the Deskfocus focus session shared with the widget"
+  "description": "Lets PaceTasks' JavaScript drive the DeskFocus focus session shared with the widget"
 }

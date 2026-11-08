@@ -1,4 +1,4 @@
-// What the Deskfocus widget gets from PaceTasks, and which of its check-offs the app still has to apply.
+// What the DeskFocus widget gets from PaceTasks, and which of its check-offs the app still has to apply.
 // The widget decodes the same field names in targets/deskfocus/_shared/PaceTasksFeed.swift.
 import { addDays } from "@domain/dates";
 import { isPendingToday, selectTodayTasks } from "@domain/todayTasks";
