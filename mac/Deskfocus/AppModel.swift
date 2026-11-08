@@ -1,13 +1,10 @@
-#if os(macOS)
 import AppKit
-#endif
 import EventKit
 import Observation
 import SwiftUI
 import WidgetKit
 
 /// Root of the app: owns the services, keeps them in sync with the shared state and exposes actions to the views.
-/// The Mac and iPhone apps share it; the few platform parts are marked with `#if os`.
 @MainActor
 @Observable
 final class AppModel {
@@ -22,19 +19,15 @@ final class AppModel {
     var googleErrorMessage: String?
     /// Language the running app was launched with; a different choice needs a restart.
     let launchLanguage: AppLanguage
-    /// Day the iPhone's "New task" sheet is open for, nil while it is closed; the Mac opens a window instead.
-    var newTaskDay: Date?
 
     private static let refreshInterval: TimeInterval = 5 * 60
 
-    #if os(macOS)
-    /// In-app updates; the iPhone app is updated by TestFlight and the App Store instead.
+    /// In-app updates with Sparkle.
     let updater = AppUpdater()
     private let desktopPanel = DesktopPanelController()
     private let addTaskWindow = AddTaskWindowController()
     private let settingsWindow = SettingsWindowController()
     private let onboardingWindow = OnboardingWindowController()
-    #endif
     @ObservationIgnored private var stateObserver: DarwinObserver?
     @ObservationIgnored private var refreshTimer: Timer?
     @ObservationIgnored private var notificationTokens: [NSObjectProtocol] = []
@@ -77,7 +70,6 @@ final class AppModel {
         LanguagePreference.apply(language)
     }
 
-    #if os(macOS)
     /// Opens a fresh copy of the app, then quits this one, so a new language takes effect.
     func relaunch() {
         let configuration = NSWorkspace.OpenConfiguration()
@@ -93,9 +85,8 @@ final class AppModel {
             }
         }
     }
-    #endif
 
-    /// Brings the timer and the list up to date after time away: the Mac waking up or the iPhone app coming back.
+    /// Brings the timer and the list up to date after the Mac wakes up.
     func catchUp() {
         focus.reconcile()
         reloadSnapshot()
@@ -130,16 +121,11 @@ final class AppModel {
         stateDidChange()
     }
 
-    /// Opens the "New task" window on the Mac, or the sheet on iPhone, preset to the day being viewed.
+    /// Opens the "New task" window, preset to the day being viewed.
     func showAddTask() {
-        #if os(macOS)
         addTaskWindow.show(model: self, day: agenda.selectedDay)
-        #else
-        newTaskDay = agenda.selectedDay
-        #endif
     }
 
-    #if os(macOS)
     /// Opens the Settings window from the menu bar, the desktop widget or the welcome guide.
     func showSettings() {
         settingsWindow.show(model: self)
@@ -172,7 +158,6 @@ final class AppModel {
             showOnboarding()
         }
     }
-    #endif
 
     /// Creates the task in the chosen calendar or list and remembers its focus time and the list.
     /// The re-sync runs in the background so the window can close right away.
@@ -191,7 +176,6 @@ final class AppModel {
         setPanelLayout(.day)
     }
 
-    #if os(macOS)
     /// Moves the desktop widget while the user drags it; `translation` is how far the pointer moved since the drag began.
     func dragDesktopPanel(translation: CGSize) {
         desktopPanel.drag(mouseLocation: NSEvent.mouseLocation, translation: translation)
@@ -208,7 +192,6 @@ final class AppModel {
         }
         desktopPanel.resetPosition()
     }
-    #endif
 
     func setPanelLayout(_ layout: PanelLayout) {
         guard snapshot.settings.panelLayout != layout else { return }
@@ -253,11 +236,9 @@ final class AppModel {
         WidgetCenter.shared.reloadTimelines(ofKind: DeskfocusConstants.widgetKind)
     }
 
-    /// Shows, hides or morphs the Mac's desktop widget; the iPhone has none.
+    /// Shows, hides or morphs the desktop widget.
     private func applyDesktopPanelSetting() {
-        #if os(macOS)
         desktopPanel.update(isVisible: snapshot.settings.showDesktopPanel, layout: snapshot.settings.panelLayout, model: self)
-        #endif
     }
 
     /// Two-way binding to one setting, saved to the shared state on every change.
@@ -324,7 +305,6 @@ final class AppModel {
         RunLoop.main.add(timer, forMode: .common)
         refreshTimer = timer
 
-        #if os(macOS)
         let workspaceCenter = NSWorkspace.shared.notificationCenter
         notificationTokens.append(workspaceCenter.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {
@@ -333,15 +313,6 @@ final class AppModel {
                 self.catchUp()
             }
         })
-        #else
-        // Widget and Live Activity buttons run in this process, often woken in the background just for them;
-        // the alert and the Live Activity are brought in line before the button's intent returns.
-        FocusIntentObserver.stateDidChange = { [weak self] in
-            guard let self else { return }
-            self.stateDidChange()
-            await self.focus.waitForLiveActivity()
-        }
-        #endif
         notificationTokens.append(NotificationCenter.default.addObserver(forName: .EKEventStoreChanged, object: eventKit.store, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {
                 guard let self else { return }

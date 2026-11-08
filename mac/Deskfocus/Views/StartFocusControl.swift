@@ -2,7 +2,7 @@ import SwiftUI
 
 /// The ▶ button for a task. Timed events, resumable and paused tasks start right away;
 /// other to-dos first ask how long to focus, and the choice is remembered for that task.
-/// Right-click (a long press on iPhone) offers "Choose length…" to start over with a new length.
+/// Right-click offers "Choose length…" to start over with a new length.
 struct StartFocusControl: View {
     @Environment(AppModel.self) private var model
     let task: DeskTask
@@ -40,8 +40,6 @@ struct StartFocusControl: View {
                 isChoosingLength = false
                 model.startFocus(on: task, minutes: minutes)
             }
-            // On iPhone too it stays a small popover by the ▶, instead of turning into a full sheet.
-            .presentationCompactAdaptation(.popover)
         }
     }
 }

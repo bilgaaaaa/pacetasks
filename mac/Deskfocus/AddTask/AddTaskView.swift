@@ -33,7 +33,6 @@ struct AddTaskView: View {
     }
 
     var body: some View {
-        #if os(macOS)
         VStack(spacing: 0) {
             form
 
@@ -49,23 +48,6 @@ struct AddTaskView: View {
         // A grouped Form scrolls and has no natural height, so the window gets a fixed size.
         .frame(width: 440, height: 360)
         .task { await loadTargets() }
-        #else
-        // A sheet on iPhone: Cancel and Add sit in the bar, which iPhone Duo can move to its side strip.
-        NavigationStack {
-            form
-                .navigationTitle("New Task")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel", role: .cancel, action: onClose)
-                    }
-                    ToolbarItem(placement: .confirmationAction) {
-                        saveButton
-                    }
-                }
-        }
-        .task { await loadTargets() }
-        #endif
     }
 
     private var form: some View {
@@ -107,13 +89,9 @@ struct AddTaskView: View {
             .disabled(!canSave)
     }
 
-    /// Where to allow access: the Mac's Calendars tab, or the iPhone's Settings sheet, which has no such tab.
+    /// Points to the Calendars tab, where access is allowed.
     private var noAccessHint: LocalizedStringKey {
-        #if os(macOS)
         "Allow Calendars or Reminders in Settings › Calendars first."
-        #else
-        "Allow Calendars or Reminders in Settings first."
-        #endif
     }
 
     @ViewBuilder
