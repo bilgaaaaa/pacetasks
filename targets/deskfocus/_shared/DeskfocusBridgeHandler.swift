@@ -87,7 +87,8 @@ final class DeskfocusBridgeHandler: NSObject {
         if SharedStore.shared.load().task(withId: taskId) == nil {
             await WidgetTaskSync.refresh()
         }
-        return FocusController.start(taskId: taskId, minutes: minutes) != nil
+        // The app's Pomodoro length is its own setting, so it never replaces the length the widget's ▶ uses for this task.
+        return FocusController.start(taskId: taskId, minutes: minutes, remembersMinutes: false) != nil
     }
 
     /// Saves the sound setting only when it changed, so routine commands never rewrite the shared state.

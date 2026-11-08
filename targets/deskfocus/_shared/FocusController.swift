@@ -8,10 +8,10 @@ enum FocusController {
     /// Minutes added by the "+5 min" button.
     static let extensionMinutes = 5
 
-    /// Starts or resumes focus on a task; `minutes` overrides the task's own length and is remembered for it.
-    /// Returns nil if the task is unknown.
+    /// Starts or resumes focus on a task; `minutes` overrides the task's own length and, with `remembersMinutes`,
+    /// becomes its length for later starts too. Returns nil if the task is unknown.
     @discardableResult
-    static func start(taskId: String, minutes: Int? = nil, now: Date = .now) -> FocusSession? {
+    static func start(taskId: String, minutes: Int? = nil, remembersMinutes: Bool = true, now: Date = .now) -> FocusSession? {
         var started: FocusSession?
         SharedStore.shared.update { snapshot in
             guard let task = snapshot.task(withId: taskId) else {
@@ -30,11 +30,16 @@ enum FocusController {
 
             saveProgressOfCurrentSession(in: &snapshot, now: now)
             if let minutes {
-                snapshot.rememberFocusMinutes(minutes, for: task.id, now: now)
+                if remembersMinutes {
+                    snapshot.rememberFocusMinutes(minutes, for: task.id, now: now)
+                }
                 snapshot.savedProgress[task.id] = nil
             }
 
-            let time = focusTime(for: task, in: snapshot, now: now)
+            let time = minutes.map { minutes -> (remaining: TimeInterval, planned: TimeInterval) in
+                let duration = DeskfocusSettings.clampedDuration(minutes: minutes)
+                return (duration, duration)
+            } ?? focusTime(for: task, in: snapshot, now: now)
             snapshot.savedProgress[task.id] = nil
             let session = FocusSession(
                 id: UUID(),

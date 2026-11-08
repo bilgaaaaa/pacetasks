@@ -33,14 +33,15 @@ export interface FocusSessionView {
 }
 
 interface Options {
-  timerSoundEnabled: boolean;
+  timerSoundEnabled: boolean | undefined; // undefined while settings load, so a default never overwrites the saved choice
   onTimeUp: (session: FocusSessionView) => void; // once per session, when it reaches its end while the app holds it
 }
 
 export interface FocusSessionControls {
   session: FocusSessionView | null;
   isStarting: boolean; // true from `start` until the session exists, so callers don't take the gap for an ended session
-  start: (paceTaskId: string, taskTitle: string, minutes: number) => Promise<void>;
+  // Starts focus on a task, or keeps its session if one is still going; resolves with the session afterwards.
+  start: (paceTaskId: string, taskTitle: string, minutes: number) => Promise<FocusSessionView | null>;
   pause: () => void;
   resume: () => void;
   end: () => void;
@@ -64,6 +65,8 @@ function useSharedFocusSession({ timerSoundEnabled, onTimeUp }: Options): FocusS
   const [shared, setShared] = useState<SharedFocusSession | null>(null);
   const [isStarting, setIsStarting] = useState(false);
   const [nowMs, setNowMs] = useState(() => Date.now());
+  const sharedRef = useRef(shared);
+  sharedRef.current = shared;
   const timeUp = useRef(onTimeUp);
   timeUp.current = onTimeUp;
   const soundEnabled = useRef(timerSoundEnabled);
@@ -79,7 +82,7 @@ function useSharedFocusSession({ timerSoundEnabled, onTimeUp }: Options): FocusS
     setNowMs(Date.now());
   }, []);
 
-  // Catch up on launch, whenever the app returns, and when the sound setting changes (it reschedules the alert).
+  // Catch up on launch, whenever the app returns, and once the sound setting is known or changes (it reschedules the alert).
   useEffect(() => {
     void send("reconcile");
   }, [send, timerSoundEnabled]);
@@ -113,23 +116,23 @@ function useSharedFocusSession({ timerSoundEnabled, onTimeUp }: Options): FocusS
     timeUp.current(toView(shared, nowMs));
   }, [shared, phase, nowMs]);
 
-  const start = useCallback(
-    async (paceTaskId: string, _taskTitle: string, minutes: number) => {
-      // Opening Focus on the task whose session is still going shows it, never restarts it.
-      if (isOngoingFor(shared, paceTaskId, Date.now())) return;
-      setIsStarting(true);
-      try {
-        // Asked first, so the "time is up" alert scheduled with the session can show.
-        await requestNotificationPermission().catch((e) => console.warn("[useFocusSession] permission request failed", e));
-        const reply = await sendFocusCommand({ action: "start", paceTaskId, minutes, timerSoundEnabled: soundEnabled.current });
-        if (!reply.error || !TRANSPORT_ERRORS.has(reply.error)) setShared(reply.focus);
-        setNowMs(Date.now());
-      } finally {
-        setIsStarting(false);
-      }
-    },
-    [shared]
-  );
+  const start = useCallback(async (paceTaskId: string, _taskTitle: string, minutes: number) => {
+    const current = sharedRef.current;
+    // Opening Focus on the task whose session is still going shows it, never restarts it.
+    if (current && isOngoingFor(current, paceTaskId, Date.now())) return toView(current, Date.now());
+    setIsStarting(true);
+    try {
+      // Asked first, so the "time is up" alert scheduled with the session can show.
+      await requestNotificationPermission().catch((e) => console.warn("[useFocusSession] permission request failed", e));
+      const reply = await sendFocusCommand({ action: "start", paceTaskId, minutes, timerSoundEnabled: soundEnabled.current });
+      if (reply.error && TRANSPORT_ERRORS.has(reply.error)) return null;
+      setShared(reply.focus);
+      setNowMs(Date.now());
+      return reply.focus ? toView(reply.focus, Date.now()) : null;
+    } finally {
+      setIsStarting(false);
+    }
+  }, []);
 
   return {
     session: shared ? toView(shared, nowMs) : null,
@@ -141,7 +144,7 @@ function useSharedFocusSession({ timerSoundEnabled, onTimeUp }: Options): FocusS
   };
 }
 
-// Web demo, Android and builds without the native module: one session held here, with its own end alert.
+// Web demo, Android and builds without the native session: one session held here, with its own end alert.
 function useLocalFocusSession({ onTimeUp }: Options): FocusSessionControls {
   const [local, setLocal] = useState<Omit<FocusSessionView, "phase" | "remainingSeconds"> | null>(null);
   const [pausedSeconds, setPausedSeconds] = useState<number | null>(null);
@@ -149,6 +152,7 @@ function useLocalFocusSession({ onTimeUp }: Options): FocusSessionControls {
   const { schedule: scheduleAlert, cancel: cancelAlert } = useTimerAlert();
   const localRef = useRef(local);
   localRef.current = local;
+  const sessionRef = useRef<FocusSessionView | null>(null); // the view from the last render, for `start` on a running session
   const timeUp = useRef(onTimeUp);
   timeUp.current = onTimeUp;
 
@@ -161,22 +165,27 @@ function useLocalFocusSession({ onTimeUp }: Options): FocusSessionControls {
   });
   const { start: startCountdown, stop: stopCountdown } = countdown;
 
+  // The session lives only as long as this hook, so its alert must not outlive it.
+  useEffect(() => () => cancelAlert(FOCUS_ALERT_KEY), [cancelAlert]);
+
   const start = useCallback(
     async (paceTaskId: string, taskTitle: string, minutes: number) => {
       const current = localRef.current;
-      if (current && current.paceTaskId === paceTaskId && !finished) return;
+      if (current && current.paceTaskId === paceTaskId && !finished) return sessionRef.current;
       const plannedSeconds = minutes * 60;
-      setLocal({
+      const session = {
         sessionId: `${paceTaskId}-${Date.now()}`,
         paceTaskId,
         taskTitle,
         plannedSeconds,
         plannedMinutes: Math.max(1, minutes),
-      });
+      };
+      setLocal(session);
       setPausedSeconds(null);
       setFinished(false);
       startCountdown(plannedSeconds);
       scheduleAlert(FOCUS_ALERT_KEY, plannedSeconds, focusTimeUpCopy(taskTitle));
+      return { ...session, phase: "running" as const, remainingSeconds: plannedSeconds };
     },
     [finished, startCountdown, scheduleAlert]
   );
@@ -213,6 +222,8 @@ function useLocalFocusSession({ onTimeUp }: Options): FocusSessionControls {
           : pausedSeconds ?? (countdown.isRunning ? countdown.remainingSeconds : local.plannedSeconds),
       }
     : null;
+
+  sessionRef.current = session;
 
   return { session, isStarting: false, start, pause, resume, end };
 }

@@ -20,13 +20,26 @@ interface FocusBridgeSubscription {
 }
 
 interface DeskfocusBridgeModule {
+  isAvailable(): boolean;
   send(command: string): Promise<string>;
   addListener(eventName: "onFocusChange", listener: () => void): FocusBridgeSubscription;
 }
 
-// Looked up once; null off iOS and in builds made before the module existed.
-const bridge: DeskfocusBridgeModule | null =
-  Platform.OS === "ios" ? requireOptionalNativeModule<DeskfocusBridgeModule>("DeskfocusBridge") : null;
+// Looked up once; null off iOS, in builds made before the module existed and when the app target lacks its handler.
+function loadBridge(): DeskfocusBridgeModule | null {
+  if (Platform.OS !== "ios") return null;
+  const module = requireOptionalNativeModule<DeskfocusBridgeModule>("DeskfocusBridge");
+  if (!module) return null;
+  try {
+    if (module.isAvailable()) return module;
+  } catch (e) {
+    console.warn("[deskfocusBridge] availability check failed", e);
+  }
+  console.warn("[deskfocusBridge] focus handler missing, using the app's own timer");
+  return null;
+}
+
+const bridge = loadBridge();
 
 // Whether Focus runs through the shared native session on this phone.
 export function isFocusBridgeAvailable(): boolean {
