@@ -436,6 +436,7 @@ design/icon/               Scripts and SVG sources for the icon set
 design/store/              App Store screenshots and the script that builds them
 design/site/               Script that renders the website's link preview
 docs/                      Website for PaceTasks and DeskFocus (landing, privacy, support) on GitHub Pages
+mac/                       DeskFocus for Mac (Swift, XcodeGen): menu bar app, desktop widget, Sparkle updates; see mac/README.md
 src/screens/               TaskListScreen (Today), StatsScreen (Pace), SettingsScreen
 src/components/            Presentational pieces: sheets, cards, rows, buttons
 src/hooks/                 One hook per feature; all data access for a screen goes through these
