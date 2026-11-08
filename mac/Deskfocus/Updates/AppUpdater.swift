@@ -61,7 +61,7 @@ final class AppUpdater {
             let canCheck = updater.canCheckForUpdates
             Task { @MainActor in self?.canCheckForUpdates = canCheck }
         }
-        Log.update.info("Updater started for Deskfocus \(self.currentVersion, privacy: .public)")
+        Log.update.info("Updater started for DeskFocus \(self.currentVersion, privacy: .public)")
     }
 
     /// "Check Now" in Settings; Sparkle shows its own window with the result.
@@ -88,7 +88,7 @@ private final class AppUpdaterDelegate: NSObject, SPUUpdaterDelegate {
     }
 
     func updaterDidNotFindUpdate(_ updater: SPUUpdater) {
-        Log.update.info("Deskfocus is up to date")
+        Log.update.info("DeskFocus is up to date")
     }
 
     func updater(_ updater: SPUUpdater, willInstallUpdate item: SUAppcastItem) {

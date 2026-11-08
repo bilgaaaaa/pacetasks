@@ -1,6 +1,6 @@
 import Foundation
 
-/// Events in the interval from the calendars the user shows in Google Calendar and keeps on in Deskfocus.
+/// Events in the interval from the calendars the user shows in Google Calendar and keeps on in DeskFocus.
 @MainActor
 final class GoogleCalendarSource: TaskSource {
     let kind: TaskSourceKind = .googleCalendar
@@ -54,7 +54,7 @@ final class GoogleCalendarSource: TaskSource {
     /// Events have no remote done state; checking one off stays local.
     func complete(_ task: DeskTask) async throws {}
 
-    /// Calendars ticked in Google Calendar itself; unticked and hidden ones stay out of Deskfocus too.
+    /// Calendars ticked in Google Calendar itself; unticked and hidden ones stay out of DeskFocus too.
     private func shownCalendars() async throws -> [GoogleCalendarListEntry] {
         try await client.getAll(
             baseURL.appendingPathComponent("users/me/calendarList"),

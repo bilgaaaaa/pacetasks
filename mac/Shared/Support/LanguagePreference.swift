@@ -1,7 +1,7 @@
 import Foundation
 
 /// Applies the chosen language to the current process; macOS reads it when the app or widget next launches.
-/// On iOS it does nothing: the language is picked in Settings › Apps › Deskfocus, and overriding it here would undo that choice.
+/// On iOS it does nothing: the language is picked in Settings › Apps › DeskFocus, and overriding it here would undo that choice.
 enum LanguagePreference {
     private static let appleLanguagesKey = "AppleLanguages"
 

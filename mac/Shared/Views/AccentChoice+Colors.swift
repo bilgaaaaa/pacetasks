@@ -42,7 +42,7 @@ private struct DeskfocusAccentKey: EnvironmentKey {
 }
 
 extension EnvironmentValues {
-    /// The user's accent, set once at the root of every Deskfocus surface.
+    /// The user's accent, set once at the root of every DeskFocus surface.
     var deskfocusAccent: AccentChoice {
         get { self[DeskfocusAccentKey.self] }
         set { self[DeskfocusAccentKey.self] = newValue }

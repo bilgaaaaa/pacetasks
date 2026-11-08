@@ -22,7 +22,7 @@ enum TaskSourceKind: String, Codable, CaseIterable, Hashable {
         }
     }
 
-    /// Sources that need Deskfocus' own Google sign-in, rather than the accounts added on the device.
+    /// Sources that need DeskFocus' own Google sign-in, rather than the accounts added on the device.
     var requiresGoogleSignIn: Bool {
         self == .googleCalendar || self == .googleTasks
     }

@@ -58,7 +58,7 @@ final class AppModel {
         FocusNotifier.requestAuthorization()
         focus.reconcile()
         applyDesktopPanelSetting()
-        Log.app.info("Deskfocus started")
+        Log.app.info("DeskFocus started")
         Task { await refresh() }
     }
 
@@ -150,7 +150,7 @@ final class AppModel {
         Log.app.info("Welcome guide completed")
     }
 
-    /// Opening Deskfocus again from Finder or Spotlight shows a window, since the app has no Dock icon.
+    /// Opening DeskFocus again from Finder or Spotlight shows a window, since the app has no Dock icon.
     func handleReopen() {
         if snapshot.settings.hasCompletedOnboarding {
             showSettings()

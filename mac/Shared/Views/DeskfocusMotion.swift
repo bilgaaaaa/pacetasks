@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Shared animation curves, so every Deskfocus surface moves the same way.
+/// Shared animation curves, so every DeskFocus surface moves the same way.
 enum DeskfocusMotion {
     /// Buttons sinking in under the pointer.
     static let press = Animation.spring(response: 0.25, dampingFraction: 0.7)

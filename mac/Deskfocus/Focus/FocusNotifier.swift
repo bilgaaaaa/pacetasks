@@ -1,6 +1,6 @@
 import UserNotifications
 
-/// Sends Deskfocus' own notifications, such as "time is up".
+/// Sends DeskFocus' own notifications, such as "time is up".
 enum FocusNotifier {
     static func requestAuthorization() {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, error in

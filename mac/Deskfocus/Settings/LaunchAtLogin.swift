@@ -1,6 +1,6 @@
 import ServiceManagement
 
-/// Registers Deskfocus as a login item so the timer and guard are always running.
+/// Registers DeskFocus as a login item so the timer and guard are always running.
 enum LaunchAtLogin {
     static var isEnabled: Bool {
         SMAppService.mainApp.status == .enabled

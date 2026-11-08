@@ -171,12 +171,12 @@
         }
       }
     },
-    "A glass widget on your desktop, and Deskfocus in the menu bar.": {
+    "A glass widget on your desktop, and DeskFocus in the menu bar.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Un widget in vetro sulla scrivania e Deskfocus nella barra dei menu."
+            "value": "Un widget in vetro sulla scrivania e DeskFocus nella barra dei menu."
           }
         }
       }
@@ -481,12 +481,12 @@
         }
       }
     },
-    "Click ⚙︎ on the widget, or the Deskfocus icon in the menu bar and then ⚙︎.": {
+    "Click ⚙︎ on the widget, or the DeskFocus icon in the menu bar and then ⚙︎.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Fai clic su ⚙︎ nel widget, oppure sull'icona di Deskfocus nella barra dei menu e poi su ⚙︎."
+            "value": "Fai clic su ⚙︎ nel widget, oppure sull'icona di DeskFocus nella barra dei menu e poi su ⚙︎."
           }
         }
       }
@@ -631,12 +631,12 @@
         }
       }
     },
-    "Create two Shortcuts that turn your \"Deskfocus\" Focus mode on and off, then enter their names here. Choose which apps may notify you in System Settings › Focus.": {
+    "Create two Shortcuts that turn your \"DeskFocus\" Focus mode on and off, then enter their names here. Choose which apps may notify you in System Settings › Focus.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Crea due Comandi Rapidi che attivano e disattivano la tua modalità Full immersion \"Deskfocus\", poi inserisci qui i loro nomi. Scegli quali app possono inviarti notifiche in Impostazioni di Sistema › Full immersion."
+            "value": "Crea due Comandi Rapidi che attivano e disattivano la tua modalità Full immersion \"DeskFocus\", poi inserisci qui i loro nomi. Scegli quali app possono inviarti notifiche in Impostazioni di Sistema › Full immersion."
           }
         }
       }
@@ -661,32 +661,32 @@
         }
       }
     },
-    "Deskfocus": {
+    "DeskFocus": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Deskfocus"
+            "value": "DeskFocus"
           }
         }
       }
     },
-    "Deskfocus Settings": {
+    "DeskFocus Settings": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Impostazioni di Deskfocus"
+            "value": "Impostazioni di DeskFocus"
           }
         }
       }
     },
-    "Deskfocus shows the calendars and reminders on this Mac. Pick which ones any time in Settings › Calendars.": {
+    "DeskFocus shows the calendars and reminders on this Mac. Pick which ones any time in Settings › Calendars.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Deskfocus mostra i calendari e i promemoria di questo Mac. Scegli quali in qualsiasi momento in Impostazioni › Calendari."
+            "value": "DeskFocus mostra i calendari e i promemoria di questo Mac. Scegli quali in qualsiasi momento in Impostazioni › Calendari."
           }
         }
       }
@@ -1011,12 +1011,12 @@
         }
       }
     },
-    "Google did not return a refresh token. Remove Deskfocus from your Google account permissions and try again.": {
+    "Google did not return a refresh token. Remove DeskFocus from your Google account permissions and try again.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Google non ha restituito un token di aggiornamento. Rimuovi Deskfocus dalle autorizzazioni del tuo account Google e riprova."
+            "value": "Google non ha restituito un token di aggiornamento. Rimuovi DeskFocus dalle autorizzazioni del tuo account Google e riprova."
           }
         }
       }
@@ -1101,12 +1101,12 @@
         }
       }
     },
-    "If access was denied before, allow Deskfocus in System Settings › Privacy & Security.": {
+    "If access was denied before, allow DeskFocus in System Settings › Privacy & Security.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Se in passato hai negato l'accesso, consenti Deskfocus in Impostazioni di Sistema › Privacy e sicurezza."
+            "value": "Se in passato hai negato l'accesso, consenti DeskFocus in Impostazioni di Sistema › Privacy e sicurezza."
           }
         }
       }
@@ -1361,12 +1361,12 @@
         }
       }
     },
-    "Open Deskfocus at login": {
+    "Open DeskFocus at login": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Apri Deskfocus al login"
+            "value": "Apri DeskFocus al login"
           }
         }
       }
@@ -1571,12 +1571,12 @@
         }
       }
     },
-    "Quit Deskfocus": {
+    "Quit DeskFocus": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Esci da Deskfocus"
+            "value": "Esci da DeskFocus"
           }
         }
       }
@@ -1631,12 +1631,12 @@
         }
       }
     },
-    "Restart Deskfocus to switch language.": {
+    "Restart DeskFocus to switch language.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Riavvia Deskfocus per cambiare lingua."
+            "value": "Riavvia DeskFocus per cambiare lingua."
           }
         }
       }
@@ -1701,12 +1701,12 @@
         }
       }
     },
-    "Right-click the desktop › Edit Widgets, search \"Deskfocus\" and pick medium or large.": {
+    "Right-click the desktop › Edit Widgets, search \"DeskFocus\" and pick medium or large.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Fai clic destro sulla scrivania › Modifica widget, cerca \"Deskfocus\" e scegli medio o grande."
+            "value": "Fai clic destro sulla scrivania › Modifica widget, cerca \"DeskFocus\" e scegli medio o grande."
           }
         }
       }
@@ -1781,12 +1781,12 @@
         }
       }
     },
-    "Show in Deskfocus": {
+    "Show in DeskFocus": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mostra in Deskfocus"
+            "value": "Mostra in DeskFocus"
           }
         }
       }
@@ -1871,12 +1871,12 @@
         }
       }
     },
-    "Start Using Deskfocus": {
+    "Start Using DeskFocus": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Inizia a usare Deskfocus"
+            "value": "Inizia a usare DeskFocus"
           }
         }
       }
@@ -2061,22 +2061,22 @@
         }
       }
     },
-    "Turn off (e.g. Deskfocus Off)": {
+    "Turn off (e.g. DeskFocus Off)": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Disattiva (es. Deskfocus Off)"
+            "value": "Disattiva (es. DeskFocus Off)"
           }
         }
       }
     },
-    "Turn on (e.g. Deskfocus On)": {
+    "Turn on (e.g. DeskFocus On)": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Attiva (es. Deskfocus On)"
+            "value": "Attiva (es. DeskFocus On)"
           }
         }
       }
@@ -2161,12 +2161,12 @@
         }
       }
     },
-    "Welcome to Deskfocus": {
+    "Welcome to DeskFocus": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ti diamo il benvenuto in Deskfocus"
+            "value": "Ti diamo il benvenuto in DeskFocus"
           }
         }
       }
@@ -2251,32 +2251,32 @@
         }
       }
     },
-    "Deskfocus shows today's events and reminders so you can focus on them.": {
+    "DeskFocus shows today's events and reminders so you can focus on them.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Deskfocus mostra gli eventi e i promemoria di oggi per aiutarti a concentrarti."
+            "value": "DeskFocus mostra gli eventi e i promemoria di oggi per aiutarti a concentrarti."
           }
         }
       }
     },
-    "Deskfocus uses the language you choose for it in the Settings app.": {
+    "DeskFocus uses the language you choose for it in the Settings app.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Deskfocus usa la lingua che scegli per l'app in Impostazioni."
+            "value": "DeskFocus usa la lingua che scegli per l'app in Impostazioni."
           }
         }
       }
     },
-    "If access was denied before, allow Deskfocus in Settings › Privacy & Security.": {
+    "If access was denied before, allow DeskFocus in Settings › Privacy & Security.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Se in passato hai negato l'accesso, consenti Deskfocus in Impostazioni › Privacy e sicurezza."
+            "value": "Se in passato hai negato l'accesso, consenti DeskFocus in Impostazioni › Privacy e sicurezza."
           }
         }
       }
@@ -2311,12 +2311,12 @@
         }
       }
     },
-    "Deskfocus looks for a new version once a day and updates itself in place. Your settings and tasks stay as they are.": {
+    "DeskFocus looks for a new version once a day and updates itself in place. Your settings and tasks stay as they are.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Deskfocus cerca una nuova versione una volta al giorno e si aggiorna da sola. Impostazioni e attività restano come sono."
+            "value": "DeskFocus cerca una nuova versione una volta al giorno e si aggiorna da sola. Impostazioni e attività restano come sono."
           }
         }
       }

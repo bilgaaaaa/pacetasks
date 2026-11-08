@@ -130,7 +130,7 @@ struct MenuBarView: View {
                 model.showSettings()
             }
 
-            footerButton("power", help: "Quit Deskfocus") {
+            footerButton("power", help: "Quit DeskFocus") {
                 NSApp.terminate(nil)
             }
         }
