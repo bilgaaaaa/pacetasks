@@ -19,6 +19,7 @@ import { useReminders } from "../hooks/useReminders";
 import { useBrainDump } from "../hooks/useBrainDump";
 import { useSheetHandoff } from "../hooks/useSheetHandoff";
 import { useHaptics } from "../hooks/useHaptics";
+import { usePro } from "../hooks/usePro";
 import { useDoNow } from "../hooks/useDoNow";
 import { useOneThing } from "../hooks/useOneThing";
 import { useRollover } from "../hooks/useRollover";
@@ -107,6 +108,7 @@ export function TaskListScreen({ userId }: Props) {
   const workEndHour = settings?.work_end_hour ?? DEFAULT_SETTINGS.work_end_hour;
   const doNow = useDoNow(tasks, workStartHour, workEndHour);
   const haptics = useHaptics();
+  const pro = usePro();
   // Every way of finishing a task (a row, Focus, One Thing) goes through here, so all of them feel the same:
   // one tap once the save has really succeeded. `silent` is for a moment that already had its own cue.
   const completeTask = async (taskId: string, actualMinutes: number, silent = false) => {
@@ -139,8 +141,9 @@ export function TaskListScreen({ userId }: Props) {
   const openFromPick = (open: (value: boolean) => void) =>
     sheetHandoff.handOff(() => setPickOpen(false), () => open(true));
 
-  const openBrainDumpFromAdd = () =>
-    sheetHandoff.handOff(() => setAddOpen(false), () => setBrainDumpOpen(true));
+  // Brain Dump is Pro: free users get the paywall instead, once the add sheet is gone.
+  const openBrainDump = () => pro.requirePro("brainDump", () => setBrainDumpOpen(true));
+  const openBrainDumpFromAdd = () => sheetHandoff.handOff(() => setAddOpen(false), openBrainDump);
 
   // A Focus pill tapped inside "Fit my time": that sheet has to go before the session can show.
   const startFocusFromDoNow = (task: Task) =>
@@ -373,7 +376,7 @@ export function TaskListScreen({ userId }: Props) {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.micButton}
-            onPress={() => setBrainDumpOpen(true)}
+            onPress={openBrainDump}
             accessibilityLabel="Brain dump: say everything at once"
           >
             <Ionicons name="mic-outline" size={22} color={theme.colors.textPrimary} />

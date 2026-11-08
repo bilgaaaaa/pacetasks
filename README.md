@@ -20,6 +20,7 @@ you compete only with your own past pace.
 5. [Tests](#tests)
 6. [Web demo](#web-demo)
 7. [Build for TestFlight and the App Store](#build-for-testflight-and-the-app-store)
+   - [PaceTasks Pro](#pacetasks-pro)
 8. [Privacy policy and support page](#privacy-policy-and-support-page)
 9. [Project structure](#project-structure)
 10. [Working together](#working-together)
@@ -370,6 +371,30 @@ sender only delivers to members of the Supabase team. Set it in Supabase →
 - The icon and splash images live in `assets/`. They are drawn by
   `design/icon/build_icon_svgs.py` and rendered by
   `design/icon/render_icon_pngs.py` (needs Python with Playwright).
+
+### PaceTasks Pro
+
+One Pro, bought on iPhone, unlocks PaceTasks and DeskFocus for Mac. On iPhone it covers Brain Dump, the
+Pace tab beyond today and, once it ships, Siri. Purchases go through RevenueCat with StoreKit. The
+RevenueCat app user ID is the PaceTasks (Supabase) user ID, so the Mac sees the same Pro once it signs in
+to that account.
+
+One-time setup:
+
+1. App Store Connect › **Business**: accept the Paid Apps agreement, with bank and tax details.
+2. App Store Connect › PaceTasks › **Subscriptions**: create a group **PaceTasks Pro** with `pro_monthly`
+   (€2.99) and `pro_yearly` (€19.99, introductory offer: 1 week free). Then **In-App Purchases**: a
+   non-consumable `pro_lifetime` (€39.99, or the founding price).
+3. RevenueCat: a project with the PaceTasks iOS app (paste an App Store Connect in-app purchase key),
+   the entitlement `pro` attached to all three products, and a **current** offering with the three
+   packages.
+4. Add the public iOS key: `.env` for local builds, and on EAS
+   `eas env:create --environment production --name EXPO_PUBLIC_REVENUECAT_IOS_KEY --value appl_... --visibility plaintext`.
+
+Without the key (web demo, Android, a local build without it) nobody can buy, and Pro is unlocked for
+everyone. So set it before any App Store release. Sandbox tests: buy, then restore on a fresh install,
+cancel the trial, lifetime shows "You're Pro", and offline keeps Pro (the last status is kept a few days
+past renewal).
 
 ### Store listing and screenshots
 
