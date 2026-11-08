@@ -4,7 +4,9 @@
 # One-time setup is described in README › "Share Deskfocus as a download" and "In-app updates".
 set -euo pipefail
 
-readonly GITHUB_REPO="bilgaaaaa/deskfocus"
+# Mac releases live on the shared repository as mac-v<version>; keep every other release out of it (or mark it pre-release),
+# because Sparkle reads the feed from the latest release.
+readonly GITHUB_REPO="bilgaaaaa/pacetasks"
 readonly FEED_URL="https://github.com/$GITHUB_REPO/releases/latest/download/appcast.xml"
 
 readonly NOTARY_PROFILE="${NOTARY_PROFILE:-deskfocus-notary}"
@@ -138,24 +140,24 @@ mkdir -p "$UPDATES_DIR"
 cp "$DMG_PATH" "$UPDATES_DIR/"
 # Signs the DMG with the key from your Keychain; the feed lists only this version, which is all Sparkle needs.
 "$GENERATE_APPCAST" \
-    --download-url-prefix "https://github.com/$GITHUB_REPO/releases/download/v$VERSION/" \
+    --download-url-prefix "https://github.com/$GITHUB_REPO/releases/download/mac-v$VERSION/" \
     --link "https://github.com/$GITHUB_REPO/releases" \
-    --full-release-notes-url "https://github.com/$GITHUB_REPO/releases/tag/v$VERSION" \
+    --full-release-notes-url "https://github.com/$GITHUB_REPO/releases/tag/mac-v$VERSION" \
     "$UPDATES_DIR"
 APPCAST_PATH="$UPDATES_DIR/appcast.xml"
 grep -q 'sparkle:edSignature' "$APPCAST_PATH" || fail "appcast.xml has no signature. Run ./Scripts/update-keys.sh on this Mac first."
 echo "Feed: $APPCAST_PATH"
 
 if [[ "$PUBLISH" == true ]]; then
-    log "Publishing GitHub release v$VERSION"
-    gh release create "v$VERSION" "$DMG_PATH" "$APPCAST_PATH" \
+    log "Publishing GitHub release mac-v$VERSION"
+    gh release create "mac-v$VERSION" "$DMG_PATH" "$APPCAST_PATH" \
         --repo "$GITHUB_REPO" \
-        --title "Deskfocus $VERSION" \
+        --title "DeskFocus for Mac $VERSION" \
         --generate-notes
     log "Done: installed copies will offer $VERSION within a day, or now from Settings › General › Check Now"
 else
     log "Done: $DMG_PATH"
-    echo "To ship it as an update, attach both files to a new GitHub release named v$VERSION:"
+    echo "To ship it as an update, attach both files to a new GitHub release named mac-v$VERSION:"
     echo "  $DMG_PATH"
     echo "  $APPCAST_PATH"
     echo "or run the script again with --publish."

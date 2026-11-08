@@ -148,12 +148,12 @@ Needs the paid Apple Developer Program. The result is a signed, notarized `Deskf
    ```bash
    ./Scripts/release.sh --publish
    ```
-   It builds, notarizes, signs the update feed and creates the GitHub release `v<version>` with `Deskfocus-<version>.dmg` and `appcast.xml` attached. Without `--publish` it stops before uploading and shows both files, to attach by hand.
+   It builds, notarizes, signs the update feed and creates the GitHub release `mac-v<version>` in this repository (bilgaaaaa/pacetasks) with `Deskfocus-<version>.dmg` and `appcast.xml` attached. Without `--publish` it stops before uploading and shows both files, to attach by hand.
 3. Installed copies offer the new version within a day, or right away from Settings › General › **Check Now**. New users download the DMG from the release page and drag Deskfocus into Applications.
 
 ## In-app updates
 
-Deskfocus updates itself with [Sparkle](https://sparkle-project.org): once a day it reads `appcast.xml` from the newest GitHub release and, when there is a newer build, downloads, installs and relaunches it in place. Settings, tasks and Google sign-in stay as they are.
+Deskfocus updates itself with [Sparkle](https://sparkle-project.org): once a day it reads `appcast.xml` from the newest GitHub release of bilgaaaaa/pacetasks. Only Mac releases are published there: any other release must be a pre-release, or Sparkle would read the wrong feed and, when there is a newer build, downloads, installs and relaunches it in place. Settings, tasks and Google sign-in stay as they are.
 
 Every update is signed with a private key that only lives in your Keychain, and the app accepts only updates signed with it.
 

@@ -4,7 +4,9 @@ name: Verify
 on:
   push:
     branches: [main]
+    paths-ignore: ['mac/**', '.github/workflows/mac*.yml']
   pull_request:
+    paths-ignore: ['mac/**', '.github/workflows/mac*.yml']
 
 concurrency:
   group: verify-${{ github.ref }}

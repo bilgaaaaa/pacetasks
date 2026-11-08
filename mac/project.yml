@@ -63,7 +63,7 @@ targets:
         GoogleSyncEnabled: $(GOOGLE_SYNC_ENABLED)
         DeskfocusAppGroupIdentifier: $(TeamIdentifierPrefix)com.bilgaaaaa.deskfocus
         # Update feed: release.sh attaches appcast.xml to each GitHub release, and "latest" always points to the newest.
-        SUFeedURL: https://github.com/bilgaaaaa/deskfocus/releases/latest/download/appcast.xml
+        SUFeedURL: https://github.com/bilgaaaaa/pacetasks/releases/latest/download/appcast.xml
         # Public half of the update signing key, written by Scripts/update-keys.sh; empty means the build never updates itself.
         SUPublicEDKey: ""
         SUEnableAutomaticChecks: true
