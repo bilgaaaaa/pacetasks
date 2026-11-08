@@ -3,16 +3,33 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PaceTasks — Help and Support</title>
+  <title>PaceTasks and DeskFocus — Help and Support</title>
+  <meta name="description" content="Answers to the questions that come up most about PaceTasks and DeskFocus, and how to reach a person.">
+  <meta name="theme-color" content="#2f4636">
   <link rel="icon" href="icon.png">
+  <link rel="apple-touch-icon" href="icon.png">
+  <link rel="preload" href="fonts/bricolage-grotesque.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="site.css">
 </head>
 <body>
-<main>
-  <header class="brand"><img src="icon.png" alt=""><a href="./">PaceTasks</a></header>
+<a class="skip-link" href="#main">Skip to content</a>
 
+<header class="site-header">
+  <a class="brand" href="./">
+    <span class="brand-icons"><img src="icon.png" alt="" width="36" height="36"><img src="deskfocus-icon.svg" alt="" width="36" height="36"></span>
+    <span class="brand-name">PaceTasks<span class="brand-with">with DeskFocus for Mac</span></span>
+  </a>
+  <nav class="site-nav" aria-label="Site">
+    <a href="./#day">How it works</a>
+    <a href="./#both">Both apps</a>
+    <a href="support.html" aria-current="page">Help</a>
+    <a href="privacy.html">Privacy</a>
+  </nav>
+</header>
+
+<main id="main" class="page">
   <h1>Help and support</h1>
-  <p class="meta">Answers to the questions that come up most.</p>
+  <p class="meta">Answers to the questions that come up most, for both apps.</p>
 
   <div class="card">
     <p><strong>Need a hand?</strong> Write to
@@ -20,39 +37,83 @@
     every message.</p>
   </div>
 
-  <h2>Do I need an account?</h2>
-  <p>No. PaceTasks works the moment you install it. An account (Settings → Create account) keeps your tasks safe if
-  you change or lose your phone, and lets you open them on another one.</p>
+  <section class="page-part" aria-labelledby="pacetasksHelp">
+    <h2 class="page-part-title" id="pacetasksHelp"><img src="icon.png" alt="" width="36" height="36">PaceTasks on iPhone</h2>
 
-  <h2>I didn't get my sign-in code</h2>
-  <p>The code can take a minute to arrive; check your spam folder too. In the app you can ask for a new code or go
-  back and correct the email address. Each code works once and expires after a short while.</p>
+    <h3>Do I need an account?</h3>
+    <p>No. PaceTasks works the moment you install it. An account (Settings → Create account) keeps your tasks safe if
+    you change or lose your phone, and lets you open them on another one.</p>
 
-  <h2>How do I add many tasks at once?</h2>
-  <p>Tap the microphone next to <strong>Add a task…</strong> and type or dictate everything on your mind, in
-  English, Italian, Turkish or a mix. PaceTasks shows what it understood before anything is added.</p>
+    <h3>I didn't get my sign-in code</h3>
+    <p>The code can take a minute to arrive; check your spam folder too. In the app you can ask for a new code or go
+    back and correct the email address. Each code works once and expires after a short while.</p>
 
-  <h2>I don't know where to start</h2>
-  <p>On Today, <strong>What can I do now?</strong> picks tasks that fit the time and energy you have, and
-  <strong>Tell me what to do</strong> shows you a single task.</p>
+    <h3>How do I add many tasks at once?</h3>
+    <p>Tap the microphone next to <strong>Add a task…</strong> and type or dictate everything on your mind, in
+    English, Italian, Turkish or a mix. PaceTasks shows what it understood before anything is added.</p>
 
-  <h2>What happens to tasks I didn't finish?</h2>
-  <p>The next day, a card on top of Today proposes where each one should go: today, tomorrow, the weekend or
-  Someday. You can change any of them and accept with one tap.</p>
+    <h3>I don't know where to start</h3>
+    <p>On Today, <strong>What can I do now?</strong> picks tasks that fit the time and energy you have, and
+    <strong>Tell me what to do</strong> shows you a single task.</p>
 
-  <h2>My reminder doesn't arrive</h2>
-  <p>Check that notifications are allowed for PaceTasks in your phone's Settings, and that the reminder is switched on
-  under <strong>Settings → Reminders</strong>. The daily check-in is sent only on days when tasks are still open.</p>
+    <h3>What happens to tasks I didn't finish?</h3>
+    <p>The next day, a card on top of Today proposes where each one should go: today, tomorrow, the weekend or
+    Someday. You can change any of them and accept with one tap.</p>
 
-  <h2>How do I delete my account or my data?</h2>
-  <p>Open <strong>Settings → Your data → Delete account</strong> (or <strong>Delete my data</strong> if you have no
-  account). Everything is erased from our database straight away, and it cannot be undone.</p>
+    <h3>My reminder doesn't arrive</h3>
+    <p>Check that notifications are allowed for PaceTasks in your phone's Settings, and that the reminder is switched on
+    under <strong>Settings → Reminders</strong>. The daily check-in is sent only on days when tasks are still open.</p>
 
-  <h2>What does PaceTasks do with my data?</h2>
-  <p>It stores your tasks to show them to you, and nothing more: no ads, no trackers. The details are in the
-  <a href="privacy.html">privacy policy</a>.</p>
+    <h3>How do I delete my account or my data?</h3>
+    <p>Open <strong>Settings → Your data → Delete account</strong> (or <strong>Delete my data</strong> if you have no
+    account). Everything is erased from our database straight away, and it cannot be undone.</p>
+  </section>
 
-  <footer><a href="./">PaceTasks</a> · <a href="privacy.html">Privacy policy</a></footer>
+  <section class="page-part" aria-labelledby="deskfocusHelp">
+    <h2 class="page-part-title" id="deskfocusHelp"><img src="deskfocus-icon.svg" alt="" width="36" height="36">DeskFocus on Mac</h2>
+
+    <h3>How do I install DeskFocus?</h3>
+    <p>Download the latest version from <a href="https://github.com/bilgaaaaa/deskfocus/releases/latest">the
+    DeskFocus releases page</a>, open the file and drag DeskFocus into Applications. It needs macOS 14 Sonoma or
+    later. A welcome guide opens on the first launch and walks you through the setup; you can open it again from
+    <strong>Settings → General → Welcome guide</strong>.</p>
+
+    <h3>How do I put the widget on my desktop?</h3>
+    <p>Right-click the desktop, choose <strong>Edit Widgets</strong>, search for DeskFocus and pick the medium or
+    large size. On iPhone, touch and hold the Home Screen, tap <strong>Edit → Add Widget</strong> and choose
+    DeskFocus.</p>
+
+    <h3>How do I connect Google Calendar and Google Tasks?</h3>
+    <p>Open <strong>Settings → Calendars</strong> in DeskFocus and connect Google. You sign in on Google's own page,
+    and DeskFocus keeps the sign-in in your Mac's Keychain. Switch off any calendar or list you don't want to see in
+    the same place.</p>
+
+    <h3>The widget's buttons don't do anything</h3>
+    <p>The widget needs the DeskFocus app running in the background. Turn on <strong>Settings → General → Open
+    DeskFocus at login</strong>, so the buttons keep working after a restart.</p>
+
+    <h3>How do I silence notifications while I focus?</h3>
+    <p>DeskFocus hides the apps you pick in <strong>Settings → Focus</strong>. To silence notifications as well,
+    create a Focus mode named DeskFocus in <strong>System Settings → Focus</strong>, then two shortcuts in the
+    Shortcuts app: <strong>DeskFocus On</strong> (Set Focus, DeskFocus, On) and <strong>DeskFocus Off</strong>
+    (Set Focus, DeskFocus, Off). Enter both names in DeskFocus' Focus settings.</p>
+
+    <h3>What does Done do on a calendar event?</h3>
+    <p>Calendar events can't be completed, so Done hides the event for today. On a reminder or a Google task, Done
+    completes it where it came from.</p>
+  </section>
+
+  <h2>What do the apps do with my data?</h2>
+  <p>PaceTasks stores your tasks to show them to you, and DeskFocus keeps everything on your devices. Neither has ads
+  or trackers. The details are in the <a href="privacy.html">privacy policy</a>.</p>
 </main>
+
+<footer class="site-footer">
+  <p>Made in Padova by <a href="https://bilgalog.dev">Bilge Ozcanbaz</a>.</p>
+  <nav class="site-nav" aria-label="Footer">
+    <a href="./">PaceTasks with DeskFocus</a>
+    <a href="privacy.html">Privacy policy</a>
+  </nav>
+</footer>
 </body>
 </html>

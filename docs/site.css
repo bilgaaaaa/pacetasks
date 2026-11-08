@@ -1,68 +1,618 @@
-/* Shared look for the PaceTasks public pages: the app's sage palette, light and dark. */
+/* Shared look for the PaceTasks and DeskFocus website: PaceTasks' Sage theme, light and dark,
+   with DeskFocus' ink panels and ember focus ring wherever the page shows the Mac. */
+
+@font-face {
+  font-family: "Bricolage Grotesque";
+  src: url("fonts/bricolage-grotesque.woff2") format("woff2");
+  font-weight: 200 800;
+  font-stretch: 75% 100%;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
+  /* PaceTasks: the app's Sage palette and its Today hero card. */
   --background: #e7efe1;
+  --background-end: #d7e4d0;
   --surface: #f6f8f1;
   --border: #d6e0cf;
   --text-primary: #26332a;
   --text-secondary: #56634f;
   --accent: #3f7446;
+  --on-accent: #f6f8f1;
+  --hero-card: #2f4636;
+  --hero-title: #f7e289;
+  --hero-body: #fbf6ee;
+  --hero-blob-a: linear-gradient(135deg, #9fc89d, #4e8552);
+  --hero-blob-b: linear-gradient(135deg, #f7e289, #b79a65);
+  --phone-bezel: #1b231d;
+  --shadow: rgba(38, 51, 42, 0.18);
+
+  /* DeskFocus: the icon's indigo and ink, and the ember ring of the focus timer. */
+  --desk-ink: #1c1747;
+  --desk-panel: linear-gradient(160deg, #2e2775 0%, #1c1747 72%);
+  --desk-text: #f4f2ff;
+  --desk-text-secondary: #b9b4e6;
+  --desk-hairline: rgba(255, 255, 255, 0.14);
+  --desk-fill: rgba(255, 255, 255, 0.08);
+  --desk-shadow: rgba(12, 9, 45, 0.6);
+  --desk-label: #5b50f0;
+  --ember: linear-gradient(135deg, #ffc857, #ff6a3d);
+  --ember-start: #ffc857;
+
+  /* Where a task comes from, as a dot in the DeskFocus list. */
+  --source-pacetasks: #9fc89d;
+  --source-calendar: #a59dff;
+  --source-reminders: #ffc857;
+  --source-google: #7cc4fa;
+
+  --font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Bricolage Grotesque", var(--font);
 }
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #141a16;
+    --background-end: #101512;
     --surface: #1d2520;
     --border: #2e3931;
     --text-primary: #e4ecdf;
     --text-secondary: #a3b09e;
     --accent: #8dc495;
+    --on-accent: #141a16;
+    --hero-card: #2a3d30;
+    --phone-bezel: #050806;
+    --shadow: rgba(0, 0, 0, 0.45);
+    --desk-label: #a59dff;
   }
 }
+
+/* Base. */
 * { box-sizing: border-box; }
+html { color-scheme: light dark; background: var(--background-end); scroll-padding-top: 1.5rem; }
 body {
   margin: 0;
-  background: var(--background);
+  min-height: 100vh;
+  background: linear-gradient(180deg, var(--background), var(--background-end));
   color: var(--text-primary);
-  font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font: 17px/1.6 var(--font);
+  -webkit-font-smoothing: antialiased;
 }
-main {
-  max-width: 44rem;
+img { max-width: 100%; display: block; }
+a { color: var(--accent); text-underline-offset: 0.15em; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+p { text-wrap: pretty; }
+.skip-link { position: absolute; left: 1rem; top: -4rem; z-index: 10; padding: 0.5rem 1rem; background: var(--surface); }
+.skip-link:focus { top: 1rem; }
+
+/* Header and footer, shared by every page. */
+.site-header,
+.site-footer {
+  max-width: 72rem;
   margin: 0 auto;
-  padding: 2.5rem 1rem 4rem;
-}
-header.brand {
+  padding: 1.25rem 1rem;
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+}
+.brand {
+  display: inline-flex;
   align-items: center;
   gap: 0.75rem;
-  margin-bottom: 2rem;
+  color: var(--text-primary);
+  text-decoration: none;
 }
-header.brand img { width: 44px; height: 44px; border-radius: 10px; }
-header.brand a { color: var(--text-primary); font-weight: 600; text-decoration: none; }
-h1, h2 { font-family: Georgia, "Times New Roman", serif; font-weight: 500; line-height: 1.2; }
-h1 { font-size: 2.25rem; margin: 0 0 0.25rem; }
-h2 { font-size: 1.4rem; margin: 2.25rem 0 0.5rem; }
-p, li { color: var(--text-primary); }
-.meta, footer { color: var(--text-secondary); font-size: 0.9rem; }
-a { color: var(--accent); }
-.card {
+.brand-icons { display: inline-flex; }
+.brand-icons img { width: 36px; height: 36px; border-radius: 9px; }
+/* The DeskFocus icon tucks behind PaceTasks', as its widget sits inside the app. */
+.brand-icons img + img { margin-left: -10px; box-shadow: 0 0 0 2px var(--background); }
+.brand-icons img:first-child { position: relative; z-index: 1; box-shadow: 0 0 0 2px var(--background); }
+.brand-name {
+  display: grid;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+.brand-with { font-family: var(--font); font-size: 0.78rem; font-weight: 500; letter-spacing: 0; color: var(--text-secondary); }
+.site-nav { display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; }
+.site-nav a { color: var(--text-secondary); text-decoration: none; font-weight: 500; }
+.site-nav a:hover,
+.site-nav a[aria-current="page"] { color: var(--text-primary); }
+.site-footer {
+  margin-top: 5rem;
+  padding-top: 1.5rem;
+  padding-bottom: 2.5rem;
+  border-top: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+.site-footer p { margin: 0; color: inherit; }
+
+/* Buttons: PaceTasks' daffodil and sage pills, DeskFocus' ember pill. */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0.7rem 1.5rem;
+  border-radius: 999px;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+}
+.button:hover { filter: brightness(1.06); }
+.button-hero { background: var(--hero-title); color: var(--hero-card); }
+.button-ghost { color: var(--hero-body); box-shadow: inset 0 0 0 1.5px rgba(251, 246, 238, 0.45); }
+.button-ghost:hover { box-shadow: inset 0 0 0 1.5px var(--hero-body); }
+.button-solid { background: var(--accent); color: var(--on-accent); }
+.button-ember { background: var(--ember); color: var(--desk-ink); }
+
+/* Landing page. */
+.landing { max-width: 72rem; margin: 0 auto; padding: 0 1rem; }
+
+/* Hero: the forest card from PaceTasks' Today screen, at page size. */
+.hero-card {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  display: grid;
+  gap: 2.5rem;
+  padding: 3rem 1.25rem 1.75rem;
+  border-radius: 32px;
+  background: var(--hero-card);
+  color: var(--hero-body);
+}
+.hero-card :focus-visible { outline-color: var(--hero-title); }
+.hero-blob {
+  position: absolute;
+  z-index: -2;
+  border-radius: 50%;
+  animation: drift 14s ease-in-out infinite alternate;
+}
+.hero-blob-a { width: 16rem; height: 16rem; right: -8rem; top: -7rem; background: var(--hero-blob-a); opacity: 0.6; }
+.hero-blob-b { width: 12rem; height: 12rem; left: -4rem; bottom: -5rem; background: var(--hero-blob-b); opacity: 0.5; animation-duration: 18s; }
+/* The same fine grain the app lays over its hero card. */
+.hero-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: url("grain.png") repeat;
+  opacity: 0.3;
+  pointer-events: none;
+}
+@keyframes drift {
+  from { transform: translate(0, 0); }
+  to { transform: translate(-2.5rem, 1.5rem); }
+}
+.hero-copy { align-self: center; max-width: 34rem; }
+.hero-copy h1 {
+  margin: 0 0 1.25rem;
+  color: var(--hero-title);
+  font-size: clamp(2.9rem, 1.5rem + 5vw, 5.5rem);
+  font-weight: 750;
+  font-stretch: 90%;
+  line-height: 0.98;
+  letter-spacing: -0.012em;
+}
+.hero-lede { margin: 0 0 2rem; color: var(--hero-body); font-size: 1.2rem; line-height: 1.55; }
+.hero-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.hero-status { margin: 1.25rem 0 0; color: var(--hero-body); opacity: 0.8; font-size: 0.92rem; }
+
+/* The phone and the DeskFocus widget overlap: one list, two screens. */
+.hero-stage { position: relative; display: grid; justify-items: center; }
+.hero-phone { width: min(100%, 280px); max-height: 21rem; overflow: hidden; }
+.hero-stage-note { margin: 0; color: var(--hero-body); opacity: 0.8; font-size: 0.85rem; text-align: center; }
+
+/* Phone frame: a screenshot, or the live demo once started. */
+.phone { margin: 0; justify-self: center; width: min(100%, 300px); }
+.phone-screen {
+  aspect-ratio: 393 / 852;
+  overflow: hidden;
+  border: 10px solid var(--phone-bezel);
+  border-radius: 46px;
+  background: var(--background);
+  box-shadow: 0 30px 60px -20px var(--shadow);
+}
+.phone-screen img,
+.phone-screen iframe { width: 100%; height: 100%; border: 0; object-fit: cover; object-position: top; }
+
+/* DeskFocus widget preview: today's list and a focus timer on dark glass. */
+.desk-widget {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 22rem);
+  margin-top: -7rem;
+  padding: 1.1rem;
+  border: 1px solid var(--desk-hairline);
+  border-radius: 24px;
+  background: var(--desk-panel);
+  color: var(--desk-text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 34px 70px -24px var(--desk-shadow);
+  font-size: 0.95rem;
+  line-height: 1.4;
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+.desk-widget :focus-visible,
+.desk-panel :focus-visible,
+.app-panel-deskfocus :focus-visible { outline-color: var(--ember-start); }
+/* Once the demo runs in the phone, the widget steps aside so the whole screen can be used. */
+.hero-stage[data-demo-live] .desk-widget {
+  opacity: 0;
+  transform: translateY(1.5rem) scale(0.96);
+  visibility: hidden;
+  transition: opacity 0.35s ease, transform 0.35s ease, visibility 0s 0.35s;
+}
+.desk-widget-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 0.85rem; }
+.desk-widget-title { font-family: var(--font-display); font-size: 1.3rem; font-weight: 700; letter-spacing: -0.01em; }
+.desk-widget-meta { color: var(--desk-text-secondary); font-size: 0.82rem; }
+
+.focus { display: flex; align-items: center; gap: 1rem; padding: 0.85rem; border-radius: 18px; background: var(--desk-fill); }
+.focus-dial { position: relative; flex: none; width: 92px; height: 92px; }
+.focus-ring { width: 100%; height: 100%; transform: rotate(-90deg); }
+.focus-ring-track { fill: none; stroke: rgba(255, 255, 255, 0.12); stroke-width: 8; }
+.focus-ring-value { fill: none; stroke: url(#emberGradient); stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 0.4s linear; }
+.focus-time {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 1.3rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.focus-info { display: grid; gap: 0.15rem; min-width: 0; }
+.focus-task { font-size: 1rem; font-weight: 650; overflow-wrap: anywhere; }
+.focus-controls { display: flex; gap: 0.5rem; margin-top: 0.45rem; }
+.widget-button {
+  min-height: 36px;
+  padding: 0.4rem 0.95rem;
+  border: 0;
+  border-radius: 12px;
+  background: var(--desk-fill);
+  color: var(--desk-text);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.widget-button:hover:not(:disabled) { filter: brightness(1.12); }
+.widget-button-primary { background: var(--ember); color: var(--desk-ink); }
+.widget-button:disabled { opacity: 0.45; cursor: default; }
+
+.desk-tasks { list-style: none; margin: 0.75rem 0 0; padding: 0; display: grid; gap: 0.15rem; }
+.desk-task {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.5rem 0.25rem 0.2rem;
+  border-radius: 12px;
+}
+.desk-task.is-selected { background: var(--desk-fill); }
+.desk-task-check {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--desk-text-secondary);
+  cursor: pointer;
+}
+.desk-task-check circle { fill: none; stroke: currentColor; stroke-width: 1.6; }
+.desk-task-check path { fill: none; stroke: var(--desk-ink); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
+.desk-task.is-done .desk-task-check circle { fill: var(--ember-start); stroke: var(--ember-start); }
+.desk-task.is-done .desk-task-check path { opacity: 1; }
+.desk-task-select {
+  display: grid;
+  gap: 0.05rem;
+  min-width: 0;
+  padding: 0.2rem 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.desk-task-select:disabled { cursor: default; }
+.desk-task-title { font-weight: 600; }
+.desk-task.is-done .desk-task-title { color: var(--desk-text-secondary); text-decoration: line-through; }
+.desk-task-source { display: inline-flex; align-items: center; gap: 0.35rem; color: var(--desk-text-secondary); font-size: 0.76rem; }
+.desk-task-source::before,
+.source-list li::before {
+  content: "";
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--source-color, var(--desk-text-secondary));
+}
+[data-source="PaceTasks"] { --source-color: var(--source-pacetasks); }
+[data-source="Calendar"] { --source-color: var(--source-calendar); }
+[data-source="Reminders"] { --source-color: var(--source-reminders); }
+[data-source="Google"] { --source-color: var(--source-google); }
+.desk-task-minutes {
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: var(--desk-fill);
+  color: var(--desk-text-secondary);
+  font-size: 0.76rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.desk-widget-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.8rem 0 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--desk-hairline);
+  color: var(--desk-text-secondary);
+  font-size: 0.8rem;
+}
+.desk-widget-footer svg { flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Section openings: a heading and one short paragraph, left aligned with the content. */
+.section-intro { max-width: 40rem; margin-bottom: 3rem; }
+.section-intro h2 { margin: 0 0 0.75rem; font-size: clamp(2rem, 1.35rem + 2.4vw, 3.25rem); font-weight: 750; font-stretch: 88%; letter-spacing: -0.03em; }
+.section-intro p { margin: 0; color: var(--text-secondary); font-size: 1.1rem; }
+
+/* A day with both apps: a rail of times, each stop on the iPhone (sage) or the Mac (indigo). */
+.day { margin-top: 6rem; }
+.day-timeline { position: relative; margin: 0; padding: 0; list-style: none; }
+.day-timeline::before {
+  content: "";
+  position: absolute;
+  top: 0.75rem;
+  bottom: 0.75rem;
+  left: calc(0.5rem - 1px);
+  width: 2px;
+  border-radius: 2px;
+  background: var(--border);
+}
+.day-stop { --stop-color: var(--accent); position: relative; display: grid; gap: 1.25rem; padding: 0 0 4rem 2.25rem; }
+.day-stop[data-device="mac"] { --stop-color: var(--desk-label); }
+.day-stop:last-child { padding-bottom: 0; }
+.day-time { position: relative; display: grid; gap: 0.15rem; margin: 0; }
+.day-time::before {
+  content: "";
+  position: absolute;
+  top: 0.6rem;
+  left: -2.25rem;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: var(--stop-color);
+  box-shadow: 0 0 0 4px var(--background);
+}
+.day-time time {
+  font-family: var(--font-display);
+  font-size: 2.25rem;
+  font-weight: 700;
+  font-stretch: 78%;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.day-device { color: var(--stop-color); font-size: 0.92rem; font-weight: 600; }
+.day-copy h3 { margin: 0 0 0.75rem; font-size: clamp(1.6rem, 1.2rem + 1.3vw, 2.25rem); letter-spacing: -0.025em; }
+.day-copy p { margin: 0 0 1rem; max-width: 34rem; color: var(--text-secondary); }
+.day-copy strong { color: var(--text-primary); }
+.day-visual { justify-self: start; }
+.phone.day-visual { width: min(100%, 240px); }
+.day-quote {
+  max-width: 34rem;
+  margin: 1.25rem 0 0;
+  padding: 0.9rem 1.1rem;
+  border-left: 4px solid var(--accent);
+  border-radius: 0 14px 14px 0;
   background: var(--surface);
+  font-size: 1.1rem;
+  line-height: 1.45;
+}
+
+/* DeskFocus panels in the day: where the list comes from, and the apps hidden during focus. */
+.desk-panel {
+  width: min(100%, 20rem);
+  min-width: 0;
+  margin: 0;
+  padding: 1.25rem;
+  border: 1px solid var(--desk-hairline);
+  border-radius: 24px;
+  background: var(--desk-panel);
+  color: var(--desk-text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 30px 60px -28px var(--desk-shadow);
+}
+.desk-panel-title {
+  float: left;
+  width: 100%;
+  margin: 0 0 0.9rem;
+  padding: 0;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+.source-list { clear: both; display: grid; gap: 0.5rem; margin: 0; padding: 0; list-style: none; }
+.source-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 14px;
+  background: var(--desk-fill);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.source-list li::before { width: 0.65rem; height: 0.65rem; }
+.source-arrow { display: block; margin: 0.6rem auto; fill: none; stroke: var(--desk-text-secondary); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.source-merge { margin: 0; padding: 0.75rem; border-radius: 14px; background: var(--ember); color: var(--desk-ink); font-weight: 700; text-align: center; }
+.app-switches { clear: both; display: grid; gap: 0.15rem; }
+.app-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.app-switch:hover { background: var(--desk-fill); }
+.app-switch-input {
+  appearance: none;
+  position: relative;
+  flex: none;
+  width: 2.75rem;
+  height: 1.6rem;
+  margin: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.app-switch-input::after {
+  content: "";
+  position: absolute;
+  top: 0.2rem;
+  left: 0.2rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s ease;
+}
+.app-switch-input:checked { background: var(--ember); }
+.app-switch-input:checked::after { transform: translateX(1.15rem); }
+.desk-panel-note { margin: 0.9rem 0 0; color: var(--desk-text-secondary); font-size: 0.82rem; }
+
+/* Both apps: one panel in each app's own colors. */
+.both { margin-top: 6rem; }
+.both-grid { display: grid; gap: 1rem; }
+.app-panel { display: flex; flex-direction: column; padding: 2rem 1.5rem; border-radius: 28px; }
+.app-panel-pacetasks { border: 1px solid var(--border); background: var(--surface); }
+.app-panel-deskfocus { border: 1px solid var(--desk-hairline); background: var(--desk-panel); color: var(--desk-text); }
+.app-panel-head { display: flex; align-items: center; gap: 0.9rem; margin-bottom: 1.25rem; }
+.app-panel-head img { width: 56px; height: 56px; border-radius: 13px; }
+.app-panel h3 { margin: 0; font-size: 1.75rem; }
+.app-panel-platform { margin: 0; color: var(--text-secondary); font-size: 0.92rem; }
+.app-panel-summary { margin: 0 0 1.25rem; font-size: 1.15rem; line-height: 1.5; }
+.app-panel-note { margin: 0.85rem 0 0; color: var(--text-secondary); font-size: 0.88rem; }
+.app-panel-deskfocus .app-panel-platform,
+.app-panel-deskfocus .app-panel-note { color: var(--desk-text-secondary); }
+.app-panel .button { align-self: flex-start; margin-top: auto; }
+.check-list { display: grid; gap: 0.55rem; margin: 0 0 2rem; padding: 0; list-style: none; }
+.check-list li { position: relative; padding-left: 1.85rem; }
+
+/* Round check marks: sage for PaceTasks and the privacy promises, ember for DeskFocus. */
+.check-list li::before,
+.promise-list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.3em;
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 50%;
+  background: var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.5l2.5 2.5L12 5.5' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 0.8rem no-repeat;
+}
+.app-panel-deskfocus .check-list li::before {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.5l2.5 2.5L12 5.5' fill='none' stroke='%231c1747' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 0.8rem no-repeat, var(--ember);
+}
+@media (prefers-color-scheme: dark) {
+  .check-list li::before,
+  .promise-list li::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.5l2.5 2.5L12 5.5' fill='none' stroke='%23141a16' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  }
+}
+
+/* Privacy promise and questions. */
+.split { display: grid; gap: 1.5rem; margin-top: 5rem; padding-top: 3rem; border-top: 1px solid var(--border); }
+.split h2 { margin: 0; font-size: clamp(2rem, 1.35rem + 2.4vw, 3.25rem); font-weight: 750; font-stretch: 88%; letter-spacing: -0.03em; }
+.promise-list { display: grid; gap: 1rem; margin: 0; padding: 0; list-style: none; }
+.promise-list li { position: relative; padding-left: 2rem; }
+.promise-list strong { display: block; }
+.promise-list span { color: var(--text-secondary); }
+.questions details { padding: 0.9rem 0; border-bottom: 1px solid var(--border); }
+.questions details:first-child { padding-top: 0; }
+.questions summary { font-weight: 600; cursor: pointer; }
+.questions details p { margin: 0.5rem 0 0; color: var(--text-secondary); }
+.questions > p { margin: 1.25rem 0 0; }
+
+@media (min-width: 900px) {
+  .hero-card { grid-template-columns: 1.05fr 1fr; padding: 4rem 4rem 2.5rem; column-gap: 3rem; row-gap: 1.5rem; }
+  .hero-blob-a { width: 34rem; height: 34rem; right: -14rem; top: -14rem; }
+  .hero-blob-b { width: 22rem; height: 22rem; left: auto; right: 24%; bottom: -14rem; }
+  /* The phone sits high so its Today header stays visible above the widget. */
+  .hero-stage { min-height: 44rem; align-items: start; }
+  .hero-phone { justify-self: end; width: 280px; max-height: none; overflow: visible; }
+  .desk-widget { position: absolute; left: -2.5rem; bottom: 0; width: 21rem; margin: 0; }
+  .hero-stage-note { grid-column: 2; text-align: right; }
+
+  .day-timeline::before { left: calc(7.5rem + 1.25rem - 1px); }
+  .day-stop { grid-template-columns: 7.5rem minmax(0, 1fr) 17rem; column-gap: 2.5rem; align-items: start; padding: 0 0 4.5rem; }
+  .day-time { justify-items: end; text-align: right; }
+  .day-time::before { left: auto; right: -1.75rem; }
+  .day-visual { justify-self: center; }
+  .phone.day-visual { width: 240px; }
+
+  .both-grid { grid-template-columns: 1fr 1fr; }
+  .app-panel { padding: 2.5rem; }
+  .split { grid-template-columns: 1fr 1.6fr; gap: 3rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-blob { animation: none; }
+  .desk-widget,
+  .hero-stage[data-demo-live] .desk-widget,
+  .focus-ring-value,
+  .app-switch-input,
+  .app-switch-input::after { transition: none; }
+}
+
+/* Policy and help pages: one readable column. */
+.page { max-width: 44rem; margin: 0 auto; padding: 1.5rem 1rem 0; }
+.page h1 { margin: 0 0 0.25rem; font-size: clamp(2.25rem, 1.8rem + 1.8vw, 3rem); font-weight: 750; font-stretch: 88%; letter-spacing: -0.03em; }
+.page h2 { margin: 2.25rem 0 0.5rem; font-size: 1.45rem; }
+.page h3 { margin: 1.75rem 0 0.4rem; font-size: 1.2rem; letter-spacing: -0.01em; }
+/* Each app gets its own part of a shared page, opened by its icon and name. */
+.page-part { margin-top: 3rem; border-top: 1px solid var(--border); }
+.page .page-part-title { display: flex; align-items: center; gap: 0.75rem; margin-top: 2rem; font-size: 1.75rem; }
+.page-part-title img { width: 36px; height: 36px; border-radius: 9px; }
+.meta { color: var(--text-secondary); font-size: 0.9rem; }
+.card {
+  margin: 1rem 0;
+  padding: 1rem 1.25rem;
   border: 1px solid var(--border);
   border-radius: 18px;
-  padding: 1rem 1.25rem;
-  margin: 1rem 0;
+  background: var(--surface);
 }
 .card > :first-child { margin-top: 0; }
 .card > :last-child { margin-bottom: 0; }
 table { width: 100%; border-collapse: collapse; }
-th, td { text-align: left; vertical-align: top; padding: 0.5rem 0.5rem 0.5rem 0; border-bottom: 1px solid var(--border); }
-th { color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; }
+th, td { padding: 0.5rem 0.5rem 0.5rem 0; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+th { color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; }
 .table-scroll { overflow-x: auto; }
-footer { margin-top: 3rem; border-top: 1px solid var(--border); padding-top: 1rem; }
 /* On a phone, three columns are too narrow to read: each row becomes a stacked block. */
 @media (max-width: 600px) {
   table, tbody, tr, td { display: block; }
   tr:first-child { display: none; }
   tr { padding: 0.75rem 0; border-bottom: 1px solid var(--border); }
-  td { border: 0; padding: 0.15rem 0; }
+  td { padding: 0.15rem 0; border: 0; }
   td:first-child { font-weight: 600; }
   td:not(:first-child) { color: var(--text-secondary); }
 }
