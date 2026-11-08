@@ -24,7 +24,7 @@ final class GoogleAuthService {
             case .cancelled: return String(localized: "Sign-in was cancelled.")
             case .invalidCallback: return String(localized: "Google returned an invalid sign-in response.")
             case .stateMismatch: return String(localized: "Sign-in response did not match the request.")
-            case .missingRefreshToken: return String(localized: "Google did not return a refresh token. Remove Deskfocus from your Google account permissions and try again.")
+            case .missingRefreshToken: return String(localized: "Google did not return a refresh token. Remove DeskFocus from your Google account permissions and try again.")
             case .server(let message): return message
             }
         }

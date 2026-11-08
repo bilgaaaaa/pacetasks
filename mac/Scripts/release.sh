@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Builds Deskfocus, signs it with your Developer ID, notarizes it with Apple, packages build/Deskfocus-<version>.dmg
+# Builds DeskFocus for Mac, signs it with your Developer ID, notarizes it with Apple, packages build/DeskFocus-<version>.dmg
 # and writes the signed update feed build/updates/appcast.xml. With --publish it also creates the GitHub release.
-# One-time setup is described in README › "Share Deskfocus as a download" and "In-app updates".
+# One-time setup is described in README › "Share DeskFocus as a download" and "In-app updates".
 set -euo pipefail
 
 # Mac releases live on the shared repository as mac-v<version>; keep every other release out of it (or mark it pre-release),
@@ -93,13 +93,13 @@ xcodebuild -exportArchive \
     -allowProvisioningUpdates \
     -quiet
 
-APP_PATH="$EXPORT_DIR/Deskfocus.app"
-[[ -d "$APP_PATH" ]] || fail "Export did not produce Deskfocus.app."
+APP_PATH="$EXPORT_DIR/DeskFocus.app"
+[[ -d "$APP_PATH" ]] || fail "Export did not produce DeskFocus.app."
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP_PATH/Contents/Info.plist")"
 BUILD_NUMBER="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP_PATH/Contents/Info.plist")"
-DMG_PATH="$BUILD_DIR/Deskfocus-$VERSION.dmg"
-codesign --verify --deep --strict "$APP_PATH" || fail "Signature check failed for Deskfocus.app."
-echo "Signed Deskfocus $VERSION ($BUILD_NUMBER)"
+DMG_PATH="$BUILD_DIR/DeskFocus-$VERSION.dmg"
+codesign --verify --deep --strict "$APP_PATH" || fail "Signature check failed for DeskFocus.app."
+echo "Signed DeskFocus $VERSION ($BUILD_NUMBER)"
 
 log "Checking the build number against the published feed"
 # Sparkle only offers a build with a higher CFBundleVersion, so an unchanged number would never reach anyone.
@@ -116,7 +116,7 @@ log "Creating disk image"
 mkdir -p "$STAGING_DIR"
 cp -R "$APP_PATH" "$STAGING_DIR/"
 ln -s /Applications "$STAGING_DIR/Applications"
-hdiutil create -volname "Deskfocus" -srcfolder "$STAGING_DIR" -ov -format UDZO "$DMG_PATH" -quiet
+hdiutil create -volname "DeskFocus" -srcfolder "$STAGING_DIR" -ov -format UDZO "$DMG_PATH" -quiet
 codesign --sign "Developer ID Application" --timestamp "$DMG_PATH"
 
 log "Notarizing with Apple (usually 1-5 minutes)"

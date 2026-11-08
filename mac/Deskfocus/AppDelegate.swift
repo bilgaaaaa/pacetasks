@@ -9,9 +9,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         model.showOnboardingIfNeeded()
     }
 
-    /// Deskfocus has no Dock icon, so opening it again from Finder or Spotlight shows a window instead of doing nothing.
+    /// DeskFocus has no Dock icon, so opening it again from Finder or Spotlight shows a window instead of doing nothing.
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        Log.app.info("Deskfocus reopened")
+        Log.app.info("DeskFocus reopened")
         model.handleReopen()
         return false
     }

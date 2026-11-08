@@ -93,7 +93,7 @@ final class TaskCreationService {
         return targets
     }
 
-    /// Creates the event or to-do and returns its Deskfocus id.
+    /// Creates the event or to-do and returns its DeskFocus id.
     func create(_ draft: NewTaskDraft) async throws -> String {
         switch draft.target.kind {
         case .event: return try createEvent(draft)

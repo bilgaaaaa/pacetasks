@@ -1,6 +1,6 @@
 import Foundation
 
-/// Open Google Tasks due in the interval (plus overdue and undated ones for today), across the task lists kept on in Deskfocus.
+/// Open Google Tasks due in the interval (plus overdue and undated ones for today), across the task lists kept on in DeskFocus.
 @MainActor
 final class GoogleTasksSource: TaskSource {
     let kind: TaskSourceKind = .googleTasks

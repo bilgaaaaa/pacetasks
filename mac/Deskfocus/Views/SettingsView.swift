@@ -42,7 +42,7 @@ struct CalendarAccountsSection: View {
         } header: {
             Text("Your accounts")
         } footer: {
-            Text("If access was denied before, allow Deskfocus in System Settings › Privacy & Security.")
+            Text("If access was denied before, allow DeskFocus in System Settings › Privacy & Security.")
         }
 
         GoogleAccountSection()
@@ -105,7 +105,7 @@ private struct CalendarsSettingsView: View {
         let items = containers.filter { $0.source == kind }
 
         Section {
-            Toggle("Show in Deskfocus", isOn: model.sourceBinding(kind))
+            Toggle("Show in DeskFocus", isOn: model.sourceBinding(kind))
             if isSourceOn {
                 if items.isEmpty && isLoadingContainers {
                     LabeledContent("Loading…") { ProgressView().controlSize(.small) }
@@ -217,12 +217,12 @@ private struct FocusSettingsView: View {
             }
 
             Section {
-                TextField("Turn on (e.g. Deskfocus On)", text: model.binding(\.focusOnShortcutName))
-                TextField("Turn off (e.g. Deskfocus Off)", text: model.binding(\.focusOffShortcutName))
+                TextField("Turn on (e.g. DeskFocus On)", text: model.binding(\.focusOnShortcutName))
+                TextField("Turn off (e.g. DeskFocus Off)", text: model.binding(\.focusOffShortcutName))
             } header: {
                 Text("Silence notifications with a Focus mode")
             } footer: {
-                Text("Create two Shortcuts that turn your \"Deskfocus\" Focus mode on and off, then enter their names here. Choose which apps may notify you in System Settings › Focus.")
+                Text("Create two Shortcuts that turn your \"DeskFocus\" Focus mode on and off, then enter their names here. Choose which apps may notify you in System Settings › Focus.")
             }
         }
         .formStyle(.grouped)
@@ -247,7 +247,7 @@ private struct GeneralSettingsView: View {
                 }
                 if model.snapshot.settings.language != model.launchLanguage {
                     HStack {
-                        Text("Restart Deskfocus to switch language.")
+                        Text("Restart DeskFocus to switch language.")
                             .foregroundStyle(.secondary)
                         Spacer()
                         Button("Restart Now") { model.relaunch() }
@@ -292,7 +292,7 @@ private struct GeneralSettingsView: View {
             }
 
             Section {
-                Toggle("Open Deskfocus at login", isOn: $launchAtLogin)
+                Toggle("Open DeskFocus at login", isOn: $launchAtLogin)
                     .onChange(of: launchAtLogin) { _, enabled in
                         LaunchAtLogin.setEnabled(enabled)
                         launchAtLogin = LaunchAtLogin.isEnabled
@@ -333,7 +333,7 @@ private struct UpdatesSection: View {
             Text("Updates")
         } footer: {
             Text(updater.isAvailable
-                 ? "Deskfocus looks for a new version once a day and updates itself in place. Your settings and tasks stay as they are."
+                 ? "DeskFocus looks for a new version once a day and updates itself in place. Your settings and tasks stay as they are."
                  : "This build doesn't update itself. Builds made with the release script do.")
         }
     }

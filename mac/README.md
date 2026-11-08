@@ -1,4 +1,4 @@
-# Deskfocus
+# DeskFocus
 
 DeskFocus for Mac: a menu bar app and desktop widget that put **today's tasks and a focus timer in one place**. On iPhone, DeskFocus is the widget inside PaceTasks (`targets/deskfocus/` at the root of this repository).
 
@@ -57,7 +57,7 @@ Fill in:
 
 ### 3. Google Calendar and Tasks (optional)
 
-1. Open [Google Cloud Console](https://console.cloud.google.com/) and create a project, for example "Deskfocus".
+1. Open [Google Cloud Console](https://console.cloud.google.com/) and create a project, for example "DeskFocus".
 2. **APIs & Services › Library**: enable **Google Calendar API** and **Google Tasks API**.
 3. **APIs & Services › OAuth consent screen**: choose **External**, fill in the app name and your email, and add these scopes: `email`, `.../auth/calendar.readonly`, `.../auth/tasks`. While the app is in **Testing**, add your own Google account under **Test users**.
 4. **APIs & Services › Credentials › Create credentials › OAuth client ID**:
@@ -76,7 +76,7 @@ xcodegen generate
 open Deskfocus.xcodeproj
 ```
 
-Select the **Deskfocus** scheme and run. The app lives in the menu bar (checklist icon). Run `xcodegen generate` again whenever you add or remove files.
+Select the **DeskFocus** scheme and run. The app lives in the menu bar (checklist icon). Run `xcodegen generate` again whenever you add or remove files.
 
 ### 5. First launch
 
@@ -84,26 +84,26 @@ A welcome guide opens on the first launch and walks through the steps below. Ope
 
 1. Settings › **Calendars**: allow Calendar and Reminders, connect Google, and switch off any calendar or list you don't want to see.
 2. **Focus** tab: pick the apps to hide during focus and set the timer length.
-3. **General** tab: turn on **Open Deskfocus at login**, so widget buttons work even after a restart.
-4. Add the widget: right-click the desktop › **Edit Widgets** › search "Deskfocus" › choose medium or large.
+3. **General** tab: turn on **Open DeskFocus at login**, so widget buttons work even after a restart.
+4. Add the widget: right-click the desktop › **Edit Widgets** › search "DeskFocus" › choose medium or large.
 
-Settings open from the ⚙︎ on the desktop widget, from the menu bar icon, or by opening Deskfocus again from Finder or Spotlight. Drag the desktop widget anywhere to move it; right-click it › **Reset Position** brings it back to the top-left corner.
+Settings open from the ⚙︎ on the desktop widget, from the menu bar icon, or by opening DeskFocus again from Finder or Spotlight. Drag the desktop widget anywhere to move it; right-click it › **Reset Position** brings it back to the top-left corner.
 
 ### 6. Silence notifications with a Focus mode (optional)
 
-macOS does not let apps block other apps' notifications directly, so Deskfocus switches a Focus mode for you:
+macOS does not let apps block other apps' notifications directly, so DeskFocus switches a Focus mode for you:
 
-1. **System Settings › Focus › Add Focus › Custom**, name it **Deskfocus**, and choose which people and apps may still notify you.
+1. **System Settings › Focus › Add Focus › Custom**, name it **DeskFocus**, and choose which people and apps may still notify you.
 2. In the **Shortcuts** app create two shortcuts:
-   - **Deskfocus On**: action *Set Focus* › Deskfocus › **On** › *Until Turned Off*.
-   - **Deskfocus Off**: action *Set Focus* › Deskfocus › **Off**.
-3. In Deskfocus Settings › **Focus**, enter `Deskfocus On` and `Deskfocus Off`.
+   - **DeskFocus On**: action *Set Focus* › DeskFocus › **On** › *Until Turned Off*.
+   - **DeskFocus Off**: action *Set Focus* › DeskFocus › **Off**.
+3. In DeskFocus Settings › **Focus**, enter `DeskFocus On` and `DeskFocus Off`.
 
 The Focus mode turns on when a session starts or resumes, and off when it is paused, stopped, completed or the time is up.
 
-## Share Deskfocus as a download
+## Share DeskFocus as a download
 
-Needs the paid Apple Developer Program. The result is a signed, notarized `Deskfocus-<version>.dmg` that opens normally on any Mac with macOS 14 or later.
+Needs the paid Apple Developer Program. The result is a signed, notarized `DeskFocus-<version>.dmg` that opens normally on any Mac with macOS 14 or later.
 
 ### One-time setup
 
@@ -123,12 +123,12 @@ Needs the paid Apple Developer Program. The result is a signed, notarized `Deskf
    ```bash
    ./Scripts/release.sh --publish
    ```
-   It builds, notarizes, signs the update feed and creates the GitHub release `mac-v<version>` in this repository (bilgaaaaa/pacetasks) with `Deskfocus-<version>.dmg` and `appcast.xml` attached. Without `--publish` it stops before uploading and shows both files, to attach by hand.
-3. Installed copies offer the new version within a day, or right away from Settings › General › **Check Now**. New users download the DMG from the release page and drag Deskfocus into Applications.
+   It builds, notarizes, signs the update feed and creates the GitHub release `mac-v<version>` in this repository (bilgaaaaa/pacetasks) with `DeskFocus-<version>.dmg` and `appcast.xml` attached. Without `--publish` it stops before uploading and shows both files, to attach by hand.
+3. Installed copies offer the new version within a day, or right away from Settings › General › **Check Now**. New users download the DMG from the release page and drag DeskFocus into Applications.
 
 ## In-app updates
 
-Deskfocus updates itself with [Sparkle](https://sparkle-project.org): once a day it reads `appcast.xml` from the newest GitHub release of bilgaaaaa/pacetasks. Only Mac releases are published there: any other release must be a pre-release, or Sparkle would read the wrong feed and, when there is a newer build, downloads, installs and relaunches it in place. Settings, tasks and Google sign-in stay as they are.
+DeskFocus updates itself with [Sparkle](https://sparkle-project.org): once a day it reads `appcast.xml` from the newest GitHub release of bilgaaaaa/pacetasks. Only Mac releases are published there: any other release must be a pre-release, or Sparkle would read the wrong feed and, when there is a newer build, downloads, installs and relaunches it in place. Settings, tasks and Google sign-in stay as they are.
 
 Every update is signed with a private key that only lives in your Keychain, and the app accepts only updates signed with it.
 
@@ -151,5 +151,5 @@ Every module logs with `os.Logger` under the subsystem `com.bilgaaaaa.deskfocus`
 ## Notes
 
 - Calendar events can't be "completed" in Calendar, so **Done** on an event only hides it for today. Done on a reminder or Google task completes it in its source; if that fails (offline), it retries on the next sync.
-- If your Google account is also added in System Settings › Internet Accounts, the same event arrives twice; Deskfocus removes the duplicate by title and start time.
+- If your Google account is also added in System Settings › Internet Accounts, the same event arrives twice; DeskFocus removes the duplicate by title and start time.
 - Sync runs at launch, every 5 minutes, on wake, at midnight and whenever the macOS calendar database changes.

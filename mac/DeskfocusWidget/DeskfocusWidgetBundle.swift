@@ -20,7 +20,7 @@ struct DeskfocusWidget: Widget {
                 }
                 .environment(\.colorScheme, .dark)
         }
-        .configurationDisplayName("Deskfocus")
+        .configurationDisplayName("DeskFocus")
         .description("Today's tasks and your focus timer in one place.")
         .supportedFamilies([.systemMedium, .systemLarge])
     }

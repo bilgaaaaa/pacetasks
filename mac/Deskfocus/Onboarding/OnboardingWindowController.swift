@@ -17,7 +17,7 @@ final class OnboardingWindowController {
         let view = OnboardingView(onFinish: { [weak self] in self?.close() })
             .environment(model)
         let window = NSWindow(contentViewController: NSHostingController(rootView: view))
-        window.title = String(localized: "Welcome to Deskfocus")
+        window.title = String(localized: "Welcome to DeskFocus")
         window.styleMask = [.titled, .closable]
         window.isReleasedWhenClosed = false
         window.center()

@@ -16,7 +16,7 @@ private enum OnboardingStep: Int, CaseIterable {
     }
 }
 
-/// First-launch guide: what Deskfocus does, connecting calendars, placing the widget and where Settings are.
+/// First-launch guide: what DeskFocus does, connecting calendars, placing the widget and where Settings are.
 struct OnboardingView: View {
     @Environment(AppModel.self) private var model
     let onFinish: () -> Void
@@ -54,7 +54,7 @@ struct OnboardingView: View {
                 Button("Back") { step = step.moved(by: -1) }
             }
             if step.isLast {
-                Button("Start Using Deskfocus") {
+                Button("Start Using DeskFocus") {
                     Log.app.info("Welcome guide finished")
                     onFinish()
                 }
@@ -69,7 +69,7 @@ struct OnboardingView: View {
     }
 }
 
-/// What Deskfocus is, in three lines.
+/// What DeskFocus is, in three lines.
 private struct WelcomePage: View {
     var body: some View {
         VStack(spacing: 22) {
@@ -78,13 +78,13 @@ private struct WelcomePage: View {
                 .frame(width: 88, height: 88)
                 .accessibilityHidden(true)
             OnboardingHeader(
-                title: "Welcome to Deskfocus",
+                title: "Welcome to DeskFocus",
                 subtitle: "Today's tasks and a focus timer, right on your desktop."
             )
             VStack(alignment: .leading, spacing: 16) {
                 OnboardingTipRow(systemImage: "calendar", title: "Your day in one list", text: "Events and to-dos from Calendar, Reminders and Google.")
                 OnboardingTipRow(systemImage: "play.circle", title: "Focus on one thing", text: "Press ▶ on any task to start a timer and keep distracting apps away.")
-                OnboardingTipRow(systemImage: "macwindow", title: "Always in sight", text: "A glass widget on your desktop, and Deskfocus in the menu bar.")
+                OnboardingTipRow(systemImage: "macwindow", title: "Always in sight", text: "A glass widget on your desktop, and DeskFocus in the menu bar.")
             }
             .padding(.horizontal, 40)
         }
@@ -98,7 +98,7 @@ private struct CalendarsPage: View {
         VStack(spacing: 8) {
             OnboardingHeader(
                 title: "Connect your calendars",
-                subtitle: "Deskfocus shows the calendars and reminders on this Mac. Pick which ones any time in Settings › Calendars."
+                subtitle: "DeskFocus shows the calendars and reminders on this Mac. Pick which ones any time in Settings › Calendars."
             )
             .padding(.horizontal, 32)
             .padding(.top, 28)
@@ -133,7 +133,7 @@ private struct WidgetPage: View {
                 Section {
                     OnboardingTipRow(systemImage: "hand.draw", title: "Move it", text: "Drag the widget anywhere, for example away from your other widgets.")
                     OnboardingTipRow(systemImage: "contextualmenu.and.cursorarrow", title: "Change it", text: "Right-click it to open the week, pick colors or reset its position.")
-                    OnboardingTipRow(systemImage: "square.grid.2x2", title: "Prefer a system widget?", text: "Right-click the desktop › Edit Widgets, search \"Deskfocus\" and pick medium or large.")
+                    OnboardingTipRow(systemImage: "square.grid.2x2", title: "Prefer a system widget?", text: "Right-click the desktop › Edit Widgets, search \"DeskFocus\" and pick medium or large.")
                 }
             }
             .formStyle(.grouped)
@@ -142,7 +142,7 @@ private struct WidgetPage: View {
     }
 }
 
-/// Where Settings are, and keeping Deskfocus running.
+/// Where Settings are, and keeping DeskFocus running.
 private struct ReadyPage: View {
     @State private var launchAtLogin = LaunchAtLogin.isEnabled
 
@@ -156,11 +156,11 @@ private struct ReadyPage: View {
             .padding(.top, 28)
             Form {
                 Section {
-                    OnboardingTipRow(systemImage: "gearshape", title: "Settings", text: "Click ⚙︎ on the widget, or the Deskfocus icon in the menu bar and then ⚙︎.")
+                    OnboardingTipRow(systemImage: "gearshape", title: "Settings", text: "Click ⚙︎ on the widget, or the DeskFocus icon in the menu bar and then ⚙︎.")
                     OnboardingTipRow(systemImage: "plus.circle", title: "New task", text: "Click + on the widget to add an event or a to-do.")
                 }
                 Section {
-                    Toggle("Open Deskfocus at login", isOn: $launchAtLogin)
+                    Toggle("Open DeskFocus at login", isOn: $launchAtLogin)
                         .onChange(of: launchAtLogin) { _, enabled in
                             LaunchAtLogin.setEnabled(enabled)
                             launchAtLogin = LaunchAtLogin.isEnabled
