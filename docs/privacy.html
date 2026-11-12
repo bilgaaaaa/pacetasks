@@ -5,34 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>PaceTasks and DeskFocus — Privacy Policy</title>
   <meta name="description" content="What PaceTasks and DeskFocus store, why, for how long, and how to delete it.">
-  <meta name="theme-color" content="#2f4636">
+  <meta name="theme-color" content="#000000">
   <link rel="canonical" href="https://pacetasks.bilgalog.dev/privacy.html">
   <link rel="icon" href="icon.png">
   <link rel="apple-touch-icon" href="icon.png">
-  <link rel="preload" href="fonts/bricolage-grotesque.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/plus-jakarta-sans.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="site.css">
+  <script src="site.js" defer></script>
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
 
 <header class="site-header">
-  <a class="brand" href="./">
-    <span class="brand-icons"><img src="icon.png" alt="" width="36" height="36"><img src="deskfocus-icon.svg" alt="" width="36" height="36"></span>
-    <span class="brand-name">PaceTasks<span class="brand-with">with DeskFocus for Mac</span></span>
-  </a>
-  <nav class="site-nav" aria-label="Site">
-    <a href="./#day">How it works</a>
-    <a href="./#both">Both apps</a>
-    <a href="support.html">Help</a>
-    <a href="privacy.html" aria-current="page">Privacy</a>
+  <nav class="nav" aria-label="Main">
+    <ul class="product-tabs">
+      <li><a class="product-tabs__tab" href="./"><img class="product-tabs__icon" src="icon.png" alt="" width="26" height="26">PaceTasks</a></li>
+      <li><a class="product-tabs__tab" href="deskfocus.html"><img class="product-tabs__icon" src="deskfocus-icon.svg" alt="" width="26" height="26">DeskFocus</a></li>
+    </ul>
+    <div class="nav__end">
+      <ul class="nav__links">
+        <li><a href="support.html">Help</a></li>
+        <li><a href="privacy.html" aria-current="page">Privacy</a></li>
+        <li><a href="terms.html">Terms</a></li>
+      </ul>
+    </div>
   </nav>
 </header>
 
 <main id="main" class="page">
+  <div class="page__glow" aria-hidden="true"></div>
   <h1>Privacy Policy</h1>
-  <p class="meta">Effective date: 9 November 2026</p>
+  <p class="page__meta">Effective date: 9 November 2026</p>
 
-  <div class="card">
+  <div class="card page__card">
     <p><strong>In short.</strong> This policy covers two apps sold together: PaceTasks for iPhone and DeskFocus for
     Mac. PaceTasks stores the tasks you type so it can show them to you. DeskFocus keeps everything on your Mac and
     talks only to Apple, Google if you connect it, and GitHub to check for updates. If you buy Pro, RevenueCat records
@@ -46,8 +51,8 @@
   Padova, Italy, who is the data controller. Contact:
   <a href="mailto:pacetasks@bilgalog.dev">pacetasks@bilgalog.dev</a>.</p>
 
-  <section class="page-part" aria-labelledby="pacetasksPrivacy">
-    <h2 class="page-part-title" id="pacetasksPrivacy"><img src="icon.png" alt="" width="36" height="36">PaceTasks</h2>
+  <section class="page__part" aria-labelledby="pacetasksPrivacy">
+    <h2 class="page__part-title" id="pacetasksPrivacy"><img src="icon.png" alt="" width="36" height="36">PaceTasks</h2>
 
     <h3>What PaceTasks stores</h3>
     <div class="table-scroll">
@@ -177,8 +182,8 @@
     adequacy decision or the European Commission's standard contractual clauses.</p>
   </section>
 
-  <section class="page-part" aria-labelledby="deskfocusPrivacy">
-    <h2 class="page-part-title" id="deskfocusPrivacy"><img src="deskfocus-icon.svg" alt="" width="36" height="36">DeskFocus</h2>
+  <section class="page__part" aria-labelledby="deskfocusPrivacy">
+    <h2 class="page__part-title" id="deskfocusPrivacy"><img src="deskfocus-icon.svg" alt="" width="36" height="36">DeskFocus</h2>
 
     <p>DeskFocus is the Mac app and desktop widget sold with PaceTasks. It has no server of its own: what it reads
     stays on your Mac, or goes directly between your Mac and Apple, Google or GitHub.</p>
@@ -277,14 +282,32 @@
 </main>
 
 <footer class="site-footer">
-  <p>Made in Padova by <a href="https://bilgalog.dev">Bilge Ozcanbaz</a>. Write to
-  <a href="mailto:pacetasks@bilgalog.dev">pacetasks@bilgalog.dev</a>.</p>
-  <nav class="site-nav" aria-label="Footer">
-    <a href="support.html">Help and support</a>
-    <a href="privacy.html" aria-current="page">Privacy policy</a>
-    <a href="terms.html">Terms and refunds</a>
-    <a href="https://github.com/bilgaaaaa/pacetasks">Source code</a>
-  </nav>
+  <div class="container site-footer__inner">
+    <div class="site-footer__brand">
+      <p class="site-footer__logos"><img src="icon.png" alt="" width="28" height="28"><img src="deskfocus-icon.svg" alt="" width="28" height="28">PaceTasks with DeskFocus</p>
+      <p class="text-muted">Plan your day on iPhone. Focus on it at your Mac.</p>
+      <p class="text-muted">Write to <a href="mailto:pacetasks@bilgalog.dev">pacetasks@bilgalog.dev</a></p>
+    </div>
+    <div class="site-footer__column">
+      <h2 class="site-footer__heading">Apps</h2>
+      <ul>
+        <li><a href="./">PaceTasks for iPhone</a></li>
+        <li><a href="deskfocus.html">DeskFocus for Mac</a></li>
+        <li><a href="https://bilgaaaaa.github.io/PaceTasksWebsite/demo/">Try the demo</a></li>
+        <li><a href="https://github.com/bilgaaaaa/deskfocus/releases/latest">Download DeskFocus</a></li>
+      </ul>
+    </div>
+    <div class="site-footer__column">
+      <h2 class="site-footer__heading">Help</h2>
+      <ul>
+        <li><a href="support.html">Help and support</a></li>
+        <li><a href="privacy.html" aria-current="page">Privacy policy</a></li>
+        <li><a href="terms.html">Terms and refunds</a></li>
+        <li><a href="https://github.com/bilgaaaaa/pacetasks">Source code</a></li>
+      </ul>
+    </div>
+  </div>
+  <p class="container site-footer__copyright">© <span data-current-year>2026</span> Bilge Ozcanbaz. Made in Padova.</p>
 </footer>
 </body>
 </html>

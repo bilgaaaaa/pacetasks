@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PaceTasks with DeskFocus — plan on your iPhone, focus on your Mac</title>
+  <title>PaceTasks — Tell me what I need to do.</title>
   <meta name="description" content="PaceTasks fits your tasks around your work on iPhone. DeskFocus, which comes with it, keeps the task you're doing on your Mac desktop with a focus timer.">
-  <meta name="theme-color" content="#2f4636">
+  <meta name="theme-color" content="#000000">
   <link rel="canonical" href="https://pacetasks.bilgalog.dev/">
   <meta property="og:type" content="website">
   <meta property="og:title" content="PaceTasks with DeskFocus">
@@ -15,380 +15,535 @@
   <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="icon.png">
   <link rel="apple-touch-icon" href="icon.png">
-  <link rel="preload" href="fonts/bricolage-grotesque.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/plus-jakarta-sans.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="site.css">
+  <!-- Enables scroll animations only when JS runs, so content stays visible without it. -->
+  <script>document.documentElement.classList.add("js");</script>
   <script src="site.js" defer></script>
   <script src="widget.js" defer></script>
+  <script src="effects.js" defer></script>
 </head>
-<body>
-<a class="skip-link" href="#main">Skip to content</a>
+<body data-product="pacetasks">
+  <a class="skip-link" href="#main">Skip to content</a>
 
-<header class="site-header">
-  <a class="brand" href="./">
-    <span class="brand-icons"><img src="icon.png" alt="" width="36" height="36"><img src="deskfocus-icon.svg" alt="" width="36" height="36"></span>
-    <span class="brand-name">PaceTasks<span class="brand-with">with DeskFocus for Mac</span></span>
-  </a>
-  <nav class="site-nav" aria-label="Site">
-    <a href="#day">How it works</a>
-    <a href="#both">Both apps</a>
-    <a href="#pricing">Pricing</a>
-    <a href="support.html">Help</a>
-    <a href="privacy.html">Privacy</a>
-  </nav>
-</header>
-
-<main id="main" class="landing">
-  <!-- Hero: PaceTasks' Today card, with the DeskFocus widget resting on its phone. -->
-  <section class="hero-card" aria-labelledby="heroTitle">
-    <span class="hero-blob hero-blob-a" aria-hidden="true"></span>
-    <span class="hero-blob hero-blob-b" aria-hidden="true"></span>
-    <div class="hero-copy">
-      <h1 id="heroTitle">Tell me what I need to do.</h1>
-      <p class="hero-lede">PaceTasks fits your tasks around your work on iPhone. DeskFocus, which comes with it, keeps
-      the one you're doing on your Mac desktop, with a focus timer and your distracting apps out of sight.</p>
-      <div class="hero-actions">
-        <!-- The demo is built from this repository by bilgaaaaa/PaceTasksWebsite's deploy workflow. -->
-        <a class="button button-hero" href="https://bilgaaaaa.github.io/PaceTasksWebsite/demo/" data-demo-launch>Try PaceTasks in your browser</a>
-        <a class="button button-ghost" href="https://github.com/bilgaaaaa/deskfocus/releases/latest">Download DeskFocus for Mac</a>
+  <!-- Floating pill navigation with the two product tabs -->
+  <header class="site-header">
+    <nav class="nav" aria-label="Main">
+      <ul class="product-tabs">
+        <li><a class="product-tabs__tab" href="./" aria-current="page"><img class="product-tabs__icon" src="icon.png" alt="" width="26" height="26">PaceTasks</a></li>
+        <li><a class="product-tabs__tab" href="deskfocus.html"><img class="product-tabs__icon" src="deskfocus-icon.svg" alt="" width="26" height="26">DeskFocus</a></li>
+      </ul>
+      <div class="nav__end">
+        <ul class="nav__links">
+          <li><a href="#how">How it works</a></li>
+          <li><a href="#pricing">Pricing</a></li>
+          <li><a href="#faq">FAQ</a></li>
+          <li><a href="support.html">Help</a></li>
+        </ul>
+        <a class="button button--gradient button--small" href="https://bilgaaaaa.github.io/PaceTasksWebsite/demo/">Try the demo</a>
       </div>
-      <!-- Swap the first sentence for the App Store link once PaceTasks is live. -->
-      <p class="hero-status">PaceTasks is coming soon to iPhone. DeskFocus runs on macOS 14 Sonoma or later.</p>
-    </div>
+    </nav>
+  </header>
 
-    <div class="hero-stage" data-hero-stage>
-      <figure class="phone hero-phone" data-demo-phone>
-        <div class="phone-screen">
-          <picture>
-            <source srcset="screens/today-dark.webp" media="(prefers-color-scheme: dark)">
-            <img src="screens/today-light.webp" width="393" height="852"
-            alt="PaceTasks Today: a hero card saying Start small, win big, this week's days, four tasks carried over and today's plan.">
-          </picture>
+  <main id="main">
+    <!-- Hero: the PaceTasks phone with the DeskFocus widget beside it -->
+    <section id="top" class="hero" data-section="overview">
+      <div class="hero__glow" aria-hidden="true"></div>
+      <div class="container hero__inner">
+        <h1 class="hero__title">Tell me what<br><span class="hero__title-fade">I need to do.</span></h1>
+        <p class="hero__lead">PaceTasks figures out how to fit it into your life. Catch tasks the moment you think of them, then get them done before or after work, with the time and energy you really have.</p>
+        <div class="hero__actions">
+          <!-- The demo is built from this repository by bilgaaaaa/PaceTasksWebsite's deploy workflow. -->
+          <a class="button button--gradient button--large" href="https://bilgaaaaa.github.io/PaceTasksWebsite/demo/" data-demo-launch>Try PaceTasks in your browser</a>
+          <a class="button button--ghost button--large" href="deskfocus.html">
+            <img src="deskfocus-icon.svg" alt="" width="22" height="22">
+            Meet DeskFocus for Mac
+          </a>
         </div>
-      </figure>
+        <!-- Swap for the App Store link once PaceTasks is live. -->
+        <p class="hero__note">Coming soon to iPhone, with DeskFocus for your Mac included.</p>
 
-      <div class="desk-widget" role="group" aria-labelledby="widgetTitle" data-widget>
-        <div class="desk-widget-header">
-          <span class="desk-widget-title" id="widgetTitle">Today</span>
-          <span class="desk-widget-meta" data-widget-progress></span>
-        </div>
-        <div class="focus">
-          <div class="focus-dial">
-            <svg class="focus-ring" viewBox="0 0 104 104" aria-hidden="true">
-              <defs>
-                <linearGradient id="emberGradient" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0" stop-color="#ffc857"/>
-                  <stop offset="1" stop-color="#ff6a3d"/>
-                </linearGradient>
-              </defs>
-              <circle class="focus-ring-track" cx="52" cy="52" r="44"/>
-              <circle class="focus-ring-value" cx="52" cy="52" r="44" data-focus-ring/>
-            </svg>
-            <span class="focus-time" data-focus-time>25:00</span>
-          </div>
-          <div class="focus-info">
-            <span class="desk-widget-meta">Focusing on</span>
-            <span class="focus-task" data-focus-task aria-live="polite"></span>
-            <div class="focus-controls">
-              <button type="button" class="widget-button widget-button-primary" data-focus-toggle>Start</button>
-              <button type="button" class="widget-button" data-focus-done>Done</button>
+        <div class="scene showcase" data-hero-stage data-reveal>
+          <figure class="phone" data-demo-phone>
+            <div class="phone__screen">
+              <img src="screens/today-light.webp" width="393" height="852"
+              alt="PaceTasks Today: a hero card saying Start small, win big, this week's days, four tasks carried over and today's plan.">
+            </div>
+          </figure>
+
+          <div class="widget" role="group" aria-labelledby="widgetTitle" data-widget data-product="deskfocus">
+            <div class="widget__header">
+              <span class="widget__title" id="widgetTitle">Today</span>
+              <span class="widget__meta" data-widget-progress></span>
+            </div>
+            <div class="widget__focus">
+              <svg class="timer-ring" width="104" height="104" viewBox="0 0 104 104" aria-hidden="true">
+                <defs>
+                  <linearGradient id="timerGradient" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#60a5fa"/>
+                    <stop offset="55%" stop-color="#a855f7"/>
+                    <stop offset="100%" stop-color="#ec4899"/>
+                  </linearGradient>
+                </defs>
+                <circle class="timer-ring__track" cx="52" cy="52" r="44"/>
+                <circle class="timer-ring__value" cx="52" cy="52" r="44" data-focus-ring/>
+                <text class="timer-ring__label" x="52" y="59" text-anchor="middle" data-focus-time>25:00</text>
+              </svg>
+              <div class="widget__focus-info">
+                <span class="widget__meta">Focusing on</span>
+                <span class="widget__task-name" data-focus-task aria-live="polite"></span>
+                <div class="widget__controls">
+                  <button type="button" class="button button--gradient button--compact" data-focus-toggle>Start</button>
+                  <button type="button" class="button button--ghost button--compact" data-focus-done>Done</button>
+                </div>
+              </div>
+            </div>
+            <ul class="task-list" data-widget-tasks></ul>
+            <div class="widget__footer">
+              <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4M3 3l18 18"/></svg>
+              <span data-hidden-apps></span>
             </div>
           </div>
         </div>
-        <ul class="desk-tasks" data-widget-tasks></ul>
-        <p class="desk-widget-footer">
-          <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4M3 3l18 18"/></svg>
-          <span data-hidden-apps></span>
+        <p class="scene__note">Pick a task in the DeskFocus widget and press Start. PaceTasks tasks in the widget are coming soon. The demo runs on sample tasks, and nothing you type leaves your browser.</p>
+      </div>
+    </section>
+
+    <!-- Scroll-driven statement -->
+    <section class="statement" aria-label="Introducing PaceTasks" data-statement>
+      <div class="statement__sticky">
+        <span class="shape shape--square" aria-hidden="true"></span>
+        <span class="shape shape--circle" aria-hidden="true"></span>
+        <span class="shape shape--triangle" aria-hidden="true"></span>
+        <span class="shape shape--pill" aria-hidden="true"></span>
+        <span class="shape shape--diamond" aria-hidden="true"></span>
+        <p class="statement__track" data-statement-track>
+          The task app that plans around
+          <span class="gradient-text gradient-text--one">your work</span>,
+          <span class="gradient-text gradient-text--two">your energy</span> and
+          <span class="gradient-text gradient-text--three">your pace</span>
+          <span class="statement__intro">— introducing <span class="gradient-text gradient-text--brand">PaceTasks</span></span>
         </p>
       </div>
-    </div>
-    <p class="hero-stage-note">Pick a task in the DeskFocus widget and press Start. PaceTasks tasks in the widget are
-    coming soon. The demo runs on sample tasks, and nothing you type leaves your browser.</p>
-  </section>
+    </section>
 
-  <!-- A day with both apps: each stop says where you are and which screen helps. -->
-  <section id="day" class="day" aria-labelledby="dayTitle">
-    <div class="section-intro">
-      <h2 id="dayTitle">One list, from your pocket to your desk.</h2>
-      <p>PaceTasks works out when each task fits into your day. DeskFocus keeps you on it once you sit down. Here is a
-      day with both.</p>
-    </div>
-
-    <ol class="day-timeline">
-      <li class="day-stop" data-device="iphone">
-        <p class="day-time"><time datetime="07:45">7:45</time><span class="day-device">On your iPhone</span></p>
-        <div class="day-copy">
-          <h3>Say everything at once.</h3>
-          <p>On the way to work, tap the microphone and type or dictate whatever is on your mind, in English, Italian,
-          Turkish or a mix. PaceTasks shows the tasks it understood before anything is added.</p>
-          <blockquote class="day-quote">“Tomorrow call the vet, domani comprare il pane, cuma günü faturayı öde”</blockquote>
+    <!-- Feature: Brain Dump -->
+    <section id="feature-dump" class="feature" data-section="dump" aria-labelledby="feature-dump-title">
+      <div class="container feature__grid">
+        <div class="feature__copy" data-reveal>
+          <span class="badge badge--pro">
+            <svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.7 4.7 1.8-4.7 1.8L12 16l-1.8-4.7-4.7-1.8 4.7-1.8z"/></svg>
+            PaceTasks Pro
+          </span>
+          <h2 id="feature-dump-title" class="feature__title gradient-text gradient-text--one">Say Everything at Once.</h2>
+          <p class="feature__subtitle">Type or dictate. PaceTasks sorts it out.</p>
+          <p class="feature__body" data-reveal-text>Tap the microphone and say whatever is on your mind, in English, Italian, Turkish or a mix. PaceTasks shows the tasks it understood, with their days, before anything is added.</p>
+          <blockquote class="feature__quote">“Tomorrow call the vet, domani comprare il pane, cuma günü faturayı öde”</blockquote>
         </div>
-        <figure class="phone day-visual">
-          <div class="phone-screen">
-            <img src="screens/brain-dump.webp" width="393" height="852" loading="lazy"
-            alt="Brain Dump turning that sentence into three tasks: Call the vet and Comprare il pane tomorrow, Faturayı öde on Friday.">
-          </div>
-        </figure>
-      </li>
-
-      <li class="day-stop" data-device="mac">
-        <p class="day-time"><time datetime="09:00">9:00</time><span class="day-device">On your Mac</span></p>
-        <div class="day-copy">
-          <h3>Today is already on your desk.</h3>
-          <p>DeskFocus puts your iCloud Calendar and Reminders, Google Calendar and Google Tasks on your Mac desktop
-          as one list, and your PaceTasks list is coming soon. It shows as a widget, in the menu bar or as a glass
-          panel, so what's next is always a glance away.</p>
+        <div class="feature__visual feature__visual--phone" data-reveal>
+          <figure class="phone">
+            <div class="phone__screen">
+              <img src="screens/brain-dump.webp" width="393" height="852" loading="lazy"
+              alt="Brain Dump turning that sentence into three tasks: Call the vet and Comprare il pane tomorrow, Faturayı öde on Friday.">
+            </div>
+          </figure>
         </div>
-        <div class="desk-panel day-visual">
-          <p class="desk-panel-title">Today's list comes from</p>
-          <ul class="source-list">
-            <li data-source="Calendar">iCloud Calendar</li>
-            <li data-source="Reminders">iCloud Reminders</li>
-            <li data-source="Google">Google Calendar and Tasks</li>
-            <li data-source="PaceTasks">PaceTasks <span class="soon-tag">Coming soon</span></li>
-          </ul>
-          <svg class="source-arrow" width="24" height="28" viewBox="0 0 24 28" aria-hidden="true"><path d="M12 2v22M5 17l7 7 7-7"/></svg>
-          <p class="source-merge">One list on your desktop</p>
+      </div>
+    </section>
+
+    <!-- Feature: Pick my next task -->
+    <section id="feature-pick" class="feature" data-section="pick" aria-labelledby="feature-pick-title">
+      <div class="container feature__grid feature__grid--reversed">
+        <div class="feature__copy" data-reveal>
+          <span class="badge">
+            <svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>
+            Included in PaceTasks
+          </span>
+          <h2 id="feature-pick-title" class="feature__title gradient-text gradient-text--two">It Picks for You.</h2>
+          <p class="feature__subtitle">Can't decide? Tap Pick my next task.</p>
+          <p class="feature__body" data-reveal-text>Decide for me shows one task: a quick win while there is one, then whatever matters most. Fit my time asks how long you have, from five minutes to an hour, and lists the tasks that fit.</p>
         </div>
-      </li>
-
-      <li class="day-stop" data-device="mac">
-        <p class="day-time"><time datetime="10:30">10:30</time><span class="day-device">On your Mac</span></p>
-        <div class="day-copy">
-          <h3>One task, one timer, nothing pulling you away.</h3>
-          <p>Press Start on any task and its timer runs on your desktop. The apps you choose are hidden until the
-          session ends, or quit in strict mode. When the time is up, Done ticks the task off where it came from.</p>
+        <div class="feature__visual feature__visual--phone" data-reveal>
+          <figure class="phone">
+            <div class="phone__screen">
+              <img src="screens/pick-next.webp" width="393" height="852" loading="lazy"
+              alt="Decide for me showing a single task, Call the dentist, about 5 minutes, with Done and Not now.">
+            </div>
+          </figure>
         </div>
-        <fieldset class="desk-panel day-visual">
-          <legend class="desk-panel-title">Hide while you focus</legend>
-          <div class="app-switches" data-app-switches></div>
-          <p class="desk-panel-note">The widget at the top of the page follows these switches.</p>
-        </fieldset>
-      </li>
+      </div>
+    </section>
 
-      <li class="day-stop" data-device="iphone">
-        <p class="day-time"><time datetime="12:40">12:40</time><span class="day-device">On your iPhone</span></p>
-        <div class="day-copy">
-          <h3>Can't decide? It picks for you.</h3>
-          <p>Tap <strong>Pick my next task</strong>. <strong>Decide for me</strong> shows one task: a quick win while
-          there is one, then whatever matters most. <strong>Fit my time</strong> asks how long you have, from 5 minutes
-          to an hour, and lists the tasks that fit.</p>
+    <!-- Feature: carried-over tasks -->
+    <section id="feature-rollover" class="feature" data-section="rollover" aria-labelledby="feature-rollover-title">
+      <div class="container feature__grid">
+        <div class="feature__copy" data-reveal>
+          <span class="badge">
+            <svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>
+            Included in PaceTasks
+          </span>
+          <h2 id="feature-rollover-title" class="feature__title gradient-text gradient-text--three">Unfinished Tasks Find a New Day.</h2>
+          <p class="feature__subtitle">Yesterday's leftovers don't pile up.</p>
+          <p class="feature__body" data-reveal-text>One row on Today proposes where each unfinished task should go: today, tomorrow, the weekend or someday. Change any of them, then apply. When tasks have waited too long, Weekly Reset walks you through them one at a time.</p>
         </div>
-        <figure class="phone day-visual">
-          <div class="phone-screen">
-            <img src="screens/pick-next.webp" width="393" height="852" loading="lazy"
-            alt="Decide for me showing a single task, Call the dentist, about 5 minutes, with Done and Not now.">
-          </div>
-        </figure>
-      </li>
-
-      <li class="day-stop" data-device="iphone">
-        <p class="day-time"><time datetime="08:00">Tomorrow, 8:00</time><span class="day-device">On your iPhone</span></p>
-        <div class="day-copy">
-          <h3>Unfinished tasks find a new day.</h3>
-          <p>Yesterday's leftovers don't pile up. One row on Today proposes where each should go: today, tomorrow, the
-          weekend or someday. Change any of them, then apply. When tasks have waited too long,
-          <strong>Weekly Reset</strong> walks you through them one at a time.</p>
+        <div class="feature__visual feature__visual--phone" data-reveal>
+          <figure class="phone">
+            <div class="phone__screen">
+              <img src="screens/carried-over.webp" width="393" height="852" loading="lazy"
+              alt="Four tasks carried over, each with a proposed day: Someday, Weekend or Today.">
+            </div>
+          </figure>
         </div>
-        <figure class="phone day-visual">
-          <div class="phone-screen">
-            <img src="screens/carried-over.webp" width="393" height="852" loading="lazy"
-            alt="Four tasks carried over, each with a proposed day: Someday, Weekend or Today.">
-          </div>
-        </figure>
-      </li>
+      </div>
+    </section>
 
-      <li class="day-stop" data-device="iphone">
-        <p class="day-time"><time>Sunday</time><span class="day-device">On your iPhone</span></p>
-        <div class="day-copy">
-          <h3>Compete only with your own pace.</h3>
-          <p>Streaks, minutes, a 13-week heatmap and how close your estimates come to reality. After ten finished
-          tasks, <strong>My Pace</strong> tells you in plain sentences when you get the most done.</p>
+    <!-- Feature: My Pace -->
+    <section id="feature-pace" class="feature" data-section="pace" aria-labelledby="feature-pace-title">
+      <div class="container feature__grid feature__grid--reversed">
+        <div class="feature__copy" data-reveal>
+          <span class="badge badge--pro">
+            <svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.7 4.7 1.8-4.7 1.8L12 16l-1.8-4.7-4.7-1.8 4.7-1.8z"/></svg>
+            History with PaceTasks Pro
+          </span>
+          <h2 id="feature-pace-title" class="feature__title gradient-text gradient-text--four">Compete With Your Own Pace.</h2>
+          <p class="feature__subtitle">Beat yesterday's you, not anyone else.</p>
+          <p class="feature__body" data-reveal-text>Today's numbers are free. With Pro, My Pace adds your week and your history: streaks, minutes, a 13-week heatmap and how close your estimates come to reality, and after ten finished tasks, plain sentences about when you get the most done.</p>
         </div>
-        <figure class="phone day-visual">
-          <div class="phone-screen">
-            <img src="screens/pace.webp" width="393" height="852" loading="lazy"
-            alt="Your pace: tasks and minutes done today, current and best streak, estimate accuracy and a 13-week heatmap.">
-          </div>
-        </figure>
-      </li>
-    </ol>
-  </section>
+        <div class="feature__visual feature__visual--phone" data-reveal>
+          <figure class="phone">
+            <div class="phone__screen">
+              <img src="screens/pace.webp" width="393" height="852" loading="lazy"
+              alt="Your pace: tasks and minutes done today, current and best streak, estimate accuracy and a 13-week heatmap.">
+            </div>
+          </figure>
+        </div>
+      </div>
+    </section>
 
-  <!-- What you get: the two apps side by side, in their own colors. -->
-  <section id="both" class="both" aria-labelledby="bothTitle">
-    <div class="section-intro">
-      <h2 id="bothTitle">Two apps, sold together.</h2>
-      <p>Get PaceTasks for your iPhone and DeskFocus for your Mac as one: plan in one place, focus in the other. Soon
-      your PaceTasks tasks will show up in DeskFocus too. Every purchase comes with a
-      <a href="terms.html#refunds">14-day refund</a>. <a href="#pricing">See what is free and what Pro costs.</a></p>
-    </div>
-
-    <div class="both-grid">
-      <article class="app-panel app-panel-pacetasks" aria-labelledby="pacetasksTitle">
-        <div class="app-panel-head">
-          <img src="icon.png" alt="" width="56" height="56">
-          <div>
-            <h3 id="pacetasksTitle">PaceTasks</h3>
-            <p class="app-panel-platform">For iPhone</p>
+    <!-- DeskFocus, in its own colours: the other tab -->
+    <section id="feature-desk" class="feature feature--raised" data-section="desk" data-product="deskfocus" aria-labelledby="feature-desk-title">
+      <div class="container feature__grid">
+        <div class="feature__copy" data-reveal>
+          <span class="badge">
+            <svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>
+            Comes with PaceTasks
+          </span>
+          <h2 id="feature-desk-title" class="feature__title gradient-text gradient-text--brand">Your Desk, Focused.</h2>
+          <p class="feature__subtitle">DeskFocus puts today's list and a focus timer on your Mac.</p>
+          <p class="feature__body" data-reveal-text>When you sit down to work, DeskFocus keeps the task in front of you on the desktop, runs its timer and hides the apps that pull you away. Your PaceTasks list is coming to it soon.</p>
+          <div class="feature__actions">
+            <a class="button button--gradient button--large" href="deskfocus.html">Explore DeskFocus</a>
+            <!-- Switch to https://github.com/bilgaaaaa/pacetasks/releases/latest once the first mac-v release is published there. -->
+            <a class="button button--ghost button--large" href="https://github.com/bilgaaaaa/deskfocus/releases/latest">Download for Mac</a>
           </div>
         </div>
-        <p class="app-panel-summary">Plans your tasks around your work, with the time and energy you really have.</p>
-        <ul class="check-list">
-          <li>Brain Dump in English, Italian and Turkish</li>
-          <li>Pick my next task and Fit my time</li>
-          <li>Unfinished tasks moved to a new day</li>
-          <li>Reminders, streaks and My Pace</li>
+        <div class="mini-desktop feature__visual" data-reveal aria-hidden="true">
+          <div class="mini-desktop__menubar">
+            <span>Finder</span><span>File</span><span>Edit</span><span>View</span>
+          </div>
+          <div class="mini-desktop__widget">
+            <div class="mini-desktop__row">
+              <span class="widget__title">Today</span>
+              <span class="gradient-text gradient-text--brand mini-desktop__time">24:10</span>
+            </div>
+            <div class="progress"><div class="progress__value"></div></div>
+            <span>Deep work: launch plan</span>
+            <span class="text-muted">Design review</span>
+            <span class="text-muted">Call the dentist</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Marquee of everything included -->
+    <section id="everything" class="more" data-section="everything" aria-labelledby="more-title">
+      <div class="container feature__copy--centered" data-reveal>
+        <span class="badge">
+          <svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>
+          All included in PaceTasks
+        </span>
+        <h2 id="more-title" class="more__title">Everything for a Day That Fits.</h2>
+        <p class="feature__subtitle feature__subtitle--muted">Plan around your work, then get it done at your own pace.</p>
+      </div>
+      <div class="marquee" data-marquee>
+        <ul class="marquee__track">
+          <li class="marquee__item"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Brain Dump</li>
+          <li class="marquee__item"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h9M8.5 3v2M6 12c2-2 3.5-4.5 4-7M10 12c-1.5-1-2.8-2.4-3.6-4"/><path d="m12 21 4.5-10 4.5 10M13.6 17.5h5.8"/></svg>English, Italian and Turkish</li>
+          <li class="marquee__item"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.7 4.7 1.8-4.7 1.8L12 16l-1.8-4.7-4.7-1.8 4.7-1.8z"/></svg>Pick my next task</li>
+          <li class="marquee__item"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M10 2h4"/></svg>Fit my time</li>
+          <li class="marquee__item"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>Quick wins</li>
+          <li class="marquee__item"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17v-2a6 6 0 0 1 6-6h10"/><path d="m16 5 4 4-4 4"/></svg>Carried-over tasks</li>
+          <li class="marquee__item"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 2l4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>Weekly Reset</li>
+          <li class="marquee__item"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg>Reminders</li>
+          <li class="marquee__item"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22c4 0 7-3 7-7 0-4-3-6-4-10-2 2-3 4-3 6-1-1-2-2-2-4-2 2-5 5-5 8 0 4 3 7 7 7Z"/></svg>Streaks</li>
+          <li class="marquee__item"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>13-week heatmap</li>
+          <li class="marquee__item"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>No account needed</li>
+          <li class="marquee__item"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>DeskFocus for Mac</li>
         </ul>
-        <a class="button button-solid" href="https://bilgaaaaa.github.io/PaceTasksWebsite/demo/">Try PaceTasks in your browser</a>
-        <p class="app-panel-note">Coming soon to iPhone.</p>
-      </article>
+      </div>
+    </section>
 
-      <article class="app-panel app-panel-deskfocus" aria-labelledby="deskfocusTitle">
-        <div class="app-panel-head">
-          <img src="deskfocus-icon.svg" alt="" width="56" height="56">
-          <div>
-            <h3 id="deskfocusTitle">DeskFocus</h3>
-            <p class="app-panel-platform">For Mac</p>
-          </div>
+    <!-- How it works -->
+    <section id="how" class="feature" data-section="how" aria-labelledby="how-title">
+      <div class="container">
+        <div class="feature__copy feature__copy--centered" data-reveal>
+          <h2 id="how-title" class="more__title">Three Steps to a Calmer Day.</h2>
         </div>
-        <p class="app-panel-summary">Keeps today's list and a focus timer on your desktop, one glance away.</p>
-        <ul class="check-list">
-          <li>Desktop widget, menu bar and glass panel</li>
-          <li>iCloud and Google lists in one, PaceTasks coming soon</li>
-          <li>A focus timer on any task, any day</li>
-          <li>Hides the apps you choose while you focus</li>
-          <li>Updates itself, checked once a day</li>
+        <ol class="steps">
+          <li class="card step" data-reveal>
+            <span class="step__number gradient-text gradient-text--one">01</span>
+            <h3 class="step__title">Catch it</h3>
+            <p class="text-muted">Add a task the moment you think of it, or with Pro, say everything at once and let Brain Dump sort it out.</p>
+          </li>
+          <li class="card step" data-reveal>
+            <span class="step__number gradient-text gradient-text--two">02</span>
+            <h3 class="step__title">Let it pick</h3>
+            <p class="text-muted">When you have a moment, Pick my next task shows what fits the time and energy you have.</p>
+          </li>
+          <li class="card step" data-reveal data-product="deskfocus">
+            <span class="step__number gradient-text gradient-text--brand">03</span>
+            <h3 class="step__title">Focus at your desk</h3>
+            <p class="text-muted">On your Mac, DeskFocus keeps the task in front of you with a timer, and hides the apps that distract you.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Both apps, sold together -->
+    <section id="both" class="feature feature--raised" data-section="both" aria-labelledby="both-title">
+      <div class="container">
+        <div class="feature__copy feature__copy--centered" data-reveal>
+          <h2 id="both-title" class="more__title">Two Apps. Sold Together.</h2>
+          <p class="feature__subtitle feature__subtitle--muted">Plan on your iPhone, focus at your Mac. Soon your PaceTasks tasks show up in DeskFocus too.</p>
+        </div>
+        <div class="offer">
+          <article class="card offer__card" data-reveal aria-labelledby="offer-pacetasks">
+            <div class="offer__head">
+              <img class="offer__icon" src="icon.png" alt="" width="56" height="56">
+              <div>
+                <h3 id="offer-pacetasks" class="offer__name">PaceTasks</h3>
+                <p class="offer__platform">For iPhone</p>
+              </div>
+            </div>
+            <p class="offer__summary">Plans your tasks around your work, with the time and energy you really have.</p>
+            <ul class="check-list">
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>As many tasks as you want, with reminders</li>
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>Pick my next task and Fit my time</li>
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>Unfinished tasks moved to a new day</li>
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>With Pro: Brain Dump and your Pace history</li>
+            </ul>
+            <a class="button button--gradient" href="https://bilgaaaaa.github.io/PaceTasksWebsite/demo/">Try PaceTasks in your browser</a>
+            <p class="offer__note">Coming soon to iPhone.</p>
+          </article>
+          <article class="card offer__card" data-reveal data-product="deskfocus" aria-labelledby="offer-deskfocus">
+            <div class="offer__head">
+              <img class="offer__icon" src="deskfocus-icon.svg" alt="" width="56" height="56">
+              <div>
+                <h3 id="offer-deskfocus" class="offer__name">DeskFocus</h3>
+                <p class="offer__platform">For Mac</p>
+              </div>
+            </div>
+            <p class="offer__summary">Keeps today's list and a focus timer on your desktop, one glance away.</p>
+            <ul class="check-list">
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>Desktop widget, menu bar and glass panel</li>
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>iCloud and Google lists in one, PaceTasks coming soon</li>
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>A focus timer on any task, any day</li>
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>Hides the apps you choose while you focus</li>
+            </ul>
+            <!-- Switch to https://github.com/bilgaaaaa/pacetasks/releases/latest once the first mac-v release is published there. -->
+            <a class="button button--gradient" href="https://github.com/bilgaaaaa/deskfocus/releases/latest">Download DeskFocus for Mac</a>
+            <p class="offer__note">macOS 14 Sonoma or later. A direct download that keeps itself up to date.</p>
+          </article>
+        </div>
+        <p class="offer__refund">See <a href="#pricing">what is free and what Pro costs</a>.</p>
+      </div>
+    </section>
+
+    <!-- Pricing: what stays free, and the one Pro that covers both apps. Prices match the App Store products. -->
+    <section id="pricing" class="feature" data-section="pricing" aria-labelledby="pricing-title">
+      <div class="container">
+        <div class="feature__copy feature__copy--centered" data-reveal>
+          <h2 id="pricing-title" class="more__title">Free to Plan Your Day.<br><span class="hero__title-fade">Pro When You Want More.</span></h2>
+          <p class="feature__subtitle feature__subtitle--muted">Everything you need for today is free, with no limit on tasks. One Pro covers PaceTasks on your iPhone and DeskFocus on your Mac.</p>
+        </div>
+        <div class="plans">
+          <article class="card plan" data-reveal aria-labelledby="plan-free">
+            <h3 id="plan-free" class="plan__name">Free</h3>
+            <p class="plan__price"><strong>€0</strong> <span>for as long as you like</span></p>
+            <ul class="check-list">
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>As many tasks as you want, on any day</li>
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>Your own start times, durations and reminders</li>
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>Pick my next task and Fit my time</li>
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>A timer on every task</li>
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>Today's numbers in My Pace</li>
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>The DeskFocus widget on your Mac</li>
+            </ul>
+            <p class="offer__note">No account and no card needed.</p>
+          </article>
+          <article class="card plan plan--pro" data-reveal aria-labelledby="plan-pro">
+            <h3 id="plan-pro" class="plan__name">Pro</h3>
+            <ul class="plan__options" aria-label="Ways to pay for Pro">
+              <li><strong>€24.99</strong> <span>a year, after a 7-day free trial</span> <em class="plan__tag">Best value</em></li>
+              <li><strong>€3.99</strong> <span>a month</span></li>
+              <li><strong>€59.99</strong> <span>once, yours for good</span></li>
+            </ul>
+            <ul class="check-list">
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>Everything in Free</li>
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>Brain Dump: say everything at once, in English, Italian or Turkish</li>
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>My Pace beyond today: your week and your history</li>
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>Siri, as soon as it ships</li>
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>DeskFocus Pro on your Mac, at no extra cost</li>
+            </ul>
+            <p class="offer__note">Pro opens with the iPhone release. Prices are in euro; the App Store shows the price for your country. <a href="terms.html#refunds">14-day refund</a> on every purchase.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Privacy promises -->
+    <section id="privacy" class="feature" data-section="privacy" aria-labelledby="privacy-title">
+      <div class="container">
+        <div class="feature__copy feature__copy--centered" data-reveal>
+          <h2 id="privacy-title" class="more__title">Your Tasks Stay Yours.</h2>
+        </div>
+        <ul class="promises">
+          <li class="card promise" data-reveal>
+            <span class="promise__icon"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.1A10 10 0 0 1 12 5c5 0 9 4.5 10 7a12.6 12.6 0 0 1-3.2 4.2M6.6 6.6C4.4 8 2.8 10 2 12c1 2.5 5 7 10 7 1.7 0 3.3-.5 4.6-1.2"/></svg></span>
+            <h3 class="promise__title">No ads, no trackers</h3>
+            <p class="text-muted">No analytics either, in either app.</p>
+          </li>
+          <li class="card promise" data-reveal>
+            <span class="promise__icon"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+            <h3 class="promise__title">Never sold</h3>
+            <p class="text-muted">Your data is never sold or shared for marketing.</p>
+          </li>
+          <li class="card promise" data-reveal>
+            <span class="promise__icon"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span>
+            <h3 class="promise__title">No account needed</h3>
+            <p class="text-muted">PaceTasks works the moment you open it. Add an account later to keep your tasks on a new phone.</p>
+          </li>
+          <li class="card promise" data-reveal data-product="deskfocus">
+            <span class="promise__icon"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></span>
+            <h3 class="promise__title">DeskFocus stays on your Mac</h3>
+            <p class="text-muted">It talks to Google directly, keeps your sign-in in the Keychain, and nothing passes through our server.</p>
+          </li>
+          <li class="card promise" data-reveal>
+            <span class="promise__icon"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0-3.5 10.9V17h7v-3.1A6 6 0 0 0 12 3Z"/><path d="M9.5 21h5"/></svg></span>
+            <h3 class="promise__title">Brain Dump stays with us</h3>
+            <p class="text-muted">Your text is read by PaceTasks' own rules, not sent to an AI company.</p>
+          </li>
+          <li class="card promise" data-reveal>
+            <span class="promise__icon"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></span>
+            <h3 class="promise__title">Delete everything</h3>
+            <p class="text-muted">One option in Settings erases your tasks and account from our server straight away.</p>
+          </li>
         </ul>
-        <!-- Switch both download links to https://github.com/bilgaaaaa/pacetasks/releases/latest once the first mac-v release is published there. -->
-        <a class="button button-ember" href="https://github.com/bilgaaaaa/deskfocus/releases/latest">Download DeskFocus for Mac</a>
-        <p class="app-panel-note">macOS 14 Sonoma or later. A direct download, not from the Mac App Store.</p>
-      </article>
-    </div>
-  </section>
+        <p class="section-link"><a href="privacy.html">Read the privacy policy</a></p>
+      </div>
+    </section>
 
-  <!-- Pricing: what stays free, and the one Pro that covers both apps. Prices match the App Store products. -->
-  <section id="pricing" class="pricing" aria-labelledby="pricingTitle">
-    <div class="section-intro">
-      <h2 id="pricingTitle">Free to plan your day. Pro when you want more.</h2>
-      <p>Everything you need for today is free, with no limit on tasks. One Pro covers PaceTasks on your iPhone and
-      DeskFocus on your Mac.</p>
-    </div>
+    <!-- FAQ -->
+    <section id="faq" class="feature feature--raised" data-section="faq" aria-labelledby="faq-title">
+      <div class="container container--narrow">
+        <h2 id="faq-title" class="more__title text-center" data-reveal>Questions.</h2>
+        <div class="faq">
+          <details class="faq__item">
+            <summary class="faq__question">When can I get them?<svg class="faq__chevron icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <p class="faq__answer">DeskFocus is ready to download for Mac. PaceTasks is getting ready for its first beta on iPhone; until then, the demo runs the whole app in your browser with sample tasks.</p>
+          </details>
+          <details class="faq__item">
+            <summary class="faq__question">Do I need a Mac to use PaceTasks?<svg class="faq__chevron icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <p class="faq__answer">No. PaceTasks works on its own on your iPhone. DeskFocus adds your Mac desktop for the hours you sit down to work.</p>
+          </details>
+          <details class="faq__item">
+            <summary class="faq__question">When will my PaceTasks tasks show up in DeskFocus?<svg class="faq__chevron icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <p class="faq__answer">Soon, in an update to both apps. Today DeskFocus shows iCloud Calendar, iCloud Reminders, Google Calendar and Google Tasks.</p>
+          </details>
+          <details class="faq__item">
+            <summary class="faq__question">What does Pro cost?<svg class="faq__chevron icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <p class="faq__answer">€24.99 a year with a 7-day free trial, €3.99 a month, or €59.99 once for good. The App Store shows the price for your country. One Pro covers PaceTasks and DeskFocus; planning your day stays free.</p>
+          </details>
+          <details class="faq__item">
+            <summary class="faq__question">Can I get a refund?<svg class="faq__chevron icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <p class="faq__answer">Yes, within 14 days of being charged, for any reason. The <a href="terms.html#refunds">refund policy</a> says how for App Store and Paddle purchases.</p>
+          </details>
+          <details class="faq__item">
+            <summary class="faq__question">Is there an Android version?<svg class="faq__chevron icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <p class="faq__answer">Not yet. PaceTasks is for iPhone, and DeskFocus for Mac.</p>
+          </details>
+          <details class="faq__item">
+            <summary class="faq__question">Does the demo keep what I type?<svg class="faq__chevron icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <p class="faq__answer">No. It runs entirely in your browser on sample tasks, and everything resets when you reload.</p>
+          </details>
+        </div>
+        <p class="section-link"><a href="support.html">More answers in Help and support</a></p>
+      </div>
+    </section>
 
-    <div class="both-grid">
-      <article class="app-panel app-panel-pacetasks" aria-labelledby="freeTitle">
-        <h3 id="freeTitle">Free</h3>
-        <p class="plan-price"><strong>€0</strong> <span>for as long as you like</span></p>
-        <ul class="check-list">
-          <li>As many tasks as you want, on any day</li>
-          <li>Your own start times, durations and reminders</li>
-          <li>Pick my next task and Fit my time</li>
-          <li>A timer on every task</li>
-          <li>Today's numbers in My Pace</li>
-          <li>The DeskFocus widget on your Mac</li>
+    <!-- Final call to action -->
+    <section id="get" class="cta" data-section="get" aria-labelledby="get-title">
+      <div class="container cta__inner" data-reveal>
+        <h2 id="get-title" class="cta__title">Ready to Plan<br><span class="hero__title-fade">Your Day?</span></h2>
+        <p class="feature__subtitle feature__subtitle--muted">Try PaceTasks now, and put DeskFocus on your Mac.</p>
+        <div class="hero__actions">
+          <a class="button button--gradient button--large" href="https://bilgaaaaa.github.io/PaceTasksWebsite/demo/">Try PaceTasks in your browser</a>
+          <a class="button button--ghost button--large" href="deskfocus.html">Meet DeskFocus for Mac</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container site-footer__inner">
+      <div class="site-footer__brand">
+        <p class="site-footer__logos"><img src="icon.png" alt="" width="28" height="28"><img src="deskfocus-icon.svg" alt="" width="28" height="28">PaceTasks with DeskFocus</p>
+        <p class="text-muted">Plan your day on iPhone. Focus on it at your Mac.</p>
+        <p class="text-muted">Write to <a href="mailto:pacetasks@bilgalog.dev">pacetasks@bilgalog.dev</a></p>
+      </div>
+      <div class="site-footer__column">
+        <h2 class="site-footer__heading">Apps</h2>
+        <ul>
+          <li><a href="./" aria-current="page">PaceTasks for iPhone</a></li>
+          <li><a href="deskfocus.html">DeskFocus for Mac</a></li>
+          <li><a href="https://bilgaaaaa.github.io/PaceTasksWebsite/demo/">Try the demo</a></li>
+          <li><a href="https://github.com/bilgaaaaa/deskfocus/releases/latest">Download DeskFocus</a></li>
         </ul>
-        <p class="app-panel-note">No account and no card needed.</p>
-      </article>
-
-      <article class="app-panel app-panel-pacetasks plan-pro" aria-labelledby="proTitle">
-        <h3 id="proTitle">Pro</h3>
-        <ul class="plan-options" aria-label="Ways to pay for Pro">
-          <li><strong>€24.99</strong> <span>a year, after a 7-day free trial</span> <em>Best value</em></li>
-          <li><strong>€3.99</strong> <span>a month</span></li>
-          <li><strong>€59.99</strong> <span>once, yours for good</span></li>
+      </div>
+      <div class="site-footer__column">
+        <h2 class="site-footer__heading">Help</h2>
+        <ul>
+          <li><a href="support.html">Help and support</a></li>
+          <li><a href="privacy.html">Privacy policy</a></li>
+          <li><a href="terms.html">Terms and refunds</a></li>
+          <li><a href="https://github.com/bilgaaaaa/pacetasks">Source code</a></li>
         </ul>
-        <ul class="check-list">
-          <li>Everything in Free</li>
-          <li>Brain Dump: say everything at once, in English, Italian or Turkish</li>
-          <li>My Pace beyond today: your week and your history</li>
-          <li>Siri, as soon as it ships</li>
-          <li>DeskFocus Pro on your Mac, at no extra cost</li>
-        </ul>
-        <p class="app-panel-note">Pro opens with the iPhone release. Prices are in euro; the App Store shows the price
-        for your country. <a href="terms.html#refunds">14-day refund</a> on every purchase.</p>
-      </article>
+      </div>
     </div>
-  </section>
+    <p class="container site-footer__copyright">© <span data-current-year>2026</span> Bilge Ozcanbaz. Made in Padova.</p>
+  </footer>
 
-  <section class="split" aria-labelledby="privacyTitle">
-    <h2 id="privacyTitle">Your tasks stay yours.</h2>
-    <div>
-      <ul class="promise-list">
-        <li><strong>No ads, no trackers, no analytics.</strong>
-          <span>In either app. Your data is never sold or shared for marketing.</span></li>
-        <li><strong>No account needed.</strong>
-          <span>PaceTasks works the moment you open it. Add your email later to keep your tasks when you change phones,
-          with a sign-in code instead of a password.</span></li>
-        <li><strong>DeskFocus stays on your Mac.</strong>
-          <span>It reads your calendars and reminders on your device and talks to Google directly. Your Google sign-in
-          is kept in your Keychain, and nothing passes through our server.</span></li>
-        <li><strong>Delete everything from the app.</strong>
-          <span>One option in PaceTasks Settings erases your tasks and account from our server straight away.</span></li>
-        <li><strong>Brain Dump stays with PaceTasks.</strong>
-          <span>Your text is read by PaceTasks' own rules, not sent to an AI company.</span></li>
-      </ul>
-      <p><a href="privacy.html">Read the privacy policy</a></p>
-    </div>
-  </section>
-
-  <section class="split" aria-labelledby="questionsTitle">
-    <h2 id="questionsTitle">Questions</h2>
-    <div class="questions">
-      <details>
-        <summary>When can I get them?</summary>
-        <p>DeskFocus is ready to download for Mac. PaceTasks is getting ready for its first beta on iPhone; until then,
-        the demo runs the whole app in your browser with sample tasks.</p>
-      </details>
-      <details>
-        <summary>Do I need a Mac to use PaceTasks?</summary>
-        <p>No. PaceTasks works on its own on your iPhone. DeskFocus adds your Mac desktop for the hours you sit down to
-        work.</p>
-      </details>
-      <details>
-        <summary>When will my PaceTasks tasks show up in DeskFocus?</summary>
-        <p>Soon, in an update to both apps. Today DeskFocus shows iCloud Calendar, iCloud Reminders, Google Calendar
-        and Google Tasks.</p>
-      </details>
-      <details>
-        <summary>Which Macs does DeskFocus run on?</summary>
-        <p>Any Mac with macOS 14 Sonoma or later.</p>
-      </details>
-      <details>
-        <summary>Is DeskFocus on the Mac App Store?</summary>
-        <p>No. DeskFocus is a direct download: open the file and drag DeskFocus into Applications. After that it keeps
-        itself up to date.</p>
-      </details>
-      <details>
-        <summary>What does Pro cost?</summary>
-        <p>€24.99 a year with a 7-day free trial, €3.99 a month, or €59.99 once for good. The App Store shows the
-        price for your country. One Pro covers PaceTasks and DeskFocus; planning your day stays free.</p>
-      </details>
-      <details>
-        <summary>Can I get a refund?</summary>
-        <p>Yes, within 14 days of being charged, for any reason. The <a href="terms.html#refunds">refund policy</a> says
-        how for App Store and Paddle purchases.</p>
-      </details>
-      <details>
-        <summary>Is there an Android version?</summary>
-        <p>Not yet. PaceTasks is for iPhone, and DeskFocus for Mac.</p>
-      </details>
-      <details>
-        <summary>Does the demo keep what I type?</summary>
-        <p>No. It runs entirely in your browser on sample tasks, and everything resets when you reload.</p>
-      </details>
-      <p>More answers in <a href="support.html">Help and support</a>.</p>
-    </div>
-  </section>
-</main>
-
-<footer class="site-footer">
-  <p>Made in Padova by <a href="https://bilgalog.dev">Bilge Ozcanbaz</a>. Write to
-  <a href="mailto:pacetasks@bilgalog.dev">pacetasks@bilgalog.dev</a>.</p>
-  <nav class="site-nav" aria-label="Footer">
-    <a href="support.html">Help and support</a>
-    <a href="privacy.html">Privacy policy</a>
-    <a href="terms.html">Terms and refunds</a>
-    <a href="https://github.com/bilgaaaaa/pacetasks">Source code</a>
+  <!-- Sticky section navigation -->
+  <nav class="section-nav" aria-label="Sections">
+    <ul class="section-nav__list">
+      <li><a class="section-nav__link" href="#top" data-section-link="overview">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/></svg>Overview</a></li>
+      <li><a class="section-nav__link" href="#feature-dump" data-section-link="dump">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Brain Dump</a></li>
+      <li><a class="section-nav__link" href="#feature-pick" data-section-link="pick">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.7 4.7 1.8-4.7 1.8L12 16l-1.8-4.7-4.7-1.8 4.7-1.8z"/></svg>Picks</a></li>
+      <li><a class="section-nav__link" href="#feature-rollover" data-section-link="rollover">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17v-2a6 6 0 0 1 6-6h10"/><path d="m16 5 4 4-4 4"/></svg>New day</a></li>
+      <li><a class="section-nav__link" href="#feature-pace" data-section-link="pace">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22c4 0 7-3 7-7 0-4-3-6-4-10-2 2-3 4-3 6-1-1-2-2-2-4-2 2-5 5-5 8 0 4 3 7 7 7Z"/></svg>Pace</a></li>
+      <li><a class="section-nav__link" href="#feature-desk" data-section-link="desk">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>DeskFocus</a></li>
+      <li><a class="section-nav__link" href="#how" data-section-link="how">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h6"/></svg>Steps</a></li>
+      <li><a class="section-nav__link" href="#pricing" data-section-link="pricing">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z"/><path d="M7.5 7.5h.01"/></svg>Pricing</a></li>
+      <li><a class="section-nav__link" href="#faq" data-section-link="faq">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/></svg>FAQ</a></li>
+    </ul>
   </nav>
-</footer>
 </body>
 </html>

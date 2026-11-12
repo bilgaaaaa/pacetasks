@@ -1,5 +1,5 @@
-// DeskFocus widget preview in the hero: today's list, a focus timer on the chosen task and
-// the apps hidden while it runs. The switches further down the page share the same state.
+// DeskFocus widget preview: today's list, a focus timer on the chosen task and the apps hidden while
+// it runs. The app switches further down the page share the same state as the widget's footer.
 (function () {
   const LOG_PREFIX = "[site]";
   const RING_LENGTH = 2 * Math.PI * 44;
@@ -129,8 +129,7 @@
     taskRows.forEach(({ row, check, select }, taskId) => {
       const isDone = state.doneTaskIds.has(taskId);
       const isSelected = taskId === state.selectedTaskId;
-      row.classList.toggle("is-done", isDone);
-      row.classList.toggle("is-selected", isSelected);
+      row.classList.toggle("task--done", isDone);
       check.setAttribute("aria-pressed", String(isDone));
       select.setAttribute("aria-pressed", String(isSelected));
       select.disabled = isDone;
@@ -176,49 +175,50 @@
     svg.setAttribute("aria-hidden", "true");
 
     const circle = document.createElementNS(SVG_NS, "circle");
+    circle.setAttribute("class", "task__check-circle");
     circle.setAttribute("cx", "11");
     circle.setAttribute("cy", "11");
-    circle.setAttribute("r", "9.5");
+    circle.setAttribute("r", "10");
 
     const mark = document.createElementNS(SVG_NS, "path");
-    mark.setAttribute("d", "m6.8 11.2 2.9 2.9 5.6-6");
+    mark.setAttribute("class", "task__check-mark");
+    mark.setAttribute("d", "m6.5 11.2 3 3 6-6.4");
 
     svg.append(circle, mark);
     return svg;
   };
 
+  const createSpan = (className, text) => {
+    const span = document.createElement("span");
+    span.className = className;
+    span.textContent = text;
+    return span;
+  };
+
   const createTaskRow = (task) => {
     const row = document.createElement("li");
-    row.className = "desk-task";
+    row.className = "task";
 
     const check = document.createElement("button");
     check.type = "button";
-    check.className = "desk-task-check";
+    check.className = "task__check";
     check.setAttribute("aria-label", `Done: ${task.title}`);
     check.append(createCheckIcon());
     check.addEventListener("click", () => toggleTaskDone(task.id));
 
     const select = document.createElement("button");
     select.type = "button";
-    select.className = "desk-task-select";
+    select.className = "task__select";
     select.setAttribute("aria-label", `Focus on ${task.title}, from ${task.source}`);
     select.addEventListener("click", () => selectTask(task.id));
 
-    const title = document.createElement("span");
-    title.className = "desk-task-title";
-    title.textContent = task.title;
-
-    const source = document.createElement("span");
-    source.className = "desk-task-source";
+    const text = createSpan("task__text", "");
+    const source = createSpan("task__source source-dot", task.source);
     source.dataset.source = task.source;
-    source.textContent = task.source;
+    text.append(createSpan("task__title", task.title), source);
+    select.append(text, createSpan("task__minutes", `${task.minutes} min`));
 
-    const minutes = document.createElement("span");
-    minutes.className = "desk-task-minutes";
-    minutes.textContent = `${task.minutes} min`;
-
-    select.append(title, source);
-    row.append(check, select, minutes);
+    row.append(check, select);
     return { row, check, select };
   };
 
@@ -239,21 +239,18 @@
     renderHiddenApps();
   };
 
-  const createAppSwitch = (app) => {
+  const createAppToggle = (app) => {
     const label = document.createElement("label");
-    label.className = "app-switch";
-
-    const name = document.createElement("span");
-    name.textContent = app.name;
+    label.className = "app-toggle";
 
     const input = document.createElement("input");
     input.type = "checkbox";
-    input.className = "app-switch-input";
+    input.className = "app-toggle__input";
     input.setAttribute("role", "switch");
     input.checked = state.hiddenAppIds.has(app.id);
     input.addEventListener("change", () => setAppHidden(app, input.checked));
 
-    label.append(name, input);
+    label.append(createSpan("app-toggle__name", app.name), input);
     return label;
   };
 
@@ -269,6 +266,6 @@
     render();
     log("DeskFocus widget preview ready");
   }
-  if (elements.appSwitches) elements.appSwitches.replaceChildren(...APPS.map(createAppSwitch));
+  if (elements.appSwitches) elements.appSwitches.replaceChildren(...APPS.map(createAppToggle));
   renderHiddenApps();
 })();

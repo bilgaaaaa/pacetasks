@@ -420,24 +420,32 @@ and widget sold together with it, at **https://pacetasks.bilgalog.dev/**. The
 app and the App Store listing link to its pages, served for free by GitHub
 Pages. Plain HTML, CSS and JavaScript, no build step.
 
+The site has the dark look of the original DeskFocus website. A pill menu at the
+top switches between two tabs: PaceTasks (`index.html`, green and yellow) and
+DeskFocus (`deskfocus.html`, blue, violet and pink). Each colour set lives in
+`site.css` under `[data-product="pacetasks"]` and `[data-product="deskfocus"]`;
+a section takes the other product's colours by carrying that attribute.
+
 | File | Purpose |
 | --- | --- |
-| `index.html` | Landing page: the hero with a working DeskFocus widget, a day with both apps, the two apps side by side |
+| `index.html` | PaceTasks tab: hero with the phone and a working DeskFocus widget, statement band, features, both apps, privacy, FAQ |
+| `deskfocus.html` | DeskFocus tab: Mac desktop with the working widget, lists, timer, app hiding, steps, FAQ, download |
 | `support.html` | Help and support, one part per app |
 | `privacy.html` | Privacy policy for both apps |
 | `terms.html` | Terms of use and the 14-day refund policy for App Store and Paddle purchases |
 | `CNAME` | The custom domain, `pacetasks.bilgalog.dev`, which GitHub Pages reads from here |
-| `site.css` | Shared look: PaceTasks' Sage theme, DeskFocus' ink panels and ember focus ring |
-| `site.js` | Starts the PaceTasks web demo inside the hero phone on wide screens |
+| `site.css` | Shared look: tokens per product, components, sections, policy pages |
+| `site.js` | Footer year, the Mac menu bar clock, and the PaceTasks web demo inside the hero phone on wide screens |
 | `widget.js` | The DeskFocus widget preview: tasks, focus timer, apps hidden during focus |
+| `effects.js` | Scroll reveals, words lighting up, the statement band, the marquee and the bottom section bar |
 | `screens/` | Screenshots of the web demo |
-| `fonts/` | Bricolage Grotesque for headings, served from the site itself (SIL Open Font License) |
-| `og-image.png` | Link preview, rendered from the hero by `node design/site/build_og_image.mjs` |
-| `icon.png`, `deskfocus-icon.svg`, `grain.png` | Both app icons, and the grain the app lays over its hero card |
+| `fonts/` | Plus Jakarta Sans, served from the site itself (SIL Open Font License) |
+| `og-image.png`, `og-deskfocus.png` | Link previews of each tab, rendered from the heroes by `node design/site/build_og_image.mjs` |
+| `icon.png`, `deskfocus-icon.svg` | Both app icons |
 
 1. The pages name Bilge Ozcanbaz as the developer and `pacetasks@bilgalog.dev`
    as the contact address (forwarded by Cloudflare Email Routing), in the policy
-   texts and every footer; update all four pages if either changes.
+   texts and every footer; update all five pages if either changes.
 2. On GitHub: **Settings → Pages → Deploy from a branch**, branch `main`,
    folder `/docs`.
 3. Custom domain: Cloudflare has a DNS-only (grey cloud) CNAME `pacetasks` →
@@ -447,21 +455,21 @@ Pages. Plain HTML, CSS and JavaScript, no build step.
    so the app's links (`src/lib/links.ts`) keep working.
 4. "Try PaceTasks in your browser" opens the web demo that
    `bilgaaaaa/PaceTasksWebsite` builds and publishes; keep that site running or
-   change the two demo links in `index.html`.
+   change the demo links in every page (search for `PaceTasksWebsite/demo`).
 5. "Download DeskFocus for Mac" still points to the releases of the old
    `bilgaaaaa/deskfocus` repository. Once `mac/Scripts/release.sh --publish` has
-   published the first `mac-v` release here, switch the links in `index.html`
-   and `support.html` to `https://github.com/bilgaaaaa/pacetasks/releases/latest`.
+   published the first `mac-v` release here, switch every download link (search
+   for `deskfocus/releases`) to `https://github.com/bilgaaaaa/pacetasks/releases/latest`.
 6. Preview locally with `python3 -m http.server 4173` inside `docs/`, then open
    http://localhost:4173.
 
 When what either app stores changes (a new table, an AI provider, analytics, a
 payment provider), update `docs/privacy.html` in the same pull request, and
-change its effective date. When PaceTasks is live,
-replace "coming soon to iPhone" in `index.html` with the App Store link, and add
-the bundle price where the comment in its "Two apps, sold together" section says.
+change its effective date. When PaceTasks is live, replace "Coming soon to
+iPhone" in `index.html` with the App Store link. When the Pro prices change, update
+the pricing section and the "What does Pro cost?" answer in `index.html` together.
 Once DeskFocus shows PaceTasks tasks, remove the "coming soon" wording from
-`index.html` (search for "coming soon").
+`index.html` and `deskfocus.html` (search for "coming soon").
 
 ## Project structure
 
