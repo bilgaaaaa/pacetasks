@@ -7,8 +7,8 @@ export type HapticCue = "taskCompleted" | "timerEnded";
 
 type HapticSettings = Pick<UserSettings, "haptics_enabled" | "timer_chime_enabled">;
 
-// The setting that switches each cue on or off. The timer's buzz keeps its older
-// field name (timer_chime_enabled), from when it was meant to be a sound.
+// The setting that switches each cue on or off. The timer's buzz shares timer_chime_enabled
+// with the sound of its end alert (see src/hooks/useTimerAlert.ts), so one switch covers both.
 const CUE_SETTING: Record<HapticCue, keyof HapticSettings> = {
   taskCompleted: "haptics_enabled",
   timerEnded: "timer_chime_enabled",

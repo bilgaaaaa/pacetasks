@@ -1,6 +1,6 @@
 import { addDays, weekdayIndex } from "@domain/dates";
 import { formatDueLabel } from "./dueLabel";
-import { DueKind } from "./types";
+import { DueKind, Task } from "./types";
 
 // The "When?" choices in the add-task sheet, turned into the task's
 // due_date/due_kind relative to the phone's today. A choice is either one exact
@@ -42,6 +42,17 @@ export function resolveDueChoice(choice: DueChoice, todayKey: string): ResolvedD
     case "next_week":
       return { due_date: addDays(endOfWeek(todayKey), 7), due_kind: "by" };
   }
+}
+
+// The choice that shows an existing task's day in the sheet. A deadline that is
+// not a week's Sunday (e.g. "by Fri" from Brain Dump) shows as that day.
+export function dueChoiceOfTask(task: Pick<Task, "due_date" | "due_kind">, todayKey: string): DueChoice {
+  if (!task.due_date) return DEFAULT_DUE_CHOICE;
+  if (task.due_kind === "by") {
+    if (task.due_date === endOfWeek(todayKey)) return { kind: "flexible", when: "this_week" };
+    if (task.due_date === addDays(endOfWeek(todayKey), 7)) return { kind: "flexible", when: "next_week" };
+  }
+  return { kind: "day", dateKey: task.due_date };
 }
 
 export function isSameDueChoice(a: DueChoice, b: DueChoice): boolean {

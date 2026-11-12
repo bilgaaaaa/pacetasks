@@ -13,17 +13,26 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { TASK_LIMITS } from "@domain/task";
+import { clampEstimatedMinutes, TASK_LIMITS } from "@domain/task";
+import { editPatch } from "@domain/taskPatch";
 import { TaskHistoryEntry, findExactMatch, findMatches, normalizeTitle } from "@domain/taskHistory";
 import { toLocalDateKey } from "@domain/dates";
 import { timingForHour } from "@domain/timing";
 import { DEFAULT_REMINDER_MINUTES, REMINDER_OFFSETS, taskReminderMoment } from "@domain/reminders";
 import { makeStyles, useTheme } from "../hooks/useTheme";
-import { EnergyLevel, Task, TaskDraft, TaskTiming } from "../lib/types";
+import { EnergyLevel, Task, TaskDraft, TaskPatch, TaskTiming } from "../lib/types";
 import { CATEGORIES, categoryColor, getCategory } from "../lib/categories";
 import { TIMING_LABELS } from "../lib/taskSections";
 import { ANY_ENERGY_LABEL, ENERGY_OPTIONS, energyLabel } from "../lib/energy";
-import { DEFAULT_DUE_CHOICE, DueChoice, dueChoiceLabel, dueChoiceSummary, resolveDueChoice } from "../lib/dueOptions";
+import {
+  DEFAULT_DUE_CHOICE,
+  DueChoice,
+  dueChoiceLabel,
+  dueChoiceOfTask,
+  dueChoiceSummary,
+  resolveDueChoice,
+} from "../lib/dueOptions";
+import { formatDueLabel } from "../lib/dueLabel";
 import { hourOf, suggestedStartTime } from "../lib/timeOptions";
 import {
   REMINDER_PERMISSION_OFF,
@@ -48,10 +57,16 @@ const ENERGY_VALUES: (EnergyLevel | null)[] = [null, ...ENERGY_OPTIONS.map((opti
 const REMINDER_VALUES: (number | null)[] = [null, ...REMINDER_OFFSETS];
 
 // The detail panel open under the task card; only one at a time keeps the sheet short.
-type Panel = "when" | "duration" | "time" | "more";
+type Panel = "when" | "duration" | "time" | "notes" | "more";
+
+// Fields set by hand; task memory and suggestions never overwrite them.
+const UNTOUCHED = { minutes: false, timing: false, category: false, energy: false, time: false, due: false };
+// An existing task's values are all its own, except its day, which is kept as it is until changed.
+const EDIT_TOUCHED = { minutes: true, timing: true, category: true, energy: true, time: true, due: false };
 
 interface Props {
   visible: boolean;
+  editing: Task | null; // the task being edited; null adds a new one
   history: Map<string, TaskHistoryEntry>;
   usuals: TaskRhythm[]; // repeat tasks for one-tap adding, most overdue first
   workStartHour: number; // picks "before work"/"after work" from a chosen time
@@ -59,17 +74,20 @@ interface Props {
   taskRemindersEnabled: boolean; // the Settings switch; the sheet says so when it is off
   onAdd: (draft: TaskDraft) => Promise<Task | undefined>; // undefined when saving failed
   onUndo: (taskId: string) => Promise<boolean>; // false when the delete failed
+  onSave: (taskId: string, patch: TaskPatch) => Promise<boolean>; // saves an edit; false when it failed
   onOpenBrainDump: () => void;
   onClose: () => void;
   onDismissed: () => void; // the sheet has fully gone (iOS): lets the screen open the next sheet
 }
 
-// The add sheet: one card with the task's name and a row of pills (day,
-// duration, start time with its reminder, more). Each pill opens its own small
-// panel below the card. With the name still empty, your usuals sit underneath,
-// one tap each. After each add it clears for the next task and offers Undo.
+// The task sheet, for a new task or an existing one (`editing`): one card with
+// the task's name and a row of pills (day, duration, start time with its
+// reminder, details, more). Each pill opens its own small panel below the card.
+// Adding: with the name still empty, your usuals sit underneath, one tap each,
+// and after each add it clears for the next task and offers Undo.
 export function AddTaskSheet({
   visible,
+  editing,
   history,
   usuals,
   workStartHour,
@@ -77,6 +95,7 @@ export function AddTaskSheet({
   taskRemindersEnabled,
   onAdd,
   onUndo,
+  onSave,
   onOpenBrainDump,
   onClose,
   onDismissed,
@@ -93,10 +112,11 @@ export function AddTaskSheet({
   const [energy, setEnergy] = useState<EnergyLevel | null>(null);
   const [scheduledTime, setScheduledTime] = useState<string | null>(null);
   const [reminder, setReminder] = useState<number | null>(null);
+  const [notes, setNotes] = useState("");
+  const [minutesText, setMinutesText] = useState(""); // what is typed in the duration field
   const [panel, setPanel] = useState<Panel | null>(null);
   const [permission, setPermission] = useState<NotificationPermission>("undetermined");
-  // Fields the user set by hand are never overwritten by task memory or the chosen time.
-  const [touched, setTouched] = useState({ minutes: false, timing: false, category: false, energy: false });
+  const [touched, setTouched] = useState(UNTOUCHED);
   // Snapshot taken on open: an added usual becomes pending and would otherwise vanish from the list.
   const [shownUsuals, setShownUsuals] = useState<TaskRhythm[]>(usuals);
   const [addedKeys, setAddedKeys] = useState<string[]>([]);
@@ -116,19 +136,38 @@ export function AddTaskSheet({
     setEnergy(null);
     setScheduledTime(null);
     setReminder(null);
+    setNotes("");
+    setMinutesText("");
     setPanel(null);
-    setTouched({ minutes: false, timing: false, category: false, energy: false });
+    setTouched(UNTOUCHED);
+  };
+
+  // Fills the sheet with an existing task; its details open right away when it has some.
+  const loadTask = (task: Task) => {
+    setTitle(task.title);
+    setMinutes(task.estimated_minutes);
+    setTiming(task.timing);
+    setDue(dueChoiceOfTask(task, toLocalDateKey(new Date())));
+    setCategory(task.category);
+    setEnergy(task.energy_level);
+    setScheduledTime(task.scheduled_time);
+    setReminder(task.reminder_minutes_before);
+    setNotes(task.notes ?? "");
+    setMinutesText("");
+    setPanel(task.notes ? "notes" : null);
+    setTouched({ ...EDIT_TOUCHED, time: task.scheduled_time !== null });
   };
 
   // Every opening starts clean, with nothing left over from last time.
   useEffect(() => {
     if (!visible) return;
-    resetDraft();
+    if (editing) loadTask(editing);
+    else resetDraft();
     setShownUsuals(usuals);
     setAddedKeys([]);
     setLastAdded(null);
     setError(null);
-  }, [visible]);
+  }, [visible, editing?.id]);
 
   // The reminder panel says up front when notifications are off for the app.
   useEffect(() => {
@@ -143,7 +182,16 @@ export function AddTaskSheet({
   const trimmedTitle = title.trim();
   const exactMatch = trimmedTitle ? findExactMatch(history, title) : undefined;
   const suggestions = trimmedTitle && !exactMatch ? findMatches(history, title, 3) : [];
-  const resolvedDue = resolveDueChoice(due, todayKey);
+  // An edited task keeps its exact day and deadline until another one is picked.
+  const resolvedDue =
+    editing && !touched.due
+      ? { due_date: editing.due_date, due_kind: editing.due_kind }
+      : resolveDueChoice(due, todayKey);
+  const dueLabel =
+    editing && !touched.due && editing.due_date
+      ? formatDueLabel(editing.due_date, editing.due_kind, todayKey)
+      : dueChoiceLabel(due, todayKey);
+  const work = { workStartHour, workEndHour };
 
   const applyMemory = (
     entry: Pick<TaskHistoryEntry, "lastMinutes" | "timing" | "category" | "energyLevel">,
@@ -172,15 +220,43 @@ export function AddTaskSheet({
     setPanel((current) => (current === next ? null : next));
   };
 
-  // A chosen time also places the task before/after work, unless that was set by hand.
-  const changeTime = (time: string) => {
+  // A time also places the task before/after work, unless that was set by hand.
+  const applyTime = (time: string) => {
     setScheduledTime(time);
     if (!touched.timing) setTiming(timingForHour(hourOf(time), workStartHour, workEndHour));
+  };
+
+  // A time picked by hand stays, whatever part of the day is chosen later.
+  const changeTime = (time: string) => {
+    applyTime(time);
+    setTouched((t) => ({ ...t, time: true }));
+  };
+
+  const changeDue = (choice: DueChoice) => {
+    setDue(choice);
+    setTouched((t) => ({ ...t, due: true }));
+  };
+
+  // A part of the day picked by hand moves a suggested start time into it.
+  const changeTiming = (value: TaskTiming) => {
+    setTiming(value);
+    setTouched((t) => ({ ...t, timing: true }));
+    if (scheduledTime && !touched.time) setScheduledTime(suggestedStartTime(now, value, work));
+  };
+
+  // Any number of minutes can be typed; the chips are only shortcuts.
+  const typeMinutes = (text: string) => {
+    const digits = text.replace(/[^0-9]/g, "");
+    setMinutesText(digits);
+    if (!digits) return;
+    setMinutes(clampEstimatedMinutes(Number(digits)));
+    setTouched((t) => ({ ...t, minutes: true }));
   };
 
   const removeTime = () => {
     setScheduledTime(null);
     setReminder(null);
+    setTouched((t) => ({ ...t, time: false }));
     if (!touched.timing) setTiming("anytime");
   };
 
@@ -197,7 +273,7 @@ export function AddTaskSheet({
 
   // The first time a task gets a start time it also gets the default nudge.
   const addTime = () => {
-    changeTime(suggestedStartTime(now));
+    applyTime(suggestedStartTime(now, timing, work));
     changeReminder(DEFAULT_REMINDER_MINUTES);
   };
 
@@ -238,22 +314,43 @@ export function AddTaskSheet({
     inputRef.current?.focus();
   };
 
+  // Writes only what changed on the edited task, then closes.
+  const saveEdit = async (task: Task, patch: TaskPatch) => {
+    if (Object.keys(patch).length === 0) {
+      onClose();
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    const saved = await onSave(task.id, patch);
+    setSaving(false);
+    if (!saved) {
+      console.warn("[AddTaskSheet] edit failed", task.id);
+      setError("Couldn't save your changes. Check your connection and try again.");
+      return;
+    }
+    console.log("[AddTaskSheet] task edited", task.id, Object.keys(patch));
+    onClose();
+  };
+
   const submit = async () => {
     if (!trimmedTitle || saving) return;
-    const saved = await save(
-      {
-        title: trimmedTitle.slice(0, TASK_LIMITS.titleMaxLength),
-        estimated_minutes: Math.min(TASK_LIMITS.maxEstimatedMinutes, Math.max(TASK_LIMITS.minEstimatedMinutes, minutes)),
-        timing,
-        category,
-        energy_level: energy,
-        scheduled_time: scheduledTime,
-        reminder_minutes_before: scheduledTime ? reminder : null,
-        ...resolvedDue,
-        source: "app",
-      },
-      dueChoiceSummary(due, todayKey)
-    );
+    const fields = {
+      title: trimmedTitle.slice(0, TASK_LIMITS.titleMaxLength),
+      estimated_minutes: clampEstimatedMinutes(minutes),
+      timing,
+      category,
+      energy_level: energy,
+      scheduled_time: scheduledTime,
+      reminder_minutes_before: scheduledTime ? reminder : null,
+      notes: notes.trim().slice(0, TASK_LIMITS.notesMaxLength) || null,
+      ...resolvedDue,
+    };
+    if (editing) {
+      await saveEdit(editing, editPatch(editing, fields));
+      return;
+    }
+    const saved = await save({ ...fields, source: "app" }, dueChoiceSummary(due, todayKey));
     if (saved) {
       // Cleared for the next thought: usuals and Undo are back in view.
       Keyboard.dismiss();
@@ -349,15 +446,31 @@ export function AddTaskSheet({
   const renderPanel = () => {
     switch (panel) {
       case "when":
-        return <DayPicker todayKey={todayKey} value={due} onChange={setDue} />;
+        return <DayPicker todayKey={todayKey} value={due} onChange={changeDue} />;
       case "duration":
         return (
           <>
             <Text style={styles.panelTitle}>HOW LONG, HONESTLY?</Text>
             {renderChips(durationChoices, minutes, (value) => `${value} min`, (value) => {
               setMinutes(value);
+              setMinutesText("");
               setTouched((t) => ({ ...t, minutes: true }));
             })}
+            <View style={styles.minutesRow}>
+              <Text style={styles.hint}>Or type it:</Text>
+              <TextInput
+                style={styles.minutesInput}
+                value={minutesText}
+                onChangeText={typeMinutes}
+                placeholder={String(minutes)}
+                placeholderTextColor={theme.colors.textTertiary}
+                keyboardType="number-pad"
+                returnKeyType="done"
+                maxLength={3}
+                accessibilityLabel="Minutes, typed"
+              />
+              <Text style={styles.hint}>min</Text>
+            </View>
           </>
         );
       case "time":
@@ -369,7 +482,13 @@ export function AddTaskSheet({
                 <Text style={styles.textButtonText}>Remove time</Text>
               </TouchableOpacity>
             </View>
-            <TimePicker value={scheduledTime} now={now} onChange={changeTime} />
+            <TimePicker
+              value={scheduledTime}
+              now={now}
+              workStartHour={workStartHour}
+              workEndHour={workEndHour}
+              onChange={changeTime}
+            />
             <Text style={[styles.panelTitle, styles.panelTitleSpaced]}>REMIND ME · BEFORE IT STARTS</Text>
             {renderChips(REMINDER_VALUES, reminder, reminderChipLabel, changeReminder)}
             {reminder !== null && (
@@ -393,14 +512,27 @@ export function AddTaskSheet({
             </TouchableOpacity>
           </View>
         );
+      case "notes":
+        return (
+          <>
+            <Text style={styles.panelTitle}>DETAILS</Text>
+            <TextInput
+              style={styles.notesInput}
+              value={notes}
+              onChangeText={setNotes}
+              placeholder="Anything you want to remember about it"
+              placeholderTextColor={theme.colors.textTertiary}
+              multiline
+              maxLength={TASK_LIMITS.notesMaxLength}
+              accessibilityLabel="Details"
+            />
+          </>
+        );
       case "more":
         return (
           <>
             <Text style={styles.panelTitle}>PART OF THE DAY</Text>
-            {renderChips(TIMING_VALUES, timing, (value) => TIMING_LABELS[value], (value) => {
-              setTiming(value);
-              setTouched((t) => ({ ...t, timing: true }));
-            })}
+            {renderChips(TIMING_VALUES, timing, (value) => TIMING_LABELS[value], changeTiming)}
             <Text style={[styles.panelTitle, styles.panelTitleSpaced]}>CATEGORY</Text>
             {renderChips<string | null>(
               [null, ...CATEGORIES.map((c) => c.id)],
@@ -428,25 +560,27 @@ export function AddTaskSheet({
     }
   };
 
-  const showUsuals = !trimmedTitle && panel === null;
+  const showUsuals = !editing && !trimmedTitle && panel === null;
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} onDismiss={onDismissed}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-        <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Close add task" />
+        <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Close task sheet" />
         <View style={styles.sheet}>
           <View style={styles.handle} />
 
           <View style={styles.header}>
-            <Text style={styles.heading}>New task</Text>
+            <Text style={styles.heading}>{editing ? "Edit task" : "New task"}</Text>
             <View style={styles.headerActions}>
-              <TouchableOpacity
-                style={styles.iconButton}
-                onPress={onOpenBrainDump}
-                accessibilityLabel="Brain dump: say everything at once"
-              >
-                <Ionicons name="mic-outline" size={20} color={theme.colors.textPrimary} />
-              </TouchableOpacity>
+              {!editing && (
+                <TouchableOpacity
+                  style={styles.iconButton}
+                  onPress={onOpenBrainDump}
+                  accessibilityLabel="Brain dump: say everything at once"
+                >
+                  <Ionicons name="mic-outline" size={20} color={theme.colors.textPrimary} />
+                </TouchableOpacity>
+              )}
               <TouchableOpacity style={styles.iconButton} onPress={onClose} accessibilityLabel="Close">
                 <Ionicons name="close" size={22} color={theme.colors.textPrimary} />
               </TouchableOpacity>
@@ -468,7 +602,7 @@ export function AddTaskSheet({
                 maxLength={TASK_LIMITS.titleMaxLength}
                 accessibilityLabel="What do you need to do?"
               />
-              {exactMatch && (
+              {!editing && exactMatch && (
                 <Text style={styles.memoryText}>
                   {exactMatch.timesCompleted > 0 && exactMatch.minMinutes !== null && exactMatch.maxMinutes !== null
                     ? `Done ${exactMatch.timesCompleted}× before · usually ${
@@ -479,7 +613,7 @@ export function AddTaskSheet({
                     : `You've added this before · last time ${exactMatch.lastMinutes} min.`}
                 </Text>
               )}
-              {suggestions.length > 0 && (
+              {!editing && suggestions.length > 0 && (
                 <View style={styles.suggestions}>
                   {suggestions.map((entry) => (
                     <TouchableOpacity
@@ -500,9 +634,9 @@ export function AddTaskSheet({
                 {renderPill(
                   "when",
                   "calendar-outline",
-                  dueChoiceLabel(due, todayKey),
-                  !(due.kind === "flexible" && due.when === "any"),
-                  `Day: ${dueChoiceLabel(due, todayKey)}`
+                  dueLabel,
+                  resolvedDue.due_date !== null,
+                  `Day: ${dueLabel}`
                 )}
                 {renderPill("duration", "hourglass-outline", `${minutes} min`, touched.minutes || !!exactMatch, `Duration: ${minutes} minutes`)}
                 {renderPill(
@@ -514,6 +648,13 @@ export function AddTaskSheet({
                     ? `Start time ${scheduledTime}, ${reminderLabel(reminder).toLowerCase()}`
                     : "Start time and reminder",
                   scheduledTime && reminder !== null ? "notifications" : undefined
+                )}
+                {renderPill(
+                  "notes",
+                  "document-text-outline",
+                  notes.trim() ? "Details" : null,
+                  notes.trim() !== "",
+                  notes.trim() ? "Details, added" : "Add details"
                 )}
                 {renderPill("more", "options-outline", moreLabel, moreIsSet, "More: part of the day, category, energy")}
               </View>
@@ -585,7 +726,7 @@ export function AddTaskSheet({
           </ScrollView>
 
           <View style={styles.footer}>
-            {lastAdded && !trimmedTitle && (
+            {!editing && lastAdded && !trimmedTitle && (
               <View style={styles.toast} accessibilityLiveRegion="polite">
                 <Ionicons name="checkmark" size={16} color={theme.colors.quickText} />
                 <Text style={styles.toastText} numberOfLines={1}>
@@ -601,7 +742,7 @@ export function AddTaskSheet({
                 </TouchableOpacity>
               </View>
             )}
-            {(trimmedTitle || !lastAdded) && (
+            {(editing || trimmedTitle || !lastAdded) && (
               <TouchableOpacity
                 style={[styles.addButton, (!trimmedTitle || saving) && styles.addButtonDisabled]}
                 onPress={submit}
@@ -610,7 +751,7 @@ export function AddTaskSheet({
               >
                 {saving && <ActivityIndicator color={theme.colors.onAccent} />}
                 <Text style={styles.addButtonText} numberOfLines={1}>
-                  {trimmedTitle ? `Add “${trimmedTitle}”` : "Add task"}
+                  {editing ? "Save changes" : trimmedTitle ? `Add “${trimmedTitle}”` : "Add task"}
                 </Text>
               </TouchableOpacity>
             )}
@@ -814,6 +955,36 @@ const useStyles = makeStyles((theme) => ({
     color: theme.colors.textSecondary,
     fontSize: theme.typography.footnote.fontSize,
     lineHeight: 18,
+  },
+  minutesRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.spacing.sm,
+  },
+  minutesInput: {
+    minWidth: 64,
+    height: 38,
+    paddingHorizontal: 12,
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surfaceAlt,
+    color: theme.colors.textPrimary,
+    fontSize: theme.typography.subhead.fontSize,
+    fontVariant: ["tabular-nums"],
+    textAlign: "center",
+  },
+  notesInput: {
+    minHeight: 96,
+    padding: 12,
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surfaceAlt,
+    color: theme.colors.textPrimary,
+    fontSize: theme.typography.subhead.fontSize,
+    lineHeight: 20,
+    textAlignVertical: "top",
   },
   chipWrap: {
     flexDirection: "row",

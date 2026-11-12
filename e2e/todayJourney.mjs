@@ -54,7 +54,8 @@ const passed = await runJourney("today-journey", async ({ page, baseUrl, step, s
     await snapshot("Duration panel");
     await page.getByLabel("Start time and reminder").click();
     await page.getByText("Set a start time").click();
-    await page.getByLabel("At 18:00").click();
+    // The hour is typed: any time can be entered, not only the shortcuts.
+    await page.getByLabel(/^hour, /).fill("18");
     await page.getByRole("radio", { name: "15 min", exact: true }).last().click();
     await page.getByText("We'll nudge you at 17:45 today.").waitFor();
     await snapshot("Start time with a reminder");

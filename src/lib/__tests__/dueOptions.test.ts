@@ -2,6 +2,7 @@ import {
   DEFAULT_DUE_CHOICE,
   DueChoice,
   dueChoiceLabel,
+  dueChoiceOfTask,
   dueChoiceSummary,
   isSameDueChoice,
   resolveDueChoice,
@@ -61,5 +62,18 @@ describe("dueChoiceLabel", () => {
     expect(dueChoiceLabel(flexible("next_week"), MONDAY)).toBe("Next week");
     expect(dueChoiceLabel(day(MONDAY), MONDAY)).toBe("Today");
     expect(dueChoiceLabel(day("2026-10-01"), MONDAY)).toBe("Thu");
+  });
+});
+
+describe("dueChoiceOfTask", () => {
+  it("shows an undated task as 'Any day' and a dated one as its day", () => {
+    expect(dueChoiceOfTask({ due_date: null, due_kind: null }, MONDAY)).toEqual(DEFAULT_DUE_CHOICE);
+    expect(dueChoiceOfTask({ due_date: "2026-09-30", due_kind: "on" }, MONDAY)).toEqual(day("2026-09-30"));
+  });
+
+  it("shows a week deadline as its week, and any other deadline as its day", () => {
+    expect(dueChoiceOfTask({ due_date: SUNDAY, due_kind: "by" }, MONDAY)).toEqual(flexible("this_week"));
+    expect(dueChoiceOfTask({ due_date: "2026-10-11", due_kind: "by" }, MONDAY)).toEqual(flexible("next_week"));
+    expect(dueChoiceOfTask({ due_date: "2026-10-02", due_kind: "by" }, MONDAY)).toEqual(day("2026-10-02"));
   });
 });

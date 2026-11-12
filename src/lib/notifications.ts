@@ -94,3 +94,61 @@ export function syncReminders(
     .catch((e) => console.warn("[notifications] reminder sync failed", e));
   return queue;
 }
+
+// Timer alerts are not reminders: one per running timer, so their ids sit outside REMINDER_ID_PREFIX and a re-plan never touches them.
+const TIMER_ALERT_ID_PREFIX = "timer-";
+
+export interface TimerAlert {
+  key: string; // one alert per key: scheduling the same key again replaces it
+  at: Date;
+  title: string;
+  body: string;
+  playsSound: boolean;
+}
+
+// The latest schedule or cancel per key, so a cancel made while the permission prompt is open still wins.
+const timerAlertRuns = new Map<string, number>();
+const nextTimerAlertRun = (key: string) => {
+  const run = (timerAlertRuns.get(key) ?? 0) + 1;
+  timerAlertRuns.set(key, run);
+  return run;
+};
+
+// Schedules the alert at a timer's end, because iOS runs no JS while the phone is locked.
+// The user just started the timer, so this is a fair moment to ask for notifications.
+export async function scheduleTimerAlert(alert: TimerAlert): Promise<void> {
+  if (!isSupported) return;
+  const run = nextTimerAlertRun(alert.key);
+  const identifier = `${TIMER_ALERT_ID_PREFIX}${alert.key}`;
+  try {
+    if (!(await requestNotificationPermission())) {
+      console.log(`[notifications] timer alert ${alert.key} skipped, notifications are off`);
+      return;
+    }
+    if (timerAlertRuns.get(alert.key) !== run) return;
+    await Notifications.scheduleNotificationAsync({
+      identifier,
+      content: { title: alert.title, body: alert.body, sound: alert.playsSound ? "default" : false },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: alert.at },
+    });
+    // Cancelled while it was being scheduled: take it back out.
+    if (timerAlertRuns.get(alert.key) !== run) {
+      await Notifications.cancelScheduledNotificationAsync(identifier);
+      return;
+    }
+    console.log(`[notifications] timer alert ${alert.key} scheduled`);
+  } catch (e) {
+    console.warn(`[notifications] could not schedule timer alert ${alert.key}`, e);
+  }
+}
+
+// Withdraws a timer's alert when the timer is stopped before its end.
+export async function cancelTimerAlert(key: string): Promise<void> {
+  if (!isSupported) return;
+  nextTimerAlertRun(key);
+  try {
+    await Notifications.cancelScheduledNotificationAsync(`${TIMER_ALERT_ID_PREFIX}${key}`);
+  } catch (e) {
+    console.warn(`[notifications] could not cancel timer alert ${key}`, e);
+  }
+}

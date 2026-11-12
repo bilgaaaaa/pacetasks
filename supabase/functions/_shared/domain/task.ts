@@ -26,6 +26,11 @@ export const TASK_LIMITS = {
   maxReminderMinutesBefore: 1440,
 } as const;
 
+// Any typed number of minutes, brought inside the limits the database enforces.
+export function clampEstimatedMinutes(minutes: number): number {
+  return Math.min(TASK_LIMITS.maxEstimatedMinutes, Math.max(TASK_LIMITS.minEstimatedMinutes, Math.round(minutes)));
+}
+
 export interface Task {
   id: string;
   user_id: string;
@@ -34,7 +39,7 @@ export interface Task {
   actual_minutes: number | null;
   timing: TaskTiming;
   category: string | null; // Category id from src/lib/categories.ts, or null for "No category"
-  scheduled_time: string | null; // "HH:MM", 24h — a fixed start time enables Focus/Pomodoro mode
+  scheduled_time: string | null; // "HH:MM", 24h — a fixed start time enables a Focus session
   reminder_minutes_before: number | null; // notify this many minutes before scheduled_time; null = no reminder
   status: TaskStatus;
   created_at: string;

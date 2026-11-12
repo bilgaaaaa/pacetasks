@@ -1,48 +1,49 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Alert, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { makeStyles, useTheme } from "../hooks/useTheme";
 import { useCountdown } from "../hooks/useCountdown";
 import { useHaptics } from "../hooks/useHaptics";
+import { useTimerAlert } from "../hooks/useTimerAlert";
 import { Task } from "../lib/types";
 import { categoryColor, getCategory } from "../lib/categories";
 import { formatClock } from "../lib/countdown";
 import { formatDueLabel } from "../lib/dueLabel";
 import { TIMING_LABELS } from "../lib/taskSections";
+import { rangeTimeUpCopy } from "../lib/timerAlertCopy";
 import { isQuickWin } from "@domain/todayTasks";
 import { toLocalDateKey } from "@domain/dates";
 
 interface Props {
   task: Task;
-  pomodoroWorkMinutes: number;
-  pomodoroBreakMinutes: number;
   suggestedMin: number; // range-timer lower bound (from task history, falls back to estimated_minutes)
   suggestedMax: number; // range-timer upper bound
   quickWinMinutes: number; // tasks this short get the highlighted "quick win" pill
   onComplete: (taskId: string, actualMinutes: number) => void;
   onDelete: (taskId: string) => void;
   onPark: (taskId: string) => void; // "Move to Someday": parks the task out of the daily lists
+  onEdit: (task: Task) => void; // opens the task sheet on this task
   onStartFocus: (task: Task) => void;
 }
 
-// A single row in the task list. Three ways to log time on a task:
+// A single row in the task list. Tapping the title (or "Edit" in the menu)
+// opens the task to change it. Three ways to log time on a task:
 // 1) tap the circle any time to open the manual actual-minutes stepper on a
 //    line of its own (Cancel backs out of an accidental tap),
 // 2) tap the minutes pill to start a simple range timer (counts down from
 //    the task's suggested max, turns green once past the suggested min),
 // 3) tap the Focus pill (only on tasks with a fixed scheduled_time) for the
-//    full Pomodoro modal instead — the range timer is hidden for those, since
+//    full Focus session instead — the range timer is hidden for those, since
 //    Focus mode already covers timing them.
 export function TaskItem({
   task,
-  pomodoroWorkMinutes,
-  pomodoroBreakMinutes,
   suggestedMin,
   suggestedMax,
   quickWinMinutes,
   onComplete,
   onDelete,
   onPark,
+  onEdit,
   onStartFocus,
 }: Props) {
   const { theme } = useTheme();
@@ -68,9 +69,39 @@ export function TaskItem({
   const elapsedSeconds = maxSeconds - timer.remainingSeconds;
   const inRange = elapsedSeconds >= minSeconds;
 
+  // The alert at the timer's end sounds even with the phone locked, when the buzz above cannot run.
+  const timerAlert = useTimerAlert();
+  const alertKey = `range-${task.id}`;
+  const startRangeTimer = () => {
+    timer.start(maxSeconds);
+    timerAlert.schedule(alertKey, maxSeconds, rangeTimeUpCopy(task.title, Math.round(maxSeconds / 60)));
+  };
+  const stopRangeTimer = () => {
+    timer.stop();
+    timerAlert.cancel(alertKey);
+  };
+
+  // A row that goes away mid-timer (deleted, filtered out) takes its timer along, so its alert must go too.
+  const runningRef = useRef(false);
+  runningRef.current = timer.isRunning;
+  const { cancel: cancelAlert } = timerAlert;
+  useEffect(
+    () => () => {
+      if (runningRef.current) cancelAlert(alertKey);
+    },
+    [alertKey, cancelAlert]
+  );
+
+  // Done elsewhere (the widget, another phone) while its timer runs: nothing is left to time.
+  useEffect(() => {
+    if (!isDone || !runningRef.current) return;
+    timer.stop();
+    cancelAlert(alertKey);
+  }, [isDone, timer.stop, cancelAlert, alertKey]);
+
   const openConfirm = () => {
     if (timer.isRunning) {
-      timer.stop();
+      stopRangeTimer();
       setConfirmingMinutes(Math.max(1, Math.round(elapsedSeconds / 60)));
     }
     setIsConfirming(true);
@@ -82,18 +113,22 @@ export function TaskItem({
     setIsConfirming(false);
   };
 
-  const baseSubtitle = task.scheduled_time
-    ? `${task.scheduled_time} · Pomodoro ${pomodoroWorkMinutes}+${pomodoroBreakMinutes}`
-    : category
-    ? `${TIMING_LABELS[task.timing]} · ${category.label}`
-    : TIMING_LABELS[task.timing];
+  // A timed task shows its minutes here: its pill shows the start time instead.
+  const baseSubtitle = [
+    task.scheduled_time ? `${task.estimated_minutes} min` : null,
+    TIMING_LABELS[task.timing],
+    category?.label,
+  ]
+    .filter(Boolean)
+    .join(" · ");
   // Due day and "maybe" come first when set (e.g. from Brain Dump): "by Fri · maybe · Anytime · Work".
   const dueLabel =
     task.due_date && !isDone ? formatDueLabel(task.due_date, task.due_kind, toLocalDateKey(new Date())) : null;
   const restSubtitle = [task.flexible && !isDone ? "maybe" : null, baseSubtitle].filter(Boolean).join(" · ");
 
   const showMenu = () => {
-    Alert.alert(task.title, undefined, [
+    Alert.alert(task.title, task.notes ?? undefined, [
+      ...(isDone ? [] : [{ text: "Edit", onPress: () => onEdit(task) }]),
       ...(isDone ? [] : [{ text: "Move to Someday", onPress: () => onPark(task.id) }]),
       { text: "Delete", style: "destructive" as const, onPress: () => onDelete(task.id) },
       { text: "Cancel", style: "cancel" as const },
@@ -137,10 +172,18 @@ export function TaskItem({
           <View style={styles.checkCircle} />
         </TouchableOpacity>
 
-        <View style={styles.mainLine}>
+        <TouchableOpacity
+          style={styles.mainLine}
+          onPress={() => onEdit(task)}
+          accessibilityRole="button"
+          accessibilityLabel={`Edit ${task.title}`}
+        >
           <Text style={styles.title} numberOfLines={2}>{task.title}</Text>
           <View style={styles.metaRow}>
             {categoryDot}
+            {task.notes && (
+              <Ionicons name="document-text-outline" size={12} color={theme.colors.textTertiary} accessibilityLabel="Has details" />
+            )}
             <Text style={styles.meta} numberOfLines={1}>
               {dueLabel && (
                 <Text style={dueLabel === "Overdue" ? styles.metaOverdue : styles.metaDue}>
@@ -151,7 +194,7 @@ export function TaskItem({
               {restSubtitle}
             </Text>
           </View>
-        </View>
+        </TouchableOpacity>
 
         {!isConfirming && (
           <>
@@ -169,7 +212,7 @@ export function TaskItem({
             ) : timer.isRunning ? (
               <TouchableOpacity
                 style={[styles.pill, inRange && styles.pillQuick]}
-                onPress={timer.stop}
+                onPress={stopRangeTimer}
                 accessibilityLabel="Stop timer"
               >
                 <Text style={[styles.pillText, inRange && styles.pillTextQuick]}>
@@ -179,7 +222,7 @@ export function TaskItem({
             ) : (
               <TouchableOpacity
                 style={[styles.pill, quickWin && styles.pillQuick]}
-                onPress={() => timer.start(maxSeconds)}
+                onPress={startRangeTimer}
                 accessibilityLabel={`Start ${task.estimated_minutes} minute timer`}
               >
                 <Text style={[styles.pillText, quickWin && styles.pillTextQuick]}>{task.estimated_minutes} min</Text>

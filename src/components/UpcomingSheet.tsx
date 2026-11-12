@@ -24,6 +24,8 @@ interface Props {
   errorMessage: string | null; // a failed save from the task list, which this sheet covers
   onMoveToToday: (task: Task) => void;
   onDelete: (taskId: string) => void; // already confirmed by the row
+  onEdit: (task: Task) => void; // the screen closes this sheet, then opens the task sheet
+  onDismissed: () => void; // the sheet has fully gone (iOS): lets the screen open the next sheet
   onClose: () => void;
 }
 
@@ -39,6 +41,8 @@ export function UpcomingSheet({
   errorMessage,
   onMoveToToday,
   onDelete,
+  onEdit,
+  onDismissed,
   onClose,
 }: Props) {
   const { theme } = useTheme();
@@ -46,7 +50,13 @@ export function UpcomingSheet({
   const scrollView = useRef<ScrollView>(null);
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+      onDismiss={onDismissed}
+    >
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <View style={styles.flex}>
@@ -90,6 +100,7 @@ export function UpcomingSheet({
                     task={task}
                     actionLabel={MOVE_TO_TODAY_LABEL}
                     onAction={onMoveToToday}
+                    onEdit={onEdit}
                     onDelete={onDelete}
                   />
                 ))}

@@ -16,9 +16,12 @@ import { Task } from "../lib/types";
 import { useTasks } from "../hooks/useTasks";
 import { useSettings } from "../hooks/useSettings";
 import { useReminders } from "../hooks/useReminders";
+import { useDeskfocusWidget } from "../hooks/useDeskfocusWidget";
+import { useFocusScreen } from "../hooks/useFocusScreen";
 import { useBrainDump } from "../hooks/useBrainDump";
 import { useSheetHandoff } from "../hooks/useSheetHandoff";
 import { useHaptics } from "../hooks/useHaptics";
+import { usePro } from "../hooks/usePro";
 import { useDoNow } from "../hooks/useDoNow";
 import { useOneThing } from "../hooks/useOneThing";
 import { useRollover } from "../hooks/useRollover";
@@ -74,7 +77,7 @@ function dateEyebrow(now: Date): string {
 // one list, or by size, place, category, time of day), with a summary of how small the
 // day really is, and an always-visible capture bar that opens the add sheet
 // (plus Brain Dump for many tasks at once). Each task can be timed with a
-// lightweight range timer or, for fixed-time tasks, the Focus/Pomodoro modal.
+// lightweight range timer or, for fixed-time tasks, the Focus session.
 // One "Pick my next task" button opens a chooser for the two helpers: "Fit my
 // time" (narrows the list to what fits the time and energy the user has) and
 // "Decide for me" (One Thing mode, a single task). When tasks were left
@@ -90,9 +93,12 @@ export function TaskListScreen({ userId }: Props) {
     useTasks();
   const { settings } = useSettings();
   // An empty list after a failed load is not "no tasks": reminders wait for a real one.
-  useReminders(userId, tasks, !loading && (tasks.length > 0 || !error));
-  const [focusTask, setFocusTask] = useState<Task | null>(null);
-  const [addOpen, setAddOpen] = useState(false);
+  const tasksReady = !loading && (tasks.length > 0 || !error);
+  useReminders(userId, tasks, tasksReady);
+  useDeskfocusWidget(tasks, tasksReady, complete);
+  // One sheet adds and edits. `editing` stays while it slides away, so its heading doesn't flip.
+  const [taskSheet, setTaskSheet] = useState<{ open: boolean; editing: Task | null }>({ open: false, editing: null });
+  const closeTaskSheet = () => setTaskSheet((sheet) => ({ ...sheet, open: false }));
   const [brainDumpOpen, setBrainDumpOpen] = useState(false);
   const [doNowOpen, setDoNowOpen] = useState(false);
   const [oneThingOpen, setOneThingOpen] = useState(false);
@@ -107,6 +113,7 @@ export function TaskListScreen({ userId }: Props) {
   const workEndHour = settings?.work_end_hour ?? DEFAULT_SETTINGS.work_end_hour;
   const doNow = useDoNow(tasks, workStartHour, workEndHour);
   const haptics = useHaptics();
+  const pro = usePro();
   // Every way of finishing a task (a row, Focus, One Thing) goes through here, so all of them feel the same:
   // one tap once the save has really succeeded. `silent` is for a moment that already had its own cue.
   const completeTask = async (taskId: string, actualMinutes: number, silent = false) => {
@@ -114,6 +121,7 @@ export function TaskListScreen({ userId }: Props) {
     if (saved && !silent) haptics.play("taskCompleted");
     return saved;
   };
+  const workMinutes = settings?.pomodoro_work_minutes ?? DEFAULT_SETTINGS.pomodoro_work_minutes;
   const oneThing = useOneThing({ tasks, energy: doNow.energy, workStartHour, workEndHour, onComplete: completeTask });
   const rollover = useRollover({ tasks, onApply: updateMany });
   const weeklyReset = useWeeklyReset({ tasks, onUpdate: update, onRemove: remove });
@@ -139,12 +147,25 @@ export function TaskListScreen({ userId }: Props) {
   const openFromPick = (open: (value: boolean) => void) =>
     sheetHandoff.handOff(() => setPickOpen(false), () => open(true));
 
-  const openBrainDumpFromAdd = () =>
-    sheetHandoff.handOff(() => setAddOpen(false), () => setBrainDumpOpen(true));
+  // Brain Dump is Pro: free users get the paywall instead, once the add sheet is gone.
+  const openBrainDump = () => pro.requirePro("brainDump", () => setBrainDumpOpen(true));
+  const openBrainDumpFromAdd = () => sheetHandoff.handOff(closeTaskSheet, openBrainDump);
 
   // A Focus pill tapped inside "Fit my time": that sheet has to go before the session can show.
   const startFocusFromDoNow = (task: Task) =>
-    sheetHandoff.handOff(() => setDoNowOpen(false), () => setFocusTask(task));
+    sheetHandoff.handOff(() => setDoNowOpen(false), () => focusScreen.open(task));
+
+  // Another sheet on screen would swallow the Focus screen (iOS shows only one at a time).
+  const otherSheetOpen =
+    taskSheet.open || brainDumpOpen || doNowOpen || oneThingOpen || pickOpen || somedayOpen || weeklyResetOpen || upcoming.open;
+  const focusScreen = useFocusScreen({
+    tasks,
+    tasksReady,
+    workMinutes,
+    timerSoundEnabled: settings?.timer_chime_enabled,
+    otherSheetOpen,
+    completeTask,
+  });
 
   const history = useMemo(() => buildTaskHistory(tasks), [tasks]);
   const stats = useMemo(() => computeStats(tasks), [tasks]);
@@ -196,29 +217,36 @@ export function TaskListScreen({ userId }: Props) {
         .sort((a, b) => (a.scheduled_time! < b.scheduled_time! ? -1 : 1)),
     [pending, done]
   );
-  const focusSessionIndex = focusTask
-    ? focusTasksToday.findIndex((t) => t.id === focusTask.id) + 1
+  const focusSessionIndex = focusScreen.task
+    ? focusTasksToday.findIndex((t) => t.id === focusScreen.task!.id) + 1
     : 0;
 
   // One task row for both the Today list and the "What can I do now?" sheet,
   // which passes its own way of starting Focus (it has to close first).
   // The range timer's suggested min/max come from this task's own history
   // (see taskHistory.ts); with no completed history yet, both ends are its estimate.
-  const renderTaskItem = (task: Task, onStartFocus: (task: Task) => void = setFocusTask) => {
+  const editTask = (task: Task) => setTaskSheet({ open: true, editing: task });
+  // Editing from inside another sheet: that sheet closes first, then the task sheet opens.
+  const editTaskFrom = (closeSheet: () => void) => (task: Task) =>
+    sheetHandoff.handOff(closeSheet, () => editTask(task));
+  const renderTaskItem = (
+    task: Task,
+    onStartFocus: (task: Task) => void = focusScreen.open,
+    onEdit: (task: Task) => void = editTask
+  ) => {
     const historyEntry = findExactMatch(history, task.title);
     const suggestedMin = historyEntry?.minMinutes ?? task.estimated_minutes;
     const suggestedMax = historyEntry?.maxMinutes ?? task.estimated_minutes;
     return (
       <TaskItem
         task={task}
-        pomodoroWorkMinutes={settings?.pomodoro_work_minutes ?? DEFAULT_SETTINGS.pomodoro_work_minutes}
-        pomodoroBreakMinutes={settings?.pomodoro_break_minutes ?? DEFAULT_SETTINGS.pomodoro_break_minutes}
         suggestedMin={Math.min(suggestedMin, suggestedMax)}
         suggestedMax={Math.max(suggestedMin, suggestedMax)}
         quickWinMinutes={appearance.quickWinMinutes}
         onComplete={completeTask}
         onDelete={remove}
         onPark={(taskId) => update(taskId, PARK_PATCH)}
+        onEdit={onEdit}
         onStartFocus={onStartFocus}
       />
     );
@@ -362,7 +390,7 @@ export function TaskListScreen({ userId }: Props) {
         <View style={styles.captureBar}>
           <TouchableOpacity
             style={styles.addButton}
-            onPress={() => setAddOpen(true)}
+            onPress={() => setTaskSheet({ open: true, editing: null })}
             accessibilityRole="button"
             accessibilityLabel="Add a task"
           >
@@ -373,7 +401,7 @@ export function TaskListScreen({ userId }: Props) {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.micButton}
-            onPress={() => setBrainDumpOpen(true)}
+            onPress={openBrainDump}
             accessibilityLabel="Brain dump: say everything at once"
           >
             <Ionicons name="mic-outline" size={22} color={theme.colors.textPrimary} />
@@ -381,7 +409,8 @@ export function TaskListScreen({ userId }: Props) {
         </View>
 
         <AddTaskSheet
-          visible={addOpen}
+          visible={taskSheet.open}
+          editing={taskSheet.editing}
           history={history}
           usuals={usuals}
           workStartHour={workStartHour}
@@ -389,8 +418,9 @@ export function TaskListScreen({ userId }: Props) {
           taskRemindersEnabled={settings?.task_reminder_enabled ?? true}
           onAdd={create}
           onUndo={remove}
+          onSave={update}
           onOpenBrainDump={openBrainDumpFromAdd}
-          onClose={() => setAddOpen(false)}
+          onClose={closeTaskSheet}
           onDismissed={sheetHandoff.onDismissed}
         />
 
@@ -422,7 +452,7 @@ export function TaskListScreen({ userId }: Props) {
           errorMessage={error}
           onChangeMinutes={doNow.setAvailableMinutes}
           onChangeEnergy={doNow.setEnergy}
-          renderTask={(task) => renderTaskItem(task, startFocusFromDoNow)}
+          renderTask={(task) => renderTaskItem(task, startFocusFromDoNow, editTaskFrom(() => setDoNowOpen(false)))}
           onClose={() => setDoNowOpen(false)}
           onDismissed={sheetHandoff.onDismissed}
         />
@@ -454,6 +484,8 @@ export function TaskListScreen({ userId }: Props) {
           errorMessage={error}
           onBringBack={(taskId) => update(taskId, UNPARK_PATCH)}
           onDelete={remove}
+          onEdit={editTaskFrom(() => setSomedayOpen(false))}
+          onDismissed={sheetHandoff.onDismissed}
           onClose={() => setSomedayOpen(false)}
         />
 
@@ -465,6 +497,8 @@ export function TaskListScreen({ userId }: Props) {
           errorMessage={error}
           onMoveToToday={(task) => update(task.id, reschedulePatch(task, todayKey))}
           onDelete={remove}
+          onEdit={editTaskFrom(() => setUpcoming((current) => ({ ...current, open: false })))}
+          onDismissed={sheetHandoff.onDismissed}
           onClose={() => setUpcoming((current) => ({ ...current, open: false }))}
         />
 
@@ -486,16 +520,16 @@ export function TaskListScreen({ userId }: Props) {
         />
 
         <FocusSessionModal
-          task={focusTask}
+          task={focusScreen.task}
+          session={focusScreen.session}
           sessionIndex={focusSessionIndex}
           sessionTotal={focusTasksToday.length}
-          workMinutes={settings?.pomodoro_work_minutes ?? DEFAULT_SETTINGS.pomodoro_work_minutes}
+          workMinutes={workMinutes}
           breakMinutes={settings?.pomodoro_break_minutes ?? DEFAULT_SETTINGS.pomodoro_break_minutes}
-          onClose={() => setFocusTask(null)}
-          onComplete={(taskId, actualMinutes, endedByTimer) => {
-            completeTask(taskId, actualMinutes, endedByTimer);
-            setFocusTask(null);
-          }}
+          onClose={focusScreen.close}
+          onPause={focusScreen.pause}
+          onResume={focusScreen.resume}
+          onDoneEarly={focusScreen.doneEarly}
         />
       </SafeAreaView>
     </LinearGradient>

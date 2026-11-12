@@ -7,6 +7,8 @@ import { ThemeProvider, makeStyles, useTheme } from "./src/hooks/useTheme";
 import { useSession } from "./src/hooks/useSession";
 import { useAppUpdate } from "./src/hooks/useAppUpdate";
 import { UpdateSheet } from "./src/components/UpdateSheet";
+import { PaywallSheet } from "./src/components/PaywallSheet";
+import { ProProvider, usePro } from "./src/hooks/usePro";
 import { SettingsProvider } from "./src/hooks/useSettings";
 import { TasksProvider } from "./src/hooks/useTasks";
 import { Button } from "./src/components/Button";
@@ -65,8 +67,25 @@ function PillTabBar({ state, descriptors, navigation, insets }: any) {
   );
 }
 
+// The one paywall for the whole app, shown whenever usePro opens it.
+function ProPaywall() {
+  const pro = usePro();
+  return (
+    <PaywallSheet
+      paywall={pro.paywall}
+      status={pro.status}
+      onPurchase={(plan) => void pro.purchase(plan.id)}
+      onRestore={() => void pro.restore()}
+      onManage={pro.manageSubscription}
+      onRetry={() => pro.openPaywall(pro.paywall.reason)}
+      onClose={pro.closePaywall}
+    />
+  );
+}
+
 // Waits for the anonymous Supabase session and the saved appearance, loads the
-// user's settings and tasks once (SettingsProvider, TasksProvider), then wires the three tabs (Today / Pace / Settings) behind the pill tab bar.
+// user's settings, tasks and Pro status once (SettingsProvider, TasksProvider, ProProvider), then wires the
+// three tabs (Today / Pace / Settings) behind the pill tab bar.
 // A newer App Store version is offered on top, once the app is ready.
 function AppContent() {
   const { theme, appearanceLoaded } = useTheme();
@@ -114,24 +133,27 @@ function AppContent() {
   return (
     <SettingsProvider userId={userId}>
       <TasksProvider userId={userId}>
-        <NavigationContainer theme={navigationTheme}>
-          <StatusBar style={theme.isDark ? "light" : "dark"} />
-          <Tab.Navigator
-            screenOptions={{ headerShown: false }}
-            tabBar={(props) => <PillTabBar {...props} />}
-          >
-            <Tab.Screen name="Tasks" options={{ tabBarLabel: "Today" }}>
-              {() => <TaskListScreen userId={userId} />}
-            </Tab.Screen>
-            <Tab.Screen name="Stats" options={{ tabBarLabel: "Pace" }}>
-              {() => <StatsScreen />}
-            </Tab.Screen>
-            <Tab.Screen name="Settings" options={{ tabBarLabel: "Settings" }}>
-              {() => <SettingsScreen userId={userId} session={session} />}
-            </Tab.Screen>
-          </Tab.Navigator>
-        </NavigationContainer>
-        <UpdateSheet update={appUpdate.update} onUpdateNow={appUpdate.updateNow} onLater={appUpdate.later} />
+        <ProProvider userId={userId}>
+          <NavigationContainer theme={navigationTheme}>
+            <StatusBar style={theme.isDark ? "light" : "dark"} />
+            <Tab.Navigator
+              screenOptions={{ headerShown: false }}
+              tabBar={(props) => <PillTabBar {...props} />}
+            >
+              <Tab.Screen name="Tasks" options={{ tabBarLabel: "Today" }}>
+                {() => <TaskListScreen userId={userId} />}
+              </Tab.Screen>
+              <Tab.Screen name="Stats" options={{ tabBarLabel: "Pace" }}>
+                {() => <StatsScreen />}
+              </Tab.Screen>
+              <Tab.Screen name="Settings" options={{ tabBarLabel: "Settings" }}>
+                {() => <SettingsScreen userId={userId} session={session} />}
+              </Tab.Screen>
+            </Tab.Navigator>
+          </NavigationContainer>
+          <UpdateSheet update={appUpdate.update} onUpdateNow={appUpdate.updateNow} onLater={appUpdate.later} />
+          <ProPaywall />
+        </ProProvider>
       </TasksProvider>
     </SettingsProvider>
   );
