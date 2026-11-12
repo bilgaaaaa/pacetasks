@@ -99,7 +99,15 @@
           "remindersPermission": "PaceTasks shows today's reminders in the DeskFocus widget and checks them off when you do."
         }
       ],
-      "@bacons/apple-targets"
+      "@bacons/apple-targets",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "PaceTasks listens while you say your tasks out loud in Brain Dump.",
+          "speechRecognitionPermission": "PaceTasks turns what you say in Brain Dump into text."
+        }
+      ],
+      "expo-localization"
     ],
     "extra": {
       "eas": {

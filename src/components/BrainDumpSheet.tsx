@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   KeyboardAvoidingView,
   Modal,
@@ -18,6 +18,7 @@ import { addButtonLabel, doneMessage, reviewSummary } from "../lib/brainDumpCopy
 import { BrainDumpState, selectedDrafts } from "../lib/brainDumpState";
 import { BrainDumpCandidateRow } from "./BrainDumpCandidateRow";
 import { Button } from "./Button";
+import { DictationBar } from "./DictationBar";
 import { ErrorBanner } from "./ErrorBanner";
 
 interface Props {
@@ -31,9 +32,9 @@ interface Props {
   onClose: () => void;
 }
 
-// Full-screen sheet for Brain Dump: write (or dictate with the keyboard mic, in
-// any language) everything on your mind, then review what PaceTasks understood
-// before anything is added. Purely presentational — state comes from useBrainDump.
+// Full-screen sheet for Brain Dump: write or say (see DictationBar) everything
+// on your mind, then review what PaceTasks understood before anything is added.
+// The Brain Dump state comes from useBrainDump; the sheet only owns the microphone.
 export function BrainDumpSheet({
   visible,
   state,
@@ -51,6 +52,7 @@ export function BrainDumpSheet({
   const isReviewPhase = phase === "review" || phase === "committing";
   const todayKey = toLocalDateKey(new Date());
   const selectedCount = selectedDrafts(state).length;
+  const [listening, setListening] = useState(false); // while the mic writes into the field, typing waits
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
@@ -71,7 +73,7 @@ export function BrainDumpSheet({
           {isInputPhase && (
             <View style={styles.flex}>
               <Text style={styles.subtitle}>
-                Everything, in any language. Tap the mic on your keyboard to talk instead.
+                Everything, in English, Italian or Turkish. Type it, or tap Talk and say it.
               </Text>
               <TextInput
                 style={styles.input}
@@ -81,19 +83,27 @@ export function BrainDumpSheet({
                 placeholderTextColor={theme.colors.textTertiary}
                 multiline
                 autoFocus
-                editable={phase === "input"}
+                editable={phase === "input" && !listening}
                 maxLength={BRAIN_DUMP_MAX_TEXT_LENGTH}
                 textAlignVertical="top"
               />
               <Text style={styles.counter}>
                 {state.text.length}/{BRAIN_DUMP_MAX_TEXT_LENGTH}
               </Text>
+              <DictationBar
+                style={styles.dictation}
+                text={state.text}
+                maxLength={BRAIN_DUMP_MAX_TEXT_LENGTH}
+                disabled={phase !== "input"}
+                onChangeText={onChangeText}
+                onListeningChange={setListening}
+              />
               {state.error && <ErrorBanner style={styles.errorBanner} message={state.error.message} />}
               <Button
                 style={styles.action}
                 label={phase === "interpreting" ? "Reading your brain dump…" : state.error?.retryable ? "Try again" : "Sort it out"}
                 loading={phase === "interpreting"}
-                disabled={state.text.trim().length === 0}
+                disabled={state.text.trim().length === 0 || listening}
                 onPress={onSubmit}
               />
             </View>
@@ -213,6 +223,10 @@ const useStyles = makeStyles((theme) => ({
     fontSize: theme.typography.caption.fontSize,
     paddingHorizontal: theme.spacing.lg,
     marginTop: theme.spacing.xs,
+  },
+  dictation: {
+    marginHorizontal: theme.spacing.lg,
+    marginTop: theme.spacing.sm,
   },
   list: {
     paddingHorizontal: theme.spacing.lg,
