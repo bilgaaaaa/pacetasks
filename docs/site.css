@@ -526,6 +526,25 @@ p { text-wrap: pretty; }
 .app-panel-deskfocus .app-panel-platform,
 .app-panel-deskfocus .app-panel-note { color: var(--desk-text-secondary); }
 .app-panel .button { align-self: flex-start; margin-top: auto; }
+/* Pricing: the two plans reuse the app panels; Pro is outlined in the accent and lists its three ways to pay. */
+.pricing { margin-top: 6rem; }
+.pricing .app-panel h3 { margin-bottom: 0.75rem; }
+.plan-pro { border: 2px solid var(--accent); }
+.plan-price { margin: 0 0 1.5rem; color: var(--text-secondary); }
+.plan-price strong,
+.plan-options strong { color: var(--text-primary); font-size: 1.75rem; font-weight: 750; font-variant-numeric: tabular-nums; }
+.plan-options { display: grid; gap: 0.35rem; margin: 0 0 1.5rem; padding: 0; list-style: none; color: var(--text-secondary); }
+.plan-options li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem; }
+.plan-options li + li strong { font-size: 1.25rem; }
+.plan-options em {
+  padding: 0.1rem 0.6rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 0.8rem;
+  font-style: normal;
+  font-weight: 600;
+}
 .check-list { display: grid; gap: 0.55rem; margin: 0 0 2rem; padding: 0; list-style: none; }
 .check-list li { position: relative; padding-left: 1.85rem; }
 
