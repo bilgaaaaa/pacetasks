@@ -61,7 +61,8 @@ interface Props {
 
 const STALLED_AFTER_MS = 4000; // how long Settings waits for a session before offering a retry
 
-const POMODORO_PRESETS: { work: number; break: number; label: string }[] = [
+// Focus session lengths: minutes of focus + minutes of break.
+const FOCUS_PRESETS: { work: number; break: number; label: string }[] = [
   { work: 15, break: 3, label: "15 + 3" },
   { work: 25, break: 5, label: "25 + 5" },
   { work: 50, break: 10, label: "50 + 10" },
@@ -81,7 +82,7 @@ function themePreviews(palette: PaletteId): Record<ThemeMode, [PreviewColors, Pr
 // yours" (theme, accent, Today's sections, quick-win size — saved on this
 // phone), the work schedule (feeds the before/after-work labels), the
 // reminders, the two vibrations (timer buzz, completion tap; see
-// src/lib/haptics.ts), Brain Dump auto-create, the Pomodoro length, and "Your data" (privacy policy, help,
+// src/lib/haptics.ts), Brain Dump auto-create, the Focus timer length, and "Your data" (privacy policy, help,
 // delete the account).
 export function SettingsScreen({ userId, session }: Props) {
   const { theme, appearance, updateAppearance } = useTheme();
@@ -466,9 +467,10 @@ export function SettingsScreen({ userId, session }: Props) {
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Pomodoro length</Text>
+            <Text style={styles.cardTitle}>Focus timer</Text>
+            <Text style={styles.cardSubtitle}>Minutes of focus, then minutes of break.</Text>
             <View style={styles.segmentedRow}>
-              {POMODORO_PRESETS.map((preset) => {
+              {FOCUS_PRESETS.map((preset) => {
                 const isActive =
                   settings.pomodoro_work_minutes === preset.work &&
                   settings.pomodoro_break_minutes === preset.break;

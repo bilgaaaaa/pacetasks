@@ -20,7 +20,7 @@ interface Props {
 // A long title shrinks before it is cut off, so it never pushes the clock off the screen.
 const LONG_TITLE_MIN_SCALE = 0.6;
 
-// Full-screen Pomodoro countdown, opened by tapping a task's Focus pill.
+// Full-screen Focus countdown (focus minutes, then a break), opened by tapping a task's Focus pill.
 // Counts down from `workMinutes` against the clock (see useCountdown), so it
 // keeps time while the phone is locked; reaching zero auto-completes the task
 // (actual_minutes = workMinutes) so the "estimate accuracy" stat still gets

@@ -14,35 +14,34 @@ import { toLocalDateKey } from "@domain/dates";
 
 interface Props {
   task: Task;
-  pomodoroWorkMinutes: number;
-  pomodoroBreakMinutes: number;
   suggestedMin: number; // range-timer lower bound (from task history, falls back to estimated_minutes)
   suggestedMax: number; // range-timer upper bound
   quickWinMinutes: number; // tasks this short get the highlighted "quick win" pill
   onComplete: (taskId: string, actualMinutes: number) => void;
   onDelete: (taskId: string) => void;
   onPark: (taskId: string) => void; // "Move to Someday": parks the task out of the daily lists
+  onEdit?: (task: Task) => void; // opens the task sheet on this task; left out where no sheet can open
   onStartFocus: (task: Task) => void;
 }
 
-// A single row in the task list. Three ways to log time on a task:
+// A single row in the task list. Tapping the title (or "Edit" in the menu)
+// opens the task to change it. Three ways to log time on a task:
 // 1) tap the circle any time to open the manual actual-minutes stepper on a
 //    line of its own (Cancel backs out of an accidental tap),
 // 2) tap the minutes pill to start a simple range timer (counts down from
 //    the task's suggested max, turns green once past the suggested min),
 // 3) tap the Focus pill (only on tasks with a fixed scheduled_time) for the
-//    full Pomodoro modal instead — the range timer is hidden for those, since
+//    full Focus session instead — the range timer is hidden for those, since
 //    Focus mode already covers timing them.
 export function TaskItem({
   task,
-  pomodoroWorkMinutes,
-  pomodoroBreakMinutes,
   suggestedMin,
   suggestedMax,
   quickWinMinutes,
   onComplete,
   onDelete,
   onPark,
+  onEdit,
   onStartFocus,
 }: Props) {
   const { theme } = useTheme();
@@ -82,18 +81,22 @@ export function TaskItem({
     setIsConfirming(false);
   };
 
-  const baseSubtitle = task.scheduled_time
-    ? `${task.scheduled_time} · Pomodoro ${pomodoroWorkMinutes}+${pomodoroBreakMinutes}`
-    : category
-    ? `${TIMING_LABELS[task.timing]} · ${category.label}`
-    : TIMING_LABELS[task.timing];
+  // A timed task shows its minutes here: its pill shows the start time instead.
+  const baseSubtitle = [
+    task.scheduled_time ? `${task.estimated_minutes} min` : null,
+    TIMING_LABELS[task.timing],
+    category?.label,
+  ]
+    .filter(Boolean)
+    .join(" · ");
   // Due day and "maybe" come first when set (e.g. from Brain Dump): "by Fri · maybe · Anytime · Work".
   const dueLabel =
     task.due_date && !isDone ? formatDueLabel(task.due_date, task.due_kind, toLocalDateKey(new Date())) : null;
   const restSubtitle = [task.flexible && !isDone ? "maybe" : null, baseSubtitle].filter(Boolean).join(" · ");
 
   const showMenu = () => {
-    Alert.alert(task.title, undefined, [
+    Alert.alert(task.title, task.notes ?? undefined, [
+      ...(isDone || !onEdit ? [] : [{ text: "Edit", onPress: () => onEdit(task) }]),
       ...(isDone ? [] : [{ text: "Move to Someday", onPress: () => onPark(task.id) }]),
       { text: "Delete", style: "destructive" as const, onPress: () => onDelete(task.id) },
       { text: "Cancel", style: "cancel" as const },
@@ -137,10 +140,19 @@ export function TaskItem({
           <View style={styles.checkCircle} />
         </TouchableOpacity>
 
-        <View style={styles.mainLine}>
+        <TouchableOpacity
+          style={styles.mainLine}
+          onPress={() => onEdit?.(task)}
+          disabled={!onEdit}
+          accessibilityRole="button"
+          accessibilityLabel={`Edit ${task.title}`}
+        >
           <Text style={styles.title} numberOfLines={2}>{task.title}</Text>
           <View style={styles.metaRow}>
             {categoryDot}
+            {task.notes && (
+              <Ionicons name="document-text-outline" size={12} color={theme.colors.textTertiary} accessibilityLabel="Has details" />
+            )}
             <Text style={styles.meta} numberOfLines={1}>
               {dueLabel && (
                 <Text style={dueLabel === "Overdue" ? styles.metaOverdue : styles.metaDue}>
@@ -151,7 +163,7 @@ export function TaskItem({
               {restSubtitle}
             </Text>
           </View>
-        </View>
+        </TouchableOpacity>
 
         {!isConfirming && (
           <>
