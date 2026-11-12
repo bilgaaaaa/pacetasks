@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   SafeAreaView,
@@ -15,6 +15,7 @@ import { makeStyles, useTheme } from "../hooks/useTheme";
 import { useSettings } from "../hooks/useSettings";
 import { useAccount } from "../hooks/useAccount";
 import { useNotificationPermission } from "../hooks/useNotificationPermission";
+import { useCalendarAccess } from "../hooks/useCalendarAccess";
 import { AccountCard } from "../components/AccountCard";
 import { ProCard } from "../components/ProCard";
 import { PRO_SECTION_LABEL } from "../lib/proCopy";
@@ -42,8 +43,15 @@ import {
   BRAIN_DUMP_AUTO_CREATE_TITLE,
   COMPLETION_TAP_SUBTITLE,
   COMPLETION_TAP_TITLE,
-  TIMER_BUZZ_SUBTITLE,
-  TIMER_BUZZ_TITLE,
+  DESKFOCUS_ALLOW_ACTION,
+  DESKFOCUS_CARD_SUBTITLE,
+  DESKFOCUS_CARD_TITLE,
+  DESKFOCUS_DENIED_ACTION,
+  DESKFOCUS_DENIED_MESSAGE,
+  DESKFOCUS_GRANTED_MESSAGE,
+  DESKFOCUS_SECTION_LABEL,
+  TIMER_SOUND_SUBTITLE,
+  TIMER_SOUND_TITLE,
 } from "../lib/settingsCopy";
 import { reviveSession } from "../lib/supabase";
 import { formatTimeOfDay, parseTimeOfDay } from "../lib/timeFormat";
@@ -84,8 +92,8 @@ function themePreviews(palette: PaletteId): Record<ThemeMode, [PreviewColors, Pr
 // The account (create one, sign in, email consent, sign out), then "Make it
 // yours" (theme, accent, Today's sections, quick-win size — saved on this
 // phone), the work schedule (feeds the before/after-work labels), the
-// reminders, the two vibrations (timer buzz, completion tap; see
-// src/lib/haptics.ts), Brain Dump auto-create, the Focus timer length, and "Your data" (privacy policy, help,
+// reminders, the timer sound and the completion tap (see src/lib/haptics.ts and
+// src/hooks/useTimerAlert.ts), Brain Dump auto-create, the Focus timer length, and "Your data" (privacy policy, help,
 // delete the account).
 export function SettingsScreen({ userId, session }: Props) {
   const { theme, appearance, updateAppearance } = useTheme();
@@ -108,6 +116,14 @@ export function SettingsScreen({ userId, session }: Props) {
   // Turning a reminder on is the moment to ask iOS for permission; the phone's
   // schedule itself follows the saved settings through useReminders.
   const notifications = useNotificationPermission();
+  const calendarAccess = useCalendarAccess();
+  // The widget's focus timer alerts through notifications, so the card asks for them with the calendar.
+  const deskfocusNeedsAccess = calendarAccess.access === "undetermined" || notifications.permission === "undetermined";
+  const allowDeskfocusAccess = useCallback(async () => {
+    await calendarAccess.request();
+    await requestNotificationPermission().catch((e) => console.warn("[SettingsScreen] permission request failed", e));
+    notifications.refresh();
+  }, [calendarAccess.request, notifications.refresh]);
   const saveReminderSwitch = async (patch: { reminder_enabled?: boolean; task_reminder_enabled?: boolean }) => {
     const saved = await save(patch);
     if (!saved || !(patch.reminder_enabled || patch.task_reminder_enabled)) return;
@@ -442,16 +458,36 @@ export function SettingsScreen({ userId, session }: Props) {
             />
           </View>
 
+          {calendarAccess.access !== "unavailable" && (
+            <>
+              <Text style={styles.sectionLabel}>{DESKFOCUS_SECTION_LABEL}</Text>
+              <View style={styles.card}>
+                <Text style={styles.cardTitle}>{DESKFOCUS_CARD_TITLE}</Text>
+                <Text style={styles.cardSubtitle}>{DESKFOCUS_CARD_SUBTITLE}</Text>
+                {calendarAccess.access === "granted" && <Text style={styles.cardSubtitle}>{DESKFOCUS_GRANTED_MESSAGE}</Text>}
+                {deskfocusNeedsAccess && calendarAccess.access !== "denied" && (
+                  <Button label={DESKFOCUS_ALLOW_ACTION} variant="secondary" onPress={allowDeskfocusAccess} />
+                )}
+                {calendarAccess.access === "denied" && (
+                  <>
+                    <Text style={styles.cardSubtitle}>{DESKFOCUS_DENIED_MESSAGE}</Text>
+                    <Button label={DESKFOCUS_DENIED_ACTION} variant="secondary" onPress={openAppSettings} />
+                  </>
+                )}
+              </View>
+            </>
+          )}
+
           <Text style={styles.sectionLabel}>WHILE YOU WORK</Text>
           <View style={styles.toggleRow}>
             <View style={styles.toggleText}>
-              <Text style={styles.toggleTitle}>{TIMER_BUZZ_TITLE}</Text>
-              <Text style={styles.toggleSubtitle}>{TIMER_BUZZ_SUBTITLE}</Text>
+              <Text style={styles.toggleTitle}>{TIMER_SOUND_TITLE}</Text>
+              <Text style={styles.toggleSubtitle}>{TIMER_SOUND_SUBTITLE}</Text>
             </View>
             <Switch
               value={settings.timer_chime_enabled}
               onValueChange={(enabled) => void save({ timer_chime_enabled: enabled })}
-              accessibilityLabel={TIMER_BUZZ_TITLE}
+              accessibilityLabel={TIMER_SOUND_TITLE}
               {...switchColors}
             />
           </View>
