@@ -16,6 +16,9 @@ import { useSettings } from "../hooks/useSettings";
 import { useAccount } from "../hooks/useAccount";
 import { useNotificationPermission } from "../hooks/useNotificationPermission";
 import { AccountCard } from "../components/AccountCard";
+import { ProCard } from "../components/ProCard";
+import { PRO_SECTION_LABEL } from "../lib/proCopy";
+import { usePro } from "../hooks/usePro";
 import { AccountSheet } from "../components/AccountSheet";
 import { DataCard } from "../components/DataCard";
 import { DeleteAccountSheet } from "../components/DeleteAccountSheet";
@@ -87,6 +90,7 @@ function themePreviews(palette: PaletteId): Record<ThemeMode, [PreviewColors, Pr
 export function SettingsScreen({ userId, session }: Props) {
   const { theme, appearance, updateAppearance } = useTheme();
   const styles = useStyles();
+  const pro = usePro();
   const { settings, loading, error, refresh, save } = useSettings();
   const account = useAccount(session);
   const [accountSheetOpen, setAccountSheetOpen] = useState(false);
@@ -212,6 +216,20 @@ export function SettingsScreen({ userId, session }: Props) {
             onChangeMarketingOptIn={account.changeMarketingOptIn}
             onSignOut={account.signOut}
           />
+
+          {pro.storeAvailable && (
+            <>
+              <Text style={styles.sectionLabel}>{PRO_SECTION_LABEL}</Text>
+              <ProCard
+                status={pro.status}
+                restoring={pro.paywall.restoring}
+                message={pro.paywall.visible ? null : pro.paywall.message}
+                onSeePlans={() => pro.openPaywall()}
+                onRestore={() => void pro.restore()}
+                onManage={pro.manageSubscription}
+              />
+            </>
+          )}
 
           <Text style={styles.sectionLabel}>THEME</Text>
           <View style={styles.themeRow} accessibilityRole="radiogroup" accessibilityLabel="Theme">
