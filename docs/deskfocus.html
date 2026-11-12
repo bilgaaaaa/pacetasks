@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DeskFocus — Your Day, Focused.</title>
+  <meta name="description" content="DeskFocus brings iCloud Calendar, Reminders, Google Calendar and Google Tasks into one Mac widget, with a focus timer on every task and the apps you choose kept out of sight. It comes with PaceTasks.">
+  <meta name="theme-color" content="#000000">
+  <link rel="canonical" href="https://pacetasks.bilgalog.dev/deskfocus.html">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="DeskFocus — Your Day, Focused.">
+  <meta property="og:description" content="Today's tasks and a focus timer in one Mac widget. Comes with PaceTasks.">
+  <meta property="og:url" content="https://pacetasks.bilgalog.dev/deskfocus.html">
+  <meta property="og:image" content="https://pacetasks.bilgalog.dev/og-deskfocus.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="deskfocus-icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.png">
+  <link rel="preload" href="fonts/plus-jakarta-sans.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="site.css">
+  <!-- Enables scroll animations only when JS runs, so content stays visible without it. -->
+  <script>document.documentElement.classList.add("js");</script>
+  <script src="site.js" defer></script>
+  <script src="widget.js" defer></script>
+  <script src="effects.js" defer></script>
+</head>
+<body data-product="deskfocus">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <!-- Floating pill navigation with the two product tabs -->
+  <header class="site-header">
+    <nav class="nav" aria-label="Main">
+      <ul class="product-tabs">
+        <li><a class="product-tabs__tab" href="./"><img class="product-tabs__icon" src="icon.png" alt="" width="26" height="26">PaceTasks</a></li>
+        <li><a class="product-tabs__tab" href="deskfocus.html" aria-current="page"><img class="product-tabs__icon" src="deskfocus-icon.svg" alt="" width="26" height="26">DeskFocus</a></li>
+      </ul>
+      <div class="nav__end">
+        <ul class="nav__links">
+          <li><a href="#how">How it works</a></li>
+          <li><a href="#faq">FAQ</a></li>
+          <li><a href="support.html#deskfocusHelp">Help</a></li>
+        </ul>
+        <a class="button button--gradient button--small" href="#download">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>
+          Download
+        </a>
+      </div>
+    </nav>
+  </header>
+
+  <main id="main">
+    <!-- Hero -->
+    <section id="top" class="hero" data-section="overview">
+      <div class="hero__glow" aria-hidden="true"></div>
+      <div class="container hero__inner">
+        <h1 class="hero__title">Your Day,<br><span class="hero__title-fade">Focused.</span></h1>
+        <p class="hero__lead">DeskFocus puts today's tasks and a focus timer in one widget on your Mac, so you always know what's next, and nothing pulls you away while you do it.</p>
+        <div class="hero__actions">
+          <a class="button button--gradient button--large" href="#download">
+            <svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>
+            Download for macOS
+          </a>
+          <a class="button button--ghost button--large" href="./">
+            <img src="icon.png" alt="" width="22" height="22">
+            Comes with PaceTasks
+          </a>
+        </div>
+        <p class="hero__note">macOS 14 Sonoma or later. Sold together with PaceTasks for iPhone.</p>
+
+        <!-- Desktop mockup holding the interactive widget preview -->
+        <div class="scene desktop" data-reveal>
+          <div class="desktop__menubar" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 24 24" class="icon icon--filled"><path d="M16.4 12.6c0-2.4 2-3.6 2.1-3.7a4.5 4.5 0 0 0-3.6-1.9c-1.5-.2-2.9.9-3.7.9-.8 0-1.9-.9-3.2-.8A4.7 4.7 0 0 0 4 9.5c-1.7 2.9-.4 7.3 1.2 9.7.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.1-.8 1.5 0 1.9.8 3.2.8 1.3 0 2.1-1.2 2.9-2.4.9-1.3 1.3-2.6 1.3-2.7 0 0-2.4-.9-2.3-3.9ZM14 5.4A4.4 4.4 0 0 0 15 2a4.5 4.5 0 0 0-2.9 1.5 4.2 4.2 0 0 0-1.1 3.2c1.1.1 2.2-.6 3-1.3Z"/></svg>
+            <span class="desktop__menubar-app">Finder</span><span>File</span><span>Edit</span><span>View</span>
+            <span class="desktop__menubar-spacer"></span>
+            <span data-current-time>9:41</span>
+          </div>
+          <div class="desktop__window" aria-hidden="true">
+            <div class="desktop__window-bar"><i></i><i></i><i></i></div>
+            <div class="desktop__window-line"></div>
+            <div class="desktop__window-line desktop__window-line--short"></div>
+            <div class="desktop__window-line"></div>
+          </div>
+
+          <div class="widget" role="group" aria-labelledby="widgetTitle" data-widget>
+            <div class="widget__header">
+              <span class="widget__title" id="widgetTitle">Today</span>
+              <span class="widget__meta" data-widget-progress></span>
+            </div>
+            <div class="widget__focus">
+              <svg class="timer-ring" width="104" height="104" viewBox="0 0 104 104" aria-hidden="true">
+                <defs>
+                  <linearGradient id="timerGradient" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#60a5fa"/>
+                    <stop offset="55%" stop-color="#a855f7"/>
+                    <stop offset="100%" stop-color="#ec4899"/>
+                  </linearGradient>
+                </defs>
+                <circle class="timer-ring__track" cx="52" cy="52" r="44"/>
+                <circle class="timer-ring__value" cx="52" cy="52" r="44" data-focus-ring/>
+                <text class="timer-ring__label" x="52" y="59" text-anchor="middle" data-focus-time>25:00</text>
+              </svg>
+              <div class="widget__focus-info">
+                <span class="widget__meta">Focusing on</span>
+                <span class="widget__task-name" data-focus-task aria-live="polite"></span>
+                <div class="widget__controls">
+                  <button type="button" class="button button--gradient button--compact" data-focus-toggle>Start</button>
+                  <button type="button" class="button button--ghost button--compact" data-focus-done>Done</button>
+                </div>
+              </div>
+            </div>
+            <ul class="task-list" data-widget-tasks></ul>
+            <div class="widget__footer">
+              <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4M3 3l18 18"/></svg>
+              <span data-hidden-apps></span>
+            </div>
+          </div>
+        </div>
+        <p class="scene__note">Try it: pick a task, press Start, tick it off. PaceTasks tasks in the widget are coming soon.</p>
+      </div>
+    </section>
+
+    <!-- Scroll-driven statement -->
+    <section class="statement" aria-label="Introducing DeskFocus" data-statement>
+      <div class="statement__sticky">
+        <span class="shape shape--square" aria-hidden="true"></span>
+        <span class="shape shape--circle" aria-hidden="true"></span>
+        <span class="shape shape--triangle" aria-hidden="true"></span>
+        <span class="shape shape--pill" aria-hidden="true"></span>
+        <span class="shape shape--diamond" aria-hidden="true"></span>
+        <p class="statement__track" data-statement-track>
+          The widget that keeps your day
+          <span class="gradient-text gradient-text--one">calm</span>,
+          <span class="gradient-text gradient-text--three">focused</span> and
+          <span class="gradient-text gradient-text--four">on track</span>
+          <span class="statement__intro">— introducing <span class="gradient-text gradient-text--brand">DeskFocus</span></span>
+        </p>
+      </div>
+    </section>
+
+    <!-- Feature: all lists in one place -->
+    <section id="feature-lists" class="feature" data-section="lists" aria-labelledby="feature-lists-title">
+      <div class="container feature__grid">
+        <div class="feature__copy" data-reveal>
+          <span class="badge">
+            <svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>
+            Included in DeskFocus
+          </span>
+          <h2 id="feature-lists-title" class="feature__title gradient-text gradient-text--one">Every List. One Place.</h2>
+          <p class="feature__subtitle">Calendar, Reminders and Google Tasks, together in today's view.</p>
+          <p class="feature__body" data-reveal-text>Stop jumping between apps to work out what today looks like. DeskFocus pulls in your iCloud Calendar and Reminders, Google Calendar events and Google Tasks, and shows them as one list for the day. Your PaceTasks list joins them soon.</p>
+        </div>
+        <div class="card feature__visual" data-reveal>
+          <div class="source-row">
+            <span class="source-row__icon source-row__icon--violet">
+              <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" class="icon"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+            </span>
+            <span class="source-row__label">iCloud Calendar and Reminders</span>
+            <span class="source-row__status">Connected</span>
+          </div>
+          <div class="source-row">
+            <span class="source-row__icon source-row__icon--blue">
+              <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" class="icon"><path d="M17.5 19a4.5 4.5 0 0 0 0-9h-1.3A7 7 0 1 0 5 16.3"/><path d="M9 19h8.5"/></svg>
+            </span>
+            <span class="source-row__label">Google Calendar</span>
+            <span class="source-row__status">Connected</span>
+          </div>
+          <div class="source-row">
+            <span class="source-row__icon source-row__icon--pink">
+              <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" class="icon"><path d="m4 12 5 5L20 6"/></svg>
+            </span>
+            <span class="source-row__label">Google Tasks</span>
+            <span class="source-row__status">Connected</span>
+          </div>
+          <div class="source-row">
+            <span class="source-row__icon source-row__icon--green">
+              <img src="icon.png" alt="" width="22" height="22">
+            </span>
+            <span class="source-row__label">PaceTasks</span>
+            <span class="source-row__status">Coming soon</span>
+          </div>
+          <svg class="source-arrow icon" width="24" height="32" viewBox="0 0 24 32" aria-hidden="true"><path d="M12 2v26M5 21l7 7 7-7"/></svg>
+          <div class="source-row source-row--highlight">
+            <span class="source-row__label source-row__label--strong">Today</span>
+            <span class="gradient-text gradient-text--brand source-row__status">One list</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Feature: per-task timer -->
+    <section id="feature-timer" class="feature" data-section="timer" aria-labelledby="feature-timer-title">
+      <div class="container feature__grid feature__grid--reversed">
+        <div class="feature__copy" data-reveal>
+          <span class="badge">
+            <svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>
+            Included in DeskFocus
+          </span>
+          <h2 id="feature-timer-title" class="feature__title gradient-text gradient-text--two">A Timer for Every Task.</h2>
+          <p class="feature__subtitle">Pick a task. Press start. That's the plan.</p>
+          <p class="feature__body" data-reveal-text>Every task in your list, on any day, carries its own focus timer, so each block of time has a clear purpose. Pause when you need to, and when the time is up, press Done to tick the task off in Reminders or Google Tasks.</p>
+        </div>
+        <div class="card feature__visual" data-reveal>
+          <div class="timer-row timer-row--active">
+            <svg width="40" height="40" viewBox="0 0 36 36" aria-hidden="true">
+              <circle cx="18" cy="18" r="15" class="mini-ring__track"/>
+              <circle cx="18" cy="18" r="15" class="mini-ring__value"/>
+            </svg>
+            <span class="timer-row__label">Write release notes</span>
+            <span class="timer-row__time">17:12</span>
+          </div>
+          <div class="timer-row">
+            <svg width="40" height="40" viewBox="0 0 36 36" aria-hidden="true">
+              <circle cx="18" cy="18" r="15" class="mini-ring__track"/>
+              <path d="M15 12.5v11l9-5.5z" class="mini-ring__play"/>
+            </svg>
+            <span class="timer-row__label">Review pull request</span>
+            <span class="timer-row__duration">25 min</span>
+          </div>
+          <div class="timer-row">
+            <svg width="40" height="40" viewBox="0 0 36 36" aria-hidden="true">
+              <circle cx="18" cy="18" r="15" class="mini-ring__track"/>
+              <path d="M15 12.5v11l9-5.5z" class="mini-ring__play"/>
+            </svg>
+            <span class="timer-row__label">Plan sprint demo</span>
+            <span class="timer-row__duration">50 min</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Feature: hide distracting apps -->
+    <section id="feature-hide" class="feature feature--raised" data-section="hide" aria-labelledby="feature-hide-title">
+      <div class="container feature__centered">
+        <div class="feature__copy feature__copy--centered" data-reveal>
+          <span class="badge">
+            <svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>
+            Included in DeskFocus
+          </span>
+          <h2 id="feature-hide-title" class="feature__title feature__title--hero gradient-text gradient-text--three">Hide the Noise.<br>Keep the Flow.</h2>
+          <p class="feature__subtitle">Choose which apps step aside while your timer runs.</p>
+        </div>
+        <fieldset class="card app-list" data-reveal>
+          <legend class="app-list__legend">Hide during focus</legend>
+          <div data-app-switches></div>
+          <p class="app-list__note">These switches change the widget at the top of the page. In the app, strict mode quits them instead, and an optional Focus mode silences notifications.</p>
+        </fieldset>
+      </div>
+    </section>
+
+    <!-- Feature: always on the desktop -->
+    <section id="feature-desktop" class="feature" data-section="desktop" aria-labelledby="feature-desktop-title">
+      <div class="container feature__grid">
+        <div class="feature__copy" data-reveal>
+          <span class="badge">
+            <svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>
+            Included in DeskFocus
+          </span>
+          <h2 id="feature-desktop-title" class="feature__title gradient-text gradient-text--four">Always on Your Desktop.</h2>
+          <p class="feature__subtitle">Your plan and your timer, one glance away.</p>
+          <p class="feature__body" data-reveal-text>DeskFocus lives as a widget, a glass panel on the desktop and an icon in the menu bar, not another window to manage. Today's list and the running timer stay in sight, so getting back on track never takes more than a look.</p>
+        </div>
+        <div class="mini-desktop feature__visual" data-reveal aria-hidden="true">
+          <div class="mini-desktop__menubar">
+            <span>Finder</span><span>File</span><span>Edit</span><span>View</span>
+          </div>
+          <div class="mini-desktop__widget">
+            <div class="mini-desktop__row">
+              <span class="widget__title">Today</span>
+              <span class="gradient-text gradient-text--brand mini-desktop__time">24:10</span>
+            </div>
+            <div class="progress"><div class="progress__value"></div></div>
+            <span>Write release notes</span>
+            <span class="text-muted">Review pull request</span>
+            <span class="text-muted">Plan sprint demo</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Marquee of everything included -->
+    <section id="everything" class="more" data-section="everything" aria-labelledby="more-title">
+      <div class="container feature__copy--centered" data-reveal>
+        <span class="badge">
+          <svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>
+          All included in DeskFocus
+        </span>
+        <h2 id="more-title" class="more__title">Everything in One Widget.</h2>
+        <p class="feature__subtitle feature__subtitle--muted">The essentials for a focused day, built right into your desktop.</p>
+      </div>
+      <div class="marquee" data-marquee>
+        <ul class="marquee__track">
+          <li class="marquee__item"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>iCloud Calendar</li>
+          <li class="marquee__item"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="m3 6 1 1 2-2M3 12l1 1 2-2M3 18l1 1 2-2"/></svg>iCloud Reminders</li>
+          <li class="marquee__item"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.5 19a4.5 4.5 0 0 0 0-9h-1.3A7 7 0 1 0 5 16.3"/><path d="M9 19h8.5"/></svg>Google Calendar</li>
+          <li class="marquee__item"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m4 12 5 5L20 6"/></svg>Google Tasks</li>
+          <li class="marquee__item"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/></svg>Today view</li>
+          <li class="marquee__item"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 4v16M13 4v16M18 4v16"/></svg>Week view</li>
+          <li class="marquee__item"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M10 2h4"/></svg>Per-task focus timer</li>
+          <li class="marquee__item"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.1A10 10 0 0 1 12 5c5 0 9 4.5 10 7a12.6 12.6 0 0 1-3.2 4.2M6.6 6.6C4.4 8 2.8 10 2 12c1 2.5 5 7 10 7 1.7 0 3.3-.5 4.6-1.2"/></svg>Hide or quit apps</li>
+          <li class="marquee__item"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>Focus mode</li>
+          <li class="marquee__item"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>Desktop widget</li>
+          <li class="marquee__item"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18M3 5v3h18V5"/><circle cx="17" cy="6.5" r=".5"/></svg>Menu bar</li>
+          <li class="marquee__item"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>Updates itself</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section id="how" class="feature" data-section="how" aria-labelledby="how-title">
+      <div class="container">
+        <div class="feature__copy feature__copy--centered" data-reveal>
+          <h2 id="how-title" class="more__title">Three Steps to a Focused Day.</h2>
+        </div>
+        <ol class="steps">
+          <li class="card step" data-reveal>
+            <span class="step__number gradient-text gradient-text--one">01</span>
+            <h3 class="step__title">Connect your lists</h3>
+            <p class="text-muted">Allow Calendar and Reminders, and sign in to Google once. Today's events, reminders and tasks appear in the widget.</p>
+          </li>
+          <li class="card step" data-reveal>
+            <span class="step__number gradient-text gradient-text--two">02</span>
+            <h3 class="step__title">Pick what matters now</h3>
+            <p class="text-muted">Choose one task from today's list, or from any day, and press ▶ to start its timer.</p>
+          </li>
+          <li class="card step" data-reveal>
+            <span class="step__number gradient-text gradient-text--three">03</span>
+            <h3 class="step__title">Focus, then check it off</h3>
+            <p class="text-muted">Your chosen apps step aside while the timer runs. When the time is up, press Done and the task is ticked off.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" class="feature feature--raised" data-section="faq" aria-labelledby="faq-title">
+      <div class="container container--narrow">
+        <h2 id="faq-title" class="more__title text-center" data-reveal>Questions.</h2>
+        <div class="faq">
+          <details class="faq__item">
+            <summary class="faq__question">Where do my tasks come from?<svg class="faq__chevron icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <p class="faq__answer">From iCloud Calendar, iCloud Reminders, Google Calendar and Google Tasks; each calendar or list can be switched on or off. Your PaceTasks list is coming soon.</p>
+          </details>
+          <details class="faq__item">
+            <summary class="faq__question">What happens to other apps during focus?<svg class="faq__chevron icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <p class="faq__answer">The apps you choose are hidden while a timer runs, or quit in strict mode, and come back when the session ends. An optional macOS Focus mode silences notifications too.</p>
+          </details>
+          <details class="faq__item">
+            <summary class="faq__question">Does it come with PaceTasks?<svg class="faq__chevron icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <p class="faq__answer">Yes. DeskFocus for Mac and <a href="./">PaceTasks for iPhone</a> are sold together: plan on your phone, focus at your desk. The DeskFocus widget is free, and one Pro covers both apps; <a href="./#pricing">see the pricing</a>.</p>
+          </details>
+          <details class="faq__item">
+            <summary class="faq__question">Is it on the Mac App Store?<svg class="faq__chevron icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <p class="faq__answer">No. DeskFocus is a direct download from this site: open the file and drag DeskFocus into Applications.</p>
+          </details>
+          <details class="faq__item">
+            <summary class="faq__question">How does it stay up to date?<svg class="faq__chevron icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <p class="faq__answer">It looks for a new version once a day and updates itself in place, keeping your settings and tasks. You can check right away, or turn the daily check off, in Settings → General → Updates.</p>
+          </details>
+          <details class="faq__item">
+            <summary class="faq__question">Which Macs does it run on?<svg class="faq__chevron icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <p class="faq__answer">Any Mac with macOS 14 Sonoma or later. On macOS 26 the desktop panel uses Liquid Glass.</p>
+          </details>
+          <details class="faq__item">
+            <summary class="faq__question">Can I get a refund?<svg class="faq__chevron icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <p class="faq__answer">Yes, within 14 days of being charged, for any reason. The <a href="terms.html#refunds">refund policy</a> explains how.</p>
+          </details>
+        </div>
+        <p class="section-link"><a href="support.html#deskfocusHelp">More answers in Help and support</a></p>
+      </div>
+    </section>
+
+    <!-- Final call to action -->
+    <section id="download" class="cta" data-section="download" aria-labelledby="download-title">
+      <div class="container cta__inner" data-reveal>
+        <h2 id="download-title" class="cta__title">Ready to Focus<br><span class="hero__title-fade">Your Workspace?</span></h2>
+        <p class="feature__subtitle feature__subtitle--muted">Get DeskFocus for your Mac, together with PaceTasks.</p>
+        <div class="hero__actions">
+          <!-- Switch to https://github.com/bilgaaaaa/pacetasks/releases/latest once the first mac-v release is published there. -->
+          <a class="button button--gradient button--large" href="https://github.com/bilgaaaaa/deskfocus/releases/latest">
+            <svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>
+            Download for macOS
+          </a>
+          <a class="button button--ghost button--large" href="./">Meet PaceTasks</a>
+        </div>
+        <p class="hero__note">macOS 14 Sonoma or later. Every purchase comes with a <a href="terms.html#refunds">14-day refund</a>.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container site-footer__inner">
+      <div class="site-footer__brand">
+        <p class="site-footer__logos"><img src="icon.png" alt="" width="28" height="28"><img src="deskfocus-icon.svg" alt="" width="28" height="28">PaceTasks with DeskFocus</p>
+        <p class="text-muted">Plan your day on iPhone. Focus on it at your Mac.</p>
+        <p class="text-muted">Write to <a href="mailto:pacetasks@bilgalog.dev">pacetasks@bilgalog.dev</a></p>
+      </div>
+      <div class="site-footer__column">
+        <h2 class="site-footer__heading">Apps</h2>
+        <ul>
+          <li><a href="./">PaceTasks for iPhone</a></li>
+          <li><a href="deskfocus.html" aria-current="page">DeskFocus for Mac</a></li>
+          <li><a href="https://bilgaaaaa.github.io/PaceTasksWebsite/demo/">Try the demo</a></li>
+          <li><a href="https://github.com/bilgaaaaa/deskfocus/releases/latest">Download DeskFocus</a></li>
+        </ul>
+      </div>
+      <div class="site-footer__column">
+        <h2 class="site-footer__heading">Help</h2>
+        <ul>
+          <li><a href="support.html">Help and support</a></li>
+          <li><a href="privacy.html">Privacy policy</a></li>
+          <li><a href="terms.html">Terms and refunds</a></li>
+          <li><a href="https://github.com/bilgaaaaa/pacetasks">Source code</a></li>
+        </ul>
+      </div>
+    </div>
+    <p class="container site-footer__copyright">© <span data-current-year>2026</span> Bilge Ozcanbaz. Made in Padova.</p>
+  </footer>
+
+  <!-- Sticky section navigation -->
+  <nav class="section-nav" aria-label="Sections">
+    <ul class="section-nav__list">
+      <li><a class="section-nav__link" href="#top" data-section-link="overview">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/></svg>Overview</a></li>
+      <li><a class="section-nav__link" href="#feature-lists" data-section-link="lists">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="m3 6 1 1 2-2M3 12l1 1 2-2M3 18l1 1 2-2"/></svg>Lists</a></li>
+      <li><a class="section-nav__link" href="#feature-timer" data-section-link="timer">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M10 2h4"/></svg>Timer</a></li>
+      <li><a class="section-nav__link" href="#feature-hide" data-section-link="hide">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.1A10 10 0 0 1 12 5c5 0 9 4.5 10 7a12.6 12.6 0 0 1-3.2 4.2M6.6 6.6C4.4 8 2.8 10 2 12c1 2.5 5 7 10 7 1.7 0 3.3-.5 4.6-1.2"/></svg>Hide</a></li>
+      <li><a class="section-nav__link" href="#feature-desktop" data-section-link="desktop">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>Desktop</a></li>
+      <li><a class="section-nav__link" href="#everything" data-section-link="everything">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>All</a></li>
+      <li><a class="section-nav__link" href="#how" data-section-link="how">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h6"/></svg>Steps</a></li>
+      <li><a class="section-nav__link" href="#faq" data-section-link="faq">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/></svg>FAQ</a></li>
+    </ul>
+  </nav>
+</body>
+</html>
