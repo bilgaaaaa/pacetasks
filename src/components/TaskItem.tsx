@@ -20,7 +20,7 @@ interface Props {
   onComplete: (taskId: string, actualMinutes: number) => void;
   onDelete: (taskId: string) => void;
   onPark: (taskId: string) => void; // "Move to Someday": parks the task out of the daily lists
-  onEdit?: (task: Task) => void; // opens the task sheet on this task; left out where no sheet can open
+  onEdit: (task: Task) => void; // opens the task sheet on this task
   onStartFocus: (task: Task) => void;
 }
 
@@ -96,7 +96,7 @@ export function TaskItem({
 
   const showMenu = () => {
     Alert.alert(task.title, task.notes ?? undefined, [
-      ...(isDone || !onEdit ? [] : [{ text: "Edit", onPress: () => onEdit(task) }]),
+      ...(isDone ? [] : [{ text: "Edit", onPress: () => onEdit(task) }]),
       ...(isDone ? [] : [{ text: "Move to Someday", onPress: () => onPark(task.id) }]),
       { text: "Delete", style: "destructive" as const, onPress: () => onDelete(task.id) },
       { text: "Cancel", style: "cancel" as const },
@@ -142,8 +142,7 @@ export function TaskItem({
 
         <TouchableOpacity
           style={styles.mainLine}
-          onPress={() => onEdit?.(task)}
-          disabled={!onEdit}
+          onPress={() => onEdit(task)}
           accessibilityRole="button"
           accessibilityLabel={`Edit ${task.title}`}
         >

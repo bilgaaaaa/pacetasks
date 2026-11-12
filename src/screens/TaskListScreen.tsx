@@ -206,12 +206,14 @@ export function TaskListScreen({ userId }: Props) {
   // which passes its own way of starting Focus (it has to close first).
   // The range timer's suggested min/max come from this task's own history
   // (see taskHistory.ts); with no completed history yet, both ends are its estimate.
-  // Editing opens the task sheet, so only the Today list offers it: a sheet can't open over another.
   const editTask = (task: Task) => setTaskSheet({ open: true, editing: task });
+  // Editing from inside another sheet: that sheet closes first, then the task sheet opens.
+  const editTaskFrom = (closeSheet: () => void) => (task: Task) =>
+    sheetHandoff.handOff(closeSheet, () => editTask(task));
   const renderTaskItem = (
     task: Task,
     onStartFocus: (task: Task) => void = setFocusTask,
-    onEdit: ((task: Task) => void) | null = editTask
+    onEdit: (task: Task) => void = editTask
   ) => {
     const historyEntry = findExactMatch(history, task.title);
     const suggestedMin = historyEntry?.minMinutes ?? task.estimated_minutes;
@@ -225,7 +227,7 @@ export function TaskListScreen({ userId }: Props) {
         onComplete={completeTask}
         onDelete={remove}
         onPark={(taskId) => update(taskId, PARK_PATCH)}
-        onEdit={onEdit ?? undefined}
+        onEdit={onEdit}
         onStartFocus={onStartFocus}
       />
     );
@@ -431,7 +433,7 @@ export function TaskListScreen({ userId }: Props) {
           errorMessage={error}
           onChangeMinutes={doNow.setAvailableMinutes}
           onChangeEnergy={doNow.setEnergy}
-          renderTask={(task) => renderTaskItem(task, startFocusFromDoNow, null)}
+          renderTask={(task) => renderTaskItem(task, startFocusFromDoNow, editTaskFrom(() => setDoNowOpen(false)))}
           onClose={() => setDoNowOpen(false)}
           onDismissed={sheetHandoff.onDismissed}
         />
@@ -463,6 +465,8 @@ export function TaskListScreen({ userId }: Props) {
           errorMessage={error}
           onBringBack={(taskId) => update(taskId, UNPARK_PATCH)}
           onDelete={remove}
+          onEdit={editTaskFrom(() => setSomedayOpen(false))}
+          onDismissed={sheetHandoff.onDismissed}
           onClose={() => setSomedayOpen(false)}
         />
 
@@ -474,6 +478,8 @@ export function TaskListScreen({ userId }: Props) {
           errorMessage={error}
           onMoveToToday={(task) => update(task.id, reschedulePatch(task, todayKey))}
           onDelete={remove}
+          onEdit={editTaskFrom(() => setUpcoming((current) => ({ ...current, open: false })))}
+          onDismissed={sheetHandoff.onDismissed}
           onClose={() => setUpcoming((current) => ({ ...current, open: false }))}
         />
 
