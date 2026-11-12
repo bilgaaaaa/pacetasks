@@ -413,18 +413,20 @@ past renewal).
 - The interface is English-only in v1, so the Italian and Turkish listings say
   so and keep the feature names in English.
 
-## Website, privacy policy and support page
+## Website, privacy policy, terms and support page
 
-`docs/` is the public website for PaceTasks and
-[DeskFocus](https://github.com/bilgaaaaa/deskfocus), the Mac widget sold
-together with it. The app and the App Store listing link to its pages, served
-for free by GitHub Pages. Plain HTML, CSS and JavaScript, no build step.
+`docs/` is the public website for PaceTasks and DeskFocus (`mac/`), the Mac app
+and widget sold together with it, at **https://pacetasks.bilgalog.dev/**. The
+app and the App Store listing link to its pages, served for free by GitHub
+Pages. Plain HTML, CSS and JavaScript, no build step.
 
 | File | Purpose |
 | --- | --- |
 | `index.html` | Landing page: the hero with a working DeskFocus widget, a day with both apps, the two apps side by side |
 | `support.html` | Help and support, one part per app |
 | `privacy.html` | Privacy policy for both apps |
+| `terms.html` | Terms of use and the 14-day refund policy for App Store and Paddle purchases |
+| `CNAME` | The custom domain, `pacetasks.bilgalog.dev`, which GitHub Pages reads from here |
 | `site.css` | Shared look: PaceTasks' Sage theme, DeskFocus' ink panels and ember focus ring |
 | `site.js` | Starts the PaceTasks web demo inside the hero phone on wide screens |
 | `widget.js` | The DeskFocus widget preview: tasks, focus timer, apps hidden during focus |
@@ -434,20 +436,28 @@ for free by GitHub Pages. Plain HTML, CSS and JavaScript, no build step.
 | `icon.png`, `deskfocus-icon.svg`, `grain.png` | Both app icons, and the grain the app lays over its hero card |
 
 1. The pages name Bilge Ozcanbaz as the developer and `pacetasks@bilgalog.dev`
-   as the contact address (forwarded by Cloudflare Email Routing); update all
-   three files if either changes.
+   as the contact address (forwarded by Cloudflare Email Routing), in the policy
+   texts and every footer; update all four pages if either changes.
 2. On GitHub: **Settings → Pages → Deploy from a branch**, branch `main`,
    folder `/docs`.
-3. The pages appear at `https://bilgaaaaa.github.io/pacetasks/`. The app's links
-   (`src/lib/links.ts`) already point there.
+3. Custom domain: Cloudflare has a DNS-only (grey cloud) CNAME `pacetasks` →
+   `bilgaaaaa.github.io`, and `docs/CNAME` names the domain. Once GitHub has
+   issued the certificate, tick **Settings → Pages → Enforce HTTPS**. The old
+   address, `https://bilgaaaaa.github.io/pacetasks/`, redirects to the new one,
+   so the app's links (`src/lib/links.ts`) keep working.
 4. "Try PaceTasks in your browser" opens the web demo that
    `bilgaaaaa/PaceTasksWebsite` builds and publishes; keep that site running or
    change the two demo links in `index.html`.
-5. Preview locally with `python3 -m http.server 4173` inside `docs/`, then open
+5. "Download DeskFocus for Mac" still points to the releases of the old
+   `bilgaaaaa/deskfocus` repository. Once `mac/Scripts/release.sh --publish` has
+   published the first `mac-v` release here, switch the links in `index.html`
+   and `support.html` to `https://github.com/bilgaaaaa/pacetasks/releases/latest`.
+6. Preview locally with `python3 -m http.server 4173` inside `docs/`, then open
    http://localhost:4173.
 
-When what either app stores changes (a new table, an AI provider, analytics),
-update `docs/privacy.html` in the same pull request. When PaceTasks is live,
+When what either app stores changes (a new table, an AI provider, analytics, a
+payment provider), update `docs/privacy.html` in the same pull request, and
+change its effective date. When PaceTasks is live,
 replace "coming soon to iPhone" in `index.html` with the App Store link, and add
 the bundle price where the comment in its "Two apps, sold together" section says.
 Once DeskFocus shows PaceTasks tasks, remove the "coming soon" wording from
@@ -464,7 +474,7 @@ assets/                    App icon, splash images, notification icon, favicon
 design/icon/               Scripts and SVG sources for the icon set
 design/store/              App Store screenshots and the script that builds them
 design/site/               Script that renders the website's link preview
-docs/                      Website for PaceTasks and DeskFocus (landing, privacy, support) on GitHub Pages
+docs/                      Website for PaceTasks and DeskFocus (landing, privacy, terms, support) at pacetasks.bilgalog.dev
 mac/                       DeskFocus for Mac (Swift, XcodeGen): menu bar app, desktop widget, Sparkle updates; see mac/README.md
 src/screens/               TaskListScreen (Today), StatsScreen (Pace), SettingsScreen
 src/components/            Presentational pieces: sheets, cards, rows, buttons
