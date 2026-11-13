@@ -65,13 +65,13 @@ enum AccentChoice: String, Codable, CaseIterable {
     }
 }
 
-/// Language of the app and widgets; `system` follows the Mac's language.
+/// Language of the app and widgets; `system` follows the device's language.
 enum AppLanguage: String, Codable, CaseIterable {
     case system
     case english
     case italian
 
-    /// Language code passed to macOS, or nil to follow the Mac.
+    /// Language code passed to the system, or nil to follow the device.
     var code: String? {
         switch self {
         case .system: return nil

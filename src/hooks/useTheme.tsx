@@ -4,6 +4,7 @@ import { AppTheme, buildTheme } from "../lib/theme";
 import { useLocales } from "expo-localization";
 import { Language, languageFor, setLanguage } from "../i18n";
 import { AppearancePrefs, DEFAULT_APPEARANCE, resolveLanguage } from "../lib/appearance";
+import { syncWidgetLanguage } from "../lib/deskfocusBridge";
 import { loadAppearance, saveAppearance } from "../lib/appearanceStorage";
 
 interface ThemeContextValue {
@@ -50,6 +51,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   // Set while rendering, not in an effect, so every text below already reads in this language.
   const language = resolveLanguage(appearance.language, languageFor(useLocales()[0]?.languageCode));
   setLanguage(language);
+
+  // The DeskFocus widget follows the same choice, once the saved one is known.
+  useEffect(() => {
+    if (appearanceLoaded) void syncWidgetLanguage(appearance.language);
+  }, [appearanceLoaded, appearance.language]);
 
   const theme = useMemo(
     () => buildTheme(scheme, appearance.accent, appearance.palette),

@@ -8,6 +8,8 @@ private struct FocusBridgeCommand: Decodable {
     let minutes: Int?
     /// PaceTasks' timer sound setting, mirrored into the shared settings so the widget's alerts follow it too.
     let timerSoundEnabled: Bool?
+    /// PaceTasks' language choice ("system", "en" or "it"), mirrored into the shared settings so the widget reads in it too.
+    let language: String?
 }
 
 /// The focus session as JavaScript reads it; field names match `SharedFocusSession` in src/lib/focusSession.ts.
@@ -51,6 +53,9 @@ final class DeskfocusBridgeHandler: NSObject {
         }
         if let enabled = command.timerSoundEnabled {
             applyTimerSound(enabled)
+        }
+        if let choice = command.language {
+            applyLanguage(choice)
         }
 
         switch command.action {
@@ -96,6 +101,19 @@ final class DeskfocusBridgeHandler: NSObject {
         guard SharedStore.shared.load().settings.timerSoundEnabled != enabled else { return }
         SharedStore.shared.update { $0.settings.timerSoundEnabled = enabled }
         Log.app.info("Bridge: timer sound \(enabled ? "on" : "off", privacy: .public)")
+        FocusController.notifyChange()
+    }
+
+    /// Saves the language only when it changed, then reloads the widget so it picks the new one up.
+    private static func applyLanguage(_ choice: String) {
+        guard let language = AppLanguage.allCases.first(where: { ($0.code ?? "system") == choice }) else {
+            Log.app.error("Bridge: unknown language \(choice, privacy: .public)")
+            return
+        }
+        guard SharedStore.shared.load().settings.language != language else { return }
+        SharedStore.shared.update { $0.settings.language = language }
+        LanguagePreference.apply(language)
+        Log.app.info("Bridge: language \(choice, privacy: .public)")
         FocusController.notifyChange()
     }
 

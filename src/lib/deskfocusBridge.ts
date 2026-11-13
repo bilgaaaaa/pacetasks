@@ -3,6 +3,7 @@
 // the Focus screen keeps its own countdown.
 import { Platform } from "react-native";
 import { requireOptionalNativeModule } from "expo";
+import type { LanguageChoice } from "./appearance";
 import { FocusReply, parseFocusReply } from "./focusSession";
 
 export type FocusBridgeAction = "state" | "start" | "pause" | "resume" | "extend" | "end" | "reconcile";
@@ -13,6 +14,7 @@ interface FocusBridgeCommand {
   paceTaskId?: string;
   minutes?: number;
   timerSoundEnabled?: boolean;
+  language?: LanguageChoice; // the app's language choice, so the widget reads in the same language
 }
 
 interface FocusBridgeSubscription {
@@ -64,4 +66,12 @@ export function onFocusBridgeChange(listener: () => void): () => void {
   if (!bridge) return () => {};
   const subscription = bridge.addListener("onFocusChange", listener);
   return () => subscription.remove();
+}
+
+
+// Tells the DeskFocus widget which language the app is in; it switches the next time iOS reloads it.
+export async function syncWidgetLanguage(language: LanguageChoice): Promise<void> {
+  if (!bridge) return;
+  const reply = await sendFocusCommand({ action: "state", language });
+  if (!reply.error) console.log("[deskfocusBridge] widget language", language);
 }
