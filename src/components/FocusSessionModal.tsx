@@ -6,6 +6,7 @@ import { FocusSessionView } from "../hooks/useFocusSession";
 import { formatClock } from "../lib/countdown";
 import { Task } from "../lib/types";
 import { Button } from "./Button";
+import { t } from "../i18n";
 
 interface Props {
   task: Task | null;
@@ -57,16 +58,16 @@ export function FocusSessionModal({
       <SafeAreaView style={styles.screen}>
         <View style={styles.content}>
           <View style={styles.header}>
-            <TouchableOpacity style={styles.closeButton} onPress={onClose} accessibilityLabel="Close focus session">
+            <TouchableOpacity style={styles.closeButton} onPress={onClose} accessibilityLabel={t("Close focus session")}>
               <Ionicons name="chevron-down" size={20} color={theme.colors.textPrimary} />
             </TouchableOpacity>
             <Text style={styles.eyebrow}>
-              {isScheduledSession ? `FOCUS · SESSION ${sessionIndex} OF ${sessionTotal}` : "FOCUS"}
+              {isScheduledSession ? t("FOCUS · SESSION {0} OF {1}", sessionIndex, sessionTotal) : t("FOCUS")}
             </Text>
             <View style={styles.headerSpacer} />
           </View>
 
-          {task.scheduled_time && <Text style={styles.fixedTime}>{task.scheduled_time} · fixed time</Text>}
+          {task.scheduled_time && <Text style={styles.fixedTime}>{t("{0} · fixed time", task.scheduled_time)}</Text>}
           <Text style={styles.taskTitle} numberOfLines={3} adjustsFontSizeToFit minimumFontScale={LONG_TITLE_MIN_SCALE}>
             {task.title}
           </Text>
@@ -74,7 +75,7 @@ export function FocusSessionModal({
           <View style={styles.clockArea}>
             <Text style={styles.countdown}>{formatClock(remainingSeconds)}</Text>
             <Text style={styles.caption}>
-              {isPaused ? "Paused" : `${elapsedMinutes} min in`} · a {breakMinutes} minute break follows
+              {isPaused ? t("Paused") : t("{0} min in", elapsedMinutes)} · {t("a {0} minute break follows", breakMinutes)}
             </Text>
           </View>
 
@@ -104,7 +105,7 @@ export function FocusSessionModal({
           </View>
 
           <Button
-            label={isPaused ? "Resume" : "Pause"}
+            label={isPaused ? t("Resume") : t("Pause")}
             variant="secondary"
             onPress={isPaused ? onResume : onPause}
             disabled={!session}
@@ -116,7 +117,7 @@ export function FocusSessionModal({
             onPress={() => onDoneEarly(task.id, Math.max(1, Math.round(elapsedSeconds / 60)))}
           >
             <Ionicons name="checkmark" size={20} color={theme.colors.onAccent} />
-            <Text style={styles.doneButtonText}>Done early</Text>
+            <Text style={styles.doneButtonText}>{t("Done early")}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>

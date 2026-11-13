@@ -1,5 +1,6 @@
 import { isValidTimeOfDay } from "@domain/dates";
 import type { TaskTiming } from "@domain/task";
+import { t } from "../i18n";
 
 // Start-time helpers for the add sheet's time picker. Times are "HH:MM", 24h,
 // the format of tasks.scheduled_time.
@@ -84,10 +85,10 @@ export function withTimePart(time: string, part: TimePart, text: string): string
 // work and the evening, without any that repeat an earlier one.
 export function quickTimeChoices(now: Date, work: WorkHours): { label: string; time: string }[] {
   const choices = [
-    { label: "In 1 hour", time: laterBy(now, 60) },
-    { label: "Before work", time: fromMinutes(Math.max(0, work.workStartHour - 1) * 60) },
+    { label: t("In 1 hour"), time: laterBy(now, 60) },
+    { label: t("Before work"), time: fromMinutes(Math.max(0, work.workStartHour - 1) * 60) },
     { label: "12:30", time: "12:30" },
-    { label: "After work", time: fromMinutes(work.workEndHour * 60) },
+    { label: t("After work"), time: fromMinutes(work.workEndHour * 60) },
     { label: "20:30", time: "20:30" },
   ];
   return choices.filter((choice, index) => choices.findIndex((other) => other.time === choice.time) === index);

@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { deletionEntryHint, deletionEntryLabel, PRIVACY_POLICY_LABEL, SUPPORT_LABEL } from "../lib/accountCopy";
 import { makeStyles, useTheme } from "../hooks/useTheme";
 import { Button } from "./Button";
+import { t } from "../i18n";
 
 interface Props {
   hasAccount: boolean; // a signed-up account, or only this phone's anonymous data
@@ -19,8 +20,8 @@ export function DataCard({ hasAccount, busy, onOpenPrivacyPolicy, onOpenSupport,
   const { theme } = useTheme();
   const styles = useStyles();
   const links = [
-    { label: PRIVACY_POLICY_LABEL, onPress: onOpenPrivacyPolicy },
-    { label: SUPPORT_LABEL, onPress: onOpenSupport },
+    { label: t(PRIVACY_POLICY_LABEL), onPress: onOpenPrivacyPolicy },
+    { label: t(SUPPORT_LABEL), onPress: onOpenSupport },
   ];
   return (
     <View style={styles.card}>

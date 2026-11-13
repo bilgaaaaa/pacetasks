@@ -2,6 +2,7 @@ import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { makeStyles, useTheme } from "../hooks/useTheme";
+import { t } from "../i18n";
 
 interface Props {
   label: string;
@@ -36,7 +37,7 @@ export function Stepper({
         <TouchableOpacity
           onPress={() => onChange(Math.max(min, value - step))}
           disabled={value <= min}
-          accessibilityLabel={`Decrease ${label}`}
+          accessibilityLabel={t("Decrease {0}", label)}
           hitSlop={8}
         >
           <Ionicons
@@ -49,7 +50,7 @@ export function Stepper({
         <TouchableOpacity
           onPress={() => onChange(Math.min(max, value + step))}
           disabled={value >= max}
-          accessibilityLabel={`Increase ${label}`}
+          accessibilityLabel={t("Increase {0}", label)}
           hitSlop={8}
         >
           <Ionicons

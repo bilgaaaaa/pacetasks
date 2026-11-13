@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { UserSettings } from "../lib/types";
 import * as settingsApi from "../lib/settingsApi";
+import { t } from "../i18n";
 
 export type SettingsPatch = Partial<Omit<UserSettings, "user_id" | "updated_at">>;
 
@@ -42,7 +43,7 @@ export function SettingsProvider({ userId, children }: { userId: string | undefi
     } catch (e: any) {
       if (currentUserId.current !== userId) return;
       console.warn("[useSettings] load failed", e);
-      setError(e.message ?? "Failed to load settings");
+      setError(e.message ?? t("Failed to load settings"));
     } finally {
       if (currentUserId.current === userId) setLoading(false);
     }
@@ -65,7 +66,7 @@ export function SettingsProvider({ userId, children }: { userId: string | undefi
       } catch (e: any) {
         if (currentUserId.current !== userId) return false;
         console.warn("[useSettings] save failed", e);
-        setError(e.message ?? "Couldn't save your settings");
+        setError(e.message ?? t("Couldn't save your settings"));
         return false;
       }
     },

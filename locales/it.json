@@ -1,0 +1,8 @@
+{
+  "NSCalendarsUsageDescription": "PaceTasks mostra gli eventi di oggi del calendario nel widget DeskFocus.",
+  "NSCalendarsFullAccessUsageDescription": "PaceTasks mostra gli eventi di oggi del calendario nel widget DeskFocus.",
+  "NSRemindersUsageDescription": "PaceTasks mostra i promemoria di oggi nel widget DeskFocus e li spunta quando lo fai tu.",
+  "NSRemindersFullAccessUsageDescription": "PaceTasks mostra i promemoria di oggi nel widget DeskFocus e li spunta quando lo fai tu.",
+  "NSMicrophoneUsageDescription": "PaceTasks ti ascolta mentre dici le tue attività ad alta voce in Brain Dump.",
+  "NSSpeechRecognitionUsageDescription": "PaceTasks trasforma in testo ciò che dici in Brain Dump."
+}

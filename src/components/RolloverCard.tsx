@@ -7,6 +7,7 @@ import { destinationLabel, reasonLabel, ROLLOVER_DESTINATION_OPTIONS, rolloverSu
 import { makeStyles, useTheme } from "../hooks/useTheme";
 import { Button } from "./Button";
 import { DropdownPill } from "./DropdownPill";
+import { t } from "../i18n";
 
 interface Props {
   choices: RolloverChoice[];
@@ -34,7 +35,7 @@ export function RolloverCard({ choices, saving, onChangeDestination, onApply, on
         onPress={() => setExpanded((open) => !open)}
         accessibilityRole="button"
         accessibilityState={{ expanded }}
-        accessibilityLabel={`${summary}. ${expanded ? "Hide review" : "Review"}`}
+        accessibilityLabel={`${summary}. ${expanded ? t("Hide review") : t("Review")}`}
       >
         <View style={styles.icon}>
           <Ionicons name="return-down-forward" size={16} color={theme.colors.accentDark} />
@@ -42,7 +43,7 @@ export function RolloverCard({ choices, saving, onChangeDestination, onApply, on
         <Text style={styles.summaryText} numberOfLines={2}>
           {summary}
         </Text>
-        <Text style={styles.reviewText}>{expanded ? "Hide" : "Review"}</Text>
+        <Text style={styles.reviewText}>{expanded ? t("Hide") : t("Review")}</Text>
         <Ionicons
           name={expanded ? "chevron-up" : "chevron-down"}
           size={16}
@@ -52,7 +53,7 @@ export function RolloverCard({ choices, saving, onChangeDestination, onApply, on
 
       {expanded && (
         <View style={styles.body}>
-          <Text style={styles.subtitle}>Here's where I'd move them. Change any, then apply.</Text>
+          <Text style={styles.subtitle}>{t("Here's where I'd move them. Change any, then apply.")}</Text>
           <View style={styles.list}>
             {choices.map((choice) => {
               const reason = reasonLabel(choice.reason);
@@ -79,13 +80,13 @@ export function RolloverCard({ choices, saving, onChangeDestination, onApply, on
           <View style={styles.actions}>
             <Button
               style={styles.action}
-              label={saving ? "Applying…" : "Apply changes"}
+              label={saving ? t("Applying…") : t("Apply changes")}
               loading={saving}
               onPress={onApply}
             />
             <Button
               style={[styles.action, styles.secondaryOnCard]}
-              label="Not now"
+              label={t("Not now")}
               variant="secondary"
               disabled={saving}
               onPress={onDismiss}

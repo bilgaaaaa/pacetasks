@@ -1,17 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getLocales } from "expo-localization";
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from "expo-speech-recognition";
 import {
   applyDictationResult,
   dictatedText,
   DICTATION_PERMISSION_OFF,
   dictationErrorMessage,
-  DictationLanguage,
-  dictationLanguageFor,
-  dictationLocale,
   DictationTranscript,
   EMPTY_TRANSCRIPT,
 } from "../lib/dictation";
+import { getLocale, t } from "../i18n";
 
 interface Options {
   text: string; // the field's current text; what is spoken is added after it
@@ -30,15 +27,12 @@ function recognitionAvailable(): boolean {
 }
 
 // Speaking instead of typing: turns the microphone on and off and writes what is
-// heard into a text field, after the text that was already there. The language
-// starts as the phone's and can be changed while the mic is off.
+// heard into a text field, after the text that was already there. It listens in
+// the app's language (Settings › Language).
 export function useDictation({ text, maxLength, onChangeText }: Options) {
   const [available] = useState(recognitionAvailable);
   const [listening, setListening] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [language, setLanguage] = useState<DictationLanguage>(() =>
-    dictationLanguageFor(getLocales()[0]?.languageCode)
-  );
   const baseText = useRef(""); // the field's text when the mic was turned on
   const transcript = useRef<DictationTranscript>(EMPTY_TRANSCRIPT);
   const listeningRef = useRef(false); // for the unmount cleanup, which can't read state
@@ -68,14 +62,14 @@ export function useDictation({ text, maxLength, onChangeText }: Options) {
       const permission = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
       if (!permission.granted) {
         console.warn("[useDictation] microphone or speech permission refused");
-        setError(DICTATION_PERMISSION_OFF);
+        setError(t(DICTATION_PERMISSION_OFF));
         return;
       }
       baseText.current = text;
       transcript.current = EMPTY_TRANSCRIPT;
-      console.log("[useDictation] listening in", dictationLocale(language));
+      console.log("[useDictation] listening in", getLocale());
       ExpoSpeechRecognitionModule.start({
-        lang: dictationLocale(language),
+        lang: getLocale(),
         interimResults: true,
         continuous: true,
         addsPunctuation: true,
@@ -84,7 +78,7 @@ export function useDictation({ text, maxLength, onChangeText }: Options) {
       console.warn("[useDictation] start failed", e);
       setError(dictationErrorMessage("audio-capture"));
     }
-  }, [text, language]);
+  }, [text]);
 
   // Stops and keeps what was heard so far.
   const stop = useCallback(() => {
@@ -101,5 +95,5 @@ export function useDictation({ text, maxLength, onChangeText }: Options) {
     []
   );
 
-  return { available, listening, error, language, setLanguage, toggle, stop };
+  return { available, listening, error, toggle, stop };
 }

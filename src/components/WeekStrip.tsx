@@ -2,6 +2,7 @@ import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import { makeStyles } from "../hooks/useTheme";
 import { WeekDay } from "../lib/weekStrip";
+import { t } from "../i18n";
 
 interface Props {
   days: WeekDay[];
@@ -9,7 +10,7 @@ interface Props {
 }
 
 function dayLabel(day: WeekDay): string {
-  return `${day.weekday} ${day.dayOfMonth}${day.isToday ? ", today" : ""}${day.dueCount > 0 ? `, ${day.dueCount} due` : ""}`;
+  return `${day.weekday} ${day.dayOfMonth}${day.isToday ? t(", today") : ""}${day.dueCount > 0 ? t(", {0} due", day.dueCount) : ""}`;
 }
 
 // This week at a glance under the Today hero: today as a filled ink pill,
@@ -18,7 +19,7 @@ function dayLabel(day: WeekDay): string {
 export function WeekStrip({ days, onPressDay }: Props) {
   const styles = useStyles();
   return (
-    <View style={styles.row} accessibilityRole="summary" accessibilityLabel="This week">
+    <View style={styles.row} accessibilityRole="summary" accessibilityLabel={t("This week")}>
       {days.map((day) => {
         const content = (
           <>
@@ -40,7 +41,7 @@ export function WeekStrip({ days, onPressDay }: Props) {
             onPress={() => onPressDay(day)}
             accessibilityRole="button"
             accessibilityLabel={dayLabel(day)}
-            accessibilityHint="Shows what is set for this day"
+            accessibilityHint={t("Shows what is set for this day")}
           >
             {content}
           </TouchableOpacity>

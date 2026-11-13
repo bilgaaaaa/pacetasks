@@ -3,6 +3,7 @@ import { Text, View } from "react-native";
 import { makeStyles } from "../hooks/useTheme";
 import { PRO_SEE_PLANS_LABEL } from "../lib/proCopy";
 import { Button } from "./Button";
+import { t } from "../i18n";
 
 interface Props {
   eyebrow: string;
@@ -19,7 +20,7 @@ export function ProLockCard({ eyebrow, title, body, onSeePlans }: Props) {
       <Text style={styles.eyebrow}>{eyebrow}</Text>
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.body}>{body}</Text>
-      <Button label={PRO_SEE_PLANS_LABEL} onPress={onSeePlans} style={styles.button} />
+      <Button label={t(PRO_SEE_PLANS_LABEL)} onPress={onSeePlans} style={styles.button} />
     </View>
   );
 }

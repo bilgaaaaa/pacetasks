@@ -1,22 +1,21 @@
 import { daysBetween, toLocalDateKey } from "@domain/dates";
 import type { ResetAction, ResetItem, ResetOutcome, ResetReason } from "@domain/weeklyReset";
 import { destinationLabel } from "./rolloverCopy";
+import { msg, t, tn } from "../i18n";
 
 // UI copy for Weekly Reset. Rules live in @domain/weeklyReset; wording lives
 // here so it can be localized later without touching the logic.
 
-function plural(count: number, singular: string, pluralForm: string): string {
-  return `${count} ${count === 1 ? singular : pluralForm}`;
-}
-
 // One line per kind of task found, for the opening screen; kinds with none are left out.
 export function introLines(counts: Record<ResetReason, number>): string[] {
   return [
-    counts.overdue > 0 ? `${plural(counts.overdue, "overdue task", "overdue tasks")}` : null,
+    counts.overdue > 0 ? tn(counts.overdue, "1 overdue task", "{0} overdue tasks") : null,
     counts.postponed_often > 0
-      ? `${plural(counts.postponed_often, "task", "tasks")} you keep postponing`
+      ? tn(counts.postponed_often, "1 task you keep postponing", "{0} tasks you keep postponing")
       : null,
-    counts.undated_old > 0 ? `${plural(counts.undated_old, "task", "tasks")} sitting without a date` : null,
+    counts.undated_old > 0
+      ? tn(counts.undated_old, "1 task sitting without a date", "{0} tasks sitting without a date")
+      : null,
   ].filter((line): line is string => line !== null);
 }
 
@@ -25,37 +24,38 @@ export function itemReason(item: ResetItem, todayKey: string): string {
   const { task, reason } = item;
   switch (reason) {
     case "overdue":
-      return `${plural(daysBetween(task.due_date as string, todayKey), "day", "days")} overdue`;
+      return tn(daysBetween(task.due_date as string, todayKey), "1 day overdue", "{0} days overdue");
     case "postponed_often":
-      return `Moved ${task.postponed_count} times`;
+      return t("Moved {0} times", task.postponed_count);
     case "undated_old": {
       const weeks = Math.floor(daysBetween(toLocalDateKey(new Date(task.created_at)), todayKey) / 7);
-      return `No date for ${plural(weeks, "week", "weeks")}`;
+      return tn(weeks, "No date for 1 week", "No date for {0} weeks");
     }
   }
 }
 
 export function actionLabel(action: ResetAction): string {
-  if (action === "delete") return "Delete";
-  if (action === "keep") return "Keep as is";
+  if (action === "delete") return t("Delete");
+  if (action === "keep") return t("Keep as is");
   return destinationLabel(action);
 }
 
 export function progressLabel(index: number, total: number): string {
-  return `${index + 1} of ${total}`;
+  return t("{0} of {1}", index + 1, total);
 }
 
-const OUTCOME_WORDS: Record<ResetOutcome, string> = {
-  scheduled: "scheduled",
-  parked: "moved to Someday",
-  deleted: "deleted",
-  kept: "kept as is",
+// How each outcome reads with its count; the count is {0}.
+const OUTCOME_COUNTS: Record<ResetOutcome, string> = {
+  scheduled: msg("{0} scheduled"),
+  parked: msg("{0} moved to Someday"),
+  deleted: msg("{0} deleted"),
+  kept: msg("{0} kept as is"),
 };
 
 // What the run achieved, e.g. "4 scheduled · 2 moved to Someday · 1 deleted"; outcomes with none are left out.
 export function summaryLine(tally: Record<ResetOutcome, number>): string {
-  return (Object.keys(OUTCOME_WORDS) as ResetOutcome[])
+  return (Object.keys(OUTCOME_COUNTS) as ResetOutcome[])
     .filter((outcome) => tally[outcome] > 0)
-    .map((outcome) => `${tally[outcome]} ${OUTCOME_WORDS[outcome]}`)
+    .map((outcome) => t(OUTCOME_COUNTS[outcome], tally[outcome]))
     .join(" · ");
 }

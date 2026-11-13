@@ -9,6 +9,7 @@ import { ENERGY_OPTIONS } from "../lib/energy";
 import { EnergyLevel, Task } from "../lib/types";
 import { ChoiceChips } from "./ChoiceChips";
 import { ErrorBanner } from "./ErrorBanner";
+import { t } from "../i18n";
 
 const MINUTE_OPTIONS = DO_NOW_MINUTE_OPTIONS.map((minutes) => ({ value: minutes as number, label: minutesLabel(minutes) }));
 // Enough to offer a real choice without turning the sheet back into the full list.
@@ -60,29 +61,29 @@ export function DoNowSheet({
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <View style={styles.flex}>
-            <Text style={styles.eyebrow}>DO NOW</Text>
-            <Text style={styles.title}>What can I do now?</Text>
+            <Text style={styles.eyebrow}>{t("DO NOW")}</Text>
+            <Text style={styles.title}>{t("What can I do now?")}</Text>
           </View>
-          <TouchableOpacity onPress={onClose} hitSlop={8} style={styles.closeButton} accessibilityLabel="Close">
+          <TouchableOpacity onPress={onClose} hitSlop={8} style={styles.closeButton} accessibilityLabel={t("Close")}>
             <Ionicons name="close" size={18} color={theme.colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
         <ScrollView style={styles.flex} contentContainerStyle={styles.content}>
-          <Text style={styles.label}>I HAVE</Text>
+          <Text style={styles.label}>{t("I HAVE")}</Text>
           <ChoiceChips
             options={MINUTE_OPTIONS}
             value={availableMinutes}
             onChange={onChangeMinutes}
-            accessibilityLabel="Time available"
+            accessibilityLabel={t("Time available")}
           />
 
-          <Text style={styles.label}>MY ENERGY</Text>
+          <Text style={styles.label}>{t("MY ENERGY")}</Text>
           <ChoiceChips
             options={ENERGY_OPTIONS}
             value={energy}
             onChange={onChangeEnergy}
-            accessibilityLabel="Energy level"
+            accessibilityLabel={t("Energy level")}
           />
 
           {errorMessage && <ErrorBanner style={styles.error} message={errorMessage} />}
@@ -94,7 +95,7 @@ export function DoNowSheet({
           ) : (
             <>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Do these now</Text>
+                <Text style={styles.sectionTitle}>{t("Do these now")}</Text>
                 <Text style={styles.sectionMeta}>{planSummary(plan.length, planMinutes, availableMinutes)}</Text>
               </View>
               {plan.map((task) => (
@@ -104,7 +105,7 @@ export function DoNowSheet({
               {shownAlternatives.length > 0 && (
                 <>
                   <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Or instead</Text>
+                    <Text style={styles.sectionTitle}>{t("Or instead")}</Text>
                   </View>
                   {shownAlternatives.map((task) => (
                     <React.Fragment key={task.id}>{renderTask(task)}</React.Fragment>

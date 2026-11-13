@@ -3,7 +3,7 @@ import { StyleProp, Text, TouchableOpacity, View, ViewStyle } from "react-native
 import { Ionicons } from "@expo/vector-icons";
 import { makeStyles, useTheme } from "../hooks/useTheme";
 import { useDictation } from "../hooks/useDictation";
-import { DICTATION_LANGUAGES } from "../lib/dictation";
+import { t } from "../i18n";
 
 interface Props {
   text: string; // the field this bar speaks into
@@ -14,9 +14,9 @@ interface Props {
   style?: StyleProp<ViewStyle>;
 }
 
-// The microphone under a text field: one button to talk and stop, the language
-// it listens in, and a line when listening could not start. Renders nothing on a
-// device that can't listen.
+// The microphone under a text field: one button to talk and stop, and a line
+// when listening could not start. It listens in the app's language. Renders
+// nothing on a device that can't listen.
 export function DictationBar({ text, maxLength, disabled, onChangeText, onListeningChange, style }: Props) {
   const { theme } = useTheme();
   const styles = useStyles();
@@ -43,7 +43,7 @@ export function DictationBar({ text, maxLength, disabled, onChangeText, onListen
           disabled={disabled}
           accessibilityRole="button"
           accessibilityState={{ selected: listening, disabled }}
-          accessibilityLabel={listening ? "Stop listening" : "Talk instead of typing"}
+          accessibilityLabel={listening ? t("Stop listening") : t("Talk instead of typing")}
         >
           <Ionicons
             name={listening ? "stop" : "mic"}
@@ -51,27 +51,9 @@ export function DictationBar({ text, maxLength, disabled, onChangeText, onListen
             color={listening ? theme.colors.onAccent : theme.colors.accentDark}
           />
           <Text style={[styles.micText, listening && styles.micTextListening]}>
-            {listening ? "Listening… tap to stop" : "Talk"}
+            {listening ? t("Listening… tap to stop") : t("Talk")}
           </Text>
         </TouchableOpacity>
-        <View style={styles.languages} accessibilityRole="radiogroup" accessibilityLabel="Language you speak in">
-          {DICTATION_LANGUAGES.map(({ code, label }) => {
-            const selected = code === dictation.language;
-            return (
-              <TouchableOpacity
-                key={code}
-                style={[styles.language, selected && styles.languageSelected]}
-                onPress={() => dictation.setLanguage(code)}
-                disabled={listening || disabled}
-                accessibilityRole="radio"
-                accessibilityState={{ selected, disabled: listening || disabled }}
-                accessibilityLabel={label}
-              >
-                <Text style={[styles.languageText, selected && styles.languageTextSelected]}>{code.toUpperCase()}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
       </View>
       {dictation.error && <Text style={styles.error}>{dictation.error}</Text>}
     </View>
@@ -82,8 +64,6 @@ const useStyles = makeStyles((theme) => ({
   row: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: theme.spacing.sm,
   },
   micButton: {
     flexDirection: "row",
@@ -107,29 +87,6 @@ const useStyles = makeStyles((theme) => ({
   },
   micTextListening: {
     color: theme.colors.onAccent,
-  },
-  languages: {
-    flexDirection: "row",
-    gap: 4,
-  },
-  language: {
-    minWidth: 40,
-    height: 32,
-    paddingHorizontal: 8,
-    borderRadius: theme.radius.pill,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  languageSelected: {
-    backgroundColor: theme.colors.surfaceAlt,
-  },
-  languageText: {
-    color: theme.colors.textTertiary,
-    fontSize: theme.typography.caption.fontSize,
-    fontWeight: "600",
-  },
-  languageTextSelected: {
-    color: theme.colors.textPrimary,
   },
   error: {
     color: theme.colors.danger,

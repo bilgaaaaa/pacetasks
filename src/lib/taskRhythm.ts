@@ -1,6 +1,7 @@
 import { daysBetween, toLocalDateKey } from "@domain/dates";
 import { normalizeTitle } from "@domain/taskHistory";
 import { Task, TaskTiming } from "./types";
+import { t } from "../i18n";
 
 // How often each recurring task actually gets done, learned from completed
 // tasks: when it was last done and its usual gap between times. Feeds the
@@ -78,6 +79,6 @@ export function isLate(rhythm: TaskRhythm): boolean {
 // "Today", "Yesterday", or "9 days ago", plus "· usually 7 days" (the usual gap) when a rhythm is known.
 export function describeLastDone(rhythm: TaskRhythm): string {
   const when =
-    rhythm.daysSince <= 0 ? "Today" : rhythm.daysSince === 1 ? "Yesterday" : `${rhythm.daysSince} days ago`;
-  return rhythm.usualGapDays !== null && rhythm.usualGapDays > 1 ? `${when} · usually ${rhythm.usualGapDays} days` : when;
+    rhythm.daysSince <= 0 ? t("Today") : rhythm.daysSince === 1 ? t("Yesterday") : t("{0} days ago", rhythm.daysSince);
+  return rhythm.usualGapDays !== null && rhythm.usualGapDays > 1 ? t("{0} · usually {1} days", when, rhythm.usualGapDays) : when;
 }

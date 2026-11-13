@@ -13,6 +13,7 @@ import {
   shiftMonth,
 } from "../lib/dayPicker";
 import { DueChoice, FLEXIBLE_DUE_IDS, FLEXIBLE_DUE_LABELS, isSameDueChoice } from "../lib/dueOptions";
+import { t } from "../i18n";
 
 interface Props {
   todayKey: string; // the phone's local day, "YYYY-MM-DD"
@@ -45,7 +46,7 @@ export function DayPicker({ todayKey, value, onChange }: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.toolbar}>
-        <Text style={styles.caption}>{monthOpen ? monthLabel(shownMonth) : "Pick a day"}</Text>
+        <Text style={styles.caption}>{monthOpen ? monthLabel(shownMonth) : t("Pick a day")}</Text>
         <View style={styles.toolbarActions}>
           {monthOpen && (
             <>
@@ -54,7 +55,7 @@ export function DayPicker({ todayKey, value, onChange }: Props) {
                 onPress={() => setShownMonth(previousMonth)}
                 disabled={!canShowMonth(previousMonth, todayKey)}
                 accessibilityRole="button"
-                accessibilityLabel="Previous month"
+                accessibilityLabel={t("Previous month")}
               >
                 <Ionicons name="chevron-back" size={18} color={theme.colors.textPrimary} />
               </TouchableOpacity>
@@ -63,7 +64,7 @@ export function DayPicker({ todayKey, value, onChange }: Props) {
                 onPress={() => setShownMonth(nextMonth)}
                 disabled={!canShowMonth(nextMonth, todayKey)}
                 accessibilityRole="button"
-                accessibilityLabel="Next month"
+                accessibilityLabel={t("Next month")}
               >
                 <Ionicons name="chevron-forward" size={18} color={theme.colors.textPrimary} />
               </TouchableOpacity>
@@ -76,7 +77,7 @@ export function DayPicker({ todayKey, value, onChange }: Props) {
             accessibilityState={{ expanded: monthOpen }}
           >
             <Ionicons name="calendar-outline" size={16} color={theme.colors.accentDark} />
-            <Text style={styles.monthToggleText}>{monthOpen ? "Show week" : "Whole month"}</Text>
+            <Text style={styles.monthToggleText}>{monthOpen ? t("Show week") : t("Whole month")}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -119,7 +120,7 @@ export function DayPicker({ todayKey, value, onChange }: Props) {
           ))}
         </View>
       ) : (
-        <View style={styles.strip} accessibilityRole="radiogroup" accessibilityLabel="The next seven days">
+        <View style={styles.strip} accessibilityRole="radiogroup" accessibilityLabel={t("The next seven days")}>
           {strip.map((day) => {
             const isSelected = day.key === selectedDay;
             return (
@@ -129,10 +130,10 @@ export function DayPicker({ todayKey, value, onChange }: Props) {
                 onPress={() => onChange({ kind: "day", dateKey: day.key })}
                 accessibilityRole="radio"
                 accessibilityState={{ selected: isSelected }}
-                accessibilityLabel={day.isToday ? `Today, ${dayLabel(day)}` : dayLabel(day)}
+                accessibilityLabel={day.isToday ? t("Today, {0}", dayLabel(day)) : dayLabel(day)}
               >
                 <Text style={[styles.stripWeekday, isSelected && styles.textOnAccent]} maxFontSizeMultiplier={1.3}>
-                  {day.isToday ? "Today" : day.weekday}
+                  {day.isToday ? t("Today") : day.weekday}
                 </Text>
                 <Text style={[styles.stripDate, isSelected && styles.textOnAccent]} maxFontSizeMultiplier={1.3}>
                   {day.dayOfMonth}
@@ -143,8 +144,8 @@ export function DayPicker({ todayKey, value, onChange }: Props) {
         </View>
       )}
 
-      <Text style={styles.caption}>Or no exact day</Text>
-      <View style={styles.flexibleRow} accessibilityRole="radiogroup" accessibilityLabel="No exact day">
+      <Text style={styles.caption}>{t("Or no exact day")}</Text>
+      <View style={styles.flexibleRow} accessibilityRole="radiogroup" accessibilityLabel={t("No exact day")}>
         {FLEXIBLE_DUE_IDS.map((when) => {
           const isSelected = isSameDueChoice(value, { kind: "flexible", when });
           return (

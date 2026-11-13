@@ -1,6 +1,7 @@
 import React from "react";
 import { Text, View } from "react-native";
 import { makeStyles } from "../hooks/useTheme";
+import { t } from "../i18n";
 
 interface Props {
   tasksToday: number;
@@ -15,20 +16,24 @@ export function EndOfDayCard({ tasksToday, minutesToday, streakDays }: Props) {
   const styles = useStyles();
   return (
     <View style={styles.card}>
-      <Text style={styles.eyebrow}>END OF DAY</Text>
-      <Text style={styles.title}>Day cleared.{"\n"}Quietly proud.</Text>
+      <Text style={styles.eyebrow}>{t("END OF DAY")}</Text>
+      <Text style={styles.title}>
+        {t("Day cleared.")}
+        {"\n"}
+        {t("Quietly proud.")}
+      </Text>
       <View style={styles.statsRow}>
         <View style={styles.stat}>
           <Text style={styles.statValue}>{tasksToday}</Text>
-          <Text style={styles.statLabel}>{tasksToday === 1 ? "task" : "tasks"}</Text>
+          <Text style={styles.statLabel}>{tasksToday === 1 ? t("task") : t("tasks")}</Text>
         </View>
         <View style={styles.stat}>
           <Text style={styles.statValue}>{minutesToday}</Text>
-          <Text style={styles.statLabel}>{minutesToday === 1 ? "minute" : "minutes"}</Text>
+          <Text style={styles.statLabel}>{minutesToday === 1 ? t("minute") : t("minutes")}</Text>
         </View>
         <View style={styles.stat}>
-          <Text style={styles.statValue}>{streakDays}d</Text>
-          <Text style={styles.statLabel}>streak</Text>
+          <Text style={styles.statValue}>{t("{0}d", streakDays)}</Text>
+          <Text style={styles.statLabel}>{t("streak")}</Text>
         </View>
       </View>
     </View>

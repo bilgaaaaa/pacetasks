@@ -7,6 +7,7 @@ import { getCategory } from "../lib/categories";
 import { formatDueLabel } from "../lib/dueLabel";
 import { issueLabel } from "../lib/brainDumpCopy";
 import { EditableCandidate } from "../lib/brainDumpState";
+import { t } from "../i18n";
 
 interface Props {
   candidate: BrainDumpCandidate;
@@ -29,7 +30,7 @@ export function BrainDumpCandidateRow({ candidate, edit, todayKey, disabled, onT
   const details = [
     draft.due_date ? formatDueLabel(draft.due_date, draft.due_kind ?? null, todayKey) : null,
     draft.scheduled_time ?? null,
-    draft.estimated_minutes ? `${draft.estimated_minutes} min` : null,
+    draft.estimated_minutes ? t("{0} min", draft.estimated_minutes) : null,
     draft.category ? getCategory(draft.category).label : null,
     draft.flexible ? "maybe" : null,
   ].filter((part): part is string => part !== null);
@@ -42,7 +43,7 @@ export function BrainDumpCandidateRow({ candidate, edit, todayKey, disabled, onT
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         accessibilityRole="checkbox"
         accessibilityState={{ checked: edit.included, disabled }}
-        accessibilityLabel={`Include ${draft.title}`}
+        accessibilityLabel={t("Include {0}", draft.title)}
       >
         <View style={[styles.checkCircle, edit.included && styles.checkCircleOn]}>
           {edit.included && <Ionicons name="checkmark" size={16} color={theme.colors.onAccent} />}
@@ -61,7 +62,7 @@ export function BrainDumpCandidateRow({ candidate, edit, todayKey, disabled, onT
         />
         {details.length > 0 && <Text style={styles.meta}>{details.join(" · ")}</Text>}
         {candidate.dateText && draft.due_date && (
-          <Text style={styles.source}>from "{candidate.dateText}"</Text>
+          <Text style={styles.source}>{t('from "{0}"', candidate.dateText)}</Text>
         )}
         {candidate.issues.map((issue, i) => (
           <View key={`${issue.code}-${i}`} style={styles.issueRow}>

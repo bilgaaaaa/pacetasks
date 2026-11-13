@@ -1,5 +1,6 @@
 import { Task } from "./types";
 import { addDays, daysBetween, toLocalDateKey } from "@domain/dates";
+import { getLocale } from "../i18n";
 
 export interface DailyStat {
   date: string;
@@ -162,7 +163,7 @@ export function buildWeekdayHeatmap(
 
   const firstDate = new Date(`${weeks[0][0].date}T12:00:00`);
   const lastDate = new Date(`${weeks[weeks.length - 1][4].date}T12:00:00`);
-  const monthFormat = (d: Date) => d.toLocaleDateString("en-US", { month: "short" });
+  const monthFormat = (d: Date) => d.toLocaleDateString(getLocale(), { month: "short" });
   const rangeLabel = `${monthFormat(firstDate)} — ${monthFormat(lastDate)}`;
 
   return { weeks, rangeLabel };

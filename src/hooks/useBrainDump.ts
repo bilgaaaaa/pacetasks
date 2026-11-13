@@ -8,6 +8,7 @@ import {
   sessionToDiscardOnClose,
 } from "../lib/brainDumpState";
 import { Task } from "../lib/types";
+import { t } from "../i18n";
 
 interface Options {
   onTasksCreated: (tasks: Task[]) => void; // lets the task list show new tasks immediately
@@ -78,5 +79,5 @@ export function useBrainDump({ onTasksCreated }: Options) {
 function toUiError(error: unknown) {
   if (error instanceof BrainDumpApiError) return { message: error.message, retryable: error.retryable };
   console.warn("[useBrainDump] unexpected error", error);
-  return { message: "Something went wrong — try again", retryable: true };
+  return { message: t("Something went wrong — try again"), retryable: true };
 }

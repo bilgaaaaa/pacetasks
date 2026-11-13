@@ -12,6 +12,7 @@ import {
   restorePurchases,
   showManageSubscriptions,
 } from "../lib/purchasesApi";
+import { t } from "../i18n";
 
 // What the paywall sheet shows; App renders it once for the whole app.
 export interface PaywallState {
@@ -114,14 +115,14 @@ export function ProProvider({ userId, children }: { userId: string | undefined; 
       setPaywall((current) => ({
         ...current,
         plans,
-        message: plans.length ? null : PRO_PLANS_UNAVAILABLE,
+        message: plans.length ? null : t(PRO_PLANS_UNAVAILABLE),
       }));
     } catch (e) {
       console.warn("[usePro] could not load plans", e);
       setPaywall((current) => ({
         ...current,
         plans: [],
-        message: PRO_PLANS_UNAVAILABLE,
+        message: t(PRO_PLANS_UNAVAILABLE),
       }));
     }
   }, []);
@@ -161,7 +162,7 @@ export function ProProvider({ userId, children }: { userId: string | undefined; 
         setPaywall((current) => ({
           ...current,
           busyPlanId: null,
-          message: PRO_PURCHASE_FAILED,
+          message: t(PRO_PURCHASE_FAILED),
         }));
       }
     },
@@ -176,14 +177,14 @@ export function ProProvider({ userId, children }: { userId: string | undefined; 
       setPaywall((current) => ({
         ...current,
         restoring: false,
-        message: restored.active ? null : PRO_RESTORE_NOTHING,
+        message: restored.active ? null : t(PRO_RESTORE_NOTHING),
       }));
     } catch (e) {
       console.warn("[usePro] restore failed", e);
       setPaywall((current) => ({
         ...current,
         restoring: false,
-        message: PRO_RESTORE_FAILED,
+        message: t(PRO_RESTORE_FAILED),
       }));
     }
   }, [applyLive]);

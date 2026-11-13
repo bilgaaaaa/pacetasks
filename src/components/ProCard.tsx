@@ -4,6 +4,7 @@ import { makeStyles } from "../hooks/useTheme";
 import { ProStatus } from "../lib/pro";
 import { PRO_MANAGE_LABEL, PRO_RESTORE_LABEL, PRO_SEE_PLANS_LABEL, proStatusLine } from "../lib/proCopy";
 import { Button } from "./Button";
+import { t } from "../i18n";
 
 interface Props {
   status: ProStatus;
@@ -22,9 +23,9 @@ export function ProCard({ status, restoring, message, onSeePlans, onRestore, onM
       <Text style={styles.status}>{proStatusLine(status)}</Text>
       {!status.active && (
         <>
-          <Button label={PRO_SEE_PLANS_LABEL} onPress={onSeePlans} />
+          <Button label={t(PRO_SEE_PLANS_LABEL)} onPress={onSeePlans} />
           <Button
-            label={PRO_RESTORE_LABEL}
+            label={t(PRO_RESTORE_LABEL)}
             variant="secondary"
             loading={restoring}
             onPress={onRestore}
@@ -34,7 +35,7 @@ export function ProCard({ status, restoring, message, onSeePlans, onRestore, onM
       )}
       {message && <Text style={styles.message}>{message}</Text>}
       {status.active && !status.lifetime && (
-        <Button label={PRO_MANAGE_LABEL} variant="secondary" onPress={onManage} style={styles.onCard} />
+        <Button label={t(PRO_MANAGE_LABEL)} variant="secondary" onPress={onManage} style={styles.onCard} />
       )}
     </View>
   );

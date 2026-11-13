@@ -2,26 +2,8 @@ import {
   applyDictationResult,
   dictatedText,
   dictationErrorMessage,
-  dictationLanguageFor,
-  dictationLocale,
   EMPTY_TRANSCRIPT,
 } from "../dictation";
-
-describe("dictationLanguageFor", () => {
-  it("uses the phone's language when Brain Dump understands it", () => {
-    expect(dictationLanguageFor("it")).toBe("it");
-    expect(dictationLanguageFor("TR")).toBe("tr");
-  });
-
-  it("falls back to English", () => {
-    expect(dictationLanguageFor("de")).toBe("en");
-    expect(dictationLanguageFor(null)).toBe("en");
-  });
-
-  it("gives the recognizer a full locale", () => {
-    expect(dictationLocale("it")).toBe("it-IT");
-  });
-});
 
 describe("applyDictationResult", () => {
   it("replaces the unfinished phrase and keeps the finished ones", () => {

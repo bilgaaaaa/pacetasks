@@ -15,7 +15,8 @@
       "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSSupportsLiveActivities": true
+        "NSSupportsLiveActivities": true,
+        "CFBundleAllowMixedLocalizations": true
       },
       "entitlements": {
         "com.apple.security.application-groups": [
@@ -114,6 +115,9 @@
         "projectId": "4b7e2dbc-8401-4288-85fc-bbb367fc9296"
       }
     },
-    "owner": "bilgaaaa"
+    "owner": "bilgaaaa",
+    "locales": {
+      "it": "./locales/it.json"
+    }
   }
 }

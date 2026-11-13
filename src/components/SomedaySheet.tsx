@@ -5,6 +5,7 @@ import { makeStyles, useTheme } from "../hooks/useTheme";
 import { Task } from "../lib/types";
 import { ErrorBanner } from "./ErrorBanner";
 import { TaskActionRow } from "./TaskActionRow";
+import { t } from "../i18n";
 
 interface Props {
   visible: boolean;
@@ -35,31 +36,31 @@ export function SomedaySheet({ visible, tasks, errorMessage, onBringBack, onDele
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <View style={styles.flex}>
-            <Text style={styles.eyebrow}>SOMEDAY</Text>
-            <Text style={styles.title}>Not now, maybe later</Text>
+            <Text style={styles.eyebrow}>{t("SOMEDAY")}</Text>
+            <Text style={styles.title}>{t("Not now, maybe later")}</Text>
           </View>
-          <TouchableOpacity onPress={onClose} hitSlop={8} style={styles.closeButton} accessibilityLabel="Close">
+          <TouchableOpacity onPress={onClose} hitSlop={8} style={styles.closeButton} accessibilityLabel={t("Close")}>
             <Ionicons name="close" size={18} color={theme.colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
         <ScrollView style={styles.flex} contentContainerStyle={styles.content}>
           <Text style={styles.subtitle}>
-            Parked tasks stay out of your day until you bring them back.
+            {t("Parked tasks stay out of your day until you bring them back.")}
           </Text>
 
           {errorMessage && <ErrorBanner style={styles.error} message={errorMessage} />}
 
           {tasks.length === 0 ? (
             <View style={styles.empty}>
-              <Text style={styles.emptyText}>Nothing parked right now.</Text>
+              <Text style={styles.emptyText}>{t("Nothing parked right now.")}</Text>
             </View>
           ) : (
             tasks.map((task) => (
               <TaskActionRow
                 key={task.id}
                 task={task}
-                actionLabel="Bring back"
+                actionLabel={t("Bring back")}
                 onAction={(parked) => onBringBack(parked.id)}
                 onEdit={onEdit}
                 onDelete={onDelete}

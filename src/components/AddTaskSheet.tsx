@@ -49,6 +49,7 @@ import {
 import { TaskRhythm, describeLastDone, isLate } from "../lib/taskRhythm";
 import { DayPicker } from "./DayPicker";
 import { TimePicker } from "./TimePicker";
+import { t } from "../i18n";
 
 const MINUTE_PRESETS = [2, 5, 10, 15, 20, 30, 45, 60, 90];
 const TIMING_VALUES: TaskTiming[] = ["anytime", "before_work", "after_work"];
@@ -285,7 +286,7 @@ export function AddTaskSheet({
     setSaving(false);
     if (!created) {
       console.warn("[AddTaskSheet] add failed", draft.title);
-      setError("Couldn't add that task. Check your connection and try again.");
+      setError(t("Couldn't add that task. Check your connection and try again."));
       return false;
     }
     const key = normalizeTitle(draft.title);
@@ -326,7 +327,7 @@ export function AddTaskSheet({
     setSaving(false);
     if (!saved) {
       console.warn("[AddTaskSheet] edit failed", task.id);
-      setError("Couldn't save your changes. Check your connection and try again.");
+      setError(t("Couldn't save your changes. Check your connection and try again."));
       return;
     }
     console.log("[AddTaskSheet] task edited", task.id, Object.keys(patch));
@@ -365,7 +366,7 @@ export function AddTaskSheet({
     const undone = await onUndo(taskId);
     if (!undone) {
       console.warn("[AddTaskSheet] undo failed", taskId);
-      setError("Couldn't undo that one. You can delete it from the list.");
+      setError(t("Couldn't undo that one. You can delete it from the list."));
       return;
     }
     setAddedKeys((prev) => {
@@ -450,14 +451,14 @@ export function AddTaskSheet({
       case "duration":
         return (
           <>
-            <Text style={styles.panelTitle}>HOW LONG, HONESTLY?</Text>
-            {renderChips(durationChoices, minutes, (value) => `${value} min`, (value) => {
+            <Text style={styles.panelTitle}>{t("HOW LONG, HONESTLY?")}</Text>
+            {renderChips(durationChoices, minutes, (value) => t("{0} min", value), (value) => {
               setMinutes(value);
               setMinutesText("");
               setTouched((t) => ({ ...t, minutes: true }));
             })}
             <View style={styles.minutesRow}>
-              <Text style={styles.hint}>Or type it:</Text>
+              <Text style={styles.hint}>{t("Or type it:")}</Text>
               <TextInput
                 style={styles.minutesInput}
                 value={minutesText}
@@ -467,9 +468,9 @@ export function AddTaskSheet({
                 keyboardType="number-pad"
                 returnKeyType="done"
                 maxLength={3}
-                accessibilityLabel="Minutes, typed"
+                accessibilityLabel={t("Minutes, typed")}
               />
-              <Text style={styles.hint}>min</Text>
+              <Text style={styles.hint}>{t("min")}</Text>
             </View>
           </>
         );
@@ -477,9 +478,9 @@ export function AddTaskSheet({
         return scheduledTime ? (
           <>
             <View style={styles.panelHeader}>
-              <Text style={styles.panelTitle}>STARTS AT</Text>
+              <Text style={styles.panelTitle}>{t("STARTS AT")}</Text>
               <TouchableOpacity style={styles.textButton} onPress={removeTime} accessibilityRole="button">
-                <Text style={styles.textButtonText}>Remove time</Text>
+                <Text style={styles.textButtonText}>{t("Remove time")}</Text>
               </TouchableOpacity>
             </View>
             <TimePicker
@@ -489,14 +490,14 @@ export function AddTaskSheet({
               workEndHour={workEndHour}
               onChange={changeTime}
             />
-            <Text style={[styles.panelTitle, styles.panelTitleSpaced]}>REMIND ME · BEFORE IT STARTS</Text>
+            <Text style={[styles.panelTitle, styles.panelTitleSpaced]}>{t("REMIND ME · BEFORE IT STARTS")}</Text>
             {renderChips(REMINDER_VALUES, reminder, reminderChipLabel, changeReminder)}
             {reminder !== null && (
               <Text style={styles.hint}>
                 {!taskRemindersEnabled
-                  ? TASK_REMINDERS_SWITCHED_OFF
+                  ? t(TASK_REMINDERS_SWITCHED_OFF)
                   : permission === "denied"
-                  ? REMINDER_PERMISSION_OFF
+                  ? t(REMINDER_PERMISSION_OFF)
                   : reminderHint(reminderPlan, now)}
               </Text>
             )}
@@ -504,50 +505,50 @@ export function AddTaskSheet({
         ) : (
           <View style={styles.emptyPanel}>
             <Text style={styles.hint}>
-              Give it a start time and PaceTasks can nudge you when it's time. It also unlocks a Focus session.
+              {t("Give it a start time and PaceTasks can nudge you when it's time. It also unlocks a Focus session.")}
             </Text>
             <TouchableOpacity style={styles.secondaryButton} onPress={addTime} accessibilityRole="button">
               <Ionicons name="time-outline" size={18} color={theme.colors.accentDark} />
-              <Text style={styles.secondaryButtonText}>Set a start time</Text>
+              <Text style={styles.secondaryButtonText}>{t("Set a start time")}</Text>
             </TouchableOpacity>
           </View>
         );
       case "notes":
         return (
           <>
-            <Text style={styles.panelTitle}>DETAILS</Text>
+            <Text style={styles.panelTitle}>{t("DETAILS")}</Text>
             <TextInput
               style={styles.notesInput}
               value={notes}
               onChangeText={setNotes}
-              placeholder="Anything you want to remember about it"
+              placeholder={t("Anything you want to remember about it")}
               placeholderTextColor={theme.colors.textTertiary}
               multiline
               maxLength={TASK_LIMITS.notesMaxLength}
-              accessibilityLabel="Details"
+              accessibilityLabel={t("Details")}
             />
           </>
         );
       case "more":
         return (
           <>
-            <Text style={styles.panelTitle}>PART OF THE DAY</Text>
+            <Text style={styles.panelTitle}>{t("PART OF THE DAY")}</Text>
             {renderChips(TIMING_VALUES, timing, (value) => TIMING_LABELS[value], changeTiming)}
-            <Text style={[styles.panelTitle, styles.panelTitleSpaced]}>CATEGORY</Text>
+            <Text style={[styles.panelTitle, styles.panelTitleSpaced]}>{t("CATEGORY")}</Text>
             {renderChips<string | null>(
               [null, ...CATEGORIES.map((c) => c.id)],
               category,
-              (value) => (value ? getCategory(value).label : "None"),
+              (value) => (value ? getCategory(value).label : t("None")),
               (value) => {
                 setCategory(value);
                 setTouched((t) => ({ ...t, category: true }));
               }
             )}
-            <Text style={[styles.panelTitle, styles.panelTitleSpaced]}>ENERGY IT NEEDS</Text>
+            <Text style={[styles.panelTitle, styles.panelTitleSpaced]}>{t("ENERGY IT NEEDS")}</Text>
             {renderChips(
               ENERGY_VALUES,
               energy,
-              (value) => (value ? energyLabel(value) : ANY_ENERGY_LABEL),
+              (value) => (value ? energyLabel(value) : t(ANY_ENERGY_LABEL)),
               (value) => {
                 setEnergy(value);
                 setTouched((t) => ({ ...t, energy: true }));
@@ -565,23 +566,23 @@ export function AddTaskSheet({
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} onDismiss={onDismissed}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-        <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Close task sheet" />
+        <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel={t("Close task sheet")} />
         <View style={styles.sheet}>
           <View style={styles.handle} />
 
           <View style={styles.header}>
-            <Text style={styles.heading}>{editing ? "Edit task" : "New task"}</Text>
+            <Text style={styles.heading}>{editing ? t("Edit task") : t("New task")}</Text>
             <View style={styles.headerActions}>
               {!editing && (
                 <TouchableOpacity
                   style={styles.iconButton}
                   onPress={onOpenBrainDump}
-                  accessibilityLabel="Brain dump: say everything at once"
+                  accessibilityLabel={t("Brain dump: say everything at once")}
                 >
                   <Ionicons name="mic-outline" size={20} color={theme.colors.textPrimary} />
                 </TouchableOpacity>
               )}
-              <TouchableOpacity style={styles.iconButton} onPress={onClose} accessibilityLabel="Close">
+              <TouchableOpacity style={styles.iconButton} onPress={onClose} accessibilityLabel={t("Close")}>
                 <Ionicons name="close" size={22} color={theme.colors.textPrimary} />
               </TouchableOpacity>
             </View>
@@ -595,22 +596,25 @@ export function AddTaskSheet({
                 value={title}
                 onChangeText={handleTitleChange}
                 onFocus={() => setPanel(null)}
-                placeholder="What needs doing?"
+                placeholder={t("What needs doing?")}
                 placeholderTextColor={theme.colors.textTertiary}
                 returnKeyType="done"
                 onSubmitEditing={submit}
                 maxLength={TASK_LIMITS.titleMaxLength}
-                accessibilityLabel="What do you need to do?"
+                accessibilityLabel={t("What do you need to do?")}
               />
               {!editing && exactMatch && (
                 <Text style={styles.memoryText}>
                   {exactMatch.timesCompleted > 0 && exactMatch.minMinutes !== null && exactMatch.maxMinutes !== null
-                    ? `Done ${exactMatch.timesCompleted}× before · usually ${
-                        exactMatch.minMinutes === exactMatch.maxMinutes
-                          ? exactMatch.minMinutes
-                          : `${exactMatch.minMinutes}–${exactMatch.maxMinutes}`
-                      } min. Filled in for you.`
-                    : `You've added this before · last time ${exactMatch.lastMinutes} min.`}
+                    ? exactMatch.minMinutes === exactMatch.maxMinutes
+                      ? t("Done {0}× before · usually {1} min. Filled in for you.", exactMatch.timesCompleted, exactMatch.minMinutes)
+                      : t(
+                          "Done {0}× before · usually {1}–{2} min. Filled in for you.",
+                          exactMatch.timesCompleted,
+                          exactMatch.minMinutes,
+                          exactMatch.maxMinutes
+                        )
+                    : t("You've added this before · last time {0} min.", exactMatch.lastMinutes)}
                 </Text>
               )}
               {!editing && suggestions.length > 0 && (
@@ -620,7 +624,7 @@ export function AddTaskSheet({
                       key={entry.title}
                       style={styles.suggestionRow}
                       onPress={() => selectSuggestion(entry)}
-                      accessibilityLabel={`Use ${entry.title}`}
+                      accessibilityLabel={t("Use {0}", entry.title)}
                     >
                       <Ionicons name="time-outline" size={14} color={theme.colors.textTertiary} />
                       <Text style={styles.suggestionText} numberOfLines={1}>{entry.title}</Text>
@@ -636,27 +640,27 @@ export function AddTaskSheet({
                   "calendar-outline",
                   dueLabel,
                   resolvedDue.due_date !== null,
-                  `Day: ${dueLabel}`
+                  t("Day: {0}", dueLabel)
                 )}
-                {renderPill("duration", "hourglass-outline", `${minutes} min`, touched.minutes || !!exactMatch, `Duration: ${minutes} minutes`)}
+                {renderPill("duration", "hourglass-outline", t("{0} min", minutes), touched.minutes || !!exactMatch, t("Duration: {0} minutes", minutes))}
                 {renderPill(
                   "time",
                   "time-outline",
-                  scheduledTime ?? "Time",
+                  scheduledTime ?? t("Time"),
                   scheduledTime !== null,
                   scheduledTime
-                    ? `Start time ${scheduledTime}, ${reminderLabel(reminder).toLowerCase()}`
-                    : "Start time and reminder",
+                    ? t("Start time {0}, {1}", scheduledTime, reminderLabel(reminder).toLowerCase())
+                    : t("Start time and reminder"),
                   scheduledTime && reminder !== null ? "notifications" : undefined
                 )}
                 {renderPill(
                   "notes",
                   "document-text-outline",
-                  notes.trim() ? "Details" : null,
+                  notes.trim() ? t("Details") : null,
                   notes.trim() !== "",
-                  notes.trim() ? "Details, added" : "Add details"
+                  notes.trim() ? t("Details, added") : t("Add details")
                 )}
-                {renderPill("more", "options-outline", moreLabel, moreIsSet, "More: part of the day, category, energy")}
+                {renderPill("more", "options-outline", moreLabel, moreIsSet, t("More: part of the day, category, energy"))}
               </View>
             </View>
 
@@ -666,10 +670,10 @@ export function AddTaskSheet({
 
             {showUsuals && (
               <View style={styles.usuals}>
-                <Text style={styles.sectionTitle}>YOUR USUALS · ONE TAP ADDS FOR TODAY</Text>
+                <Text style={styles.sectionTitle}>{t("YOUR USUALS · ONE TAP ADDS FOR TODAY")}</Text>
                 {shownUsuals.length === 0 ? (
                   <Text style={styles.emptyText}>
-                    Tasks you do more than once show up here, ready to add again in one tap.
+                    {t("Tasks you do more than once show up here, ready to add again in one tap.")}
                   </Text>
                 ) : (
                   <View style={styles.usualList}>
@@ -683,7 +687,7 @@ export function AddTaskSheet({
                             onPress={() => addUsual(rhythm)}
                             disabled={saving || added}
                             accessibilityState={{ disabled: saving || added }}
-                            accessibilityLabel={added ? `${rhythm.title}, added for today` : `Add ${rhythm.title} for today`}
+                            accessibilityLabel={added ? t("{0}, added for today", rhythm.title) : t("Add {0} for today", rhythm.title)}
                           >
                             <View
                               style={[styles.usualIcon, added && styles.usualIconAdded]}
@@ -704,7 +708,7 @@ export function AddTaskSheet({
                                   style={[styles.usualMeta, late && !added && styles.usualMetaLate, added && styles.usualMetaAdded]}
                                   numberOfLines={1}
                                 >
-                                  {added ? "Added for today" : `${rhythm.lastMinutes} min · ${describeLastDone(rhythm)}`}
+                                  {added ? t("Added for today") : t("{0} min · {1}", rhythm.lastMinutes, describeLastDone(rhythm))}
                                 </Text>
                               </View>
                             </View>
@@ -712,7 +716,7 @@ export function AddTaskSheet({
                           <TouchableOpacity
                             style={styles.usualAdjust}
                             onPress={() => adjustUsual(rhythm)}
-                            accessibilityLabel={`Adjust ${rhythm.title} before adding`}
+                            accessibilityLabel={t("Adjust {0} before adding", rhythm.title)}
                           >
                             <Ionicons name="ellipsis-horizontal" size={18} color={theme.colors.textSecondary} />
                           </TouchableOpacity>
@@ -730,15 +734,16 @@ export function AddTaskSheet({
               <View style={styles.toast} accessibilityLiveRegion="polite">
                 <Ionicons name="checkmark" size={16} color={theme.colors.quickText} />
                 <Text style={styles.toastText} numberOfLines={1}>
-                  Added “{lastAdded.title}”{lastAdded.when ? ` ${lastAdded.when}` : ""}
+                  {t("Added “{0}”", lastAdded.title)}
+                  {lastAdded.when ? ` ${lastAdded.when}` : ""}
                 </Text>
                 <TouchableOpacity
                   style={styles.toastUndo}
                   onPress={undoLastAdd}
                   accessibilityRole="button"
-                  accessibilityLabel={`Undo adding ${lastAdded.title}`}
+                  accessibilityLabel={t("Undo adding {0}", lastAdded.title)}
                 >
-                  <Text style={styles.toastUndoText}>Undo</Text>
+                  <Text style={styles.toastUndoText}>{t("Undo")}</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -751,7 +756,7 @@ export function AddTaskSheet({
               >
                 {saving && <ActivityIndicator color={theme.colors.onAccent} />}
                 <Text style={styles.addButtonText} numberOfLines={1}>
-                  {editing ? "Save changes" : trimmedTitle ? `Add “${trimmedTitle}”` : "Add task"}
+                  {editing ? t("Save changes") : trimmedTitle ? t("Add “{0}”", trimmedTitle) : t("Add task")}
                 </Text>
               </TouchableOpacity>
             )}

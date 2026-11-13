@@ -2,6 +2,7 @@ import React from "react";
 import { Modal, Pressable, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { makeStyles, useTheme } from "../hooks/useTheme";
+import { t } from "../i18n";
 
 interface Props {
   visible: boolean;
@@ -34,16 +35,16 @@ export function PickNextTaskSheet({ visible, onDecideForMe, onFitMyTime, onClose
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} onDismiss={onDismissed}>
-      <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Close">
+      <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel={t("Close")}>
         {/* Taps inside the panel must not reach the backdrop. */}
         <Pressable style={styles.panel} onPress={() => {}}>
           <Text style={styles.title} accessibilityRole="header">
-            Pick my next task
+            {t("Pick my next task")}
           </Text>
-          {option("sparkles-outline", "Decide for me", "One task at a time, picked for you", onDecideForMe)}
-          {option("time-outline", "Fit my time", "See what fits the minutes and energy you have", onFitMyTime)}
+          {option("sparkles-outline", t("Decide for me"), t("One task at a time, picked for you"), onDecideForMe)}
+          {option("time-outline", t("Fit my time"), t("See what fits the minutes and energy you have"), onFitMyTime)}
           <TouchableOpacity style={styles.cancel} onPress={onClose} accessibilityRole="button">
-            <Text style={styles.cancelText}>Cancel</Text>
+            <Text style={styles.cancelText}>{t("Cancel")}</Text>
           </TouchableOpacity>
         </Pressable>
       </Pressable>

@@ -1,17 +1,18 @@
 import { addDays, weekdayIndex } from "@domain/dates";
+import { localized, msg } from "../i18n";
 
 // Calendar math behind the add sheet's day picker: the next seven days as a
 // strip, and a month as a Monday-first grid. Pure, on date keys ("YYYY-MM-DD")
 // and month keys ("YYYY-MM"), so it ignores time zones and DST.
 
-const WEEKDAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
+const WEEKDAY_SHORT = localized([msg("Sun"), msg("Mon"), msg("Tue"), msg("Wed"), msg("Thu"), msg("Fri"), msg("Sat")]);
+const MONTH_NAMES = localized([
+  msg("January"), msg("February"), msg("March"), msg("April"), msg("May|full month"), msg("June"),
+  msg("July"), msg("August"), msg("September"), msg("October"), msg("November"), msg("December"),
+]);
 
 // Column headers of the month grid; the week starts on Monday, like "This week" does.
-export const GRID_WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+export const GRID_WEEKDAYS = localized([msg("Mon"), msg("Tue"), msg("Wed"), msg("Thu"), msg("Fri"), msg("Sat"), msg("Sun")]);
 
 export const DAY_PICKER_POLICY = {
   stripDays: 7, // today and the six days after it

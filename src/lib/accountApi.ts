@@ -3,6 +3,7 @@ import { requestAppleCredential } from "./appleAuth";
 import { clearRolloverDismissedDay } from "./rolloverStorage";
 import { ensureSession, supabase } from "./supabase";
 import { clearKeptResetTasks } from "./weeklyResetStorage";
+import { localized, msg } from "../i18n";
 
 // The only file that talks to Supabase about accounts. PaceTasks is
 // passwordless: an account is an email proven with a one-time code, or an Apple
@@ -48,15 +49,15 @@ export class AccountError extends Error {
   }
 }
 
-const ERROR_MESSAGES: Record<AccountErrorCode, string> = {
-  email_taken: "That email already has an account. Sign in instead.",
-  no_account: "There's no account with that email. Create one instead.",
-  wrong_code: "That code is wrong or has expired. Check it or ask for a new one.",
-  too_many_requests: "Too many tries. Wait a minute, then try again.",
-  apple_failed: "Sign in with Apple didn't work. Try again, or use your email instead.",
-  network: "Couldn't reach the server. Check your connection and try again.",
-  unknown: "Something went wrong. Try again.",
-};
+const ERROR_MESSAGES: Record<AccountErrorCode, string> = localized({
+  email_taken: msg("That email already has an account. Sign in instead."),
+  no_account: msg("There's no account with that email. Create one instead."),
+  wrong_code: msg("That code is wrong or has expired. Check it or ask for a new one."),
+  too_many_requests: msg("Too many tries. Wait a minute, then try again."),
+  apple_failed: msg("Sign in with Apple didn't work. Try again, or use your email instead."),
+  network: msg("Couldn't reach the server. Check your connection and try again."),
+  unknown: msg("Something went wrong. Try again."),
+});
 
 // Supabase's own error codes (and, for older servers, HTTP statuses) mapped onto ours.
 const SUPABASE_ERROR_CODES: Record<string, AccountErrorCode> = {

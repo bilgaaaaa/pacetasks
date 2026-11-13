@@ -3,6 +3,7 @@ import { Text, View } from "react-native";
 import { makeStyles, useTheme } from "../hooks/useTheme";
 import { AppTheme } from "../lib/theme";
 import { Heatmap } from "../lib/stats";
+import { t } from "../i18n";
 
 interface Props {
   heatmap: Heatmap;
@@ -28,7 +29,7 @@ export function WeekHeatmap({ heatmap }: Props) {
   return (
     <View style={styles.card}>
       <View style={styles.headerRow}>
-        <Text style={styles.cardTitle}>LAST {heatmap.weeks.length} WEEKS</Text>
+        <Text style={styles.cardTitle}>{t("LAST {0} WEEKS", heatmap.weeks.length)}</Text>
         <Text style={styles.rangeLabel}>{heatmap.rangeLabel}</Text>
       </View>
       <View style={styles.grid}>

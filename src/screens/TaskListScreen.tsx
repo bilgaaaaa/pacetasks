@@ -53,6 +53,7 @@ import { WeekStrip } from "../components/WeekStrip";
 import { SomedaySheet } from "../components/SomedaySheet";
 import { UpcomingSheet } from "../components/UpcomingSheet";
 import { WeeklyResetSheet } from "../components/WeeklyResetSheet";
+import { getLocale, t } from "../i18n";
 
 interface Props {
   userId: string | undefined;
@@ -68,8 +69,8 @@ interface ListSection {
 
 // Header: a small date label ("SUNDAY · OCTOBER 4") over the greeting from todayCopy.
 function dateEyebrow(now: Date): string {
-  const day = now.toLocaleDateString("en-US", { weekday: "long" });
-  const date = now.toLocaleDateString("en-US", { month: "long", day: "numeric" });
+  const day = now.toLocaleDateString(getLocale(), { weekday: "long" });
+  const date = now.toLocaleDateString(getLocale(), { month: "long", day: "numeric" });
   return `${day} · ${date}`.toUpperCase();
 }
 
@@ -200,7 +201,7 @@ export function TaskListScreen({ userId }: Props) {
     if (filter === "all" && done.length > 0) {
       grouped.push({
         key: "done",
-        title: "Done",
+        title: t("Done"),
         totalMinutes: done.reduce((total, t) => total + (t.actual_minutes ?? t.estimated_minutes), 0),
         data: done,
       });
@@ -361,7 +362,7 @@ export function TaskListScreen({ userId }: Props) {
                     style={styles.footerLink}
                     accessibilityRole="button"
                   >
-                    <Text style={styles.footerLinkText}>Weekly reset · {weeklyReset.pendingCount} to review</Text>
+                    <Text style={styles.footerLinkText}>{t("Weekly reset · {0} to review", weeklyReset.pendingCount)}</Text>
                   </TouchableOpacity>
                 )}
                 {upcomingTasks.length > 0 && (
@@ -379,7 +380,7 @@ export function TaskListScreen({ userId }: Props) {
                     style={styles.footerLink}
                     accessibilityRole="button"
                   >
-                    <Text style={styles.footerLinkText}>Someday · {somedayTasks.length} parked</Text>
+                    <Text style={styles.footerLinkText}>{t("Someday · {0} parked", somedayTasks.length)}</Text>
                   </TouchableOpacity>
                 )}
               </>
@@ -392,9 +393,9 @@ export function TaskListScreen({ userId }: Props) {
             style={styles.addButton}
             onPress={() => setTaskSheet({ open: true, editing: null })}
             accessibilityRole="button"
-            accessibilityLabel="Add a task"
+            accessibilityLabel={t("Add a task")}
           >
-            <Text style={styles.addButtonText} numberOfLines={1}>Add a task…</Text>
+            <Text style={styles.addButtonText} numberOfLines={1}>{t("Add a task…")}</Text>
             <View style={styles.addButtonIcon}>
               <Ionicons name="add" size={22} color={theme.colors.onAccent} />
             </View>
@@ -402,7 +403,7 @@ export function TaskListScreen({ userId }: Props) {
           <TouchableOpacity
             style={styles.micButton}
             onPress={openBrainDump}
-            accessibilityLabel="Brain dump: say everything at once"
+            accessibilityLabel={t("Brain dump: say everything at once")}
           >
             <Ionicons name="mic-outline" size={22} color={theme.colors.textPrimary} />
           </TouchableOpacity>

@@ -15,6 +15,7 @@ import {
 import { Task } from "../lib/types";
 import { ErrorBanner } from "./ErrorBanner";
 import { TaskActionRow } from "./TaskActionRow";
+import { t } from "../i18n";
 
 interface Props {
   visible: boolean;
@@ -61,21 +62,21 @@ export function UpcomingSheet({
         <View style={styles.header}>
           <View style={styles.flex}>
             <Text style={styles.eyebrow}>{UPCOMING_EYEBROW}</Text>
-            <Text style={styles.title}>{UPCOMING_TITLE}</Text>
+            <Text style={styles.title}>{t(UPCOMING_TITLE)}</Text>
           </View>
-          <TouchableOpacity onPress={onClose} hitSlop={8} style={styles.closeButton} accessibilityLabel="Close">
+          <TouchableOpacity onPress={onClose} hitSlop={8} style={styles.closeButton} accessibilityLabel={t("Close")}>
             <Ionicons name="close" size={18} color={theme.colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
         <ScrollView ref={scrollView} style={styles.flex} contentContainerStyle={styles.content}>
-          <Text style={styles.subtitle}>{UPCOMING_SUBTITLE}</Text>
+          <Text style={styles.subtitle}>{t(UPCOMING_SUBTITLE)}</Text>
 
           {errorMessage && <ErrorBanner style={styles.error} message={errorMessage} />}
 
           {days.length === 0 ? (
             <View style={styles.empty}>
-              <Text style={styles.emptyText}>{UPCOMING_EMPTY}</Text>
+              <Text style={styles.emptyText}>{t(UPCOMING_EMPTY)}</Text>
             </View>
           ) : (
             days.map((day) => (
@@ -98,7 +99,7 @@ export function UpcomingSheet({
                   <TaskActionRow
                     key={task.id}
                     task={task}
-                    actionLabel={MOVE_TO_TODAY_LABEL}
+                    actionLabel={t(MOVE_TO_TODAY_LABEL)}
                     onAction={onMoveToToday}
                     onEdit={onEdit}
                     onDelete={onDelete}

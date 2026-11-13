@@ -20,6 +20,7 @@ import { BrainDumpCandidateRow } from "./BrainDumpCandidateRow";
 import { Button } from "./Button";
 import { DictationBar } from "./DictationBar";
 import { ErrorBanner } from "./ErrorBanner";
+import { t } from "../i18n";
 
 interface Props {
   visible: boolean;
@@ -60,12 +61,12 @@ export function BrainDumpSheet({
         <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <View style={styles.header}>
             <View style={styles.flex}>
-              <Text style={styles.eyebrow}>BRAIN DUMP</Text>
+              <Text style={styles.eyebrow}>{t("BRAIN DUMP")}</Text>
               <Text style={styles.title}>
-                {isReviewPhase ? "Here's what I understood" : phase === "done" ? "All set" : "What's on your mind?"}
+                {isReviewPhase ? t("Here's what I understood") : phase === "done" ? t("All set") : t("What's on your mind?")}
               </Text>
             </View>
-            <TouchableOpacity onPress={onClose} hitSlop={8} style={styles.closeButton} accessibilityLabel="Close">
+            <TouchableOpacity onPress={onClose} hitSlop={8} style={styles.closeButton} accessibilityLabel={t("Close")}>
               <Ionicons name="close" size={18} color={theme.colors.textSecondary} />
             </TouchableOpacity>
           </View>
@@ -73,13 +74,13 @@ export function BrainDumpSheet({
           {isInputPhase && (
             <View style={styles.flex}>
               <Text style={styles.subtitle}>
-                Everything, in English, Italian or Turkish. Type it, or tap Talk and say it.
+                {t("Everything, in English, Italian or Turkish. Type it, or tap Talk and say it.")}
               </Text>
               <TextInput
                 style={styles.input}
                 value={state.text}
                 onChangeText={onChangeText}
-                placeholder={"Tomorrow call the vet, finish the presentation before Friday, belki spora giderim…"}
+                placeholder={t("Tomorrow call the vet, finish the presentation before Friday, belki spora giderim…")}
                 placeholderTextColor={theme.colors.textTertiary}
                 multiline
                 autoFocus
@@ -101,7 +102,7 @@ export function BrainDumpSheet({
               {state.error && <ErrorBanner style={styles.errorBanner} message={state.error.message} />}
               <Button
                 style={styles.action}
-                label={phase === "interpreting" ? "Reading your brain dump…" : state.error?.retryable ? "Try again" : "Sort it out"}
+                label={phase === "interpreting" ? t("Reading your brain dump…") : state.error?.retryable ? t("Try again") : t("Sort it out")}
                 loading={phase === "interpreting"}
                 disabled={state.text.trim().length === 0 || listening}
                 onPress={onSubmit}
@@ -126,7 +127,7 @@ export function BrainDumpSheet({
                 ))}
                 {proposal.unparsedFragments.length > 0 && (
                   <View style={styles.unparsed}>
-                    <Text style={styles.unparsedTitle}>Not turned into tasks</Text>
+                    <Text style={styles.unparsedTitle}>{t("Not turned into tasks")}</Text>
                     {proposal.unparsedFragments.map((fragment, i) => (
                       <Text key={i} style={styles.unparsedText}>
                         "{fragment}"
@@ -139,13 +140,13 @@ export function BrainDumpSheet({
               {proposal.candidates.length > 0 ? (
                 <Button
                   style={styles.action}
-                  label={phase === "committing" ? "Adding…" : addButtonLabel(selectedCount)}
+                  label={phase === "committing" ? t("Adding…") : addButtonLabel(selectedCount)}
                   loading={phase === "committing"}
                   disabled={selectedCount === 0}
                   onPress={onCommit}
                 />
               ) : (
-                <Button style={styles.action} label="Close" onPress={onClose} />
+                <Button style={styles.action} label={t("Close")} onPress={onClose} />
               )}
             </View>
           )}
@@ -156,7 +157,7 @@ export function BrainDumpSheet({
                 <Ionicons name="checkmark" size={32} color={theme.colors.onAccent} />
               </View>
               <Text style={styles.doneText}>{doneMessage(state.createdTasks.length)}</Text>
-              <Button style={styles.action} label="Done" onPress={onClose} />
+              <Button style={styles.action} label={t("Done")} onPress={onClose} />
             </View>
           )}
         </KeyboardAvoidingView>

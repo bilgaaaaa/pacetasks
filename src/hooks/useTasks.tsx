@@ -5,6 +5,7 @@ import { Task, TaskChange, TaskDraft, TaskPatch } from "../lib/types";
 import * as tasksApi from "../lib/tasksApi";
 import { supabase } from "../lib/supabase";
 import { removeTask, upsertTask } from "@domain/taskCollection";
+import { t } from "../i18n";
 
 interface TasksContextValue {
   tasks: Task[];
@@ -68,7 +69,7 @@ export function TasksProvider({ userId, children }: { userId: string | undefined
       } catch (e: any) {
         if (currentUserId.current !== userId) return;
         console.warn("[useTasks] load failed", e);
-        setError(e.message ?? "Failed to load tasks");
+        setError(e.message ?? t("Failed to load tasks"));
       } finally {
         if (!silent && currentUserId.current === userId) setLoading(false);
       }
@@ -140,7 +141,7 @@ export function TasksProvider({ userId, children }: { userId: string | undefined
         return true;
       } catch (e: any) {
         console.warn(`[useTasks] ${label} failed`, e);
-        if (currentUserId.current === userId) setError(e.message ?? `Couldn't ${label}`);
+        if (currentUserId.current === userId) setError(e.message ?? t("Couldn't {0}", label));
         return false;
       }
     },
@@ -151,7 +152,7 @@ export function TasksProvider({ userId, children }: { userId: string | undefined
   const create = useCallback(
     async (draft: TaskDraft): Promise<Task | undefined> => {
       let created: Task | undefined;
-      await run("create task", async () => {
+      await run(t("create task"), async () => {
         const newTask = await tasksApi.createTask(draft);
         changeTasks((prev) => upsertTask(prev, newTask));
         created = newTask;
@@ -171,7 +172,7 @@ export function TasksProvider({ userId, children }: { userId: string | undefined
 
   const complete = useCallback(
     (taskId: string, actualMinutes: number | null) =>
-      run("complete task", async () => {
+      run(t("complete task"), async () => {
         const updated = await tasksApi.completeTask(taskId, actualMinutes);
         changeTasks((prev) => upsertTask(prev, updated));
       }),
@@ -181,7 +182,7 @@ export function TasksProvider({ userId, children }: { userId: string | undefined
   // Moves or parks one task (see @domain/taskPatch for the patches).
   const update = useCallback(
     (taskId: string, patch: TaskPatch) =>
-      run("update task", async () => {
+      run(t("update task"), async () => {
         const updated = await tasksApi.updateTask(taskId, patch);
         changeTasks((prev) => upsertTask(prev, updated));
       }),
@@ -192,7 +193,7 @@ export function TasksProvider({ userId, children }: { userId: string | undefined
   // failure; the ones already applied stay applied and show in the list.
   const updateMany = useCallback(
     (changes: TaskChange[]) =>
-      run("update tasks", async () => {
+      run(t("update tasks"), async () => {
         for (const { taskId, patch } of changes) {
           const updated = await tasksApi.updateTask(taskId, patch);
           changeTasks((prev) => upsertTask(prev, updated));
@@ -203,7 +204,7 @@ export function TasksProvider({ userId, children }: { userId: string | undefined
 
   const remove = useCallback(
     (taskId: string) =>
-      run("delete task", async () => {
+      run(t("delete task"), async () => {
         await tasksApi.deleteTask(taskId);
         changeTasks((prev) => removeTask(prev, taskId));
       }),

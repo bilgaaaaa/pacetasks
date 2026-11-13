@@ -1,12 +1,15 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { StyleSheet, useColorScheme } from "react-native";
 import { AppTheme, buildTheme } from "../lib/theme";
-import { AppearancePrefs, DEFAULT_APPEARANCE } from "../lib/appearance";
+import { useLocales } from "expo-localization";
+import { Language, languageFor, setLanguage } from "../i18n";
+import { AppearancePrefs, DEFAULT_APPEARANCE, resolveLanguage } from "../lib/appearance";
 import { loadAppearance, saveAppearance } from "../lib/appearanceStorage";
 
 interface ThemeContextValue {
   theme: AppTheme;
   appearance: AppearancePrefs;
+  language: Language; // the language on screen: the chosen one, or the phone's
   appearanceLoaded: boolean;
   updateAppearance: (patch: Partial<AppearancePrefs>) => void;
 }
@@ -15,6 +18,7 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 // Resolves the active theme from the saved appearance prefs and, in "system"
 // mode, the phone's light/dark setting (which updates live when it changes).
+// The app's language is resolved the same way and set before any screen renders.
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const systemScheme = useColorScheme();
   const [appearance, setAppearance] = useState<AppearancePrefs>(DEFAULT_APPEARANCE);
@@ -43,14 +47,18 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const scheme =
     appearance.themeMode === "system" ? (systemScheme === "dark" ? "dark" : "light") : appearance.themeMode;
+  // Set while rendering, not in an effect, so every text below already reads in this language.
+  const language = resolveLanguage(appearance.language, languageFor(useLocales()[0]?.languageCode));
+  setLanguage(language);
+
   const theme = useMemo(
     () => buildTheme(scheme, appearance.accent, appearance.palette),
     [scheme, appearance.accent, appearance.palette]
   );
 
   const value = useMemo(
-    () => ({ theme, appearance, appearanceLoaded, updateAppearance }),
-    [theme, appearance, appearanceLoaded, updateAppearance]
+    () => ({ theme, appearance, language, appearanceLoaded, updateAppearance }),
+    [theme, appearance, language, appearanceLoaded, updateAppearance]
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
