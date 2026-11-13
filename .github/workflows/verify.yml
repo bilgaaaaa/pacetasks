@@ -26,6 +26,8 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
+      # The Italian website is built from the English pages; this fails when it has fallen behind.
+      - run: python3 scripts/build_site_it.py --check
       - run: npx playwright install --with-deps chromium
       - run: npm run e2e
       # Kept even when a step fails, so the film shows what went wrong.

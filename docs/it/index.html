@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PaceTasks con DeskFocus — pianifica sul tuo iPhone, concentrati sul tuo Mac</title>
+  <meta name="description" content="PaceTasks organizza le tue attività intorno al lavoro, su iPhone. DeskFocus, incluso, tiene sulla scrivania del Mac quella che stai facendo, con un timer per il focus.">
+  <meta name="theme-color" content="#2f4636">
+  <link rel="canonical" href="https://pacetasks.bilgalog.dev/it/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="PaceTasks con DeskFocus">
+  <meta property="og:description" content="Dimmi cosa devo fare. PaceTasks lo pianifica sul tuo iPhone; DeskFocus ti aiuta a non perderlo di vista sul Mac.">
+  <meta property="og:url" content="https://pacetasks.bilgalog.dev/it/">
+  <meta property="og:image" content="https://pacetasks.bilgalog.dev/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="alternate" hreflang="en" href="https://pacetasks.bilgalog.dev/">
+  <link rel="alternate" hreflang="it" href="https://pacetasks.bilgalog.dev/it/">
+  <link rel="alternate" hreflang="x-default" href="https://pacetasks.bilgalog.dev/">
+  <link rel="icon" href="../icon.png">
+  <link rel="apple-touch-icon" href="../icon.png">
+  <link rel="preload" href="../fonts/bricolage-grotesque.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="../site.css">
+  <script src="../lang.js"></script>
+  <script src="../site.js" defer></script>
+  <script src="../widget.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Vai al contenuto</a>
+
+<header class="site-header">
+  <a class="brand" href="./">
+    <span class="brand-icons"><img src="../icon.png" alt="" width="36" height="36"><img src="../deskfocus-icon.svg" alt="" width="36" height="36"></span>
+    <span class="brand-name">PaceTasks<span class="brand-with">con DeskFocus per Mac</span></span>
+  </a>
+  <nav class="site-nav" aria-label="Sito">
+    <a href="#day">Come funziona</a>
+    <a href="#both">Entrambe le app</a>
+    <a href="#pricing">Prezzi</a>
+    <a href="support.html">Aiuto</a>
+    <a href="privacy.html">Privacy</a>
+    <a class="lang-switch" href="../" hreflang="en" lang="en">English</a>
+  </nav>
+</header>
+
+<main id="main" class="landing">
+  <!-- Hero: PaceTasks' Today card, with the DeskFocus widget resting on its phone. -->
+  <section class="hero-card" aria-labelledby="heroTitle">
+    <span class="hero-blob hero-blob-a" aria-hidden="true"></span>
+    <span class="hero-blob hero-blob-b" aria-hidden="true"></span>
+    <div class="hero-copy">
+      <h1 id="heroTitle">Dimmi cosa devo fare.</h1>
+      <p class="hero-lede">PaceTasks organizza le tue attività intorno al lavoro, su iPhone. DeskFocus, incluso, tiene sulla scrivania del Mac quella che stai facendo, con un timer per il focus e le app che ti distraggono fuori dalla vista.</p>
+      <div class="hero-actions">
+        <!-- The demo is built from this repository by bilgaaaaa/PaceTasksWebsite's deploy workflow. -->
+        <a class="button button-hero" href="https://bilgaaaaa.github.io/PaceTasksWebsite/demo/" data-demo-launch>Prova PaceTasks nel tuo browser</a>
+        <a class="button button-ghost" href="https://github.com/bilgaaaaa/deskfocus/releases/latest">Scarica DeskFocus per Mac</a>
+      </div>
+      <!-- Swap the first sentence for the App Store link once PaceTasks is live. -->
+      <p class="hero-status">PaceTasks arriverà presto su iPhone. DeskFocus funziona con macOS 14 Sonoma o successivo.</p>
+    </div>
+
+    <div class="hero-stage" data-hero-stage>
+      <figure class="phone hero-phone" data-demo-phone>
+        <div class="phone-screen">
+          <picture>
+            <source srcset="../screens/today-dark.webp" media="(prefers-color-scheme: dark)">
+            <img src="../screens/today-light.webp" width="393" height="852"
+            alt="PaceTasks Oggi: una scheda che dice Parti in piccolo, vinci in grande, i giorni di questa settimana, quattro attività rimandate e il piano di oggi.">
+          </picture>
+        </div>
+      </figure>
+
+      <div class="desk-widget" role="group" aria-labelledby="widgetTitle" data-widget>
+        <div class="desk-widget-header">
+          <span class="desk-widget-title" id="widgetTitle">Oggi</span>
+          <span class="desk-widget-meta" data-widget-progress></span>
+        </div>
+        <div class="focus">
+          <div class="focus-dial">
+            <svg class="focus-ring" viewBox="0 0 104 104" aria-hidden="true">
+              <defs>
+                <linearGradient id="emberGradient" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#ffc857"/>
+                  <stop offset="1" stop-color="#ff6a3d"/>
+                </linearGradient>
+              </defs>
+              <circle class="focus-ring-track" cx="52" cy="52" r="44"/>
+              <circle class="focus-ring-value" cx="52" cy="52" r="44" data-focus-ring/>
+            </svg>
+            <span class="focus-time" data-focus-time>25:00</span>
+          </div>
+          <div class="focus-info">
+            <span class="desk-widget-meta">Focus su</span>
+            <span class="focus-task" data-focus-task aria-live="polite"></span>
+            <div class="focus-controls">
+              <button type="button" class="widget-button widget-button-primary" data-focus-toggle>Inizia</button>
+              <button type="button" class="widget-button" data-focus-done>Fatto</button>
+            </div>
+          </div>
+        </div>
+        <ul class="desk-tasks" data-widget-tasks></ul>
+        <p class="desk-widget-footer">
+          <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4M3 3l18 18"/></svg>
+          <span data-hidden-apps></span>
+        </p>
+      </div>
+    </div>
+    <p class="hero-stage-note">Scegli un'attività nel widget DeskFocus e premi Inizia. Le attività di PaceTasks nel widget arriveranno presto. La demo usa attività di esempio e nulla di ciò che scrivi lascia il tuo browser.</p>
+  </section>
+
+  <!-- A day with both apps: each stop says where you are and which screen helps. -->
+  <section id="day" class="day" aria-labelledby="dayTitle">
+    <div class="section-intro">
+      <h2 id="dayTitle">Una sola lista, dalla tasca alla scrivania.</h2>
+      <p>PaceTasks capisce quando ogni attività entra nella tua giornata. DeskFocus ti tiene su quella giusta quando ti siedi. Ecco una giornata con entrambi.</p>
+    </div>
+
+    <ol class="day-timeline">
+      <li class="day-stop" data-device="iphone">
+        <p class="day-time"><time datetime="07:45">7:45</time><span class="day-device">Sul tuo iPhone</span></p>
+        <div class="day-copy">
+          <h3>Di' tutto in una volta.</h3>
+          <p>Andando al lavoro, tocca il microfono e scrivi o detta tutto ciò che hai in mente, in inglese, italiano, turco o un misto. PaceTasks mostra le attività che ha capito prima di aggiungere qualcosa.</p>
+          <blockquote class="day-quote">“Tomorrow call the vet, domani comprare il pane, cuma günü faturayı öde”</blockquote>
+        </div>
+        <figure class="phone day-visual">
+          <div class="phone-screen">
+            <img src="../screens/brain-dump.webp" width="393" height="852" loading="lazy"
+            alt="Brain Dump che trasforma quella frase in tre attività: Call the vet e Comprare il pane domani, Faturayı öde venerdì.">
+          </div>
+        </figure>
+      </li>
+
+      <li class="day-stop" data-device="mac">
+        <p class="day-time"><time datetime="09:00">9:00</time><span class="day-device">Sul tuo Mac</span></p>
+        <div class="day-copy">
+          <h3>Oggi è già sulla tua scrivania.</h3>
+          <p>DeskFocus mette Calendario e Promemoria di iCloud, Google Calendar e Google Tasks sulla scrivania del Mac come un'unica lista, e presto arriverà anche la tua lista di PaceTasks. Si mostra come widget, nella barra dei menu o come pannello di vetro, così ciò che viene dopo è sempre a portata di sguardo.</p>
+        </div>
+        <div class="desk-panel day-visual">
+          <p class="desk-panel-title">La lista di oggi arriva da</p>
+          <ul class="source-list">
+            <li data-source="Calendar">Calendario di iCloud</li>
+            <li data-source="Reminders">Promemoria di iCloud</li>
+            <li data-source="Google">Google Calendar e Tasks</li>
+            <li data-source="PaceTasks">PaceTasks <span class="soon-tag">In arrivo</span></li>
+          </ul>
+          <svg class="source-arrow" width="24" height="28" viewBox="0 0 24 28" aria-hidden="true"><path d="M12 2v22M5 17l7 7 7-7"/></svg>
+          <p class="source-merge">Una sola lista sulla tua scrivania</p>
+        </div>
+      </li>
+
+      <li class="day-stop" data-device="mac">
+        <p class="day-time"><time datetime="10:30">10:30</time><span class="day-device">Sul tuo Mac</span></p>
+        <div class="day-copy">
+          <h3>Un'attività, un timer, niente che ti distragga.</h3>
+          <p>Premi Inizia su qualsiasi attività e il suo timer parte sulla scrivania. Le app che scegli restano nascoste fino alla fine della sessione, oppure vengono chiuse in modalità rigorosa. Quando il tempo è finito, Fatto spunta l'attività là da dove arriva.</p>
+        </div>
+        <fieldset class="desk-panel day-visual">
+          <legend class="desk-panel-title">Nascondi mentre ti concentri</legend>
+          <div class="app-switches" data-app-switches></div>
+          <p class="desk-panel-note">Il widget in cima alla pagina segue questi interruttori.</p>
+        </fieldset>
+      </li>
+
+      <li class="day-stop" data-device="iphone">
+        <p class="day-time"><time datetime="12:40">12:40</time><span class="day-device">Sul tuo iPhone</span></p>
+        <div class="day-copy">
+          <h3>Non sai decidere? Sceglie per te.</h3>
+          <p>Tocca <strong>Scegli la mia prossima attività</strong>. <strong>Decidi per me</strong> mostra una sola attività: una vittoria rapida finché ce n'è una, poi ciò che conta di più. <strong>Adatta al mio tempo</strong> chiede quanto tempo hai, da 5 minuti a un'ora, ed elenca le attività che ci stanno.</p>
+        </div>
+        <figure class="phone day-visual">
+          <div class="phone-screen">
+            <img src="../screens/pick-next.webp" width="393" height="852" loading="lazy"
+            alt="Decidi per me che mostra una sola attività, Chiamare il dentista, circa 5 minuti, con Fatto e Non ora.">
+          </div>
+        </figure>
+      </li>
+
+      <li class="day-stop" data-device="iphone">
+        <p class="day-time"><time datetime="08:00">Domani, 8:00</time><span class="day-device">Sul tuo iPhone</span></p>
+        <div class="day-copy">
+          <h3>Le attività non finite trovano un nuovo giorno.</h3>
+          <p>Gli avanzi di ieri non si accumulano. Una riga in Oggi propone dove mettere ciascuna: oggi, domani, nel weekend o prima o poi. Cambia ciò che vuoi, poi applica. Quando le attività aspettano da troppo, il <strong>Reset settimanale</strong> te le fa rivedere una alla volta.</p>
+        </div>
+        <figure class="phone day-visual">
+          <div class="phone-screen">
+            <img src="../screens/carried-over.webp" width="393" height="852" loading="lazy"
+            alt="Quattro attività rimandate, ognuna con un giorno proposto: Prima o poi, Weekend o Oggi.">
+          </div>
+        </figure>
+      </li>
+
+      <li class="day-stop" data-device="iphone">
+        <p class="day-time"><time>Domenica</time><span class="day-device">Sul tuo iPhone</span></p>
+        <div class="day-copy">
+          <h3>Gareggia solo con il tuo ritmo.</h3>
+          <p>Serie, minuti, una mappa di 13 settimane e quanto le tue stime si avvicinano alla realtà. Dopo dieci attività completate, <strong>Il mio ritmo</strong> ti dice con frasi semplici quando rendi di più.</p>
+        </div>
+        <figure class="phone day-visual">
+          <div class="phone-screen">
+            <img src="../screens/pace.webp" width="393" height="852" loading="lazy"
+            alt="Il tuo ritmo: attività e minuti fatti oggi, serie attuale e migliore, precisione delle stime e una mappa di 13 settimane.">
+          </div>
+        </figure>
+      </li>
+    </ol>
+  </section>
+
+  <!-- What you get: the two apps side by side, in their own colors. -->
+  <section id="both" class="both" aria-labelledby="bothTitle">
+    <div class="section-intro">
+      <h2 id="bothTitle">Due app, vendute insieme.</h2>
+      <p>Prendi PaceTasks per il tuo iPhone e DeskFocus per il tuo Mac come una cosa sola: pianifichi da una parte, ti concentri dall'altra. Presto le tue attività di PaceTasks compariranno anche in DeskFocus. Ogni acquisto include un <a href="terms.html#refunds">rimborso entro 14 giorni</a>. <a href="#pricing">Guarda cosa è gratis e quanto costa Pro.</a></p>
+    </div>
+
+    <div class="both-grid">
+      <article class="app-panel app-panel-pacetasks" aria-labelledby="pacetasksTitle">
+        <div class="app-panel-head">
+          <img src="../icon.png" alt="" width="56" height="56">
+          <div>
+            <h3 id="pacetasksTitle">PaceTasks</h3>
+            <p class="app-panel-platform">Per iPhone</p>
+          </div>
+        </div>
+        <p class="app-panel-summary">Pianifica le tue attività intorno al lavoro, con il tempo e l'energia che hai davvero.</p>
+        <ul class="check-list">
+          <li>Brain Dump in inglese, italiano e turco</li>
+          <li>Scegli la mia prossima attività e Adatta al mio tempo</li>
+          <li>Le attività non finite passano a un nuovo giorno</li>
+          <li>Promemoria, serie e Il mio ritmo</li>
+        </ul>
+        <a class="button button-solid" href="https://bilgaaaaa.github.io/PaceTasksWebsite/demo/">Prova PaceTasks nel tuo browser</a>
+        <p class="app-panel-note">In arrivo su iPhone.</p>
+      </article>
+
+      <article class="app-panel app-panel-deskfocus" aria-labelledby="deskfocusTitle">
+        <div class="app-panel-head">
+          <img src="../deskfocus-icon.svg" alt="" width="56" height="56">
+          <div>
+            <h3 id="deskfocusTitle">DeskFocus</h3>
+            <p class="app-panel-platform">Per Mac</p>
+          </div>
+        </div>
+        <p class="app-panel-summary">Tiene la lista di oggi e un timer per il focus sulla tua scrivania, a portata di sguardo.</p>
+        <ul class="check-list">
+          <li>Widget sulla scrivania, barra dei menu e pannello di vetro</li>
+          <li>Liste di iCloud e Google in una sola, PaceTasks in arrivo</li>
+          <li>Un timer per il focus su qualsiasi attività, in qualsiasi giorno</li>
+          <li>Nasconde le app che scegli mentre ti concentri</li>
+          <li>Si aggiorna da solo, con un controllo al giorno</li>
+        </ul>
+        <!-- Switch both download links to https://github.com/bilgaaaaa/pacetasks/releases/latest once the first mac-v release is published there. -->
+        <a class="button button-ember" href="https://github.com/bilgaaaaa/deskfocus/releases/latest">Scarica DeskFocus per Mac</a>
+        <p class="app-panel-note">macOS 14 Sonoma o successivo. Un download diretto, non dal Mac App Store.</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- Pricing: what stays free, and the one Pro that covers both apps. Prices match the App Store products. -->
+  <section id="pricing" class="pricing" aria-labelledby="pricingTitle">
+    <div class="section-intro">
+      <h2 id="pricingTitle">Gratis per pianificare la tua giornata. Pro quando vuoi di più.</h2>
+      <p>Tutto ciò che ti serve per oggi è gratis, senza limiti di attività. Un solo Pro copre PaceTasks sul tuo iPhone e DeskFocus sul tuo Mac.</p>
+    </div>
+
+    <div class="both-grid">
+      <article class="app-panel app-panel-pacetasks" aria-labelledby="freeTitle">
+        <h3 id="freeTitle">Gratis</h3>
+        <p class="plan-price"><strong>€0</strong> <span>per tutto il tempo che vuoi</span></p>
+        <ul class="check-list">
+          <li>Tutte le attività che vuoi, in qualsiasi giorno</li>
+          <li>Orari di inizio, durate e promemoria scelti da te</li>
+          <li>Scegli la mia prossima attività e Adatta al mio tempo</li>
+          <li>Un timer su ogni attività</li>
+          <li>I numeri di oggi in Il mio ritmo</li>
+          <li>Il widget DeskFocus sul tuo Mac</li>
+        </ul>
+        <p class="app-panel-note">Senza account e senza carta.</p>
+      </article>
+
+      <article class="app-panel app-panel-pacetasks plan-pro" aria-labelledby="proTitle">
+        <h3 id="proTitle">Pro</h3>
+        <ul class="plan-options" aria-label="Modi per pagare Pro">
+          <li><strong>€24,99</strong> <span>all'anno, dopo 7 giorni di prova gratuita</span> <em>Più conveniente</em></li>
+          <li><strong>€3,99</strong> <span>al mese</span></li>
+          <li><strong>€59,99</strong> <span>una volta sola, tuo per sempre</span></li>
+        </ul>
+        <ul class="check-list">
+          <li>Tutto ciò che c'è in Gratis</li>
+          <li>Brain Dump: di' tutto in una volta, in inglese, italiano o turco</li>
+          <li>Il mio ritmo oltre oggi: la tua settimana e la tua cronologia</li>
+          <li>Siri, appena sarà pronta</li>
+          <li>DeskFocus Pro sul tuo Mac, senza costi aggiuntivi</li>
+        </ul>
+        <p class="app-panel-note">Pro arriva con l'uscita su iPhone. I prezzi sono in euro; l'App Store mostra il prezzo per il tuo paese. <a href="terms.html#refunds">Rimborso entro 14 giorni</a> su ogni acquisto.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="split" aria-labelledby="privacyTitle">
+    <h2 id="privacyTitle">Le tue attività restano tue.</h2>
+    <div>
+      <ul class="promise-list">
+        <li><strong>Niente pubblicità, niente tracciamento, niente analisi.</strong> <span>In nessuna delle due app. I tuoi dati non vengono mai venduti né condivisi per il marketing.</span></li>
+        <li><strong>Nessun account necessario.</strong> <span>PaceTasks funziona appena lo apri. Aggiungi la tua email più avanti per conservare le attività quando cambi telefono, con un codice di accesso al posto della password.</span></li>
+        <li><strong>DeskFocus resta sul tuo Mac.</strong> <span>Legge calendari e promemoria sul tuo dispositivo e parla direttamente con Google. Il tuo accesso a Google è conservato nel Portachiavi e nulla passa dal nostro server.</span></li>
+        <li><strong>Elimina tutto dall'app.</strong> <span>Un'opzione nelle Impostazioni di PaceTasks cancella subito attività e account dal nostro server.</span></li>
+        <li><strong>Brain Dump resta in PaceTasks.</strong> <span>Il tuo testo viene letto dalle regole di PaceTasks, non inviato a un'azienda di IA.</span></li>
+      </ul>
+      <p><a href="privacy.html">Leggi l'informativa sulla privacy</a></p>
+    </div>
+  </section>
+
+  <section class="split" aria-labelledby="questionsTitle">
+    <h2 id="questionsTitle">Domande</h2>
+    <div class="questions">
+      <details>
+        <summary>Quando posso averle?</summary>
+        <p>DeskFocus è pronto da scaricare per Mac. PaceTasks si sta preparando alla sua prima beta su iPhone; nel frattempo la demo fa funzionare l'intera app nel tuo browser con attività di esempio.</p>
+      </details>
+      <details>
+        <summary>Mi serve un Mac per usare PaceTasks?</summary>
+        <p>No. PaceTasks funziona da solo sul tuo iPhone. DeskFocus aggiunge la scrivania del Mac per le ore in cui ti siedi a lavorare.</p>
+      </details>
+      <details>
+        <summary>Quando compariranno in DeskFocus le mie attività di PaceTasks?</summary>
+        <p>Presto, con un aggiornamento di entrambe le app. Oggi DeskFocus mostra Calendario di iCloud, Promemoria di iCloud, Google Calendar e Google Tasks.</p>
+      </details>
+      <details>
+        <summary>Su quali Mac funziona DeskFocus?</summary>
+        <p>Su qualsiasi Mac con macOS 14 Sonoma o successivo.</p>
+      </details>
+      <details>
+        <summary>DeskFocus è sul Mac App Store?</summary>
+        <p>No. DeskFocus è un download diretto: apri il file e trascina DeskFocus in Applicazioni. Poi si tiene aggiornato da solo.</p>
+      </details>
+      <details>
+        <summary>Quanto costa Pro?</summary>
+        <p>€24,99 all'anno con 7 giorni di prova gratuita, €3,99 al mese, oppure €59,99 una volta per sempre. L'App Store mostra il prezzo per il tuo paese. Un solo Pro copre PaceTasks e DeskFocus; pianificare la giornata resta gratis.</p>
+      </details>
+      <details>
+        <summary>Posso avere un rimborso?</summary>
+        <p>Sì, entro 14 giorni dall'addebito, per qualsiasi motivo. Le <a href="terms.html#refunds">regole sui rimborsi</a> spiegano come fare per gli acquisti su App Store e Paddle.</p>
+      </details>
+      <details>
+        <summary>Esiste una versione per Android?</summary>
+        <p>Non ancora. PaceTasks è per iPhone e DeskFocus per Mac.</p>
+      </details>
+      <details>
+        <summary>La demo conserva ciò che scrivo?</summary>
+        <p>No. Funziona interamente nel tuo browser con attività di esempio, e tutto si azzera quando ricarichi.</p>
+      </details>
+      <p>Altre risposte in <a href="support.html">Aiuto e supporto</a>.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <p>Fatto a Padova da <a href="https://bilgalog.dev">Bilge Ozcanbaz</a>. Scrivi a <a href="mailto:pacetasks@bilgalog.dev">pacetasks@bilgalog.dev</a>.</p>
+  <nav class="site-nav" aria-label="Piè di pagina">
+    <a href="support.html">Aiuto e supporto</a>
+    <a href="privacy.html">Informativa sulla privacy</a>
+    <a href="terms.html">Condizioni e rimborsi</a>
+    <a href="https://github.com/bilgaaaaa/pacetasks">Codice sorgente</a>
+  </nav>
+</footer>
+</body>
+</html>

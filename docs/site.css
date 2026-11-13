@@ -128,6 +128,8 @@ p { text-wrap: pretty; }
 .site-nav a { color: var(--text-secondary); text-decoration: none; font-weight: 500; }
 .site-nav a:hover,
 .site-nav a[aria-current="page"] { color: var(--text-primary); }
+/* The link to the same page in the other language. */
+.site-nav a.lang-switch { padding: 0 0.6rem; border: 1px solid var(--border); border-radius: 999px; color: var(--text-primary); }
 .site-footer {
   margin-top: 5rem;
   padding-top: 1.5rem;
