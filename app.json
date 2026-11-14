@@ -108,7 +108,8 @@
           "speechRecognitionPermission": "PaceTasks turns what you say in Brain Dump into text."
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      "./plugins/withPaceSiri"
     ],
     "extra": {
       "eas": {

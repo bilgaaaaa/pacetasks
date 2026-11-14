@@ -2410,6 +2410,148 @@
           }
         }
       }
+    },
+    "Add to PaceTasks": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi a PaceTasks"
+          }
+        }
+      }
+    },
+    "Add one or more tasks by voice, in English or Italian.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi una o più attività con la voce, in inglese o in italiano."
+          }
+        }
+      }
+    },
+    "Tasks": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Attività"
+          }
+        }
+      }
+    },
+    "What should I add?": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cosa aggiungo?"
+          }
+        }
+      }
+    },
+    "Add ${text} to PaceTasks": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi ${text} a PaceTasks"
+          }
+        }
+      }
+    },
+    "What's next in PaceTasks": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cosa c'è dopo in PaceTasks"
+          }
+        }
+      }
+    },
+    "Hear the one task to do now.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ascolta l'attività da fare adesso."
+          }
+        }
+      }
+    },
+    "What's on today in PaceTasks": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cosa c'è oggi in PaceTasks"
+          }
+        }
+      }
+    },
+    "Hear how many tasks are left today and how long they take.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ascolta quante attività restano oggi e quanto tempo richiedono."
+          }
+        }
+      }
+    },
+    "Add tasks": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi attività"
+          }
+        }
+      }
+    },
+    "What's next": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cosa c'è dopo"
+          }
+        }
+      }
+    },
+    "siri.failed": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Al momento non è stato possibile. Riprova tra poco."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PaceTasks couldn't do that right now. Try again in a moment."
+          }
+        }
+      }
+    },
+    "siri.openApp": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apri PaceTasks una volta, così Siri può raggiungere le tue attività."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open PaceTasks once so Siri can reach your tasks."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

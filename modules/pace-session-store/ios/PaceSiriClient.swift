@@ -66,7 +66,7 @@ public enum PaceSiriClient {
     }
   }
 
-  // Looked up in the app's Localizable.xcstrings (English, Italian, Turkish).
+  // Looked up in the app's Localizable.xcstrings (English, Italian), in targets/deskfocus/_shared.
   private static func failedLine() -> String {
     String(localized: "siri.failed", defaultValue: "PaceTasks couldn't do that right now. Try again in a moment.", bundle: .main)
   }
