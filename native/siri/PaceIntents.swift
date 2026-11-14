@@ -1,5 +1,6 @@
 import AppIntents
-import PaceSessionStore
+// Matches the "internal import" in Expo's generated ExpoModulesProvider.swift; Swift rejects mixed import levels.
+internal import PaceSessionStore
 
 // PaceTasks' Siri and Shortcuts actions. Each asks the PaceTasks server, which
 // does the work and answers with the sentence Siri says (see supabase/functions/siri).
