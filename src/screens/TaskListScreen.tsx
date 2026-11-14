@@ -427,6 +427,7 @@ export function TaskListScreen({ userId }: Props) {
 
         <BrainDumpSheet
           visible={brainDumpOpen}
+          listenOnOpen
           state={brainDump.state}
           onChangeText={brainDump.setText}
           onSubmit={brainDump.submit}

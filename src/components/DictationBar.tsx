@@ -11,17 +11,28 @@ interface Props {
   disabled: boolean; // the field can't change right now (e.g. it is being sent)
   onChangeText: (text: string) => void;
   onListeningChange: (listening: boolean) => void; // lets the owner lock the field while the mic writes into it
+  startListening: boolean; // starts listening as soon as the bar appears, as when the user tapped a mic to get here
   style?: StyleProp<ViewStyle>;
 }
 
 // The microphone under a text field: one button to talk and stop, and a line
 // when listening could not start. It listens in the app's language. Renders
 // nothing on a device that can't listen.
-export function DictationBar({ text, maxLength, disabled, onChangeText, onListeningChange, style }: Props) {
+export function DictationBar({ text, maxLength, disabled, onChangeText, onListeningChange, startListening, style }: Props) {
   const { theme } = useTheme();
   const styles = useStyles();
   const dictation = useDictation({ text, maxLength, onChangeText });
-  const { listening, stop } = dictation;
+  const { listening, start, stop } = dictation;
+
+  // Tapping a mic means "listen now": the bar starts once, when it appears.
+  useEffect(() => {
+    if (startListening && dictation.available) {
+      console.log("[DictationBar] listening on open");
+      void start();
+    }
+    // Only on appearance: later changes to `start` must not restart the mic.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     onListeningChange(listening);

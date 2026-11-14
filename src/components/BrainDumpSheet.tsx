@@ -24,6 +24,7 @@ import { t } from "../i18n";
 
 interface Props {
   visible: boolean;
+  listenOnOpen: boolean; // opened from a mic: listening starts right away
   state: BrainDumpState;
   onChangeText: (text: string) => void;
   onSubmit: () => void;
@@ -38,6 +39,7 @@ interface Props {
 // The Brain Dump state comes from useBrainDump; the sheet only owns the microphone.
 export function BrainDumpSheet({
   visible,
+  listenOnOpen,
   state,
   onChangeText,
   onSubmit,
@@ -83,7 +85,7 @@ export function BrainDumpSheet({
                 placeholder={t("Tomorrow call the vet, finish the presentation before Friday, belki spora giderim…")}
                 placeholderTextColor={theme.colors.textTertiary}
                 multiline
-                autoFocus
+                autoFocus={!listenOnOpen}
                 editable={phase === "input" && !listening}
                 maxLength={BRAIN_DUMP_MAX_TEXT_LENGTH}
                 textAlignVertical="top"
@@ -98,6 +100,7 @@ export function BrainDumpSheet({
                 disabled={phase !== "input"}
                 onChangeText={onChangeText}
                 onListeningChange={setListening}
+                startListening={listenOnOpen && state.text === ""}
               />
               {state.error && <ErrorBanner style={styles.errorBanner} message={state.error.message} />}
               <Button

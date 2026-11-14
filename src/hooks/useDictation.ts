@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Platform } from "react-native";
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from "expo-speech-recognition";
 import {
   applyDictationResult,
@@ -16,8 +17,11 @@ interface Options {
   onChangeText: (text: string) => void;
 }
 
-// Whether this device can listen at all (false in a browser without speech recognition).
+// Whether this device can listen at all. An iPhone always can: if something is
+// off (permission, language), starting says so instead of hiding the button.
+// A browser without speech recognition can't.
 function recognitionAvailable(): boolean {
+  if (Platform.OS === "ios") return true;
   try {
     return ExpoSpeechRecognitionModule.isRecognitionAvailable();
   } catch (e) {
@@ -95,5 +99,5 @@ export function useDictation({ text, maxLength, onChangeText }: Options) {
     []
   );
 
-  return { available, listening, error, toggle, stop };
+  return { available, listening, error, start, toggle, stop };
 }
