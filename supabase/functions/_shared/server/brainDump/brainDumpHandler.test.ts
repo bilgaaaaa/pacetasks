@@ -188,3 +188,26 @@ Deno.test("CORS preflight is answered", async () => {
   assert.equal(response.status, 204);
   assert.equal(response.headers.get("access-control-allow-origin"), "*");
 });
+
+Deno.test("an interpretation made on the phone is used instead of the server's AI, and recorded as such", async () => {
+  const { deps, repository, ai } = setup();
+  const scripted = ai as ReturnType<typeof scriptedAI>;
+  const response = await handleBrainDumpHttp(
+    post({ ...VALID, interpretation: { model: "apple-foundation-models", promptVersion: "on-device.v1", result: SAMPLE_AI_RESULT } }),
+    deps
+  );
+  assert.equal(response.status, 200);
+  const proposal = (await response.json()) as BrainDumpProposal;
+  assert.equal(proposal.candidates.length, SAMPLE_AI_RESULT.candidates.length);
+  assert.equal(scripted.calls.length, 0);
+  assert.equal(repository.sessions[0].aiProvider, "apple_on_device");
+});
+
+Deno.test("a malformed phone interpretation is refused like any invalid request", async () => {
+  const { deps } = setup();
+  const response = await handleBrainDumpHttp(
+    post({ ...VALID, interpretation: { model: "x", promptVersion: "y", result: { candidates: "nope" } } }),
+    deps
+  );
+  assert.equal(response.status, 400);
+});

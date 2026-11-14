@@ -1,6 +1,7 @@
 import { useCallback, useReducer, useRef } from "react";
 import * as brainDumpApi from "../lib/brainDumpApi";
 import { BrainDumpApiError } from "../lib/brainDumpApi";
+import { interpretBrainDumpOnDevice } from "../lib/onDeviceAI";
 import {
   brainDumpReducer,
   INITIAL_BRAIN_DUMP_STATE,
@@ -14,8 +15,9 @@ interface Options {
   onTasksCreated: (tasks: Task[]) => void; // lets the task list show new tasks immediately
 }
 
-// Drives the Brain Dump sheet: submit text → review the AI's proposal → commit
-// the kept drafts. All state transitions live in brainDumpReducer.
+// Drives the Brain Dump sheet: submit text → the phone's own model reads it when
+// it can → the server checks it and proposes → commit the kept drafts. All state
+// transitions live in brainDumpReducer.
 export function useBrainDump({ onTasksCreated }: Options) {
   const [state, dispatch] = useReducer(brainDumpReducer, INITIAL_BRAIN_DUMP_STATE);
   const visitRef = useRef(0); // bumped on close, so an answer that arrives after the sheet closed never lands on the next opening
@@ -34,7 +36,8 @@ export function useBrainDump({ onTasksCreated }: Options) {
     const visit = visitRef.current;
     dispatch({ type: "submitStarted" });
     try {
-      const proposal = await brainDumpApi.proposeBrainDump(text);
+      const interpretation = await interpretBrainDumpOnDevice(text);
+      const proposal = await brainDumpApi.proposeBrainDump(text, interpretation);
       if (proposal.createdTasks.length > 0) onTasksCreated(proposal.createdTasks);
       if (visit === visitRef.current) {
         dispatch({ type: "proposalReceived", proposal });

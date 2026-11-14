@@ -1,4 +1,5 @@
 import type { AIProvider } from "../ai/AIProvider.ts";
+import { withDeviceInterpretation } from "../ai/deviceAIProvider.ts";
 import { AIError } from "../ai/errors.ts";
 import type { AIErrorKind } from "../ai/errors.ts";
 import { ApiError, CORS_HEADERS, errorResponse, jsonResponse } from "../http/apiError.ts";
@@ -52,7 +53,7 @@ export async function handleBrainDumpHttp(request: Request, deps: BrainDumpHandl
 
     const proposal = await runBrainDump(parsed.data, {
       repository: deps.createRepository(authorization),
-      ai: deps.createAI(),
+      ai: withDeviceInterpretation(deps.createAI(), parsed.data.interpretation),
       now: deps.now,
       dailyLimit: deps.dailyLimit,
     });

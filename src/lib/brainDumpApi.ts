@@ -2,6 +2,7 @@ import { FunctionsHttpError } from "@supabase/supabase-js";
 import type { BrainDumpProposal } from "@domain/brainDump/types";
 import { supabase } from "./supabase";
 import { getDeviceLocale, getDeviceTimeZone } from "./deviceContext";
+import type { DeviceInterpretation } from "./onDeviceAI";
 import { Task, TaskDraft } from "./types";
 
 // A Brain Dump failure the UI can show as-is: `message` is user-facing and
@@ -17,10 +18,14 @@ export class BrainDumpApiError extends Error {
   }
 }
 
-// Sends the text to the brain-dump Edge Function. Mode "auto" lets the server
-// create the tasks directly only when the user enabled auto-create and nothing
-// needs review; otherwise it returns a proposal to review.
-export async function proposeBrainDump(text: string): Promise<BrainDumpProposal> {
+// Sends the text to the brain-dump Edge Function, with the phone's own reading
+// when the on-device model made one (the server then skips its own). Mode "auto"
+// lets the server create the tasks directly only when the user enabled
+// auto-create and nothing needs review; otherwise it returns a proposal to review.
+export async function proposeBrainDump(
+  text: string,
+  interpretation: DeviceInterpretation | null = null
+): Promise<BrainDumpProposal> {
   const { data, error } = await supabase.functions.invoke<BrainDumpProposal>("brain-dump", {
     body: {
       text,
@@ -28,6 +33,7 @@ export async function proposeBrainDump(text: string): Promise<BrainDumpProposal>
       locale: getDeviceLocale(),
       channel: "app",
       mode: "auto",
+      ...(interpretation ? { interpretation } : {}),
     },
   });
 
