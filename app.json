@@ -16,7 +16,8 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSSupportsLiveActivities": true,
-        "CFBundleAllowMixedLocalizations": true
+        "CFBundleAllowMixedLocalizations": true,
+        "NSPhotoLibraryUsageDescription": "PaceTasks doesn't use your photos. Apple requires this text because a system file component used by the app can open the photo library."
       },
       "entitlements": {
         "com.apple.security.application-groups": [
