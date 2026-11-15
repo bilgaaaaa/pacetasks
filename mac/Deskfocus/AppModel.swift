@@ -58,7 +58,7 @@ final class AppModel {
         FocusNotifier.requestAuthorization()
         focus.reconcile()
         applyDesktopPanelSetting()
-        Log.app.info("DeskFocus started")
+        Log.app.info("PaceTasks for Mac started")
         Task { await refresh() }
     }
 

@@ -1,6 +1,6 @@
-# DeskFocus
+# PaceTasks for Mac
 
-DeskFocus for Mac: a menu bar app and desktop widget that put **today's tasks and a focus timer in one place**. On iPhone, DeskFocus is the widget inside PaceTasks (`targets/deskfocus/` at the root of this repository).
+PaceTasks for Mac: a menu bar app that brings the **DeskFocus widget** to the Mac, with today's tasks and a focus timer in one place. Same account as PaceTasks on iPhone, where DeskFocus is the widget inside the app (`targets/deskfocus/` at the root of this repository). Code names (targets, schemes, folders) are still `Deskfocus`.
 
 - Today's list merges **iCloud Calendar, iCloud Reminders, Google Calendar and Google Tasks**; each calendar or list can be switched on or off in Settings.
 - Shown as a **glass panel on the desktop** (Liquid Glass on macOS 26), as a WidgetKit widget, and in the menu bar; the panel and the widget share the same view.

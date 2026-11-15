@@ -8,7 +8,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Deskfocus"
+            "value" : "PaceTasks"
           }
         }
       }
@@ -20,7 +20,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Deskfocus"
+            "value" : "PaceTasks"
           }
         }
       }
@@ -31,13 +31,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deskfocus shows today's events so you can focus on them."
+            "value" : "PaceTasks shows today's events so you can focus on them."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deskfocus mostra gli eventi di oggi per aiutarti a concentrarti."
+            "value" : "PaceTasks mostra gli eventi di oggi per aiutarti a concentrarti."
           }
         }
       }
@@ -48,13 +48,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deskfocus shows today's events so you can focus on them."
+            "value" : "PaceTasks shows today's events so you can focus on them."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deskfocus mostra gli eventi di oggi per aiutarti a concentrarti."
+            "value" : "PaceTasks mostra gli eventi di oggi per aiutarti a concentrarti."
           }
         }
       }
@@ -65,13 +65,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deskfocus shows today's reminders and marks them done when you finish."
+            "value" : "PaceTasks shows today's reminders and marks them done when you finish."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deskfocus mostra i promemoria di oggi e li segna come completati quando hai finito."
+            "value" : "PaceTasks mostra i promemoria di oggi e li segna come completati quando hai finito."
           }
         }
       }
@@ -82,13 +82,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deskfocus shows today's reminders and marks them done when you finish."
+            "value" : "PaceTasks shows today's reminders and marks them done when you finish."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deskfocus mostra i promemoria di oggi e li segna come completati quando hai finito."
+            "value" : "PaceTasks mostra i promemoria di oggi e li segna come completati quando hai finito."
           }
         }
       }

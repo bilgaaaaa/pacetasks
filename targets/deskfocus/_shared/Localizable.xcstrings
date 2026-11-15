@@ -171,12 +171,12 @@
         }
       }
     },
-    "A glass widget on your desktop, and DeskFocus in the menu bar.": {
+    "The DeskFocus widget on your desktop, and PaceTasks in the menu bar.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Un widget in vetro sulla scrivania e DeskFocus nella barra dei menu."
+            "value": "Il widget DeskFocus sulla scrivania e PaceTasks nella barra dei menu."
           }
         }
       }
@@ -481,12 +481,12 @@
         }
       }
     },
-    "Click ⚙︎ on the widget, or the DeskFocus icon in the menu bar and then ⚙︎.": {
+    "Click ⚙︎ on the widget, or the PaceTasks icon in the menu bar and then ⚙︎.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Fai clic su ⚙︎ nel widget, oppure sull'icona di DeskFocus nella barra dei menu e poi su ⚙︎."
+            "value": "Fai clic su ⚙︎ nel widget, oppure sull'icona di PaceTasks nella barra dei menu e poi su ⚙︎."
           }
         }
       }
@@ -671,22 +671,22 @@
         }
       }
     },
-    "DeskFocus Settings": {
+    "PaceTasks Settings": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Impostazioni di DeskFocus"
+            "value": "Impostazioni di PaceTasks"
           }
         }
       }
     },
-    "DeskFocus shows the calendars and reminders on this Mac. Pick which ones any time in Settings › Calendars.": {
+    "PaceTasks shows the calendars and reminders on this Mac. Pick which ones any time in Settings › Calendars.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "DeskFocus mostra i calendari e i promemoria di questo Mac. Scegli quali in qualsiasi momento in Impostazioni › Calendari."
+            "value": "PaceTasks mostra i calendari e i promemoria di questo Mac. Scegli quali in qualsiasi momento in Impostazioni › Calendari."
           }
         }
       }
@@ -1101,12 +1101,12 @@
         }
       }
     },
-    "If access was denied before, allow DeskFocus in System Settings › Privacy & Security.": {
+    "If access was denied before, allow PaceTasks in System Settings › Privacy & Security.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Se in passato hai negato l'accesso, consenti DeskFocus in Impostazioni di Sistema › Privacy e sicurezza."
+            "value": "Se in passato hai negato l'accesso, consenti PaceTasks in Impostazioni di Sistema › Privacy e sicurezza."
           }
         }
       }
@@ -1361,12 +1361,12 @@
         }
       }
     },
-    "Open DeskFocus at login": {
+    "Open PaceTasks at login": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Apri DeskFocus al login"
+            "value": "Apri PaceTasks al login"
           }
         }
       }
@@ -1571,12 +1571,12 @@
         }
       }
     },
-    "Quit DeskFocus": {
+    "Quit PaceTasks": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Esci da DeskFocus"
+            "value": "Esci da PaceTasks"
           }
         }
       }
@@ -1631,12 +1631,12 @@
         }
       }
     },
-    "Restart DeskFocus to switch language.": {
+    "Restart PaceTasks to switch language.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Riavvia DeskFocus per cambiare lingua."
+            "value": "Riavvia PaceTasks per cambiare lingua."
           }
         }
       }
@@ -1781,12 +1781,12 @@
         }
       }
     },
-    "Show in DeskFocus": {
+    "Show in PaceTasks": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mostra in DeskFocus"
+            "value": "Mostra in PaceTasks"
           }
         }
       }
@@ -1871,12 +1871,12 @@
         }
       }
     },
-    "Start Using DeskFocus": {
+    "Start Using PaceTasks": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Inizia a usare DeskFocus"
+            "value": "Inizia a usare PaceTasks"
           }
         }
       }
@@ -2161,12 +2161,12 @@
         }
       }
     },
-    "Welcome to DeskFocus": {
+    "Welcome to PaceTasks": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ti diamo il benvenuto in DeskFocus"
+            "value": "Ti diamo il benvenuto in PaceTasks"
           }
         }
       }
@@ -2311,12 +2311,12 @@
         }
       }
     },
-    "DeskFocus looks for a new version once a day and updates itself in place. Your settings and tasks stay as they are.": {
+    "PaceTasks looks for a new version once a day and updates itself in place. Your settings and tasks stay as they are.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "DeskFocus cerca una nuova versione una volta al giorno e si aggiorna da sola. Impostazioni e attività restano come sono."
+            "value": "PaceTasks cerca una nuova versione una volta al giorno e si aggiorna da sola. Impostazioni e attività restano come sono."
           }
         }
       }
