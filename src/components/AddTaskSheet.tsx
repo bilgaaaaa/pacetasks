@@ -466,32 +466,36 @@ export function AddTaskSheet({
     </View>
   );
 
-  const renderPill = (
+  // One readable line per setting ("Time · 19:00–21:00"); tapping it opens its panel right underneath.
+  const renderRow = (
     id: Panel,
     icon: React.ComponentProps<typeof Ionicons>["name"],
-    label: string | null,
+    label: string,
+    value: string,
     isSet: boolean,
     a11y: string,
     trailingIcon?: React.ComponentProps<typeof Ionicons>["name"]
   ) => {
     const open = panel === id;
-    const color = open ? theme.colors.onAccent : isSet ? theme.colors.accentDark : theme.colors.textSecondary;
     return (
-      <TouchableOpacity
-        style={[styles.pill, !label && styles.pillIconOnly, isSet && styles.pillSet, open && styles.pillOpen]}
-        onPress={() => togglePanel(id)}
-        accessibilityRole="button"
-        accessibilityState={{ expanded: open }}
-        accessibilityLabel={a11y}
-      >
-        <Ionicons name={icon} size={16} color={color} />
-        {label && (
-          <Text style={[styles.pillText, isSet && styles.pillTextSet, open && styles.pillTextOpen]} numberOfLines={1}>
-            {label}
+      <View key={id} style={styles.rowBlock}>
+        <TouchableOpacity
+          style={styles.row}
+          onPress={() => togglePanel(id)}
+          accessibilityRole="button"
+          accessibilityState={{ expanded: open }}
+          accessibilityLabel={a11y}
+        >
+          <Ionicons name={icon} size={18} color={isSet || open ? theme.colors.accentDark : theme.colors.textSecondary} />
+          <Text style={styles.rowLabel}>{label}</Text>
+          <Text style={[styles.rowValue, isSet && styles.rowValueSet]} numberOfLines={1}>
+            {value}
           </Text>
-        )}
-        {trailingIcon && <Ionicons name={trailingIcon} size={14} color={color} />}
-      </TouchableOpacity>
+          {trailingIcon && <Ionicons name={trailingIcon} size={14} color={theme.colors.accentDark} />}
+          <Ionicons name={open ? "chevron-up" : "chevron-down"} size={16} color={theme.colors.textTertiary} />
+        </TouchableOpacity>
+        {open && <View style={styles.inlinePanel}>{renderPanel()}</View>}
+      </View>
     );
   };
 
@@ -627,11 +631,12 @@ export function AddTaskSheet({
     }
   };
 
+  // Usuals only while nothing is typed or open, so the pop-up stays small.
   const showUsuals = !editing && !trimmedTitle && panel === null;
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} onDismiss={onDismissed}>
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+      <KeyboardAvoidingView style={styles.frame} behavior={Platform.OS === "ios" ? "padding" : "height"}>
         <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel={t("Close task sheet")} />
         <View style={styles.sheet}>
           <View style={styles.handle} />
@@ -654,7 +659,7 @@ export function AddTaskSheet({
             </View>
           </View>
 
-          <ScrollView style={styles.flex} contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+          <ScrollView style={styles.scroll} contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
             <View style={styles.card}>
               <TextInput
                 ref={inputRef}
@@ -700,97 +705,81 @@ export function AddTaskSheet({
                 </View>
               )}
 
-              <View style={styles.pillRow}>
-                {renderPill(
-                  "when",
-                  "calendar-outline",
-                  dueLabel,
-                  resolvedDue.due_date !== null,
-                  t("Day: {0}", dueLabel)
-                )}
-                {renderPill("duration", "hourglass-outline", t("{0} min", minutes), touched.minutes || !!exactMatch, t("Duration: {0} minutes", minutes))}
-                {renderPill(
+              <View style={styles.rows}>
+                {renderRow("when", "calendar-outline", t("Day"), dueLabel, resolvedDue.due_date !== null, t("Day: {0}", dueLabel))}
+                {renderRow(
                   "time",
                   "time-outline",
-                  taskTimeLabel(time) ?? t("Time"),
+                  t("Time"),
+                  taskTimeLabel(time) ?? t("Anytime"),
                   time.kind !== "any",
                   time.kind !== "any"
                     ? t("Time: {0}, {1}", taskTimeSpoken(time), reminderLabel(reminder).toLowerCase())
                     : t("Time and reminder"),
                   reminderAnchor(timeFields(time)) && reminder !== null ? "notifications" : undefined
                 )}
-                {renderPill(
+                {renderRow(
+                  "duration",
+                  "hourglass-outline",
+                  t("How long"),
+                  t("{0} min", minutes),
+                  touched.minutes || !!exactMatch,
+                  t("Duration: {0} minutes", minutes)
+                )}
+                {renderRow(
                   "notes",
                   "document-text-outline",
-                  notes.trim() ? t("Details") : null,
+                  t("Details"),
+                  notes.trim() ? notes.trim().split("\n")[0] : t("Add"),
                   notes.trim() !== "",
                   notes.trim() ? t("Details, added") : t("Add details")
                 )}
-                {renderPill("more", "options-outline", moreLabel, moreIsSet, t("More: part of the day, category, energy"))}
+                {renderRow(
+                  "more",
+                  "options-outline",
+                  t("More"),
+                  moreLabel ?? t("Category, energy"),
+                  moreIsSet,
+                  t("More: part of the day, category, energy")
+                )}
               </View>
             </View>
 
-            {panel && <View style={styles.panel}>{renderPanel()}</View>}
-
             {error && <Text style={styles.errorText}>{error}</Text>}
 
-            {showUsuals && (
+            {showUsuals && shownUsuals.length > 0 && (
               <View style={styles.usuals}>
                 <Text style={styles.sectionTitle}>{t("YOUR USUALS · ONE TAP ADDS FOR TODAY")}</Text>
-                {shownUsuals.length === 0 ? (
-                  <Text style={styles.emptyText}>
-                    {t("Tasks you do more than once show up here, ready to add again in one tap.")}
-                  </Text>
-                ) : (
-                  <View style={styles.usualList}>
-                    {shownUsuals.map((rhythm, index) => {
-                      const added = addedKeys.includes(rhythm.key);
-                      const late = isLate(rhythm);
-                      return (
-                        <View key={rhythm.key} style={[styles.usualRow, index > 0 && styles.usualDivider]}>
-                          <TouchableOpacity
-                            style={styles.usualMain}
-                            onPress={() => addUsual(rhythm)}
-                            disabled={saving || added}
-                            accessibilityState={{ disabled: saving || added }}
-                            accessibilityLabel={added ? t("{0}, added for today", rhythm.title) : t("Add {0} for today", rhythm.title)}
-                          >
-                            <View
-                              style={[styles.usualIcon, added && styles.usualIconAdded]}
-                            >
-                              <Ionicons
-                                name={added ? "checkmark" : "add"}
-                                size={18}
-                                color={added ? theme.colors.onAccent : theme.colors.accentDark}
-                              />
-                            </View>
-                            <View style={styles.usualText}>
-                              <Text style={styles.usualTitle} numberOfLines={1}>{rhythm.title}</Text>
-                              <View style={styles.usualMetaRow}>
-                                <View
-                                  style={[styles.usualDot, { backgroundColor: categoryColor(getCategory(rhythm.category), theme) }]}
-                                />
-                                <Text
-                                  style={[styles.usualMeta, late && !added && styles.usualMetaLate, added && styles.usualMetaAdded]}
-                                  numberOfLines={1}
-                                >
-                                  {added ? t("Added for today") : t("{0} min · {1}", rhythm.lastMinutes, describeLastDone(rhythm))}
-                                </Text>
-                              </View>
-                            </View>
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            style={styles.usualAdjust}
-                            onPress={() => adjustUsual(rhythm)}
-                            accessibilityLabel={t("Adjust {0} before adding", rhythm.title)}
-                          >
-                            <Ionicons name="ellipsis-horizontal" size={18} color={theme.colors.textSecondary} />
-                          </TouchableOpacity>
-                        </View>
-                      );
-                    })}
-                  </View>
-                )}
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.usualRow} keyboardShouldPersistTaps="handled">
+                  {shownUsuals.map((rhythm) => {
+                    const added = addedKeys.includes(rhythm.key);
+                    const late = isLate(rhythm);
+                    return (
+                      <TouchableOpacity
+                        key={rhythm.key}
+                        style={[styles.usualChip, added && styles.usualChipAdded, late && !added && styles.usualChipLate]}
+                        onPress={() => addUsual(rhythm)}
+                        onLongPress={() => adjustUsual(rhythm)}
+                        disabled={saving || added}
+                        accessibilityState={{ disabled: saving || added }}
+                        accessibilityLabel={
+                          added
+                            ? t("{0}, added for today", rhythm.title)
+                            : t("Add {0} for today. {1} min, {2}", rhythm.title, rhythm.lastMinutes, describeLastDone(rhythm))
+                        }
+                        accessibilityHint={t("Touch and hold to adjust it before adding")}
+                      >
+                        <View style={[styles.usualDot, { backgroundColor: categoryColor(getCategory(rhythm.category), theme) }]} />
+                        <Text style={[styles.usualChipText, added && styles.usualChipTextAdded]} numberOfLines={1}>
+                          {rhythm.title}
+                        </Text>
+                        <Text style={[styles.usualChipMeta, added && styles.usualChipTextAdded]}>
+                          {added ? "✓" : t("{0} min", rhythm.lastMinutes)}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
               </View>
             )}
           </ScrollView>
@@ -834,20 +823,28 @@ export function AddTaskSheet({
 }
 
 const useStyles = makeStyles((theme) => ({
-  flex: {
+  // The page stays visible and dimmed above; the pop-up sits at the bottom, only as tall as it needs.
+  frame: {
     flex: 1,
+    justifyContent: "flex-end",
   },
   backdrop: {
-    height: "8%",
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
     backgroundColor: theme.colors.overlay,
   },
   sheet: {
-    flex: 1,
+    maxHeight: "92%",
     backgroundColor: theme.colors.background,
     borderTopLeftRadius: theme.radius.xl,
     borderTopRightRadius: theme.radius.xl,
     paddingTop: 10,
-    marginTop: -theme.radius.xl,
+  },
+  scroll: {
+    flexGrow: 0,
   },
   handle: {
     alignSelf: "center",
@@ -865,7 +862,7 @@ const useStyles = makeStyles((theme) => ({
   },
   heading: {
     color: theme.colors.textPrimary,
-    fontSize: 24,
+    fontSize: 20,
     fontFamily: theme.fonts.display,
   },
   headerActions: {
@@ -883,9 +880,9 @@ const useStyles = makeStyles((theme) => ({
   },
   body: {
     paddingHorizontal: 16,
-    paddingTop: theme.spacing.md,
-    paddingBottom: theme.spacing.lg,
-    gap: 14,
+    paddingTop: theme.spacing.sm,
+    paddingBottom: theme.spacing.md,
+    gap: 12,
   },
   card: {
     padding: theme.spacing.md,
@@ -928,57 +925,38 @@ const useStyles = makeStyles((theme) => ({
     fontFamily: theme.fonts.mono,
     fontVariant: ["tabular-nums"],
   },
-  pillRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
-    paddingTop: 10,
+  rows: {
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
   },
-  pill: {
+  rowBlock: {
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  row: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
-    height: 36,
-    maxWidth: "100%",
-    paddingHorizontal: 11,
-    borderRadius: theme.radius.pill,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surfaceAlt,
+    gap: 10,
+    minHeight: 46,
   },
-  pillIconOnly: {
-    width: 36,
-    paddingHorizontal: 0,
-    justifyContent: "center",
-  },
-  pillSet: {
-    borderColor: theme.colors.accentDark,
-    backgroundColor: theme.colors.surface,
-  },
-  pillOpen: {
-    borderColor: theme.colors.accentDark,
-    backgroundColor: theme.colors.accentDark,
-  },
-  pillText: {
+  rowLabel: {
     color: theme.colors.textSecondary,
     fontSize: theme.typography.subhead.fontSize,
-    fontWeight: "600",
+    fontWeight: "500",
+  },
+  rowValue: {
+    flex: 1,
+    textAlign: "right",
+    color: theme.colors.textSecondary,
+    fontSize: theme.typography.subhead.fontSize,
     fontVariant: ["tabular-nums"],
   },
-  pillTextSet: {
-    color: theme.colors.accentDark,
+  rowValueSet: {
+    color: theme.colors.textPrimary,
+    fontWeight: "700",
   },
-  pillTextOpen: {
-    color: theme.colors.onAccent,
-  },
-  panel: {
-    padding: theme.spacing.md,
-    borderRadius: 22,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+  inlinePanel: {
+    paddingBottom: theme.spacing.md,
     gap: 10,
   },
   panelHeader: {
@@ -1091,97 +1069,53 @@ const useStyles = makeStyles((theme) => ({
   },
   usuals: {
     gap: theme.spacing.sm,
-    marginTop: theme.spacing.xs,
   },
   sectionTitle: {
     color: theme.colors.textSecondary,
-    fontSize: theme.typography.eyebrow.fontSize,
-    fontWeight: theme.typography.eyebrow.fontWeight,
-    letterSpacing: theme.typography.eyebrow.letterSpacing,
-    paddingHorizontal: 4,
-  },
-  emptyText: {
-    color: theme.colors.textSecondary,
-    fontSize: theme.typography.subhead.fontSize,
-    lineHeight: 20,
-    padding: theme.spacing.md,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderColor: theme.colors.border,
-  },
-  usualList: {
-    borderRadius: 22,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    overflow: "hidden",
+    fontSize: theme.typography.caption.fontSize,
+    fontWeight: "700",
+    letterSpacing: 0.8,
   },
   usualRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    gap: theme.spacing.sm,
   },
-  usualDivider: {
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-  },
-  usualMain: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    minHeight: 60,
-    paddingLeft: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-  },
-  usualIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: theme.colors.accentDark,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  usualIconAdded: {
-    backgroundColor: theme.colors.accentDark,
-  },
-  usualText: {
-    flex: 1,
-    gap: 2,
-  },
-  usualTitle: {
-    color: theme.colors.textPrimary,
-    fontSize: theme.typography.body.fontSize,
-    fontWeight: "600",
-  },
-  usualMetaRow: {
+  usualChip: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
+    height: 38,
+    maxWidth: 240,
+    paddingHorizontal: 12,
+    borderRadius: theme.radius.pill,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+  },
+  usualChipLate: {
+    borderColor: theme.colors.accentDark,
+  },
+  usualChipAdded: {
+    backgroundColor: theme.colors.accentDark,
+    borderColor: theme.colors.accentDark,
   },
   usualDot: {
-    width: 7,
-    height: 7,
+    width: 8,
+    height: 8,
     borderRadius: 4,
   },
-  usualMeta: {
-    flex: 1,
-    color: theme.colors.textSecondary,
-    fontSize: theme.typography.footnote.fontSize,
-  },
-  usualMetaLate: {
-    color: theme.colors.danger,
-  },
-  usualMetaAdded: {
-    color: theme.colors.quickText,
+  usualChipText: {
+    flexShrink: 1,
+    color: theme.colors.textPrimary,
+    fontSize: theme.typography.subhead.fontSize,
     fontWeight: "600",
   },
-  usualAdjust: {
-    width: 48,
-    height: 60,
-    alignItems: "center",
-    justifyContent: "center",
+  usualChipMeta: {
+    color: theme.colors.textSecondary,
+    fontSize: theme.typography.footnote.fontSize,
+    fontVariant: ["tabular-nums"],
+  },
+  usualChipTextAdded: {
+    color: theme.colors.onAccent,
   },
   footer: {
     paddingHorizontal: 16,

@@ -201,13 +201,7 @@ export const it: Record<string, string> = {
   "Add details": "Aggiungi dettagli",
   "More: part of the day, category, energy": "Altro: momento della giornata, categoria, energia",
   "YOUR USUALS · ONE TAP ADDS FOR TODAY": "LE TUE SOLITE · UN TOCCO LE AGGIUNGE A OGGI",
-  "Tasks you do more than once show up here, ready to add again in one tap.":
-    "Le attività che fai più di una volta compaiono qui, pronte da aggiungere con un tocco.",
   "{0}, added for today": "{0}, aggiunta per oggi",
-  "Add {0} for today": "Aggiungi {0} per oggi",
-  "Added for today": "Aggiunta per oggi",
-  "{0} min · {1}": "{0} min · {1}",
-  "Adjust {0} before adding": "Modifica {0} prima di aggiungerla",
   "Added “{0}”": "Aggiunta “{0}”",
   "Undo adding {0}": "Annulla l'aggiunta di {0}",
   "Save changes": "Salva le modifiche",
@@ -683,4 +677,12 @@ export const it: Record<string, string> = {
   "any time": "in qualsiasi momento",
   "at {0}": "alle {0}",
   "between {0} and {1}": "tra le {0} e le {1}",
+  // New task pop-up rows
+  "Day": "Giorno",
+  "How long": "Durata",
+  "Add": "Aggiungi",
+  "More": "Altro",
+  "Category, energy": "Categoria, energia",
+  "Add {0} for today. {1} min, {2}": "Aggiungi {0} per oggi. {1} min, {2}",
+  "Touch and hold to adjust it before adding": "Tieni premuto per modificarla prima di aggiungerla",
 };
