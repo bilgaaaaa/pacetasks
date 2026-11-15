@@ -103,8 +103,12 @@ struct OnDeviceTask {
     var notes: String?
     @Guide(description: "When the user said it should happen, or nil if they did not say")
     var when: OnDeviceWhen?
-    @Guide(description: "An explicit clock time in 24-hour HH:MM, or nil")
+    @Guide(description: "An exact clock time in 24-hour HH:MM (\"at 7\", \"alle 19\"), or nil")
     var dueTime: String?
+    @Guide(description: "Earliest time, 24-hour HH:MM, for \"after 8\", \"dopo le 20\" or the start of \"between 7 and 9\", \"tra le 19 e le 21\"; nil otherwise")
+    var afterTime: String?
+    @Guide(description: "Latest time, 24-hour HH:MM, for \"before 6\", \"entro le 18\" or the end of a between; nil otherwise")
+    var beforeTime: String?
     var timeOfDay: OnDeviceTimeOfDay?
     @Guide(description: "Realistic minutes the action takes, or nil if you cannot tell")
     var estimatedMinutes: Int?

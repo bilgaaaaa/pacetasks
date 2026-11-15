@@ -85,3 +85,13 @@ describe("toBrainDumpAiResult", () => {
     expect(toBrainDumpAiResult(answer({ tasks: [], notTasks: ["hello"] }))).toBeNull();
   });
 });
+
+describe("toBrainDumpAiResult time windows", () => {
+  it("turns afterTime and beforeTime into a window, unless an exact time was given", () => {
+    const base = { title: "Aperitivo", sourceSpan: "aperitivo tra le 19 e le 21", language: "it", flexible: false, confidence: 90 };
+    const between = toBrainDumpAiResult(JSON.stringify({ tasks: [{ ...base, afterTime: "19:00", beforeTime: "21:00" }], notTasks: [] }));
+    expect(between?.candidates[0]).toMatchObject({ dueTime: null, timeWindow: { start: "19:00", end: "21:00" } });
+    const exact = toBrainDumpAiResult(JSON.stringify({ tasks: [{ ...base, dueTime: "19:30", afterTime: "19:00" }], notTasks: [] }));
+    expect(exact?.candidates[0]).toMatchObject({ dueTime: "19:30", timeWindow: null });
+  });
+});

@@ -79,6 +79,15 @@ export const aiTaskCandidateSchema = z.object({
   notes: z.string().max(2000).nullable(),
   when: dateExpressionSchema.nullable(),
   dueTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable(),
+  // "after 20:00" (start only), "before 18:00" (end only), "19:00–21:00" (both); never with dueTime.
+  // Optional, so results from before windows existed still parse.
+  timeWindow: z
+    .object({
+      start: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable(),
+      end: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable(),
+    })
+    .nullable()
+    .optional(),
   timeOfDay: z.enum(TIMES_OF_DAY).nullable(),
   estimatedDurationMinutes: z.number().int().min(1).max(AI_RESULT_LIMITS.maxDurationMinutes).nullable(),
   priority: z.enum(TASK_PRIORITIES).nullable(),

@@ -73,6 +73,8 @@ Deno.test("propose: returns reviewable drafts dated from the phone's today, with
     timing: "anytime",
     category: "personal",
     scheduled_time: null,
+    window_start: null,
+    window_end: null,
     due_date: "2026-09-30", // "domani" from Tuesday 29 Sep in Rome
     due_kind: "on",
     notes: null,

@@ -7,6 +7,8 @@ import { getCategory } from "../lib/categories";
 import { formatDueLabel } from "../lib/dueLabel";
 import { issueLabel } from "../lib/brainDumpCopy";
 import { EditableCandidate } from "../lib/brainDumpState";
+import { taskTimeOf } from "@domain/taskTime";
+import { taskTimeLabel } from "../lib/taskTimeLabel";
 import { t } from "../i18n";
 
 interface Props {
@@ -29,7 +31,13 @@ export function BrainDumpCandidateRow({ candidate, edit, todayKey, disabled, onT
 
   const details = [
     draft.due_date ? formatDueLabel(draft.due_date, draft.due_kind ?? null, todayKey) : null,
-    draft.scheduled_time ?? null,
+    taskTimeLabel(
+      taskTimeOf({
+        scheduled_time: draft.scheduled_time ?? null,
+        window_start: draft.window_start ?? null,
+        window_end: draft.window_end ?? null,
+      })
+    ),
     draft.estimated_minutes ? t("{0} min", draft.estimated_minutes) : null,
     draft.category ? getCategory(draft.category).label : null,
     draft.flexible ? "maybe" : null,
