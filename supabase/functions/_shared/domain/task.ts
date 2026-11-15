@@ -40,7 +40,9 @@ export interface Task {
   timing: TaskTiming;
   category: string | null; // Category id from src/lib/categories.ts, or null for "No category"
   scheduled_time: string | null; // "HH:MM", 24h — a fixed start time enables a Focus session
-  reminder_minutes_before: number | null; // notify this many minutes before scheduled_time; null = no reminder
+  window_start: string | null; // "HH:MM" — do it after this time; never together with scheduled_time
+  window_end: string | null; // "HH:MM" — be done by this time; never together with scheduled_time
+  reminder_minutes_before: number | null; // notify this many minutes before scheduled_time or window_start; null = no reminder
   status: TaskStatus;
   created_at: string;
   completed_at: string | null;
@@ -65,7 +67,9 @@ export interface TaskDraft {
   timing?: TaskTiming;
   category?: string | null;
   scheduled_time?: string | null;
-  reminder_minutes_before?: number | null; // needs scheduled_time
+  window_start?: string | null;
+  window_end?: string | null;
+  reminder_minutes_before?: number | null; // needs scheduled_time or window_start
   due_date?: string | null;
   due_kind?: DueKind | null;
   notes?: string | null;

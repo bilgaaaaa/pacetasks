@@ -11,6 +11,8 @@ export function makeTask(overrides: Partial<Task> = {}): Task {
     timing: "anytime",
     category: null,
     scheduled_time: null,
+    window_start: null,
+    window_end: null,
     reminder_minutes_before: null,
     status: "pending",
     created_at: "2026-09-28T08:00:00.000Z",

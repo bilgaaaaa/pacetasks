@@ -27,7 +27,7 @@ export interface SiriAnswer {
 export function answerNext(tasks: Task[], moment: SiriMoment): SiriAnswer {
   const [next] = selectOneThingQueue(
     tasks,
-    { todayKey: moment.todayKey, energy: DO_NOW_DEFAULT_ENERGY, currentTiming: moment.currentTiming },
+    { todayKey: moment.todayKey, energy: DO_NOW_DEFAULT_ENERGY, currentTiming: moment.currentTiming, timeOfDay: moment.timeOfDay },
     new Set()
   );
   if (next) return { speech: nextNowSpeech(moment.language, next.title, next.estimated_minutes), taskIds: [next.id] };

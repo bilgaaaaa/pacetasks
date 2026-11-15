@@ -17,12 +17,14 @@ interface Props extends WorkHours {
   value: string; // "HH:MM", 24h
   now: Date; // the phone's clock, for "In 1 hour"
   onChange: (time: string) => void;
+  label?: string; // what the time is for, read out by VoiceOver: "Start time", "After", "Done by"
+  showShortcuts?: boolean; // the one-tap row under the clock; off when two pickers sit together
 }
 
 // A start-time picker that works the same on iPhone and in the web demo: hour
 // and minute fields that can be typed in (any minute) or moved with the arrows
 // (minutes in 5-minute steps), plus one-tap shortcuts around the work day.
-export function TimePicker({ value, now, workStartHour, workEndHour, onChange }: Props) {
+export function TimePicker({ value, now, workStartHour, workEndHour, onChange, label, showShortcuts = true }: Props) {
   const { theme } = useTheme();
   const styles = useStyles();
   const [hour, minute] = value.split(":");
@@ -71,7 +73,7 @@ export function TimePicker({ value, now, workStartHour, workEndHour, onChange }:
 
   return (
     <View style={styles.container}>
-      <View style={styles.clock} accessibilityLabel={t("Start time {0}", value)}>
+      <View style={styles.clock} accessibilityLabel={`${label ?? t("Start time")} ${value}`}>
         {column("hour", t("hour"), () => onChange(shiftTime(value, 60)), () => onChange(shiftTime(value, -60)))}
         <Text style={styles.colon}>:</Text>
         {column(
@@ -81,7 +83,7 @@ export function TimePicker({ value, now, workStartHour, workEndHour, onChange }:
           () => onChange(shiftMinutes(value, -TIME_MINUTE_STEP))
         )}
       </View>
-      <ScrollView
+      {showShortcuts && <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.quickRow}
@@ -102,7 +104,7 @@ export function TimePicker({ value, now, workStartHour, workEndHour, onChange }:
             </TouchableOpacity>
           );
         })}
-      </ScrollView>
+      </ScrollView>}
     </View>
   );
 }

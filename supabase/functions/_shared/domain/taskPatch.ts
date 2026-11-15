@@ -1,4 +1,5 @@
 import type { Task } from "./task.ts";
+import { reminderAnchor } from "./taskTime.ts";
 
 // What the edit sheet can change on a task. One list, so the app, the patch
 // type and the tests agree on what "editing a task" means.
@@ -9,6 +10,8 @@ export const EDITABLE_TASK_FIELDS = [
   "category",
   "energy_level",
   "scheduled_time",
+  "window_start",
+  "window_end",
   "reminder_minutes_before",
   "due_date",
   "due_kind",
@@ -36,12 +39,12 @@ export const PARK_PATCH: TaskPatch = { status: "someday", due_date: null, due_ki
 export const UNPARK_PATCH: TaskPatch = { status: "pending" };
 
 // Only what an edit really changed, so an untouched task is never written. Keeps
-// the database's rules: no reminder without a start time, no due kind without a day.
+// the database's rules: no reminder without a start time or window start, no due kind without a day.
 export function editPatch(task: Task, edit: TaskEdit): TaskPatch {
   const wanted: TaskEdit = {
     ...edit,
     notes: edit.notes?.trim() || null,
-    reminder_minutes_before: edit.scheduled_time ? edit.reminder_minutes_before : null,
+    reminder_minutes_before: reminderAnchor(edit) ? edit.reminder_minutes_before : null,
     due_kind: edit.due_date ? edit.due_kind ?? "on" : null,
   };
   const patch: Record<string, unknown> = {};

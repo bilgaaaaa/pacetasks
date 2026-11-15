@@ -15,6 +15,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { clampEstimatedMinutes, TASK_LIMITS } from "@domain/task";
 import { editPatch } from "@domain/taskPatch";
+import { ANY_TIME, isValidTaskTime, reminderAnchor, TaskTime, TaskTimeKind, taskTimeOf, timeFields } from "@domain/taskTime";
 import { TaskHistoryEntry, findExactMatch, findMatches, normalizeTitle } from "@domain/taskHistory";
 import { toLocalDateKey } from "@domain/dates";
 import { timingForHour } from "@domain/timing";
@@ -33,7 +34,8 @@ import {
   resolveDueChoice,
 } from "../lib/dueOptions";
 import { formatDueLabel } from "../lib/dueLabel";
-import { hourOf, suggestedStartTime } from "../lib/timeOptions";
+import { hourOf, shiftTime, suggestedStartTime } from "../lib/timeOptions";
+import { taskTimeLabel, taskTimeSpoken } from "../lib/taskTimeLabel";
 import {
   REMINDER_PERMISSION_OFF,
   reminderChipLabel,
@@ -56,6 +58,25 @@ const TIMING_VALUES: TaskTiming[] = ["anytime", "before_work", "after_work"];
 // null = no energy set, so "What can I do now?" never hides the task.
 const ENERGY_VALUES: (EnergyLevel | null)[] = [null, ...ENERGY_OPTIONS.map((option) => option.value)];
 const REMINDER_VALUES: (number | null)[] = [null, ...REMINDER_OFFSETS];
+const TIME_KINDS: TaskTimeKind[] = ["any", "at", "after", "before", "between"];
+// A new "between" window starts this long: an evening "19:00–21:00".
+const DEFAULT_WINDOW_MINUTES = 120;
+
+// The time kinds as the chips say them.
+function timeKindLabel(kind: TaskTimeKind): string {
+  switch (kind) {
+    case "any":
+      return t("Anytime");
+    case "at":
+      return t("At");
+    case "after":
+      return t("After");
+    case "before":
+      return t("Before");
+    case "between":
+      return t("Between");
+  }
+}
 
 // The detail panel open under the task card; only one at a time keeps the sheet short.
 type Panel = "when" | "duration" | "time" | "notes" | "more";
@@ -111,7 +132,7 @@ export function AddTaskSheet({
   const [due, setDue] = useState<DueChoice>(DEFAULT_DUE_CHOICE);
   const [category, setCategory] = useState<string | null>(null);
   const [energy, setEnergy] = useState<EnergyLevel | null>(null);
-  const [scheduledTime, setScheduledTime] = useState<string | null>(null);
+  const [time, setTime] = useState<TaskTime>(ANY_TIME);
   const [reminder, setReminder] = useState<number | null>(null);
   const [notes, setNotes] = useState("");
   const [minutesText, setMinutesText] = useState(""); // what is typed in the duration field
@@ -135,7 +156,7 @@ export function AddTaskSheet({
     setDue(DEFAULT_DUE_CHOICE);
     setCategory(null);
     setEnergy(null);
-    setScheduledTime(null);
+    setTime(ANY_TIME);
     setReminder(null);
     setNotes("");
     setMinutesText("");
@@ -151,12 +172,12 @@ export function AddTaskSheet({
     setDue(dueChoiceOfTask(task, toLocalDateKey(new Date())));
     setCategory(task.category);
     setEnergy(task.energy_level);
-    setScheduledTime(task.scheduled_time);
+    setTime(taskTimeOf(task));
     setReminder(task.reminder_minutes_before);
     setNotes(task.notes ?? "");
     setMinutesText("");
     setPanel(task.notes ? "notes" : null);
-    setTouched({ ...EDIT_TOUCHED, time: task.scheduled_time !== null });
+    setTouched({ ...EDIT_TOUCHED, time: taskTimeOf(task).kind !== "any" });
   };
 
   // Every opening starts clean, with nothing left over from last time.
@@ -222,15 +243,47 @@ export function AddTaskSheet({
   };
 
   // A time also places the task before/after work, unless that was set by hand.
-  const applyTime = (time: string) => {
-    setScheduledTime(time);
-    if (!touched.timing) setTiming(timingForHour(hourOf(time), workStartHour, workEndHour));
+  const applyTime = (next: TaskTime) => {
+    setTime(next);
+    const placing = reminderAnchor(timeFields(next)) ?? timeFields(next).window_end;
+    if (!touched.timing && placing) setTiming(timingForHour(hourOf(placing), workStartHour, workEndHour));
+    // A reminder needs a moment to count back from: "before 18:00" has none.
+    if (!reminderAnchor(timeFields(next))) setReminder(null);
   };
 
   // A time picked by hand stays, whatever part of the day is chosen later.
-  const changeTime = (time: string) => {
-    applyTime(time);
+  const changeTime = (next: TaskTime) => {
+    applyTime(next);
     setTouched((t) => ({ ...t, time: true }));
+  };
+
+  // Switching kind keeps the time already chosen where it fits: "at 19:00" becomes "after 19:00".
+  const changeTimeKind = (kind: TaskTimeKind) => {
+    const chosen = timeFields(time);
+    const first = chosen.scheduled_time ?? chosen.window_start ?? chosen.window_end ?? suggestedStartTime(now, timing, work);
+    const hadAnchor = reminderAnchor(chosen) !== null;
+    switch (kind) {
+      case "any":
+        removeTime();
+        return;
+      case "at":
+        changeTime({ kind: "at", time: first });
+        break;
+      case "after":
+        changeTime({ kind: "after", start: first });
+        break;
+      case "before":
+        changeTime({ kind: "before", end: chosen.window_end ?? first });
+        break;
+      case "between": {
+        const end = chosen.window_end && chosen.window_end > first ? chosen.window_end : shiftTime(first, DEFAULT_WINDOW_MINUTES);
+        // Near midnight the end would wrap to the morning; start earlier instead.
+        changeTime(end > first ? { kind: "between", start: first, end } : { kind: "between", start: shiftTime(first, -DEFAULT_WINDOW_MINUTES), end: first });
+        break;
+      }
+    }
+    // The first time a task gets a moment to start from, it also gets the default nudge.
+    if (!hadAnchor && kind !== "before") changeReminder(DEFAULT_REMINDER_MINUTES);
   };
 
   const changeDue = (choice: DueChoice) => {
@@ -242,7 +295,7 @@ export function AddTaskSheet({
   const changeTiming = (value: TaskTiming) => {
     setTiming(value);
     setTouched((t) => ({ ...t, timing: true }));
-    if (scheduledTime && !touched.time) setScheduledTime(suggestedStartTime(now, value, work));
+    if (time.kind === "at" && !touched.time) setTime({ kind: "at", time: suggestedStartTime(now, value, work) });
   };
 
   // Any number of minutes can be typed; the chips are only shortcuts.
@@ -255,7 +308,7 @@ export function AddTaskSheet({
   };
 
   const removeTime = () => {
-    setScheduledTime(null);
+    setTime(ANY_TIME);
     setReminder(null);
     setTouched((t) => ({ ...t, time: false }));
     if (!touched.timing) setTiming("anytime");
@@ -270,12 +323,6 @@ export function AddTaskSheet({
       return false;
     });
     setPermission(granted ? "granted" : await getNotificationPermission());
-  };
-
-  // The first time a task gets a start time it also gets the default nudge.
-  const addTime = () => {
-    applyTime(suggestedStartTime(now, timing, work));
-    changeReminder(DEFAULT_REMINDER_MINUTES);
   };
 
   // Shared by one-tap usuals and the form; returns true when the task was saved.
@@ -336,14 +383,18 @@ export function AddTaskSheet({
 
   const submit = async () => {
     if (!trimmedTitle || saving) return;
+    if (!isValidTaskTime(time)) {
+      setPanel("time");
+      return;
+    }
     const fields = {
       title: trimmedTitle.slice(0, TASK_LIMITS.titleMaxLength),
       estimated_minutes: clampEstimatedMinutes(minutes),
       timing,
       category,
       energy_level: energy,
-      scheduled_time: scheduledTime,
-      reminder_minutes_before: scheduledTime ? reminder : null,
+      ...timeFields(time),
+      reminder_minutes_before: reminderAnchor(timeFields(time)) ? reminder : null,
       notes: notes.trim().slice(0, TASK_LIMITS.notesMaxLength) || null,
       ...resolvedDue,
     };
@@ -377,12 +428,12 @@ export function AddTaskSheet({
 
   // When the reminder would go off for the draft as it stands now.
   const reminderPlan =
-    scheduledTime && reminder !== null
+    reminderAnchor(timeFields(time)) && reminder !== null
       ? taskReminderMoment(
           {
             id: "draft",
             status: "pending",
-            scheduled_time: scheduledTime,
+            ...timeFields(time),
             reminder_minutes_before: reminder,
             due_date: resolvedDue.due_date,
             due_kind: resolvedDue.due_kind,
@@ -474,45 +525,60 @@ export function AddTaskSheet({
             </View>
           </>
         );
-      case "time":
-        return scheduledTime ? (
+      case "time": {
+        const anchor = reminderAnchor(timeFields(time));
+        const picker = (value: string, label: string, onPick: (picked: string) => void, showShortcuts = true) => (
+          <TimePicker
+            value={value}
+            now={now}
+            workStartHour={workStartHour}
+            workEndHour={workEndHour}
+            onChange={onPick}
+            label={label}
+            showShortcuts={showShortcuts}
+          />
+        );
+        return (
           <>
-            <View style={styles.panelHeader}>
-              <Text style={styles.panelTitle}>{t("STARTS AT")}</Text>
-              <TouchableOpacity style={styles.textButton} onPress={removeTime} accessibilityRole="button">
-                <Text style={styles.textButtonText}>{t("Remove time")}</Text>
-              </TouchableOpacity>
-            </View>
-            <TimePicker
-              value={scheduledTime}
-              now={now}
-              workStartHour={workStartHour}
-              workEndHour={workEndHour}
-              onChange={changeTime}
-            />
-            <Text style={[styles.panelTitle, styles.panelTitleSpaced]}>{t("REMIND ME · BEFORE IT STARTS")}</Text>
-            {renderChips(REMINDER_VALUES, reminder, reminderChipLabel, changeReminder)}
-            {reminder !== null && (
+            <Text style={styles.panelTitle}>{t("WHEN IN THE DAY")}</Text>
+            {renderChips(TIME_KINDS, time.kind, timeKindLabel, changeTimeKind)}
+            {time.kind === "any" && (
               <Text style={styles.hint}>
-                {!taskRemindersEnabled
-                  ? t(TASK_REMINDERS_SWITCHED_OFF)
-                  : permission === "denied"
-                  ? t(REMINDER_PERMISSION_OFF)
-                  : reminderHint(reminderPlan, now)}
+                {t("Do it whenever it suits you. Pick a time to get a nudge, or a window like “after 20:00” so it waits until then.")}
               </Text>
             )}
+            {time.kind === "at" && picker(time.time, t("Start time"), (picked) => changeTime({ kind: "at", time: picked }))}
+            {time.kind === "after" && picker(time.start, t("After"), (picked) => changeTime({ kind: "after", start: picked }))}
+            {time.kind === "before" && picker(time.end, t("Done by"), (picked) => changeTime({ kind: "before", end: picked }))}
+            {time.kind === "between" && (
+              <>
+                <Text style={[styles.panelTitle, styles.panelTitleSpaced]}>{t("FROM")}</Text>
+                {picker(time.start, t("From"), (picked) => changeTime({ ...time, start: picked }), false)}
+                <Text style={[styles.panelTitle, styles.panelTitleSpaced]}>{t("TO")}</Text>
+                {picker(time.end, t("To"), (picked) => changeTime({ ...time, end: picked }), false)}
+                {!isValidTaskTime(time) && <Text style={styles.errorText}>{t("The window has to end after it starts.")}</Text>}
+              </>
+            )}
+            {anchor && (
+              <>
+                <Text style={[styles.panelTitle, styles.panelTitleSpaced]}>
+                  {time.kind === "at" ? t("REMIND ME · BEFORE IT STARTS") : t("REMIND ME · BEFORE {0}", anchor)}
+                </Text>
+                {renderChips(REMINDER_VALUES, reminder, reminderChipLabel, changeReminder)}
+                {reminder !== null && (
+                  <Text style={styles.hint}>
+                    {!taskRemindersEnabled
+                      ? t(TASK_REMINDERS_SWITCHED_OFF)
+                      : permission === "denied"
+                      ? t(REMINDER_PERMISSION_OFF)
+                      : reminderHint(reminderPlan, now)}
+                  </Text>
+                )}
+              </>
+            )}
           </>
-        ) : (
-          <View style={styles.emptyPanel}>
-            <Text style={styles.hint}>
-              {t("Give it a start time and PaceTasks can nudge you when it's time. It also unlocks a Focus session.")}
-            </Text>
-            <TouchableOpacity style={styles.secondaryButton} onPress={addTime} accessibilityRole="button">
-              <Ionicons name="time-outline" size={18} color={theme.colors.accentDark} />
-              <Text style={styles.secondaryButtonText}>{t("Set a start time")}</Text>
-            </TouchableOpacity>
-          </View>
         );
+      }
       case "notes":
         return (
           <>
@@ -646,12 +712,12 @@ export function AddTaskSheet({
                 {renderPill(
                   "time",
                   "time-outline",
-                  scheduledTime ?? t("Time"),
-                  scheduledTime !== null,
-                  scheduledTime
-                    ? t("Start time {0}, {1}", scheduledTime, reminderLabel(reminder).toLowerCase())
-                    : t("Start time and reminder"),
-                  scheduledTime && reminder !== null ? "notifications" : undefined
+                  taskTimeLabel(time) ?? t("Time"),
+                  time.kind !== "any",
+                  time.kind !== "any"
+                    ? t("Time: {0}, {1}", taskTimeSpoken(time), reminderLabel(reminder).toLowerCase())
+                    : t("Time and reminder"),
+                  reminderAnchor(timeFields(time)) && reminder !== null ? "notifications" : undefined
                 )}
                 {renderPill(
                   "notes",

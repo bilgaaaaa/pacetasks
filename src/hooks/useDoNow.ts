@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { toLocalDateKey } from "@domain/dates";
 import { DO_NOW_DEFAULT_ENERGY, DO_NOW_DEFAULT_MINUTES, selectDoNowTasks } from "@domain/doNow";
 import { isPendingToday } from "@domain/todayTasks";
-import { getCurrentTiming } from "../lib/deviceContext";
+import { getCurrentTimeOfDay, getCurrentTiming } from "../lib/deviceContext";
 import { EnergyLevel, Task } from "../lib/types";
 
 // Drives "What can I do now?": remembers the time and energy the user picked
@@ -15,10 +15,11 @@ export function useDoNow(tasks: Task[], workStartHour: number, workEndHour: numb
   // "Now" always comes from the phone; recomputed on every render like the Today list.
   const todayKey = toLocalDateKey(new Date());
   const currentTiming = getCurrentTiming(workStartHour, workEndHour);
+  const timeOfDay = getCurrentTimeOfDay();
 
   const selection = useMemo(
-    () => selectDoNowTasks(tasks, { todayKey, availableMinutes, energy, currentTiming }),
-    [tasks, todayKey, availableMinutes, energy, currentTiming]
+    () => selectDoNowTasks(tasks, { todayKey, availableMinutes, energy, currentTiming, timeOfDay }),
+    [tasks, todayKey, availableMinutes, energy, currentTiming, timeOfDay]
   );
   const hasPendingToday = useMemo(
     () => tasks.some((task) => isPendingToday(task, todayKey)),

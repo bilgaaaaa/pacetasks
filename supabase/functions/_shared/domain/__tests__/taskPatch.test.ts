@@ -10,6 +10,8 @@ const TASK: Task = {
   timing: "after_work",
   category: null,
   scheduled_time: "10:00",
+  window_start: null,
+  window_end: null,
   reminder_minutes_before: 10,
   status: "pending",
   created_at: "2026-11-12T08:00:00Z",
@@ -34,6 +36,8 @@ const UNCHANGED: TaskEdit = {
   category: TASK.category,
   energy_level: TASK.energy_level,
   scheduled_time: TASK.scheduled_time,
+  window_start: TASK.window_start,
+  window_end: TASK.window_end,
   reminder_minutes_before: TASK.reminder_minutes_before,
   due_date: TASK.due_date,
   due_kind: TASK.due_kind,
@@ -57,6 +61,18 @@ describe("editPatch", () => {
   it("drops the reminder together with the start time", () => {
     expect(editPatch(TASK, { ...UNCHANGED, scheduled_time: null })).toEqual({
       scheduled_time: null,
+      reminder_minutes_before: null,
+    });
+  });
+
+  it("keeps the reminder when the start time becomes the start of a window", () => {
+    expect(editPatch(TASK, { ...UNCHANGED, scheduled_time: null, window_start: "20:00" })).toEqual({
+      scheduled_time: null,
+      window_start: "20:00",
+    });
+    expect(editPatch(TASK, { ...UNCHANGED, scheduled_time: null, window_end: "18:00" })).toEqual({
+      scheduled_time: null,
+      window_end: "18:00",
       reminder_minutes_before: null,
     });
   });

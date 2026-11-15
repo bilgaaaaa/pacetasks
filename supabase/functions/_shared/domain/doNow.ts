@@ -1,5 +1,6 @@
 import { ENERGY_LEVELS } from "./task.ts";
 import type { EnergyLevel, Task, TaskPriority, TaskTiming } from "./task.ts";
+import { isWindowOpen } from "./taskTime.ts";
 import { isPendingToday } from "./todayTasks.ts";
 
 // "What can I do now?" and One Thing mode: given the time and energy the user
@@ -15,6 +16,7 @@ export interface DoNowRankContext {
   todayKey: string; // the phone's local day, "YYYY-MM-DD"
   energy: EnergyLevel; // the energy the user has right now
   currentTiming: TaskTiming; // where "now" falls in the user's day, from timingForHour
+  timeOfDay?: string; // "HH:MM" now; when given, tasks outside their time window are left out
 }
 
 export interface DoNowContext extends DoNowRankContext {
@@ -38,16 +40,21 @@ function energyRank(level: EnergyLevel): number {
 }
 
 // A task can be started at any moment when it is on today's list and has no
-// fixed start time (those belong to their slot and Focus mode).
-export function isDoableToday(task: Task, todayKey: string): boolean {
-  return isPendingToday(task, todayKey) && task.scheduled_time === null;
+// fixed start time (those belong to their slot and Focus mode). With the time of
+// day, a task whose window ("after 20:00", "before 18:00") is closed waits.
+export function isDoableToday(task: Task, todayKey: string, timeOfDay?: string): boolean {
+  return (
+    isPendingToday(task, todayKey) &&
+    task.scheduled_time === null &&
+    (timeOfDay === undefined || isWindowOpen(task, timeOfDay))
+  );
 }
 
 // A task fits right now when it is doable today, fits the time, and doesn't need
 // more energy than the user has. Tasks with unknown energy are never hidden.
 export function fitsNow(task: Task, context: DoNowContext): boolean {
   return (
-    isDoableToday(task, context.todayKey) &&
+    isDoableToday(task, context.todayKey, context.timeOfDay) &&
     task.estimated_minutes <= context.availableMinutes &&
     (task.energy_level === null || energyRank(task.energy_level) <= energyRank(context.energy))
   );
@@ -61,6 +68,8 @@ type DurationOrder = "longest_first" | "shortest_first";
 
 // Sorts after every real date key, so undated tasks follow the ones with a deadline.
 const NO_DEADLINE_KEY = "9999-12-31";
+// Sorts after every real "HH:MM", so tasks without a window end follow those with one.
+const NO_WINDOW_END_KEY = "99:99";
 
 // True when the task's day has come: due today or overdue.
 function isDueNow(task: Task, todayKey: string): boolean {
@@ -78,6 +87,8 @@ function rankKeys(task: Task, context: DoNowRankContext, durationOrder: Duration
   return [
     dueNow ? 0 : 1,
     dueNow ? (task.due_date as string) : "",
+    // A window that closes today ("before 18:00") goes first, earliest end first.
+    task.window_end ?? NO_WINDOW_END_KEY,
     task.priority === null ? DEFAULT_PRIORITY_RANK : PRIORITY_RANK[task.priority],
     task.due_date ?? NO_DEADLINE_KEY,
     suitsNow ? 0 : 1,
@@ -137,16 +148,16 @@ export function selectDoNowTasks(tasks: Task[], context: DoNowContext): DoNowSel
 }
 
 // One Thing mode: every task that could be started today, best first, minus the
-// ones the user said "not now" to. Time and energy never hide a task here, since
-// the point is a single answer; energy only shapes the order, and among equals
-// the shortest comes first so starting is easy.
+// ones the user said "not now" to and the ones whose time window is closed.
+// Available time and energy never hide a task here, since the point is a single
+// answer; energy only shapes the order, and among equals the shortest comes first.
 export function selectOneThingQueue(
   tasks: Task[],
   context: DoNowRankContext,
   skippedTaskIds: ReadonlySet<string>
 ): Task[] {
   return rankTasks(
-    tasks.filter((task) => isDoableToday(task, context.todayKey) && !skippedTaskIds.has(task.id)),
+    tasks.filter((task) => isDoableToday(task, context.todayKey, context.timeOfDay) && !skippedTaskIds.has(task.id)),
     context,
     "shortest_first"
   );

@@ -14,6 +14,8 @@ import { rangeTimeUpCopy } from "../lib/timerAlertCopy";
 import { isQuickWin } from "@domain/todayTasks";
 import { toLocalDateKey } from "@domain/dates";
 import { t } from "../i18n";
+import { taskTimeOf } from "@domain/taskTime";
+import { taskTimeLabel } from "../lib/taskTimeLabel";
 
 interface Props {
   task: Task;
@@ -114,8 +116,10 @@ export function TaskItem({
     setIsConfirming(false);
   };
 
-  // A timed task shows its minutes here: its pill shows the start time instead.
+  // A timed task shows its minutes here: its pill shows the start time instead. A window ("after 20:00") leads the line.
+  const windowLabel = task.scheduled_time ? null : taskTimeLabel(taskTimeOf(task));
   const baseSubtitle = [
+    windowLabel,
     task.scheduled_time ? t("{0} min", task.estimated_minutes) : null,
     TIMING_LABELS[task.timing],
     category?.label,
