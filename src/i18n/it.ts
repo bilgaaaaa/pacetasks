@@ -280,8 +280,6 @@ export const it: Record<string, string> = {
   "Here's what I understood": "Ecco cosa ho capito",
   "All set": "Tutto pronto",
   "What's on your mind?": "Cosa hai in mente?",
-  "Everything, in English, Italian or Turkish. Type it, or tap Talk and say it.":
-    "Tutto, in inglese, italiano o turco. Scrivilo, oppure tocca Parla e dillo.",
   "Tomorrow call the vet, finish the presentation before Friday, belki spora giderim…":
     "Domani chiamare il veterinario, finire la presentazione entro venerdì, forse vado in palestra…",
   "Reading your brain dump…": "Sto leggendo il tuo Brain Dump…",
@@ -685,4 +683,8 @@ export const it: Record<string, string> = {
   "Category, energy": "Categoria, energia",
   "Add {0} for today. {1} min, {2}": "Aggiungi {0} per oggi. {1} min, {2}",
   "Touch and hold to adjust it before adding": "Tieni premuto per modificarla prima di aggiungerla",
+  // Talk: listening language
+  "Everything, in English or Italian. Type it, or tap Talk and say it.": "Tutto, in italiano o in inglese. Scrivilo, o tocca Parla e dillo.",
+  "Language Talk listens in": "Lingua in cui ascolta Parla",
+  "Listen in {0}": "Ascolta in {0}",
 };

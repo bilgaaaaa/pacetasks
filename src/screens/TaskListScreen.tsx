@@ -169,6 +169,8 @@ export function TaskListScreen({ userId }: Props) {
   });
 
   const history = useMemo(() => buildTaskHistory(tasks), [tasks]);
+  // The user's own task names help Talk hear them (names, places, brands).
+  const taskTitles = useMemo(() => [...history.values()].map((entry) => entry.title), [history]);
   const stats = useMemo(() => computeStats(tasks), [tasks]);
 
   // "Today" is the phone's local calendar day; recomputed on every render so a
@@ -428,6 +430,7 @@ export function TaskListScreen({ userId }: Props) {
         <BrainDumpSheet
           visible={brainDumpOpen}
           listenOnOpen
+          taskTitles={taskTitles}
           state={brainDump.state}
           onChangeText={brainDump.setText}
           onSubmit={brainDump.submit}

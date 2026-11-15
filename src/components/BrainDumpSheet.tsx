@@ -25,6 +25,7 @@ import { t } from "../i18n";
 interface Props {
   visible: boolean;
   listenOnOpen: boolean; // opened from a mic: listening starts right away
+  taskTitles: string[]; // the user's task names, as hints for Talk
   state: BrainDumpState;
   onChangeText: (text: string) => void;
   onSubmit: () => void;
@@ -40,6 +41,7 @@ interface Props {
 export function BrainDumpSheet({
   visible,
   listenOnOpen,
+  taskTitles,
   state,
   onChangeText,
   onSubmit,
@@ -76,7 +78,7 @@ export function BrainDumpSheet({
           {isInputPhase && (
             <View style={styles.flex}>
               <Text style={styles.subtitle}>
-                {t("Everything, in English, Italian or Turkish. Type it, or tap Talk and say it.")}
+                {t("Everything, in English or Italian. Type it, or tap Talk and say it.")}
               </Text>
               <TextInput
                 style={styles.input}
@@ -101,6 +103,7 @@ export function BrainDumpSheet({
                 onChangeText={onChangeText}
                 onListeningChange={setListening}
                 startListening={listenOnOpen && state.text === ""}
+                taskTitles={taskTitles}
               />
               {state.error && <ErrorBanner style={styles.errorBanner} message={state.error.message} />}
               <Button

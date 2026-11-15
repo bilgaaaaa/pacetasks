@@ -30,6 +30,11 @@ export function getLocale(): string {
   return LOCALES[currentLanguage];
 }
 
+// The locale of any of the app's languages, e.g. for listening in a language other than the app's.
+export function localeFor(language: Language): string {
+  return LOCALES[language];
+}
+
 // A phone language code ("it", "en", "tr"…) as one of the app's languages; English when it isn't one.
 export function languageFor(languageCode: string | null | undefined): Language {
   const code = languageCode?.toLowerCase();

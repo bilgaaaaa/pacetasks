@@ -9,12 +9,15 @@ import {
   DictationTranscript,
   EMPTY_TRANSCRIPT,
 } from "../lib/dictation";
-import { getLocale, t } from "../i18n";
+import { getLanguage, Language, localeFor, t } from "../i18n";
+import { dictationHints } from "../lib/dictationLanguage";
+import { loadDictationLanguage, saveDictationLanguage } from "../lib/dictationLanguageStorage";
 
 interface Options {
   text: string; // the field's current text; what is spoken is added after it
   maxLength: number;
   onChangeText: (text: string) => void;
+  taskTitles?: string[]; // the user's own task names, so the recognizer knows their names and places
 }
 
 // Whether this device can listen at all. An iPhone always can: if something is
@@ -32,9 +35,10 @@ function recognitionAvailable(): boolean {
 
 // Speaking instead of typing: turns the microphone on and off and writes what is
 // heard into a text field, after the text that was already there. It listens in
-// the app's language (Settings › Language).
-export function useDictation({ text, maxLength, onChangeText }: Options) {
+// one language at a time: the app's, until the user picks the other one, which is remembered.
+export function useDictation({ text, maxLength, onChangeText, taskTitles = [] }: Options) {
   const [available] = useState(recognitionAvailable);
+  const [language, setLanguageState] = useState<Language>(getLanguage);
   const [listening, setListening] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const baseText = useRef(""); // the field's text when the mic was turned on
@@ -45,6 +49,11 @@ export function useDictation({ text, maxLength, onChangeText }: Options) {
     listeningRef.current = value;
     setListening(value);
   };
+
+  // A language picked earlier on this phone wins over the app's.
+  useEffect(() => {
+    loadDictationLanguage().then((saved) => saved && setLanguageState(saved));
+  }, []);
 
   useSpeechRecognitionEvent("start", () => markListening(true));
   useSpeechRecognitionEvent("end", () => markListening(false));
@@ -60,7 +69,7 @@ export function useDictation({ text, maxLength, onChangeText }: Options) {
     markListening(false);
   });
 
-  const start = useCallback(async () => {
+  const start = useCallback(async (listenIn: Language = language) => {
     setError(null);
     try {
       const permission = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
@@ -71,18 +80,19 @@ export function useDictation({ text, maxLength, onChangeText }: Options) {
       }
       baseText.current = text;
       transcript.current = EMPTY_TRANSCRIPT;
-      console.log("[useDictation] listening in", getLocale());
+      console.log("[useDictation] listening in", localeFor(listenIn));
       ExpoSpeechRecognitionModule.start({
-        lang: getLocale(),
+        lang: localeFor(listenIn),
         interimResults: true,
         continuous: true,
         addsPunctuation: true,
+        contextualStrings: dictationHints(listenIn, taskTitles),
       });
     } catch (e) {
       console.warn("[useDictation] start failed", e);
       setError(dictationErrorMessage("audio-capture"));
     }
-  }, [text]);
+  }, [text, language, taskTitles]);
 
   // Stops and keeps what was heard so far.
   const stop = useCallback(() => {
@@ -90,6 +100,19 @@ export function useDictation({ text, maxLength, onChangeText }: Options) {
   }, []);
 
   const toggle = useCallback(() => (listeningRef.current ? stop() : void start()), [start, stop]);
+
+  // Switching language while listening starts again in the new one, keeping what was already heard.
+  const changeLanguage = useCallback(
+    (next: Language) => {
+      setLanguageState(next);
+      void saveDictationLanguage(next);
+      if (listeningRef.current) {
+        ExpoSpeechRecognitionModule.stop();
+        setTimeout(() => void start(next), 300);
+      }
+    },
+    [start]
+  );
 
   // The mic never stays on after the field that owns it has gone.
   useEffect(
@@ -99,5 +122,5 @@ export function useDictation({ text, maxLength, onChangeText }: Options) {
     []
   );
 
-  return { available, listening, error, start, toggle, stop };
+  return { available, listening, error, language, start, toggle, stop, changeLanguage };
 }
