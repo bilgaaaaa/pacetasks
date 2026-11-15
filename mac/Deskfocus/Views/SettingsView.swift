@@ -84,7 +84,7 @@ private struct CalendarsSettingsView: View {
         }
         .formStyle(.grouped)
         .toggleStyle(ColorfulSwitchToggleStyle())
-        // Reloads when access is granted or a Google account is connected or removed.
+        // Reloads when access is granted, or a Google or PaceTasks account is connected or removed.
         .task(id: accessState) { await loadContainers() }
         .onReceive(NotificationCenter.default.publisher(for: .EKEventStoreChanged)) { _ in
             Task { await loadContainers() }
@@ -97,7 +97,7 @@ private struct CalendarsSettingsView: View {
     }
 
     private var accessState: [Bool] {
-        [model.eventKit.hasCalendarAccess, model.eventKit.hasRemindersAccess, model.googleAuth.isConnected]
+        [model.eventKit.hasCalendarAccess, model.eventKit.hasRemindersAccess, model.googleAuth.isConnected, model.paceAuth.isSignedIn]
     }
 
     @ViewBuilder

@@ -168,13 +168,17 @@ enum FocusController {
 
     // MARK: Focus time
 
-    /// How long to focus, in order: saved progress, the minutes chosen for this task,
+    /// How long to focus, in order: saved progress, the minutes chosen for this task, the task's planned length,
     /// the event's own length (or what is left of it), then the default from Settings.
     static func focusTime(for task: DeskTask, in snapshot: DeskfocusSnapshot, now: Date) -> (remaining: TimeInterval, planned: TimeInterval) {
         if let saved = snapshot.savedProgress[task.id] {
             return (saved.remaining, saved.planned)
         }
         if let minutes = snapshot.taskFocusMinutes[task.id] {
+            let duration = DeskfocusSettings.clampedDuration(minutes: minutes)
+            return (duration, duration)
+        }
+        if let minutes = task.plannedMinutes {
             let duration = DeskfocusSettings.clampedDuration(minutes: minutes)
             return (duration, duration)
         }

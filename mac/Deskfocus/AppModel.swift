@@ -38,7 +38,9 @@ final class AppModel {
         let googleAuth = GoogleAuthService()
         let googleClient = GoogleAPIClient(auth: googleAuth)
         let paceAuth = PaceTasksAuthService()
+        let paceTasks = PaceTasksSource(auth: paceAuth)
         let repository = TaskRepository(sources: [
+            paceTasks,
             AppleCalendarSource(access: eventKit),
             AppleRemindersSource(access: eventKit),
             GoogleCalendarSource(auth: googleAuth, client: googleClient),
@@ -50,7 +52,7 @@ final class AppModel {
         self.paceAuth = paceAuth
         self.repository = repository
         self.agenda = AgendaModel(repository: repository)
-        self.taskCreator = TaskCreationService(eventKit: eventKit, googleAuth: googleAuth, googleClient: googleClient)
+        self.taskCreator = TaskCreationService(eventKit: eventKit, googleAuth: googleAuth, googleClient: googleClient, paceTasks: paceTasks)
         self.focus = FocusCoordinator()
         let snapshot = SharedStore.shared.load()
         self.snapshot = snapshot

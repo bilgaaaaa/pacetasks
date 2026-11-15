@@ -1,0 +1,136 @@
+import Foundation
+
+/// Open PaceTasks tasks of the signed-in account, placed on days the way the iPhone app's Today list does.
+@MainActor
+final class PaceTasksSource: TaskSource {
+    /// Container id of every PaceTasks row; PaceTasks has a single list (same value as the iPhone widget's feed).
+    static let containerIdentifier = "pacetasks"
+
+    let kind: TaskSourceKind = .paceTasks
+    private let auth: PaceTasksAuthService
+
+    /// One row of the tasks table, with only the columns the Mac needs.
+    private struct Row: Decodable {
+        let id: String
+        let title: String
+        let estimatedMinutes: Int
+        /// Fixed start time, "HH:MM" in 24 hours.
+        let scheduledTime: String?
+        /// "YYYY-MM-DD"; nil for undated tasks.
+        let dueDate: String?
+        /// "on" for that day only, "by" for a deadline that can be met any day before it.
+        let dueKind: String?
+    }
+
+    init(auth: PaceTasksAuthService) {
+        self.auth = auth
+    }
+
+    var isAvailable: Bool { auth.isSignedIn }
+
+    func containers() async throws -> [TaskContainer] {
+        [TaskContainer(
+            source: kind,
+            identifier: Self.containerIdentifier,
+            title: "PaceTasks",
+            accountName: auth.email ?? "PaceTasks",
+            colorHex: DeskfocusConstants.paceTasksColorHex
+        )]
+    }
+
+    func fetchTasks(in interval: DateInterval, settings: DeskfocusSettings) async throws -> [DeskTask] {
+        guard settings.isContainerVisible(source: kind, containerIdentifier: Self.containerIdentifier) else { return [] }
+        let data = try await PaceTasksServer.send("GET", path: "rest/v1/tasks", query: [
+            URLQueryItem(name: "select", value: "id,title,estimated_minutes,scheduled_time,due_date,due_kind"),
+            URLQueryItem(name: "status", value: "eq.pending"),
+            URLQueryItem(name: "order", value: "created_at.asc")
+        ], accessToken: try await auth.validAccessToken())
+
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let rows = try decoder.decode([Row].self, from: data)
+        let tasks = rows.compactMap { row -> DeskTask? in
+            let day = Self.day(of: row)
+            // Always placed, like on the iPhone: "Include undated to-dos" is about Reminders and Google Tasks.
+            guard DeskTask.isDue(day, in: interval, includeUndated: true) else { return nil }
+            return task(from: row, day: day)
+        }
+        Log.paceTasks.debug("PaceTasks returned \(tasks.count) of \(rows.count) open tasks")
+        return tasks
+    }
+
+    /// Completes the task in PaceTasks, as the iPhone app does when the real time spent is unknown.
+    func complete(_ task: DeskTask) async throws {
+        _ = try await PaceTasksServer.send("PATCH", path: "rest/v1/tasks", query: [
+            URLQueryItem(name: "id", value: "eq.\(task.sourceIdentifier)")
+        ], json: [
+            "status": "done",
+            "actual_minutes": NSNull(),
+            "completed_at": ISO8601DateFormatter().string(from: .now)
+        ], accessToken: try await auth.validAccessToken(), headers: ["Prefer": "return=minimal"])
+        Log.paceTasks.info("Task completed in PaceTasks")
+    }
+
+    /// Adds a task through the same `create_task` function the iPhone app uses and returns its id.
+    func create(title: String, minutes: Int, dueDay: Date?) async throws -> String {
+        var draft: [String: Any] = [
+            "title": title,
+            "estimated_minutes": min(max(minutes, DeskfocusSettings.minimumFocusMinutes), DeskfocusSettings.maximumFocusMinutes),
+            "source": "app"
+        ]
+        if let dueDay {
+            draft["due_date"] = Self.dayKeyFormatter.string(from: dueDay)
+            draft["due_kind"] = "on"
+        }
+        let data = try await PaceTasksServer.send("POST", path: "rest/v1/rpc/create_task", json: ["draft": draft], accessToken: try await auth.validAccessToken())
+        guard let created = (try JSONSerialization.jsonObject(with: data)) as? [String: Any], let id = created["id"] as? String else {
+            throw PaceTasksServer.ServerError.server(status: 200, code: nil, message: String(localized: "PaceTasks did not confirm the new task. Please try again."))
+        }
+        Log.paceTasks.info("Task created in PaceTasks")
+        return DeskTask.makeId(source: kind, containerIdentifier: Self.containerIdentifier, sourceIdentifier: id)
+    }
+
+    // MARK: Days
+
+    /// The day a task belongs to, nil meaning "today" (undated, a deadline still ahead, or overdue).
+    /// Same rule as `isPendingToday` in supabase/functions/_shared/domain/todayTasks.ts.
+    private static func day(of row: Row) -> Date? {
+        guard row.dueKind != "by", let key = row.dueDate, let date = dayKeyFormatter.date(from: key) else { return nil }
+        return date > Calendar.current.startOfDay(for: .now) ? date : nil
+    }
+
+    private func task(from row: Row, day: Date?) -> DeskTask {
+        let start = row.scheduledTime.flatMap { Self.time(on: day ?? .now, hhmm: $0) }
+        return DeskTask(
+            id: DeskTask.makeId(source: kind, containerIdentifier: Self.containerIdentifier, sourceIdentifier: row.id),
+            source: kind,
+            sourceIdentifier: row.id,
+            containerIdentifier: Self.containerIdentifier,
+            title: DeskTask.displayTitle(row.title),
+            startDate: nil,
+            endDate: nil,
+            dueDate: start ?? day,
+            isAllDay: start == nil,
+            listName: "PaceTasks",
+            colorHex: DeskfocusConstants.paceTasksColorHex,
+            plannedMinutes: row.estimatedMinutes
+        )
+    }
+
+    /// "YYYY-MM-DD" keys in the Mac's calendar, as the iPhone app writes them.
+    private static let dayKeyFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.timeZone = .current
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
+    }()
+
+    /// That day at "HH:MM", or nil when the text is not a valid time.
+    private static func time(on day: Date, hhmm: String) -> Date? {
+        let parts = hhmm.split(separator: ":").compactMap { Int($0) }
+        guard parts.count == 2, (0..<24).contains(parts[0]), (0..<60).contains(parts[1]) else { return nil }
+        return Calendar.current.date(bySettingHour: parts[0], minute: parts[1], second: 0, of: day)
+    }
+}

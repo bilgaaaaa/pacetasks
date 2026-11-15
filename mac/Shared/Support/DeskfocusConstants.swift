@@ -8,4 +8,6 @@ enum DeskfocusConstants {
     static let widgetKind = "DeskfocusWidget"
     /// Darwin notification posted whenever the shared state changes in any process.
     static let stateChangedNotification = "com.bilgaaaaa.deskfocus.stateChanged"
+    /// Color of PaceTasks rows, the app's brand green (same as the iPhone widget).
+    static let paceTasksColorHex = "#3F7446"
 }

@@ -15,6 +15,8 @@ struct DeskTask: Codable, Identifiable, Hashable {
     var isAllDay: Bool
     var listName: String
     var colorHex: String?
+    /// Planned length from the source, e.g. a PaceTasks estimate; used as the focus time.
+    var plannedMinutes: Int? = nil
 
     var isEvent: Bool { source.isEvent }
 

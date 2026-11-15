@@ -117,6 +117,8 @@ struct DeskfocusSettings: Codable, Equatable {
     var focusOffShortcutName: String = ""
     var includeUndatedTasks: Bool = true
     var enabledSources: Set<TaskSourceKind> = Set(TaskSourceKind.allCases)
+    /// Sources these settings were saved with; a source added in a later version starts switched on.
+    var knownSources: Set<TaskSourceKind> = Set(TaskSourceKind.allCases)
     var showDesktopPanel: Bool = true
     var panelLayout: PanelLayout = .day
     var glassTint: GlassTint = .purple
@@ -141,6 +143,10 @@ struct DeskfocusSettings: Codable, Equatable {
         focusOffShortcutName = try container.decodeIfPresent(String.self, forKey: .focusOffShortcutName) ?? defaults.focusOffShortcutName
         includeUndatedTasks = try container.decodeIfPresent(Bool.self, forKey: .includeUndatedTasks) ?? defaults.includeUndatedTasks
         enabledSources = try container.decodeIfPresent(Set<TaskSourceKind>.self, forKey: .enabledSources) ?? defaults.enabledSources
+        // Settings saved before PaceTasks existed knew only the four calendar and to-do sources.
+        let known = try container.decodeIfPresent(Set<TaskSourceKind>.self, forKey: .knownSources)
+            ?? [.appleCalendar, .appleReminders, .googleCalendar, .googleTasks]
+        enabledSources.formUnion(Set(TaskSourceKind.allCases).subtracting(known))
         showDesktopPanel = try container.decodeIfPresent(Bool.self, forKey: .showDesktopPanel) ?? defaults.showDesktopPanel
         panelLayout = (try? container.decodeIfPresent(PanelLayout.self, forKey: .panelLayout)) ?? defaults.panelLayout
         glassTint = (try? container.decodeIfPresent(GlassTint.self, forKey: .glassTint)) ?? defaults.glassTint

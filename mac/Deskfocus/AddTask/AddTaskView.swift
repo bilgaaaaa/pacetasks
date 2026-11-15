@@ -105,6 +105,7 @@ struct AddTaskView: View {
             }
         } else {
             Picker("Add to", selection: $selectedTargetId) {
+                targetSection("PaceTasks", kind: .paceTask)
                 targetSection("Calendars", kind: .event)
                 targetSection("Reminders", kind: .reminder)
                 targetSection("Google Tasks", kind: .googleTask)

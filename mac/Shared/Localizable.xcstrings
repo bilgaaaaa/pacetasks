@@ -2742,6 +2742,16 @@
           }
         }
       }
+    },
+    "PaceTasks did not confirm the new task. Please try again.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PaceTasks non ha confermato la nuova attività. Riprova."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

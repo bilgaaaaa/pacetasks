@@ -6,6 +6,8 @@ enum TaskSourceKind: String, Codable, CaseIterable, Hashable {
     case appleReminders
     case googleCalendar
     case googleTasks
+    /// Tasks of the signed-in PaceTasks account, completed in PaceTasks itself.
+    case paceTasks
 
     /// Calendar events have no "done" state remotely, so they are only checked off locally.
     var isEvent: Bool {
@@ -19,6 +21,7 @@ enum TaskSourceKind: String, Codable, CaseIterable, Hashable {
         case .appleReminders: return String(localized: "Reminders")
         case .googleCalendar: return String(localized: "Google Calendar (direct)")
         case .googleTasks: return String(localized: "Google Tasks")
+        case .paceTasks: return "PaceTasks"
         }
     }
 
