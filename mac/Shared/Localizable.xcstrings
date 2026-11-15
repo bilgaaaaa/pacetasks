@@ -2552,6 +2552,196 @@
           }
         }
       }
+    },
+    "This build can't reach PaceTasks. Add the server address to Config/Secrets.xcconfig.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questa build non raggiunge PaceTasks. Aggiungi l'indirizzo del server in Config/Secrets.xcconfig."
+          }
+        }
+      }
+    },
+    "PaceTasks didn't answer (error %lld). Please try again.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PaceTasks non ha risposto (errore %lld). Riprova."
+          }
+        }
+      }
+    },
+    "Sign in with your PaceTasks account first.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prima accedi con il tuo account PaceTasks."
+          }
+        }
+      }
+    },
+    "No PaceTasks account uses this email. Create one in PaceTasks on your iPhone first.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessun account PaceTasks usa questa email. Creane uno prima in PaceTasks sul tuo iPhone."
+          }
+        }
+      }
+    },
+    "That code is wrong or has expired. Check the newest email, or send a new code.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il codice è sbagliato o scaduto. Controlla l'email più recente o invia un nuovo codice."
+          }
+        }
+      }
+    },
+    "Too many codes were asked for. Wait a minute and try again.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sono stati richiesti troppi codici. Aspetta un minuto e riprova."
+          }
+        }
+      }
+    },
+    "PaceTasks account": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account PaceTasks"
+          }
+        }
+      }
+    },
+    "Not available in this build": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non disponibile in questa build"
+          }
+        }
+      }
+    },
+    "Signed in": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accesso effettuato"
+          }
+        }
+      }
+    },
+    "Sign Out": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esci"
+          }
+        }
+      }
+    },
+    "Code from the email to %@": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Codice dall'email inviata a %@"
+          }
+        }
+      }
+    },
+    "Use Another Email": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usa un'altra email"
+          }
+        }
+      }
+    },
+    "Signing In…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accesso in corso…"
+          }
+        }
+      }
+    },
+    "Sign In": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accedi"
+          }
+        }
+      }
+    },
+    "Email": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Email"
+          }
+        }
+      }
+    },
+    "Sending…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invio in corso…"
+          }
+        }
+      }
+    },
+    "Email Me a Code": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inviami un codice"
+          }
+        }
+      }
+    },
+    "PaceTasks": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PaceTasks"
+          }
+        }
+      }
+    },
+    "Use the same account as PaceTasks on your iPhone, and your tasks show up here and in the DeskFocus widget.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usa lo stesso account di PaceTasks sul tuo iPhone: le tue attività compariranno qui e nel widget DeskFocus."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

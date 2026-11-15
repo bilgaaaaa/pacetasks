@@ -45,6 +45,7 @@ struct CalendarAccountsSection: View {
             Text("If access was denied before, allow PaceTasks in System Settings › Privacy & Security.")
         }
 
+        PaceTasksAccountSection()
         GoogleAccountSection()
     }
 

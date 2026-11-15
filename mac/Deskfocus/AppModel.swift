@@ -10,6 +10,7 @@ import WidgetKit
 final class AppModel {
     let eventKit: EventKitAccess
     let googleAuth: GoogleAuthService
+    let paceAuth: PaceTasksAuthService
     let repository: TaskRepository
     let agenda: AgendaModel
     let taskCreator: TaskCreationService
@@ -36,6 +37,7 @@ final class AppModel {
         let eventKit = EventKitAccess()
         let googleAuth = GoogleAuthService()
         let googleClient = GoogleAPIClient(auth: googleAuth)
+        let paceAuth = PaceTasksAuthService()
         let repository = TaskRepository(sources: [
             AppleCalendarSource(access: eventKit),
             AppleRemindersSource(access: eventKit),
@@ -45,6 +47,7 @@ final class AppModel {
 
         self.eventKit = eventKit
         self.googleAuth = googleAuth
+        self.paceAuth = paceAuth
         self.repository = repository
         self.agenda = AgendaModel(repository: repository)
         self.taskCreator = TaskCreationService(eventKit: eventKit, googleAuth: googleAuth, googleClient: googleClient)
@@ -210,6 +213,18 @@ final class AppModel {
             googleErrorMessage = error.localizedDescription
             Log.google.error("Google sign-in failed: \(error.localizedDescription, privacy: .public)")
         }
+    }
+
+    /// Finishes the PaceTasks sign-in with the emailed code, then loads its tasks.
+    func signInToPaceTasks(email: String, code: String) async throws {
+        try await paceAuth.verify(email: email, code: code)
+        await refresh()
+    }
+
+    /// Signs out of PaceTasks; its tasks leave the list and the widget.
+    func signOutOfPaceTasks() async {
+        await paceAuth.signOut()
+        await refresh()
     }
 
     func disconnectGoogle() async {
