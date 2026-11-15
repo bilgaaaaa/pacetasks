@@ -52,8 +52,8 @@ const passed = await runJourney("today-journey", async ({ page, baseUrl, step, s
     await page.getByLabel("Duration: 5 minutes").click();
     await page.getByRole("radio", { name: "15 min", exact: true }).click();
     await snapshot("Duration panel");
-    await page.getByLabel("Start time and reminder").click();
-    await page.getByText("Set a start time").click();
+    await page.getByLabel("Time and reminder").click();
+    await page.getByRole("radio", { name: "At", exact: true }).click();
     // The hour is typed: any time can be entered, not only the shortcuts.
     await page.getByLabel(/^hour, /).fill("18");
     await page.getByRole("radio", { name: "15 min", exact: true }).last().click();
