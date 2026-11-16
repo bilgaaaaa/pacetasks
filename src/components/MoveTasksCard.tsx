@@ -2,31 +2,42 @@ import React, { useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { RolloverDestination } from "@domain/rollover";
-import { RolloverChoice } from "../hooks/useRollover";
-import { destinationLabel, reasonLabel, ROLLOVER_DESTINATION_OPTIONS, rolloverSummary } from "../lib/rolloverCopy";
+import type { RescueReason } from "@domain/rescue";
+import { destinationLabel, reasonLabel, ROLLOVER_DESTINATION_OPTIONS } from "../lib/rolloverCopy";
 import { makeStyles, useTheme } from "../hooks/useTheme";
+import { Task } from "../lib/types";
 import { Button } from "./Button";
 import { DropdownPill } from "./DropdownPill";
 import { t } from "../i18n";
 
+// One task on the card and where it would go. `reason` is null once the user changed the destination.
+export interface MoveChoice {
+  task: Task;
+  destination: RolloverDestination;
+  reason: RescueReason | null;
+}
+
 interface Props {
-  choices: RolloverChoice[];
+  summary: string; // the collapsed row, e.g. "4 tasks carried over"
+  subtitle: string; // first line of the review
+  icon: React.ComponentProps<typeof Ionicons>["name"];
+  choices: MoveChoice[];
   saving: boolean;
   onChangeDestination: (taskId: string, destination: RolloverDestination) => void;
   onApply: () => void;
   onDismiss: () => void;
 }
 
-// The "I didn't do it" rollover on Today, folded into one slim row ("4 tasks
-// carried over · Review") so it doesn't push the list off the first screen.
-// Review opens every unfinished task with the day PaceTasks would move it to,
-// each changeable. Nothing is saved until "Apply changes"; "Not now" hides it
-// until tomorrow. Purely presentational — the proposals come from useRollover.
-export function RolloverCard({ choices, saving, onChangeDestination, onApply, onDismiss }: Props) {
+// A Today card that moves tasks to other days, folded into one slim row ("4 tasks
+// carried over · Review") so it doesn't push the list off the first screen. Used by
+// the "I didn't do it" rollover and Rescue my day. Review opens each task with the
+// day PaceTasks would move it to, each changeable. Nothing is saved until "Apply
+// changes"; "Not now" hides it until tomorrow. Purely presentational — the
+// proposals come from useRollover and useRescue.
+export function MoveTasksCard({ summary, subtitle, icon, choices, saving, onChangeDestination, onApply, onDismiss }: Props) {
   const { theme } = useTheme();
   const styles = useStyles();
   const [expanded, setExpanded] = useState(false);
-  const summary = rolloverSummary(choices.length);
 
   return (
     <View style={styles.card}>
@@ -38,7 +49,7 @@ export function RolloverCard({ choices, saving, onChangeDestination, onApply, on
         accessibilityLabel={`${summary}. ${expanded ? t("Hide review") : t("Review")}`}
       >
         <View style={styles.icon}>
-          <Ionicons name="return-down-forward" size={16} color={theme.colors.accentDark} />
+          <Ionicons name={icon} size={16} color={theme.colors.accentDark} />
         </View>
         <Text style={styles.summaryText} numberOfLines={2}>
           {summary}
@@ -53,7 +64,7 @@ export function RolloverCard({ choices, saving, onChangeDestination, onApply, on
 
       {expanded && (
         <View style={styles.body}>
-          <Text style={styles.subtitle}>{t("Here's where I'd move them. Change any, then apply.")}</Text>
+          <Text style={styles.subtitle}>{subtitle}</Text>
           <View style={styles.list}>
             {choices.map((choice) => {
               const reason = reasonLabel(choice.reason);

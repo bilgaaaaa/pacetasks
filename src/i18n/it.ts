@@ -484,6 +484,15 @@ export const it: Record<string, string> = {
   "Today is full": "Oggi è pieno",
   "1 task carried over": "1 attività rimandata",
   "{0} tasks carried over": "{0} attività rimandate",
+  // Rescue my day
+  "Its time has passed": "L'orario è passato",
+  "Its window has closed": "La sua fascia oraria è finita",
+  "{0} h": "{0} h",
+  "{0} h {1} min": "{0} h {1} min",
+  "Running behind · 1 task to move": "Sei in ritardo · 1 attività da spostare",
+  "Running behind · {0} tasks to move": "Sei in ritardo · {0} attività da spostare",
+  "{0} left today, {1} planned. Here's what I'd keep and what I'd move. Change any, then apply.":
+    "Oggi restano {0}, ne hai in programma {1}. Ecco cosa terrei e cosa sposterei. Cambia ciò che vuoi, poi applica.",
   SOMEDAY: "PRIMA O POI",
   "Not now, maybe later": "Non ora, magari più tardi",
   "Parked tasks stay out of your day until you bring them back.":

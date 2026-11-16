@@ -1,5 +1,6 @@
 import { normalizeEmail, providerName } from "@domain/account";
 import { requestAppleCredential } from "./appleAuth";
+import { clearRescueDismissedDay } from "./rescueStorage";
 import { clearRolloverDismissedDay } from "./rolloverStorage";
 import { ensureSession, supabase } from "./supabase";
 import { clearKeptResetTasks } from "./weeklyResetStorage";
@@ -230,7 +231,7 @@ export async function deleteAccount(): Promise<void> {
   // The user no longer exists on the server: only this phone's copy of the session is cleared.
   const { error: signOutError } = await supabase.auth.signOut({ scope: "local" });
   if (signOutError) console.warn("[accountApi] clearing the session after deletion failed", signOutError);
-  await Promise.all([clearRolloverDismissedDay(), clearKeptResetTasks()]);
+  await Promise.all([clearRolloverDismissedDay(), clearRescueDismissedDay(), clearKeptResetTasks()]);
   try {
     await ensureSession();
   } catch (e) {

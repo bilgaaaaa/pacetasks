@@ -2,7 +2,7 @@ import { runJourney } from "./harness.mjs";
 
 // One simulated day in PaceTasks, start to finish: finish a task, sort out what
 // was carried over, add tasks for today and for later, let the app pick the next,
-// dump a few thoughts, tidy up (Someday, Weekly Reset), then check Pace, the
+// dump a few thoughts, tidy up (Someday, Weekly Reset), rescue the evening, then check Pace, the
 // themes, an account and dark mode.
 // Elements are found by the same labels and wording a person (or VoiceOver) meets.
 
@@ -15,6 +15,8 @@ const COLOR_THEMES = ["Pastel Night", "Sunny", "Sage"]; // ends on the default, 
 // The demo backend accepts any code except 000000.
 const ACCOUNT = { firstName: "Ada", lastName: "Rossi", email: "ada@example.com", code: "123456" };
 const WEEKLY_RESET_MAX_DECISIONS = 12;
+// Evening of the harness's fixed day, when the rest of the list no longer fits before 22:00.
+const RESCUE_TIME = "2026-10-12T21:30:00+02:00";
 const BRAIN_DUMP_TEXT = "Tomorrow call the vet, domani comprare il pane, cuma günü faturayı öde";
 
 const passed = await runJourney("today-journey", async ({ page, baseUrl, step, snapshot }) => {
@@ -182,6 +184,21 @@ const passed = await runJourney("today-journey", async ({ page, baseUrl, step, s
     const weeklyResetLink = page.getByText(/^Weekly reset · /);
     await page.getByText(/^Someday · \d+ parked$/).scrollIntoViewIfNeeded();
     await weeklyResetLink.waitFor({ state: "detached" });
+  });
+
+  await step("Rescue my day offers to move what no longer fits the evening", async () => {
+    // Late in the day what's left can't all fit. Leaving the app and coming back makes Today read the new time.
+    await page.clock.setSystemTime(new Date(RESCUE_TIME));
+    await page.evaluate(() => {
+      for (const state of ["hidden", "visible"]) {
+        Object.defineProperty(document, "visibilityState", { value: state, configurable: true });
+        document.dispatchEvent(new Event("visibilitychange"));
+      }
+    });
+    await page.getByLabel(/^Running behind · /).click();
+    await snapshot("Rescue my day with proposed moves");
+    await page.getByText("Not now", { exact: true }).click();
+    await page.getByLabel(/^Running behind · /).waitFor({ state: "detached" });
   });
 
   await step("Pace shows today's numbers", async () => {

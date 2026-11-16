@@ -24,6 +24,7 @@ import { useHaptics } from "../hooks/useHaptics";
 import { usePro } from "../hooks/usePro";
 import { useDoNow } from "../hooks/useDoNow";
 import { useOneThing } from "../hooks/useOneThing";
+import { useRescue } from "../hooks/useRescue";
 import { useRollover } from "../hooks/useRollover";
 import { useWeeklyReset } from "../hooks/useWeeklyReset";
 import { DEFAULT_SETTINGS } from "../lib/settingsApi";
@@ -34,6 +35,8 @@ import { upcomingLink } from "../lib/upcomingCopy";
 import { heroMessage, heroStart } from "../lib/heroCopy";
 import { buildWeek, WeekDay } from "../lib/weekStrip";
 import { selectUsuals } from "../lib/taskRhythm";
+import { rescueSubtitle, rescueSummary } from "../lib/rescueCopy";
+import { rolloverSubtitle, rolloverSummary } from "../lib/rolloverCopy";
 import { buildPaceModel, hasLearnedPace } from "@domain/pace";
 import { buildTaskHistory, findExactMatch } from "@domain/taskHistory";
 import { groupUpcomingByDay, selectSomedayTasks, selectTodayTasks, selectUpcomingTasks } from "@domain/todayTasks";
@@ -46,7 +49,7 @@ import { EndOfDayCard } from "../components/EndOfDayCard";
 import { BrainDumpSheet } from "../components/BrainDumpSheet";
 import { DoNowSheet } from "../components/DoNowSheet";
 import { OneThingSheet } from "../components/OneThingSheet";
-import { RolloverCard } from "../components/RolloverCard";
+import { MoveTasksCard } from "../components/MoveTasksCard";
 import { PickNextTaskSheet } from "../components/PickNextTaskSheet";
 import { TodayFilterBar } from "../components/TodayFilterBar";
 import { TodayHero } from "../components/TodayHero";
@@ -128,6 +131,7 @@ export function TaskListScreen({ userId }: Props) {
   const workMinutes = settings?.pomodoro_work_minutes ?? DEFAULT_SETTINGS.pomodoro_work_minutes;
   const oneThing = useOneThing({ tasks, energy: doNow.energy, workStartHour, workEndHour, onComplete: completeTask });
   const rollover = useRollover({ tasks, onApply: updateMany });
+  const rescue = useRescue({ tasks, paceModel, workStartHour, workEndHour, onApply: updateMany });
   const weeklyReset = useWeeklyReset({ tasks, onUpdate: update, onRemove: remove });
   const sheetHandoff = useSheetHandoff();
 
@@ -333,12 +337,28 @@ export function TaskListScreen({ userId }: Props) {
                 />
                 <WeekStrip days={week} onPressDay={(day: WeekDay) => setUpcoming({ open: true, dayKey: day.key })} />
                 {rollover.visible && (
-                  <RolloverCard
+                  <MoveTasksCard
+                    summary={rolloverSummary(rollover.choices.length)}
+                    subtitle={rolloverSubtitle()}
+                    icon="return-down-forward"
                     choices={rollover.choices}
                     saving={rollover.saving}
                     onChangeDestination={rollover.setDestination}
                     onApply={rollover.apply}
                     onDismiss={rollover.dismiss}
+                  />
+                )}
+                {/* Yesterday's leftovers are settled first, then the rest of today. */}
+                {!rollover.visible && rescue.visible && (
+                  <MoveTasksCard
+                    summary={rescueSummary(rescue.moveCount)}
+                    subtitle={rescueSubtitle(rescue.minutesLeft, rescue.minutesPlanned)}
+                    icon="help-buoy-outline"
+                    choices={rescue.choices}
+                    saving={rescue.saving}
+                    onChangeDestination={rescue.setDestination}
+                    onApply={rescue.apply}
+                    onDismiss={rescue.dismiss}
                   />
                 )}
                 <View style={styles.filterRow}>
