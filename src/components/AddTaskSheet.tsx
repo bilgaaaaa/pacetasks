@@ -216,10 +216,10 @@ export function AddTaskSheet({
   const work = { workStartHour, workEndHour };
 
   const applyMemory = (
-    entry: Pick<TaskHistoryEntry, "lastMinutes" | "timing" | "category" | "energyLevel">,
+    entry: Pick<TaskHistoryEntry, "usualMinutes" | "timing" | "category" | "energyLevel">,
     force: boolean
   ) => {
-    if (force || !touched.minutes) setMinutes(entry.lastMinutes);
+    if (force || !touched.minutes) setMinutes(entry.usualMinutes);
     if (force || !touched.timing) setTiming(entry.timing);
     if (force || !touched.category) setCategory(entry.category);
     if (force || !touched.energy) setEnergy(entry.energyLevel);
@@ -342,12 +342,15 @@ export function AddTaskSheet({
     return true;
   };
 
+  // A usual's length is the median of its latest timed runs, the same as typing its name would fill in.
+  const usualMinutesOf = (rhythm: TaskRhythm) => findExactMatch(history, rhythm.title)?.usualMinutes ?? rhythm.lastMinutes;
+
   const addUsual = (rhythm: TaskRhythm) => {
     // An added usual stays added until Undo: a second tap must not create a duplicate.
     if (saving || addedKeys.includes(rhythm.key)) return;
     save({
       title: rhythm.title,
-      estimated_minutes: rhythm.lastMinutes,
+      estimated_minutes: usualMinutesOf(rhythm),
       timing: rhythm.timing,
       category: rhythm.category,
       energy_level: findExactMatch(history, rhythm.title)?.energyLevel ?? null,
@@ -358,7 +361,10 @@ export function AddTaskSheet({
   const adjustUsual = (rhythm: TaskRhythm) => {
     resetDraft();
     setTitle(rhythm.title);
-    applyMemory({ ...rhythm, energyLevel: findExactMatch(history, rhythm.title)?.energyLevel ?? null }, true);
+    applyMemory(
+      { ...rhythm, usualMinutes: usualMinutesOf(rhythm), energyLevel: findExactMatch(history, rhythm.title)?.energyLevel ?? null },
+      true
+    );
     inputRef.current?.focus();
   };
 
@@ -699,7 +705,7 @@ export function AddTaskSheet({
                     >
                       <Ionicons name="time-outline" size={14} color={theme.colors.textTertiary} />
                       <Text style={styles.suggestionText} numberOfLines={1}>{entry.title}</Text>
-                      <Text style={styles.suggestionMeta}>{entry.lastMinutes} min</Text>
+                      <Text style={styles.suggestionMeta}>{t("{0} min", entry.usualMinutes)}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -765,7 +771,7 @@ export function AddTaskSheet({
                         accessibilityLabel={
                           added
                             ? t("{0}, added for today", rhythm.title)
-                            : t("Add {0} for today. {1} min, {2}", rhythm.title, rhythm.lastMinutes, describeLastDone(rhythm))
+                            : t("Add {0} for today. {1} min, {2}", rhythm.title, usualMinutesOf(rhythm), describeLastDone(rhythm))
                         }
                         accessibilityHint={t("Touch and hold to adjust it before adding")}
                       >
@@ -774,7 +780,7 @@ export function AddTaskSheet({
                           {rhythm.title}
                         </Text>
                         <Text style={[styles.usualChipMeta, added && styles.usualChipTextAdded]}>
-                          {added ? "✓" : t("{0} min", rhythm.lastMinutes)}
+                          {added ? "✓" : t("{0} min", usualMinutesOf(rhythm))}
                         </Text>
                       </TouchableOpacity>
                     );

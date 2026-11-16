@@ -23,6 +23,11 @@ export function planSummary(taskCount: number, planMinutes: number, availableMin
   return t("{0} · {1} of {2} min", tasks, planMinutes, availableMinutes);
 }
 
+// Under the plan once learned pace is in use, so a 20-minute task counted as 35 isn't a surprise.
+export function paceNote(): string {
+  return t("Counted at your real pace, from your timers.");
+}
+
 // Shown when nothing fits: says whether the day is clear or what to change.
 export function emptyMessage(hasPendingToday: boolean, availableMinutes: number, energy: EnergyLevel): string {
   if (!hasPendingToday) return t("Nothing left for today. Enjoy the free time.");

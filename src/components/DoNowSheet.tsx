@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { DO_NOW_MINUTE_OPTIONS } from "@domain/doNow";
 import type { DoNowSelection } from "@domain/doNow";
 import { makeStyles, useTheme } from "../hooks/useTheme";
-import { emptyMessage, minutesLabel, planSummary } from "../lib/doNowCopy";
+import { emptyMessage, minutesLabel, paceNote, planSummary } from "../lib/doNowCopy";
 import { ENERGY_OPTIONS } from "../lib/energy";
 import { EnergyLevel, Task } from "../lib/types";
 import { ChoiceChips } from "./ChoiceChips";
@@ -21,6 +21,7 @@ interface Props {
   energy: EnergyLevel;
   selection: DoNowSelection;
   hasPendingToday: boolean;
+  atYourPace: boolean; // lengths come from learned pace; the plan says so
   errorMessage: string | null; // a failed save from the task list, which this sheet covers
   onChangeMinutes: (minutes: number) => void;
   onChangeEnergy: (energy: EnergyLevel) => void;
@@ -38,6 +39,7 @@ export function DoNowSheet({
   energy,
   selection,
   hasPendingToday,
+  atYourPace,
   errorMessage,
   onChangeMinutes,
   onChangeEnergy,
@@ -98,6 +100,7 @@ export function DoNowSheet({
                 <Text style={styles.sectionTitle}>{t("Do these now")}</Text>
                 <Text style={styles.sectionMeta}>{planSummary(plan.length, planMinutes, availableMinutes)}</Text>
               </View>
+              {atYourPace && <Text style={styles.paceNote}>{paceNote()}</Text>}
               {plan.map((task) => (
                 <React.Fragment key={task.id}>{renderTask(task)}</React.Fragment>
               ))}
@@ -187,6 +190,12 @@ const useStyles = makeStyles((theme) => ({
     color: theme.colors.textSecondary,
     fontSize: theme.typography.footnote.fontSize,
     fontWeight: theme.typography.footnote.fontWeight,
+  },
+  paceNote: {
+    color: theme.colors.textTertiary,
+    fontSize: theme.typography.footnote.fontSize,
+    marginTop: -theme.spacing.xs,
+    marginBottom: theme.spacing.xs,
   },
   empty: {
     backgroundColor: theme.colors.surfaceAlt,

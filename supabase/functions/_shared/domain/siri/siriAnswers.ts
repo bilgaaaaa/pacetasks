@@ -1,4 +1,5 @@
-import { DO_NOW_DEFAULT_ENERGY, selectOneThingQueue } from "../doNow.ts";
+import { DO_NOW_DEFAULT_ENERGY, selectOneThingQueue, taskMinutes } from "../doNow.ts";
+import { buildPaceModel } from "../pace.ts";
 import type { Task, TaskTiming } from "../task.ts";
 import { selectTodayTasks } from "../todayTasks.ts";
 import { allClearSpeech, nextAtSpeech, nextNowSpeech, todaySpeech } from "./siriSpeech.ts";
@@ -25,12 +26,15 @@ export interface SiriAnswer {
 // The task Decide for me would pick right now; when only fixed-time tasks are
 // left, the next one by start time (or the earliest, once all have passed).
 export function answerNext(tasks: Task[], moment: SiriMoment): SiriAnswer {
-  const [next] = selectOneThingQueue(
-    tasks,
-    { todayKey: moment.todayKey, energy: DO_NOW_DEFAULT_ENERGY, currentTiming: moment.currentTiming, timeOfDay: moment.timeOfDay },
-    new Set()
-  );
-  if (next) return { speech: nextNowSpeech(moment.language, next.title, next.estimated_minutes), taskIds: [next.id] };
+  const context = {
+    todayKey: moment.todayKey,
+    energy: DO_NOW_DEFAULT_ENERGY,
+    currentTiming: moment.currentTiming,
+    timeOfDay: moment.timeOfDay,
+    paceModel: buildPaceModel(tasks),
+  };
+  const [next] = selectOneThingQueue(tasks, context, new Set());
+  if (next) return { speech: nextNowSpeech(moment.language, next.title, taskMinutes(next, context)), taskIds: [next.id] };
 
   const timed = selectTodayTasks(tasks, moment.todayKey)
     .pending.filter((task) => task.scheduled_time !== null)
@@ -45,7 +49,8 @@ export function answerNext(tasks: Task[], moment: SiriMoment): SiriAnswer {
 // What is left on Today, in the list's own order, with the total time it needs.
 export function answerToday(tasks: Task[], moment: SiriMoment): SiriAnswer {
   const { pending } = selectTodayTasks(tasks, moment.todayKey);
-  const totalMinutes = pending.reduce((sum, task) => sum + task.estimated_minutes, 0);
+  const paceModel = buildPaceModel(tasks);
+  const totalMinutes = pending.reduce((sum, task) => sum + taskMinutes(task, { paceModel }), 0);
   const named = pending.slice(0, TODAY_TITLES_SPOKEN);
   return {
     speech: todaySpeech(moment.language, pending.length, totalMinutes, named.map((task) => task.title)),

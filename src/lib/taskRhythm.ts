@@ -1,4 +1,5 @@
 import { daysBetween, toLocalDateKey } from "@domain/dates";
+import { median } from "@domain/median";
 import { normalizeTitle } from "@domain/taskHistory";
 import { Task, TaskTiming } from "./types";
 import { t } from "../i18n";
@@ -18,12 +19,6 @@ export interface TaskRhythm {
   daysSince: number;
   usualGapDays: number | null; // median days between completions; null until done on 2+ days
   lateByDays: number | null; // days past the usual gap; negative = still ahead of it
-}
-
-function median(values: number[]): number {
-  const sorted = [...values].sort((a, b) => a - b);
-  const mid = Math.floor(sorted.length / 2);
-  return sorted.length % 2 ? sorted[mid] : Math.round((sorted[mid - 1] + sorted[mid]) / 2);
 }
 
 // One rhythm per task name that has been completed at least once.

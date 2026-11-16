@@ -333,6 +333,7 @@ export const it: Record<string, string> = {
     "Ciò che resta per oggi richiede più di {0} oppure ha un'ora di inizio fissa.",
   "Nothing fits {0} at {1}. Try more time or more energy.":
     "Niente entra in {0} con {1}. Prova con più tempo o più energia.",
+  "Counted at your real pace, from your timers.": "Calcolato sul tuo ritmo reale, dai tuoi timer.",
   Low: "Bassa",
   Normal: "Normale",
   High: "Alta",

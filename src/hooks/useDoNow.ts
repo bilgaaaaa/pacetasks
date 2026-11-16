@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { toLocalDateKey } from "@domain/dates";
 import { DO_NOW_DEFAULT_ENERGY, DO_NOW_DEFAULT_MINUTES, selectDoNowTasks } from "@domain/doNow";
+import type { PaceModel } from "@domain/pace";
 import { isPendingToday } from "@domain/todayTasks";
 import { getCurrentTimeOfDay, getCurrentTiming } from "../lib/deviceContext";
 import { EnergyLevel, Task } from "../lib/types";
@@ -8,7 +9,8 @@ import { EnergyLevel, Task } from "../lib/types";
 // Drives "What can I do now?": remembers the time and energy the user picked
 // (for as long as the app stays open) and keeps the suggestions in step with
 // the live task list, so finishing a task immediately brings up the next one.
-export function useDoNow(tasks: Task[], workStartHour: number, workEndHour: number) {
+// Lengths follow the user's learned pace.
+export function useDoNow(tasks: Task[], paceModel: PaceModel, workStartHour: number, workEndHour: number) {
   const [availableMinutes, setAvailableMinutes] = useState<number>(DO_NOW_DEFAULT_MINUTES);
   const [energy, setEnergy] = useState<EnergyLevel>(DO_NOW_DEFAULT_ENERGY);
 
@@ -18,8 +20,8 @@ export function useDoNow(tasks: Task[], workStartHour: number, workEndHour: numb
   const timeOfDay = getCurrentTimeOfDay();
 
   const selection = useMemo(
-    () => selectDoNowTasks(tasks, { todayKey, availableMinutes, energy, currentTiming, timeOfDay }),
-    [tasks, todayKey, availableMinutes, energy, currentTiming, timeOfDay]
+    () => selectDoNowTasks(tasks, { todayKey, availableMinutes, energy, currentTiming, timeOfDay, paceModel }),
+    [tasks, todayKey, availableMinutes, energy, currentTiming, timeOfDay, paceModel]
   );
   const hasPendingToday = useMemo(
     () => tasks.some((task) => isPendingToday(task, todayKey)),

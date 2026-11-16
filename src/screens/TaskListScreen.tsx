@@ -34,6 +34,7 @@ import { upcomingLink } from "../lib/upcomingCopy";
 import { heroMessage, heroStart } from "../lib/heroCopy";
 import { buildWeek, WeekDay } from "../lib/weekStrip";
 import { selectUsuals } from "../lib/taskRhythm";
+import { buildPaceModel, hasLearnedPace } from "@domain/pace";
 import { buildTaskHistory, findExactMatch } from "@domain/taskHistory";
 import { groupUpcomingByDay, selectSomedayTasks, selectTodayTasks, selectUpcomingTasks } from "@domain/todayTasks";
 import { PARK_PATCH, reschedulePatch, UNPARK_PATCH } from "@domain/taskPatch";
@@ -112,7 +113,9 @@ export function TaskListScreen({ userId }: Props) {
   const brainDump = useBrainDump({ onTasksCreated: applyCreated });
   const workStartHour = settings?.work_start_hour ?? DEFAULT_SETTINGS.work_start_hour;
   const workEndHour = settings?.work_end_hour ?? DEFAULT_SETTINGS.work_end_hour;
-  const doNow = useDoNow(tasks, workStartHour, workEndHour);
+  // How long tasks really take this user, from the timers; planning counts these lengths.
+  const paceModel = useMemo(() => buildPaceModel(tasks), [tasks]);
+  const doNow = useDoNow(tasks, paceModel, workStartHour, workEndHour);
   const haptics = useHaptics();
   const pro = usePro();
   // Every way of finishing a task (a row, Focus, One Thing) goes through here, so all of them feel the same:
@@ -454,6 +457,7 @@ export function TaskListScreen({ userId }: Props) {
           energy={doNow.energy}
           selection={doNow.selection}
           hasPendingToday={doNow.hasPendingToday}
+          atYourPace={hasLearnedPace(paceModel)}
           errorMessage={error}
           onChangeMinutes={doNow.setAvailableMinutes}
           onChangeEnergy={doNow.setEnergy}
