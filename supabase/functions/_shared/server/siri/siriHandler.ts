@@ -14,12 +14,12 @@ import type { SiriLanguage } from "../../domain/siri/siriSpeech.ts";
 import { timingForHour } from "../../domain/timing.ts";
 import { ApiError, CORS_HEADERS, jsonResponse } from "../http/apiError.ts";
 import type { BrainDumpRequest } from "../brainDump/brainDumpRequest.ts";
-import type { SiriRepository } from "./siriRepository.ts";
+import type { TaskRepository } from "../tasks/taskRepository.ts";
 import { siriRequestSchema } from "./siriRequest.ts";
 import type { SiriOutcome, SiriReply, SiriRequest } from "./siriRequest.ts";
 
 export interface SiriServiceDeps {
-  repository: SiriRepository;
+  repository: Pick<TaskRepository, "getUserId" | "loadUserContext">;
   runBrainDump: (request: BrainDumpRequest) => Promise<BrainDumpProposal>; // the same use case the app's Brain Dump runs
   now: () => Date;
 }

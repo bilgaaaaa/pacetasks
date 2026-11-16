@@ -15,6 +15,8 @@ final class AppModel {
     let agenda: AgendaModel
     let taskCreator: TaskCreationService
     let focus: FocusCoordinator
+    /// Rescue my day for PaceTasks tasks, shown in the menu bar.
+    let rescue: PaceRescueModel
 
     private(set) var snapshot: DeskfocusSnapshot
     var googleErrorMessage: String?
@@ -54,11 +56,13 @@ final class AppModel {
         self.agenda = AgendaModel(repository: repository)
         self.taskCreator = TaskCreationService(eventKit: eventKit, googleAuth: googleAuth, googleClient: googleClient, paceTasks: paceTasks)
         self.focus = FocusCoordinator()
+        self.rescue = PaceRescueModel(paceTasks: paceTasks)
         let snapshot = SharedStore.shared.load()
         self.snapshot = snapshot
         self.launchLanguage = snapshot.settings.language
         LanguagePreference.apply(snapshot.settings.language)
 
+        rescue.onApplied = { [weak self] in await self?.refresh() }
         startObserving()
         FocusNotifier.requestAuthorization()
         focus.reconcile()
@@ -103,6 +107,7 @@ final class AppModel {
         await repository.refresh()
         reloadSnapshot()
         await agenda.reload()
+        await rescue.refresh()
     }
 
     /// Starts or resumes focus on a task from any day; `minutes` is the length picked for a to-do.

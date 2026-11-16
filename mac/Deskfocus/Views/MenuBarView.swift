@@ -28,6 +28,13 @@ struct MenuBarView: View {
                         .padding(.bottom, 6)
                 }
 
+                // Rescue my day is about the rest of today, so it only shows on Today.
+                if model.agenda.isShowingToday && model.rescue.isVisible {
+                    PaceRescueCard(rescue: model.rescue)
+                        .padding(.horizontal, 12)
+                        .padding(.bottom, 8)
+                }
+
                 taskList(now: context.date)
 
                 Divider()

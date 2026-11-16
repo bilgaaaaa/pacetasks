@@ -81,9 +81,11 @@ enum PaceTasksServer {
         return data
     }
 
-    /// Auth answers {"error_code", "msg"}, REST answers {"code", "message"}; either way keep the code and a readable message.
+    /// Auth answers {"error_code", "msg"}, REST answers {"code", "message"}, PaceTasks' own functions answer
+    /// {"error": {"code", "message"}}; either way keep the code and a readable message.
     private static func serverError(status: Int, body: Data) -> ServerError {
-        let object = (try? JSONSerialization.jsonObject(with: body)) as? [String: Any] ?? [:]
+        let root = (try? JSONSerialization.jsonObject(with: body)) as? [String: Any] ?? [:]
+        let object = root["error"] as? [String: Any] ?? root
         let code = (object["error_code"] ?? object["code"] ?? object["error"]).map { "\($0)" }
         let message = (object["msg"] ?? object["message"] ?? object["error_description"]) as? String
         return .server(status: status, code: code, message: message ?? String(localized: "PaceTasks didn't answer (error \(status)). Please try again."))

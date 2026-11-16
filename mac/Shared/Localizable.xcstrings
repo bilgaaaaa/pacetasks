@@ -2812,6 +2812,206 @@
           }
         }
       }
+    },
+    "Tomorrow": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Domani"
+          }
+        }
+      }
+    },
+    "Weekend": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weekend"
+          }
+        }
+      }
+    },
+    "Someday": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prima o poi"
+          }
+        }
+      }
+    },
+    "Deadline passed": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scadenza passata"
+          }
+        }
+      }
+    },
+    "High priority": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alta priorità"
+          }
+        }
+      }
+    },
+    "Moved several times already": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Già spostata più volte"
+          }
+        }
+      }
+    },
+    "A maybe": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un forse"
+          }
+        }
+      }
+    },
+    "Today is full": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oggi è pieno"
+          }
+        }
+      }
+    },
+    "Its time has passed": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'orario è passato"
+          }
+        }
+      }
+    },
+    "Its window has closed": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La sua fascia oraria è finita"
+          }
+        }
+      }
+    },
+    "Due today": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In scadenza oggi"
+          }
+        }
+      }
+    },
+    "Running behind · 1 task to move": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sei in ritardo · 1 attività da spostare"
+          }
+        }
+      }
+    },
+    "Running behind · %lld tasks to move": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sei in ritardo · %lld attività da spostare"
+          }
+        }
+      }
+    },
+    "%@ left today, %@ planned. Here's what I'd keep and what I'd move. Change any, then apply.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oggi restano %@, ne hai in programma %@. Ecco cosa terrei e cosa sposterei. Cambia ciò che vuoi, poi applica."
+          }
+        }
+      }
+    },
+    "Review": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rivedi"
+          }
+        }
+      }
+    },
+    "Hide": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nascondi"
+          }
+        }
+      }
+    },
+    "Not now": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non ora"
+          }
+        }
+      }
+    },
+    "Apply changes": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Applica le modifiche"
+          }
+        }
+      }
+    },
+    "Move %@ to": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sposta %@ in"
+          }
+        }
+      }
+    },
+    "Couldn't move the tasks. Check your connection and try again.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non è stato possibile spostare le attività. Controlla la connessione e riprova."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

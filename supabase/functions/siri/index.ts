@@ -2,7 +2,7 @@ import { createAIProvider } from "../_shared/server/ai/providerFactory.ts";
 import { runBrainDump } from "../_shared/server/brainDump/brainDumpService.ts";
 import { createSupabaseBrainDumpRepository } from "../_shared/server/brainDump/supabaseBrainDumpRepository.ts";
 import { handleSiriHttp } from "../_shared/server/siri/siriHandler.ts";
-import { createSupabaseSiriRepository } from "../_shared/server/siri/siriRepository.ts";
+import { createSupabaseTaskRepository } from "../_shared/server/tasks/taskRepository.ts";
 
 // POST /functions/v1/siri — what the iPhone's App Intents call: add tasks by voice,
 // "what's next?" and "what's on today?". Answers carry the words Siri says.
@@ -19,7 +19,7 @@ Deno.serve((request) =>
     createDeps: (authorizationHeader) => {
       const connection = { supabaseUrl, supabaseAnonKey, authorizationHeader };
       return {
-        repository: createSupabaseSiriRepository(connection),
+        repository: createSupabaseTaskRepository(connection),
         runBrainDump: (brainDumpRequest) =>
           runBrainDump(brainDumpRequest, {
             repository: createSupabaseBrainDumpRepository(connection),

@@ -96,6 +96,37 @@ final class PaceTasksSource: TaskSource {
         Log.paceTasks.info("Task completed in PaceTasks, focused \(focusedMinutes.map { "\($0)" } ?? "–", privacy: .public) min")
     }
 
+    // MARK: Rescue my day
+
+    /// What still fits the rest of today and what to move, from the `rescue` function (the iPhone app's rules).
+    func rescuePlan() async throws -> PaceRescuePlan {
+        let data = try await PaceTasksServer.send("POST", path: "functions/v1/rescue", json: [
+            "action": "plan",
+            "timeZone": TimeZone.current.identifier
+        ], accessToken: try await auth.validAccessToken())
+        return try Self.rescueDecoder.decode(PaceRescuePlan.self, from: data)
+    }
+
+    /// Moves the tasks the user confirmed; the server computes each change. Returns how many moved.
+    func applyRescue(_ moves: [PaceRescueMove]) async throws -> Int {
+        let body = try JSONSerialization.jsonObject(with: JSONEncoder().encode(moves))
+        let data = try await PaceTasksServer.send("POST", path: "functions/v1/rescue", json: [
+            "action": "apply",
+            "timeZone": TimeZone.current.identifier,
+            "moves": body
+        ], accessToken: try await auth.validAccessToken())
+        let reply = try Self.rescueDecoder.decode(RescueApplyReply.self, from: data)
+        Log.paceTasks.info("Rescue my day moved \(reply.moved) tasks")
+        return reply.moved
+    }
+
+    private struct RescueApplyReply: Decodable {
+        let moved: Int
+    }
+
+    /// The function answers in camelCase, unlike the REST API.
+    private static let rescueDecoder = JSONDecoder()
+
     /// Adds a task through the same `create_task` function the iPhone app uses and returns its id.
     /// A repeating task without a day starts today, as on the iPhone.
     func create(title: String, minutes: Int, dueDay: Date?, repeatRule: PaceRepeatRule?) async throws -> String {
