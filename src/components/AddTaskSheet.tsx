@@ -50,6 +50,8 @@ import {
 } from "../lib/notifications";
 import { TaskRhythm, describeLastDone, isLate } from "../lib/taskRhythm";
 import { DayPicker } from "./DayPicker";
+import type { RepeatRule } from "@domain/repeat";
+import { REPEAT_CHOICES, repeatChoiceLabel, repeatTag } from "../lib/repeatCopy";
 import { TimePicker } from "./TimePicker";
 import { t } from "../i18n";
 
@@ -130,6 +132,7 @@ export function AddTaskSheet({
   const [minutes, setMinutes] = useState<number>(TASK_LIMITS.defaultEstimatedMinutes);
   const [timing, setTiming] = useState<TaskTiming>("anytime");
   const [due, setDue] = useState<DueChoice>(DEFAULT_DUE_CHOICE);
+  const [repeat, setRepeat] = useState<RepeatRule | null>(null);
   const [category, setCategory] = useState<string | null>(null);
   const [energy, setEnergy] = useState<EnergyLevel | null>(null);
   const [time, setTime] = useState<TaskTime>(ANY_TIME);
@@ -154,6 +157,7 @@ export function AddTaskSheet({
     setMinutes(TASK_LIMITS.defaultEstimatedMinutes);
     setTiming("anytime");
     setDue(DEFAULT_DUE_CHOICE);
+    setRepeat(null);
     setCategory(null);
     setEnergy(null);
     setTime(ANY_TIME);
@@ -170,6 +174,7 @@ export function AddTaskSheet({
     setMinutes(task.estimated_minutes);
     setTiming(task.timing);
     setDue(dueChoiceOfTask(task, toLocalDateKey(new Date())));
+    setRepeat(task.repeat_rule);
     setCategory(task.category);
     setEnergy(task.energy_level);
     setTime(taskTimeOf(task));
@@ -205,14 +210,19 @@ export function AddTaskSheet({
   const exactMatch = trimmedTitle ? findExactMatch(history, title) : undefined;
   const suggestions = trimmedTitle && !exactMatch ? findMatches(history, title, 3) : [];
   // An edited task keeps its exact day and deadline until another one is picked.
-  const resolvedDue =
+  const pickedDue =
     editing && !touched.due
       ? { due_date: editing.due_date, due_kind: editing.due_kind }
       : resolveDueChoice(due, todayKey);
-  const dueLabel =
+  // A repeating task happens on days: without one picked it starts today, and a deadline becomes its day.
+  const resolvedDue = repeat ? { due_date: pickedDue.due_date ?? todayKey, due_kind: "on" as const } : pickedDue;
+  const pickedDueLabel =
     editing && !touched.due && editing.due_date
       ? formatDueLabel(editing.due_date, editing.due_kind, todayKey)
       : dueChoiceLabel(due, todayKey);
+  const dueLabel = repeat
+    ? `${pickedDue.due_date ? pickedDueLabel : formatDueLabel(todayKey, "on", todayKey)} · ${repeatTag(repeat)}`
+    : pickedDueLabel;
   const work = { workStartHour, workEndHour };
 
   const applyMemory = (
@@ -289,6 +299,12 @@ export function AddTaskSheet({
   const changeDue = (choice: DueChoice) => {
     setDue(choice);
     setTouched((t) => ({ ...t, due: true }));
+  };
+
+  // A repeat happens on days, so a task without one starts today and the picker shows it.
+  const changeRepeat = (rule: RepeatRule | null) => {
+    setRepeat(rule);
+    if (rule && pickedDue.due_date === null) changeDue({ kind: "day", dateKey: todayKey });
   };
 
   // A part of the day picked by hand moves a suggested start time into it.
@@ -403,6 +419,7 @@ export function AddTaskSheet({
       reminder_minutes_before: reminderAnchor(timeFields(time)) ? reminder : null,
       notes: notes.trim().slice(0, TASK_LIMITS.notesMaxLength) || null,
       ...resolvedDue,
+      repeat_rule: repeat,
     };
     if (editing) {
       await saveEdit(editing, editPatch(editing, fields));
@@ -508,7 +525,13 @@ export function AddTaskSheet({
   const renderPanel = () => {
     switch (panel) {
       case "when":
-        return <DayPicker todayKey={todayKey} value={due} onChange={changeDue} />;
+        return (
+          <>
+            <DayPicker todayKey={todayKey} value={due} onChange={changeDue} />
+            <Text style={styles.panelTitle}>{t("REPEAT")}</Text>
+            {renderChips(REPEAT_CHOICES, repeat, repeatChoiceLabel, changeRepeat)}
+          </>
+        );
       case "duration":
         return (
           <>

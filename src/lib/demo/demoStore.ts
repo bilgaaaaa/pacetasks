@@ -1,6 +1,7 @@
 import { TASK_LIMITS } from "@domain/task";
 import type { Task, TaskDraft, TaskTiming } from "@domain/task";
 import { addDays, toLocalDateKey } from "@domain/dates";
+import { nextOccurrenceDay } from "@domain/repeat";
 
 // In-memory tables behind demo mode. Shapes and defaults mirror supabase/migrations
 // so demo data behaves like the real database; it resets on every reload.
@@ -88,6 +89,33 @@ export function createDemoTask(draft: TaskDraft): Task {
   return { ...task };
 }
 
+// Mirror of public.complete_task: completes once and, for a repeating task, adds the next occurrence.
+export function completeDemoTask(taskId: string, actualMinutes: number | null, localDay: string): { completed: Task; next: Task | null } {
+  const task = demoTables.tasks.find((row) => row.id === taskId) as Task | undefined;
+  if (!task) throw new Error("complete_task: task not found");
+  if (task.status === "done") return { completed: { ...task }, next: null };
+
+  Object.assign(task, { status: "done", actual_minutes: actualMinutes, completed_at: new Date().toISOString() });
+  if (!task.repeat_rule || !task.repeat_anchor) return { completed: { ...task }, next: null };
+
+  const { id, created_at, completed_at, actual_minutes, status, postponed_count, ...copied } = task;
+  const next: Task = {
+    ...copied,
+    id: newDemoId(),
+    created_at: new Date().toISOString(),
+    completed_at: null,
+    actual_minutes: null,
+    status: "pending",
+    postponed_count: 0,
+    ai_confidence: null,
+    due_date: nextOccurrenceDay({ repeat_rule: task.repeat_rule, repeat_anchor: task.repeat_anchor, due_date: task.due_date }, localDay),
+    due_kind: "on",
+    repeat_source_id: id,
+  };
+  demoTables.tasks.push(next);
+  return { completed: { ...task }, next: { ...next } };
+}
+
 function taskFromDraft(draft: TaskDraft): Task {
   const tags = [...new Set((draft.tags ?? []).map((t) => t.trim()).filter(Boolean))];
   return {
@@ -116,6 +144,9 @@ function taskFromDraft(draft: TaskDraft): Task {
     source_language: draft.source_language ?? null,
     ai_confidence: draft.ai_confidence ?? null,
     postponed_count: 0,
+    repeat_rule: draft.repeat_rule ?? null,
+    repeat_anchor: draft.repeat_rule ? draft.due_date ?? toLocalDateKey(new Date()) : null,
+    repeat_source_id: null,
   };
 }
 

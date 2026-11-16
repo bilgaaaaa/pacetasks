@@ -68,6 +68,9 @@ export class InMemoryBrainDumpRepository implements BrainDumpRepository {
       source_language: draft.source_language ?? null,
       ai_confidence: draft.ai_confidence ?? null,
       postponed_count: 0,
+      repeat_rule: draft.repeat_rule ?? null,
+      repeat_anchor: draft.repeat_rule ? draft.due_date ?? "2026-09-28" : null,
+      repeat_source_id: null,
     };
   }
 }

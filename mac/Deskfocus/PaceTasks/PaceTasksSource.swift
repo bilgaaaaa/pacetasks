@@ -87,26 +87,31 @@ final class PaceTasksSource: TaskSource {
 
     /// Completes the task in PaceTasks, as the iPhone app does when the real time spent is unknown.
     func complete(_ task: DeskTask) async throws {
-        _ = try await PaceTasksServer.send("PATCH", path: "rest/v1/tasks", query: [
-            URLQueryItem(name: "id", value: "eq.\(task.sourceIdentifier)")
-        ], json: [
-            "status": "done",
+        // complete_task is the one completion path shared with the iPhone: it also adds a repeating task's next occurrence.
+        _ = try await PaceTasksServer.send("POST", path: "rest/v1/rpc/complete_task", json: [
+            "task_id": task.sourceIdentifier,
             "actual_minutes": NSNull(),
-            "completed_at": ISO8601DateFormatter().string(from: .now)
-        ], accessToken: try await auth.validAccessToken(), headers: ["Prefer": "return=minimal"])
+            "local_day": Self.dayKeyFormatter.string(from: .now)
+        ], accessToken: try await auth.validAccessToken())
         Log.paceTasks.info("Task completed in PaceTasks")
     }
 
     /// Adds a task through the same `create_task` function the iPhone app uses and returns its id.
-    func create(title: String, minutes: Int, dueDay: Date?) async throws -> String {
+    /// A repeating task without a day starts today, as on the iPhone.
+    func create(title: String, minutes: Int, dueDay: Date?, repeatRule: PaceRepeatRule?) async throws -> String {
         var draft: [String: Any] = [
             "title": title,
             "estimated_minutes": min(max(minutes, DeskfocusSettings.minimumFocusMinutes), DeskfocusSettings.maximumFocusMinutes),
             "source": "app"
         ]
-        if let dueDay {
-            draft["due_date"] = Self.dayKeyFormatter.string(from: dueDay)
+        var day = dueDay
+        if day == nil, repeatRule != nil { day = .now }
+        if let day {
+            draft["due_date"] = Self.dayKeyFormatter.string(from: day)
             draft["due_kind"] = "on"
+        }
+        if let repeatRule {
+            draft["repeat_rule"] = repeatRule.rawValue
         }
         let data = try await PaceTasksServer.send("POST", path: "rest/v1/rpc/create_task", json: ["draft": draft], accessToken: try await auth.validAccessToken())
         guard let created = (try JSONSerialization.jsonObject(with: data)) as? [String: Any], let id = created["id"] as? String else {

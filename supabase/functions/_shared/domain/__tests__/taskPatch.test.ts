@@ -27,6 +27,9 @@ const TASK: Task = {
   source_language: null,
   ai_confidence: null,
   postponed_count: 0,
+  repeat_rule: null,
+  repeat_anchor: null,
+  repeat_source_id: null,
 };
 
 const UNCHANGED: TaskEdit = {
@@ -42,6 +45,7 @@ const UNCHANGED: TaskEdit = {
   due_date: TASK.due_date,
   due_kind: TASK.due_kind,
   notes: TASK.notes,
+  repeat_rule: TASK.repeat_rule,
 };
 
 describe("editPatch", () => {
@@ -81,5 +85,29 @@ describe("editPatch", () => {
     expect(editPatch(TASK, { ...UNCHANGED, due_date: "2026-11-13" })).toEqual({ due_date: "2026-11-13", due_kind: "on" });
     const dated: Task = { ...TASK, due_date: "2026-11-13", due_kind: "by" };
     expect(editPatch(dated, { ...UNCHANGED, due_date: null, due_kind: "by" })).toEqual({ due_date: null, due_kind: null });
+  });
+});
+
+describe("editPatch and repeats", () => {
+  const dated = { ...UNCHANGED, due_date: "2026-11-16", due_kind: "on" as const };
+
+  it("anchors a new repeat on the task's day", () => {
+    expect(editPatch({ ...TASK, due_date: "2026-11-16", due_kind: "on" }, { ...dated, repeat_rule: "weekly" })).toEqual({
+      repeat_rule: "weekly",
+      repeat_anchor: "2026-11-16",
+    });
+  });
+
+  it("moves the anchor when the day is changed in the sheet, so it repeats on the new weekday", () => {
+    const weekly: Task = { ...TASK, due_date: "2026-11-16", due_kind: "on", repeat_rule: "weekly", repeat_anchor: "2026-11-16" };
+    expect(editPatch(weekly, { ...dated, repeat_rule: "weekly", due_date: "2026-11-17" })).toEqual({
+      due_date: "2026-11-17",
+      repeat_anchor: "2026-11-17",
+    });
+  });
+
+  it("clears the anchor when the repeat is turned off", () => {
+    const daily: Task = { ...TASK, due_date: "2026-11-16", due_kind: "on", repeat_rule: "daily", repeat_anchor: "2026-11-16" };
+    expect(editPatch(daily, { ...dated, repeat_rule: null })).toEqual({ repeat_rule: null, repeat_anchor: null });
   });
 });

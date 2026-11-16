@@ -15,6 +15,7 @@ import { isQuickWin } from "@domain/todayTasks";
 import { toLocalDateKey } from "@domain/dates";
 import { t } from "../i18n";
 import { taskTimeOf } from "@domain/taskTime";
+import { repeatTag } from "../lib/repeatCopy";
 import { taskTimeLabel } from "../lib/taskTimeLabel";
 
 interface Props {
@@ -129,7 +130,13 @@ export function TaskItem({
   // Due day and "maybe" come first when set (e.g. from Brain Dump): "by Fri · maybe · Anytime · Work".
   const dueLabel =
     task.due_date && !isDone ? formatDueLabel(task.due_date, task.due_kind, toLocalDateKey(new Date())) : null;
-  const restSubtitle = [task.flexible && !isDone ? "maybe" : null, baseSubtitle].filter(Boolean).join(" · ");
+  const restSubtitle = [
+    task.repeat_rule && !isDone ? repeatTag(task.repeat_rule) : null,
+    task.flexible && !isDone ? "maybe" : null,
+    baseSubtitle,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   const showMenu = () => {
     Alert.alert(task.title, task.notes ?? undefined, [

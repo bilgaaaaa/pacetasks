@@ -36,6 +36,8 @@ struct NewTaskDraft {
     let hasDueDate: Bool
     /// Focus time remembered for a to-do.
     let focusMinutes: Int
+    /// How a PaceTasks task repeats; ignored by the other sources.
+    let repeatRule: PaceRepeatRule?
 }
 
 /// Lists writable calendars and lists, and creates events and to-dos in them.
@@ -106,7 +108,13 @@ final class TaskCreationService {
         case .event: return try createEvent(draft)
         case .reminder: return try createReminder(draft)
         case .googleTask: return try await createGoogleTask(draft)
-        case .paceTask: return try await paceTasks.create(title: draft.title, minutes: draft.focusMinutes, dueDay: draft.hasDueDate ? draft.date : nil)
+        case .paceTask:
+            return try await paceTasks.create(
+                title: draft.title,
+                minutes: draft.focusMinutes,
+                dueDay: draft.hasDueDate ? draft.date : nil,
+                repeatRule: draft.repeatRule
+            )
         }
     }
 

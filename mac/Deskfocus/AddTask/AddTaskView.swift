@@ -13,6 +13,7 @@ struct AddTaskView: View {
     @State private var eventMinutes = 60
     @State private var hasDueDate = true
     @State private var focusMinutes: Int
+    @State private var repeatRule: PaceRepeatRule?
     @State private var isLoadingTargets = true
     @State private var isSaving = false
     @State private var errorMessage: String?
@@ -70,6 +71,15 @@ struct AddTaskView: View {
                     }
                     Stepper(value: $focusMinutes, in: DeskfocusSettings.minimumFocusMinutes...DeskfocusSettings.maximumFocusMinutes, step: 5) {
                         LabeledContent("Focus time", value: DeskTaskFormatter.duration(minutes: focusMinutes))
+                    }
+                    // Only PaceTasks repeats tasks; Reminders and Google Tasks keep their own repeat settings.
+                    if target.kind == .paceTask {
+                        Picker("Repeat", selection: $repeatRule) {
+                            Text("Doesn't repeat").tag(PaceRepeatRule?.none)
+                            ForEach(PaceRepeatRule.allCases) { rule in
+                                Text(rule.label).tag(PaceRepeatRule?.some(rule))
+                            }
+                        }
                     }
                 }
             }
@@ -142,7 +152,8 @@ struct AddTaskView: View {
             date: date,
             eventMinutes: eventMinutes,
             hasDueDate: hasDueDate,
-            focusMinutes: focusMinutes
+            focusMinutes: focusMinutes,
+            repeatRule: target.kind == .paceTask ? repeatRule : nil
         )
         isSaving = true
         errorMessage = nil

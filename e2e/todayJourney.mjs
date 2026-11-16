@@ -15,6 +15,7 @@ const COLOR_THEMES = ["Pastel Night", "Sunny", "Sage"]; // ends on the default, 
 // The demo backend accepts any code except 000000.
 const ACCOUNT = { firstName: "Ada", lastName: "Rossi", email: "ada@example.com", code: "123456" };
 const WEEKLY_RESET_MAX_DECISIONS = 12;
+const REPEAT_TASK_TITLE = "Stretch for ten minutes";
 // Evening of the harness's fixed day, when the rest of the list no longer fits before 22:00.
 const RESCUE_TIME = "2026-10-12T21:30:00+02:00";
 const BRAIN_DUMP_TEXT = "Tomorrow call the vet, domani comprare il pane, cuma günü faturayı öde";
@@ -81,6 +82,26 @@ const passed = await runJourney("today-journey", async ({ page, baseUrl, step, s
     // Set for Thursday, so Today does not list it.
     await page.getByText(/^Upcoming · \d+$/).waitFor();
     await page.getByLabel(`Complete ${LATER_TASK_TITLE}`).waitFor({ state: "detached" });
+  });
+
+  await step("A daily task comes back tomorrow once it's done", async () => {
+    await page.getByLabel("Add a task").click();
+    await page.getByPlaceholder("What needs doing?").fill(REPEAT_TASK_TITLE);
+    await page.getByLabel("Day: Any day").click();
+    await page.getByRole("radio", { name: "Every day", exact: true }).click();
+    await page.getByLabel("Day: Today · ↻ Every day").waitFor();
+    await snapshot("Repeat set to every day");
+    await page.getByText(`Add “${REPEAT_TASK_TITLE}”`).click();
+    await page.getByLabel("Close", { exact: true }).click();
+    await page.getByText(/↻ Every day/).first().waitFor();
+    await page.getByLabel(`Complete ${REPEAT_TASK_TITLE}`).click();
+    await page.getByText("Done", { exact: true }).first().click();
+    // Done for today; tomorrow's occurrence waits in Upcoming.
+    await page.getByLabel(`Complete ${REPEAT_TASK_TITLE}`).waitFor({ state: "detached" });
+    await page.getByText(/^Upcoming · \d+$/).click();
+    await page.getByLabel(`Move to Today: ${REPEAT_TASK_TITLE}`).waitFor();
+    await page.getByLabel("Close").last().click();
+    await page.getByText("UPCOMING", { exact: true }).waitFor({ state: "detached" });
   });
 
   await step("Upcoming lists it under its day", async () => {

@@ -16,6 +16,7 @@ export const EDITABLE_TASK_FIELDS = [
   "due_date",
   "due_kind",
   "notes",
+  "repeat_rule",
 ] as const;
 
 // A task as it should be after an edit: every editable field, changed or not.
@@ -23,7 +24,7 @@ export type TaskEdit = Pick<Task, (typeof EDITABLE_TASK_FIELDS)[number]>;
 
 // The fields a task can change after it exists, other than being completed.
 // Every caller (app, rollover, Weekly Reset, Siri) moves, parks and edits tasks through these.
-export type TaskPatch = Partial<Pick<Task, "status"> & TaskEdit>;
+export type TaskPatch = Partial<Pick<Task, "status" | "repeat_anchor"> & TaskEdit>;
 
 // One task's change, for applying several at once (rollover, Weekly Reset).
 export interface TaskChange {
@@ -39,7 +40,8 @@ export const PARK_PATCH: TaskPatch = { status: "someday", due_date: null, due_ki
 export const UNPARK_PATCH: TaskPatch = { status: "pending" };
 
 // Only what an edit really changed, so an untouched task is never written. Keeps
-// the database's rules: no reminder without a start time or window start, no due kind without a day.
+// the database's rules: no reminder without a start time or window start, no due kind without a day,
+// and a repeat counted from the day picked in the sheet (moving it to Tuesday makes it repeat on Tuesdays).
 export function editPatch(task: Task, edit: TaskEdit): TaskPatch {
   const wanted: TaskEdit = {
     ...edit,
@@ -51,6 +53,8 @@ export function editPatch(task: Task, edit: TaskEdit): TaskPatch {
   for (const field of EDITABLE_TASK_FIELDS) {
     if (task[field] !== wanted[field]) patch[field] = wanted[field];
   }
+  const anchor = wanted.repeat_rule ? wanted.due_date ?? task.repeat_anchor : null;
+  if (anchor !== task.repeat_anchor) patch.repeat_anchor = anchor;
   return patch as TaskPatch;
 }
 

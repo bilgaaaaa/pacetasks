@@ -2752,6 +2752,66 @@
           }
         }
       }
+    },
+    "Repeat": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ripeti"
+          }
+        }
+      }
+    },
+    "Doesn't repeat": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non si ripete"
+          }
+        }
+      }
+    },
+    "Every day": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ogni giorno"
+          }
+        }
+      }
+    },
+    "Weekdays": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giorni feriali"
+          }
+        }
+      }
+    },
+    "Every week": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ogni settimana"
+          }
+        }
+      }
+    },
+    "Every month": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ogni mese"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

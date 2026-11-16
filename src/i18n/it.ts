@@ -484,6 +484,13 @@ export const it: Record<string, string> = {
   "Today is full": "Oggi è pieno",
   "1 task carried over": "1 attività rimandata",
   "{0} tasks carried over": "{0} attività rimandate",
+  // Repeating tasks
+  "Every day": "Ogni giorno",
+  Weekdays: "Giorni feriali",
+  "Every week": "Ogni settimana",
+  "Every month": "Ogni mese",
+  "Doesn't repeat": "Non si ripete",
+  REPEAT: "RIPETI",
   // Rescue my day
   "Its time has passed": "L'orario è passato",
   "Its window has closed": "La sua fascia oraria è finita",

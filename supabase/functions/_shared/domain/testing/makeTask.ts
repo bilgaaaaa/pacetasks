@@ -28,6 +28,9 @@ export function makeTask(overrides: Partial<Task> = {}): Task {
     source_language: null,
     ai_confidence: null,
     postponed_count: 0,
+    repeat_rule: null,
+    repeat_anchor: null,
+    repeat_source_id: null,
     ...overrides,
   };
 }

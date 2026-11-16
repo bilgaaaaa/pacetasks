@@ -1,3 +1,5 @@
+import type { RepeatRule } from "./repeat.ts";
+
 // PaceTasks task model shared by the app and Edge Functions. Must stay in sync
 // with the tasks table and its check constraints in supabase/migrations.
 
@@ -14,6 +16,7 @@ export type TaskPriority = (typeof TASK_PRIORITIES)[number];
 export type EnergyLevel = (typeof ENERGY_LEVELS)[number];
 export type DueKind = (typeof DUE_KINDS)[number]; // "on" = that day, "by" = deadline
 export type TaskSource = (typeof TASK_SOURCES)[number];
+export type { RepeatRule } from "./repeat.ts";
 
 // Same limits the database enforces, so callers can validate before a round trip.
 export const TASK_LIMITS = {
@@ -57,6 +60,9 @@ export interface Task {
   source_language: string | null; // BCP-47 language the task was written in, e.g. "it"
   ai_confidence: number | null; // 0–1, only set for AI-interpreted tasks
   postponed_count: number; // times the due date moved later; kept by a database trigger, never written by callers
+  repeat_rule: RepeatRule | null; // null = does not repeat; completing a repeating task adds the next occurrence
+  repeat_anchor: string | null; // "YYYY-MM-DD" the repeat counts from (weekday, day of the month); set with the rule
+  repeat_source_id: string | null; // the completed occurrence this one was made from; set by complete_task only
 }
 
 // Input for public.create_task — the one creation path for app, Brain Dump and Siri.
@@ -80,4 +86,5 @@ export interface TaskDraft {
   source?: TaskSource;
   source_language?: string | null;
   ai_confidence?: number | null;
+  repeat_rule?: RepeatRule | null; // anchored on due_date (else today) by create_task
 }

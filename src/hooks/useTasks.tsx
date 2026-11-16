@@ -173,8 +173,10 @@ export function TasksProvider({ userId, children }: { userId: string | undefined
   const complete = useCallback(
     (taskId: string, actualMinutes: number | null) =>
       run(t("complete task"), async () => {
-        const updated = await tasksApi.completeTask(taskId, actualMinutes);
-        changeTasks((prev) => upsertTask(prev, updated));
+        const { completed, next } = await tasksApi.completeTask(taskId, actualMinutes);
+        // A repeating task's next occurrence shows right away, without waiting for Realtime.
+        changeTasks((prev) => (next ? upsertTask(upsertTask(prev, completed), next) : upsertTask(prev, completed)));
+        if (next) console.log(`[useTasks] repeating task continues on ${next.due_date}`);
       }),
     [run, changeTasks]
   );
