@@ -40,24 +40,50 @@ final class PaceTasksSource: TaskSource {
 
     func fetchTasks(in interval: DateInterval, settings: DeskfocusSettings) async throws -> [DeskTask] {
         guard settings.isContainerVisible(source: kind, containerIdentifier: Self.containerIdentifier) else { return [] }
+        let accessToken = try await auth.validAccessToken()
+        async let pace = paceModel(accessToken: accessToken)
         let data = try await PaceTasksServer.send("GET", path: "rest/v1/tasks", query: [
             URLQueryItem(name: "select", value: "id,title,estimated_minutes,scheduled_time,due_date,due_kind"),
             URLQueryItem(name: "status", value: "eq.pending"),
             URLQueryItem(name: "order", value: "created_at.asc")
-        ], accessToken: try await auth.validAccessToken())
+        ], accessToken: accessToken)
 
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
-        let rows = try decoder.decode([Row].self, from: data)
+        let rows = try Self.decoder.decode([Row].self, from: data)
+        let paceModel = await pace
         let tasks = rows.compactMap { row -> DeskTask? in
             let day = Self.day(of: row)
             // Always placed, like on the iPhone: "Include undated to-dos" is about Reminders and Google Tasks.
             guard DeskTask.isDue(day, in: interval, includeUndated: true) else { return nil }
-            return task(from: row, day: day)
+            return task(from: row, day: day, paceModel: paceModel)
         }
         Log.paceTasks.debug("PaceTasks returned \(tasks.count) of \(rows.count) open tasks")
         return tasks
     }
+
+    /// The learned pace from the latest timed tasks; without it (offline, an error) tasks keep their estimates.
+    private func paceModel(accessToken: String) async -> PaceModel {
+        do {
+            let data = try await PaceTasksServer.send("GET", path: "rest/v1/tasks", query: [
+                URLQueryItem(name: "select", value: "title,estimated_minutes,actual_minutes"),
+                URLQueryItem(name: "status", value: "eq.done"),
+                URLQueryItem(name: "actual_minutes", value: "gt.0"),
+                URLQueryItem(name: "order", value: "created_at.desc"),
+                URLQueryItem(name: "limit", value: String(PaceModel.historyLimit))
+            ], accessToken: accessToken)
+            let runs = try Self.decoder.decode([PaceModel.Run].self, from: data)
+            Log.paceTasks.debug("Learned pace from \(runs.count) timed tasks")
+            return PaceModel(newestFirst: runs)
+        } catch {
+            Log.paceTasks.error("Learned pace unavailable, using estimates: \(error.localizedDescription, privacy: .public)")
+            return .empty
+        }
+    }
+
+    private static let decoder: JSONDecoder = {
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        return decoder
+    }()
 
     /// Completes the task in PaceTasks, as the iPhone app does when the real time spent is unknown.
     func complete(_ task: DeskTask) async throws {
@@ -99,7 +125,7 @@ final class PaceTasksSource: TaskSource {
         return date > Calendar.current.startOfDay(for: .now) ? date : nil
     }
 
-    private func task(from row: Row, day: Date?) -> DeskTask {
+    private func task(from row: Row, day: Date?, paceModel: PaceModel) -> DeskTask {
         let start = row.scheduledTime.flatMap { Self.time(on: day ?? .now, hhmm: $0) }
         return DeskTask(
             id: DeskTask.makeId(source: kind, containerIdentifier: Self.containerIdentifier, sourceIdentifier: row.id),
@@ -113,7 +139,7 @@ final class PaceTasksSource: TaskSource {
             isAllDay: start == nil,
             listName: "PaceTasks",
             colorHex: DeskfocusConstants.paceTasksColorHex,
-            plannedMinutes: row.estimatedMinutes
+            plannedMinutes: paceModel.expectedMinutes(title: row.title, estimatedMinutes: row.estimatedMinutes)
         )
     }
 

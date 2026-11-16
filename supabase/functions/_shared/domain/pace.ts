@@ -4,9 +4,11 @@ import { buildTaskHistory, normalizeTitle } from "./taskHistory.ts";
 
 // Learned pace: how long tasks really take for this user, read from the timer
 // history. Planning (Fit my time, Rescue my day) counts a task's real length
-// instead of the guess typed when it was added. Pure and shared by the app and Siri.
+// instead of the guess typed when it was added. Pure and shared by the app and Siri;
+// the Mac app reads the same history with the same rules (mac/Deskfocus/PaceTasks/PaceModel.swift).
 
 export const PACE_POLICY = {
+  historyLimit: 300, // only the latest timed tasks count, the same number the Mac app fetches
   minTimingsForTask: 2, // one timed run is a sample, two start a pattern
   minTimedTasksForRatio: 5, // tasks with a logged duration needed before the overall pace is trusted
   minRatio: 0.5, // the overall pace never more than halves or doubles an estimate
@@ -30,16 +32,17 @@ function isTimed(task: Task): boolean {
   return task.status === "done" && task.actual_minutes !== null && task.actual_minutes > 0;
 }
 
-// Reads every task in any order; per-name lengths come from task history, newest runs first.
+// Reads tasks in any order: the latest timed ones (by creation) give per-name lengths and the overall pace.
 export function buildPaceModel(tasks: Task[]): PaceModel {
-  const newestFirst = [...tasks].sort((a, b) => b.created_at.localeCompare(a.created_at));
+  const timed = tasks
+    .filter(isTimed)
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+    .slice(0, PACE_POLICY.historyLimit);
   const byTitle = new Map<string, TaskPace>();
-  for (const [key, entry] of buildTaskHistory(newestFirst)) {
-    if (entry.recentMinutes.length > 0) {
-      byTitle.set(key, { usualMinutes: entry.usualMinutes, timings: entry.recentMinutes.length });
-    }
+  for (const [key, entry] of buildTaskHistory(timed)) {
+    byTitle.set(key, { usualMinutes: entry.usualMinutes, timings: entry.recentMinutes.length });
   }
-  return { byTitle, ratio: overallRatio(tasks.filter(isTimed)) };
+  return { byTitle, ratio: overallRatio(timed) };
 }
 
 function overallRatio(timed: Task[]): number | null {

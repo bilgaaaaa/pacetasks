@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { AppState } from "react-native";
 import { toLocalDateKey } from "@domain/dates";
+import type { PaceModel } from "@domain/pace";
 import { onFocusBridgeChange } from "../lib/deskfocusBridge";
 import { completionsToApply, parseWidgetCompletions, widgetPaceTasks } from "../lib/deskfocusWidget";
 import { readWidgetCompletions, writeWidgetTasks } from "../lib/deskfocusWidgetStorage";
@@ -13,6 +14,7 @@ const WRITE_DELAY_MS = 500; // lets a burst of task changes settle into one widg
 // or failed to load, so an empty list that is not real never empties the widget.
 export function useDeskfocusWidget(
   tasks: Task[],
+  paceModel: PaceModel, // focus lengths follow the learned pace, as everywhere else in PaceTasks
   tasksReady: boolean,
   complete: (taskId: string, actualMinutes: number | null) => Promise<boolean>
 ) {
@@ -20,9 +22,12 @@ export function useDeskfocusWidget(
 
   useEffect(() => {
     if (!tasksReady) return;
-    const timer = setTimeout(() => writeWidgetTasks(widgetPaceTasks(tasks, toLocalDateKey(new Date()))), WRITE_DELAY_MS);
+    const timer = setTimeout(
+      () => writeWidgetTasks(widgetPaceTasks(tasks, toLocalDateKey(new Date()), paceModel)),
+      WRITE_DELAY_MS
+    );
     return () => clearTimeout(timer);
-  }, [tasks, tasksReady]);
+  }, [tasks, paceModel, tasksReady]);
 
   // Completed tasks leave the list on the next write, which tells the widget they are settled.
   const applyWidgetCompletions = useCallback(async () => {

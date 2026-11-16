@@ -100,7 +100,9 @@ export function TaskListScreen({ userId }: Props) {
   // An empty list after a failed load is not "no tasks": reminders wait for a real one.
   const tasksReady = !loading && (tasks.length > 0 || !error);
   useReminders(userId, tasks, tasksReady);
-  useDeskfocusWidget(tasks, tasksReady, complete);
+  // How long tasks really take this user, from the timers; planning and the widgets count these lengths.
+  const paceModel = useMemo(() => buildPaceModel(tasks), [tasks]);
+  useDeskfocusWidget(tasks, paceModel, tasksReady, complete);
   // One sheet adds and edits. `editing` stays while it slides away, so its heading doesn't flip.
   const [taskSheet, setTaskSheet] = useState<{ open: boolean; editing: Task | null }>({ open: false, editing: null });
   const closeTaskSheet = () => setTaskSheet((sheet) => ({ ...sheet, open: false }));
@@ -116,8 +118,6 @@ export function TaskListScreen({ userId }: Props) {
   const brainDump = useBrainDump({ onTasksCreated: applyCreated });
   const workStartHour = settings?.work_start_hour ?? DEFAULT_SETTINGS.work_start_hour;
   const workEndHour = settings?.work_end_hour ?? DEFAULT_SETTINGS.work_end_hour;
-  // How long tasks really take this user, from the timers; planning counts these lengths.
-  const paceModel = useMemo(() => buildPaceModel(tasks), [tasks]);
   const doNow = useDoNow(tasks, paceModel, workStartHour, workEndHour);
   const haptics = useHaptics();
   const pro = usePro();
