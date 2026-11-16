@@ -154,6 +154,10 @@ enum FocusController {
             }
             if !task.isEvent {
                 snapshot.pendingCompletionIds.insert(task.id)
+                if let minutes = focusedMinutes(on: task.id, in: snapshot, now: now) {
+                    snapshot.completionFocusMinutes[task.id] = minutes
+                    Log.focus.info("Focused \(minutes) min before checking it off")
+                }
             }
             if snapshot.focus?.taskId == task.id {
                 snapshot.focus = nil
@@ -169,6 +173,21 @@ enum FocusController {
     static func notifyChange() {
         DarwinNotifier.post(DeskfocusConstants.stateChangedNotification)
         WidgetCenter.shared.reloadTimelines(ofKind: DeskfocusConstants.widgetKind)
+    }
+
+    /// Minutes really spent focusing on a task: its running or finished session, else its saved progress.
+    /// Nil when it was checked off without a session, so a guess never teaches the pace.
+    static func focusedMinutes(on taskId: String, in snapshot: DeskfocusSnapshot, now: Date) -> Int? {
+        let seconds: TimeInterval
+        if let session = snapshot.focus, session.taskId == taskId {
+            seconds = session.plannedDuration - session.remaining(at: now)
+        } else if let saved = snapshot.savedProgress[taskId] {
+            seconds = saved.planned - saved.remaining
+        } else {
+            return nil
+        }
+        let minutes = Int((seconds / 60).rounded())
+        return minutes >= 1 ? minutes : nil
     }
 
     // MARK: Focus time

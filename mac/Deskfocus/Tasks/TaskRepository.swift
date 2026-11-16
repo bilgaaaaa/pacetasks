@@ -129,7 +129,7 @@ final class TaskRepository {
                 continue
             }
             do {
-                try await source.complete(task)
+                try await source.complete(task, focusedMinutes: snapshot.completionFocusMinutes[taskId])
                 done.insert(taskId)
             } catch {
                 Log.sync.error("Completion failed, will retry: \(error.localizedDescription, privacy: .public)")
@@ -138,7 +138,7 @@ final class TaskRepository {
 
         guard !done.isEmpty || !dropped.isEmpty else { return }
         SharedStore.shared.update { snapshot in
-            snapshot.pendingCompletionIds.subtract(done.union(dropped))
+            snapshot.settleCompletions(done.union(dropped))
             snapshot.completedTaskIds.subtract(dropped)
         }
     }

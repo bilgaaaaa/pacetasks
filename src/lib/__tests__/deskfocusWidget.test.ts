@@ -63,8 +63,18 @@ describe("widgetPaceTasks", () => {
 });
 
 describe("parseWidgetCompletions", () => {
-  it("reads the widget's JSON list of ids", () => {
-    expect(parseWidgetCompletions('["a","b"]')).toEqual(["a", "b"]);
+  it("reads each check-off with the minutes focused in a DeskFocus session", () => {
+    expect(parseWidgetCompletions('[{"id":"a","minutes":23},{"id":"b","minutes":null}]')).toEqual([
+      { id: "a", minutes: 23 },
+      { id: "b", minutes: null },
+    ]);
+  });
+
+  it("still reads the bare ids older builds wrote", () => {
+    expect(parseWidgetCompletions('["a","b"]')).toEqual([
+      { id: "a", minutes: null },
+      { id: "b", minutes: null },
+    ]);
   });
 
   it("treats missing or unreadable values as none", () => {
@@ -72,7 +82,11 @@ describe("parseWidgetCompletions", () => {
     expect(parseWidgetCompletions("")).toEqual([]);
     expect(parseWidgetCompletions("not json")).toEqual([]);
     expect(parseWidgetCompletions('{"a":1}')).toEqual([]);
-    expect(parseWidgetCompletions('["a",2,null]')).toEqual(["a"]);
+    expect(parseWidgetCompletions('["a",2,null,{"minutes":5}]')).toEqual([{ id: "a", minutes: null }]);
+    expect(parseWidgetCompletions('[{"id":"a","minutes":-3},{"id":"b","minutes":"12"}]')).toEqual([
+      { id: "a", minutes: null },
+      { id: "b", minutes: null },
+    ]);
   });
 });
 
@@ -83,6 +97,7 @@ describe("completionsToApply", () => {
       makeTask({ id: "done", status: "done" }),
       makeTask({ id: "parked", status: "someday" }),
     ];
-    expect(completionsToApply(["open", "open", "done", "parked", "deleted"], tasks)).toEqual(["open"]);
+    const completions = ["open", "open", "done", "parked", "deleted"].map((id) => ({ id, minutes: 10 }));
+    expect(completionsToApply(completions, tasks)).toEqual([{ id: "open", minutes: 10 }]);
   });
 });

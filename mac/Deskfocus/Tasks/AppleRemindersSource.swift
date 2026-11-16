@@ -71,7 +71,7 @@ final class AppleRemindersSource: TaskSource {
         return tasks
     }
 
-    func complete(_ task: DeskTask) async throws {
+    func complete(_ task: DeskTask, focusedMinutes: Int?) async throws {
         guard let reminder = access.store.calendarItem(withIdentifier: task.sourceIdentifier) as? EKReminder else {
             throw RemindersError.reminderNotFound
         }

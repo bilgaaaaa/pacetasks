@@ -52,7 +52,7 @@ final class GoogleCalendarSource: TaskSource {
     }
 
     /// Events have no remote done state; checking one off stays local.
-    func complete(_ task: DeskTask) async throws {}
+    func complete(_ task: DeskTask, focusedMinutes: Int?) async throws {}
 
     /// Calendars ticked in Google Calendar itself; unticked and hidden ones stay out of DeskFocus too.
     private func shownCalendars() async throws -> [GoogleCalendarListEntry] {

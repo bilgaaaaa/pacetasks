@@ -55,16 +55,23 @@ enum PaceTasksFeed {
         }
     }
 
-    /// Mirrors the PaceTasks tasks waiting for completion as a JSON array of ids, which the app reads when it comes to the front.
+    /// One check-off for the app: the PaceTasks task id and the minutes really focused on it, if a session ran.
+    private struct PendingCompletion: Encodable {
+        let id: String
+        let minutes: Int?
+    }
+
+    /// Mirrors the PaceTasks tasks waiting for completion as a JSON array of `{id, minutes}`, which the app reads
+    /// when it comes to the front.
     static func publishPendingCompletions(of snapshot: DeskfocusSnapshot) {
-        let ids = snapshot.pendingCompletionIds
+        let completions = snapshot.pendingCompletionIds
             .compactMap { snapshot.task(withId: $0) }
             .filter { $0.source == .paceTasks }
-            .map(\.sourceIdentifier)
-            .sorted()
-        guard let data = try? JSONEncoder().encode(ids), let json = String(data: data, encoding: .utf8) else { return }
+            .map { PendingCompletion(id: $0.sourceIdentifier, minutes: snapshot.completionFocusMinutes[$0.id]) }
+            .sorted { $0.id < $1.id }
+        guard let data = try? JSONEncoder().encode(completions), let json = String(data: data, encoding: .utf8) else { return }
         defaults?.set(json, forKey: DeskfocusConstants.completedPaceTaskIdsKey)
-        Log.sync.debug("\(ids.count) PaceTasks completions waiting for the app")
+        Log.sync.debug("\(completions.count) PaceTasks completions waiting for the app")
     }
 
     private static func task(from payload: Payload, now: Date) -> DeskTask {

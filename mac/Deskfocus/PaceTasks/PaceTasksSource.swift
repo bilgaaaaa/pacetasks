@@ -86,14 +86,14 @@ final class PaceTasksSource: TaskSource {
     }()
 
     /// Completes the task in PaceTasks, as the iPhone app does when the real time spent is unknown.
-    func complete(_ task: DeskTask) async throws {
+    func complete(_ task: DeskTask, focusedMinutes: Int?) async throws {
         // complete_task is the one completion path shared with the iPhone: it also adds a repeating task's next occurrence.
         _ = try await PaceTasksServer.send("POST", path: "rest/v1/rpc/complete_task", json: [
             "task_id": task.sourceIdentifier,
-            "actual_minutes": NSNull(),
+            "actual_minutes": focusedMinutes.map { $0 as Any } ?? NSNull(),
             "local_day": Self.dayKeyFormatter.string(from: .now)
         ], accessToken: try await auth.validAccessToken())
-        Log.paceTasks.info("Task completed in PaceTasks")
+        Log.paceTasks.info("Task completed in PaceTasks, focused \(focusedMinutes.map { "\($0)" } ?? "–", privacy: .public) min")
     }
 
     /// Adds a task through the same `create_task` function the iPhone app uses and returns its id.

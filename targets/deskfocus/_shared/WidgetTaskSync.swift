@@ -24,7 +24,7 @@ enum WidgetTaskSync {
             let settled = snapshot.pendingCompletionIds.filter { id in
                 snapshot.task(withId: id)?.source == .paceTasks && !paceTaskIds.contains(id)
             }
-            snapshot.pendingCompletionIds.subtract(settled)
+            snapshot.settleCompletions(settled)
             let pending = snapshot.pendingCompletionIds
             snapshot.referencedTasks = snapshot.referencedTasks.filter { pending.contains($0.id) || $0.id == focusTaskId }
             snapshot.completedTaskIds = snapshot.completedTaskIds.filter { taskIds.contains($0) || pending.contains($0) }
@@ -62,7 +62,7 @@ enum WidgetTaskSync {
         }
         guard !done.isEmpty || !dropped.isEmpty else { return }
         SharedStore.shared.update { snapshot in
-            snapshot.pendingCompletionIds.subtract(done.union(dropped))
+            snapshot.settleCompletions(done.union(dropped))
             snapshot.completedTaskIds.subtract(dropped)
         }
     }

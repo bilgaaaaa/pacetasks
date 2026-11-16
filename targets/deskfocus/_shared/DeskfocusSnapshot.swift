@@ -17,6 +17,9 @@ struct DeskfocusSnapshot: Codable, Equatable {
     var completedTaskIds: Set<String> = []
     /// To-dos marked done that the app still has to complete in Reminders or Google Tasks.
     var pendingCompletionIds: Set<String> = []
+    /// Minutes really spent in focus on a to-do checked off after a session, sent with its completion so
+    /// PaceTasks learns the real pace. Kept only while the completion is pending.
+    var completionFocusMinutes: [String: Int] = [:]
     /// When each item was checked off, so "done today" stays right after synced items disappear.
     var completionDates: [String: Date] = [:]
     /// Focus time the user picked for a to-do, in minutes.
@@ -37,6 +40,7 @@ struct DeskfocusSnapshot: Codable, Equatable {
         referencedTasks = try container.decodeIfPresent([DeskTask].self, forKey: .referencedTasks) ?? []
         completedTaskIds = try container.decodeIfPresent(Set<String>.self, forKey: .completedTaskIds) ?? []
         pendingCompletionIds = try container.decodeIfPresent(Set<String>.self, forKey: .pendingCompletionIds) ?? []
+        completionFocusMinutes = try container.decodeIfPresent([String: Int].self, forKey: .completionFocusMinutes) ?? [:]
         completionDates = try container.decodeIfPresent([String: Date].self, forKey: .completionDates) ?? [:]
         taskFocusMinutes = try container.decodeIfPresent([String: Int].self, forKey: .taskFocusMinutes) ?? [:]
         taskFocusMinutesUpdated = try container.decodeIfPresent([String: Date].self, forKey: .taskFocusMinutesUpdated) ?? [:]
@@ -44,6 +48,12 @@ struct DeskfocusSnapshot: Codable, Equatable {
         focus = try container.decodeIfPresent(FocusSession.self, forKey: .focus)
         settings = try container.decodeIfPresent(DeskfocusSettings.self, forKey: .settings) ?? DeskfocusSettings()
         lastSyncDate = try container.decodeIfPresent(Date.self, forKey: .lastSyncDate)
+    }
+
+    /// Forgets completions that were applied, dropped or settled elsewhere, with their focus minutes.
+    mutating func settleCompletions(_ ids: Set<String>) {
+        pendingCompletionIds.subtract(ids)
+        completionFocusMinutes = completionFocusMinutes.filter { pendingCompletionIds.contains($0.key) }
     }
 
     func task(withId id: String) -> DeskTask? {

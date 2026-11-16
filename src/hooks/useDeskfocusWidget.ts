@@ -32,13 +32,13 @@ export function useDeskfocusWidget(
   // Completed tasks leave the list on the next write, which tells the widget they are settled.
   const applyWidgetCompletions = useCallback(async () => {
     if (!tasksReady || applying.current) return;
-    const ids = completionsToApply(parseWidgetCompletions(readWidgetCompletions()), tasks);
-    if (ids.length === 0) return;
+    const completions = completionsToApply(parseWidgetCompletions(readWidgetCompletions()), tasks);
+    if (completions.length === 0) return;
     applying.current = true;
-    console.log(`[useDeskfocusWidget] completing ${ids.length} tasks checked off in the widget`);
+    console.log(`[useDeskfocusWidget] completing ${completions.length} tasks checked off in the widget`);
     try {
-      // The widget does not time a check-off, so the real minutes are unknown.
-      for (const id of ids) await complete(id, null);
+      // Minutes come from a DeskFocus session when there was one, so the widget's timer teaches the pace too.
+      for (const { id, minutes } of completions) await complete(id, minutes);
     } finally {
       applying.current = false;
     }
