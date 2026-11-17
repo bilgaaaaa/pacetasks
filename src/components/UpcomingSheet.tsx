@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React from "react";
 import { Modal, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { UpcomingDay } from "@domain/todayTasks";
@@ -21,7 +21,6 @@ interface Props {
   visible: boolean;
   days: UpcomingDay[]; // from selectUpcomingTasks + groupUpcomingByDay, nearest day first
   todayKey: string;
-  focusDayKey: string | null; // the day to open on (a tap in the week strip); null opens at the top
   errorMessage: string | null; // a failed save from the task list, which this sheet covers
   onMoveToToday: (task: Task) => void;
   onDelete: (taskId: string) => void; // already confirmed by the row
@@ -38,7 +37,6 @@ export function UpcomingSheet({
   visible,
   days,
   todayKey,
-  focusDayKey,
   errorMessage,
   onMoveToToday,
   onDelete,
@@ -48,7 +46,6 @@ export function UpcomingSheet({
 }: Props) {
   const { theme } = useTheme();
   const styles = useStyles();
-  const scrollView = useRef<ScrollView>(null);
 
   return (
     <Modal
@@ -69,7 +66,7 @@ export function UpcomingSheet({
           </TouchableOpacity>
         </View>
 
-        <ScrollView ref={scrollView} style={styles.flex} contentContainerStyle={styles.content}>
+        <ScrollView style={styles.flex} contentContainerStyle={styles.content}>
           <Text style={styles.subtitle}>{t(UPCOMING_SUBTITLE)}</Text>
 
           {errorMessage && <ErrorBanner style={styles.error} message={errorMessage} />}
@@ -80,15 +77,7 @@ export function UpcomingSheet({
             </View>
           ) : (
             days.map((day) => (
-              <View
-                key={day.dateKey}
-                // The day asked for is brought to the top as soon as its position is known.
-                onLayout={
-                  day.dateKey === focusDayKey
-                    ? (event) => scrollView.current?.scrollTo({ y: event.nativeEvent.layout.y, animated: false })
-                    : undefined
-                }
-              >
+              <View key={day.dateKey}>
                 <View style={styles.dayHeader}>
                   <Text style={styles.dayTitle} accessibilityRole="header">
                     {upcomingDayHeading(day.dateKey, todayKey)}

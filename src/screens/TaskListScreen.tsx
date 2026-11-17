@@ -30,18 +30,19 @@ import { useWeeklyReset } from "../hooks/useWeeklyReset";
 import { DEFAULT_SETTINGS } from "../lib/settingsApi";
 import { computeStats } from "../lib/stats";
 import { filterTodayTasks, groupTodayTasks, summarizePending, TodayFilter } from "../lib/taskSections";
-import { emptyFilterMessage, greetingForHour, totalsLine } from "../lib/todayCopy";
+import { dayEyebrow, dayTitle, emptyFilterMessage, totalsLine } from "../lib/todayCopy";
 import { upcomingLink } from "../lib/upcomingCopy";
-import { heroMessage, heroStart } from "../lib/heroCopy";
-import { buildWeek, WeekDay } from "../lib/weekStrip";
+import { dayHeroMessage, heroMessage, heroStart } from "../lib/heroCopy";
+import { buildWeek } from "../lib/weekStrip";
+import { plannedDayKey, selectDayTasks } from "../lib/dayTasks";
 import { selectUsuals } from "../lib/taskRhythm";
 import { rescueSubtitle, rescueSummary } from "../lib/rescueCopy";
 import { rolloverSubtitle, rolloverSummary } from "../lib/rolloverCopy";
 import { buildPaceModel, hasLearnedPace } from "@domain/pace";
 import { buildTaskHistory, findExactMatch } from "@domain/taskHistory";
-import { groupUpcomingByDay, selectSomedayTasks, selectTodayTasks, selectUpcomingTasks } from "@domain/todayTasks";
+import { groupUpcomingByDay, selectSomedayTasks, selectUpcomingTasks } from "@domain/todayTasks";
 import { PARK_PATCH, reschedulePatch, UNPARK_PATCH } from "@domain/taskPatch";
-import { toLocalDateKey } from "@domain/dates";
+import { addDays, toLocalDateKey } from "@domain/dates";
 import { AddTaskSheet } from "../components/AddTaskSheet";
 import { TaskItem } from "../components/TaskItem";
 import { FocusSessionModal } from "../components/FocusSessionModal";
@@ -57,7 +58,7 @@ import { WeekStrip } from "../components/WeekStrip";
 import { SomedaySheet } from "../components/SomedaySheet";
 import { UpcomingSheet } from "../components/UpcomingSheet";
 import { WeeklyResetSheet } from "../components/WeeklyResetSheet";
-import { getLocale, t } from "../i18n";
+import { t } from "../i18n";
 
 interface Props {
   userId: string | undefined;
@@ -71,13 +72,6 @@ interface ListSection {
 }
 
 
-// Header: a small date label ("SUNDAY · OCTOBER 4") over the greeting from todayCopy.
-function dateEyebrow(now: Date): string {
-  const day = now.toLocaleDateString(getLocale(), { weekday: "long" });
-  const date = now.toLocaleDateString(getLocale(), { month: "long", day: "numeric" });
-  return `${day} · ${date}`.toUpperCase();
-}
-
 // Home screen: today's tasks split into the sections the user picked (all in
 // one list, or by size, place, category, time of day), with a summary of how small the
 // day really is, and an always-visible capture bar that opens the add sheet
@@ -89,8 +83,9 @@ function dateEyebrow(now: Date): string {
 // unfinished, a slim "carried over" row opens a review that proposes where
 // each one goes. Quick filters (All, Quick wins, Due today) sit above the
 // list; groupings live behind the round button beside them. The foot of the list links to Weekly Reset, to the
-// Upcoming sheet (tasks set for a later day, also opened from the week strip) and to the Someday sheet
-// (parked tasks). An end-of-day card appears once nothing is left pending.
+// Upcoming sheet (tasks set for a later day) and to the Someday sheet (parked tasks). An end-of-day card
+// appears once nothing is left pending. The week strip shows any other day in place of today: a later day
+// lists what is set for it, and tasks added there are set for it; an earlier day lists what was finished.
 export function TaskListScreen({ userId }: Props) {
   const { theme, appearance, updateAppearance } = useTheme();
   const styles = useStyles();
@@ -113,8 +108,9 @@ export function TaskListScreen({ userId }: Props) {
   const [filter, setFilter] = useState<TodayFilter>("all");
   const [somedayOpen, setSomedayOpen] = useState(false);
   const [weeklyResetOpen, setWeeklyResetOpen] = useState(false);
-  // `dayKey` is the day the sheet opens on (a tap in the week strip); null opens at the top.
-  const [upcoming, setUpcoming] = useState<{ open: boolean; dayKey: string | null }>({ open: false, dayKey: null });
+  const [upcomingOpen, setUpcomingOpen] = useState(false);
+  // The day on screen, picked in the week strip; null follows today, also across midnight.
+  const [shownDayKey, setShownDayKey] = useState<string | null>(null);
   const brainDump = useBrainDump({ onTasksCreated: applyCreated });
   const workStartHour = settings?.work_start_hour ?? DEFAULT_SETTINGS.work_start_hour;
   const workEndHour = settings?.work_end_hour ?? DEFAULT_SETTINGS.work_end_hour;
@@ -165,7 +161,7 @@ export function TaskListScreen({ userId }: Props) {
 
   // Another sheet on screen would swallow the Focus screen (iOS shows only one at a time).
   const otherSheetOpen =
-    taskSheet.open || brainDumpOpen || doNowOpen || oneThingOpen || pickOpen || somedayOpen || weeklyResetOpen || upcoming.open;
+    taskSheet.open || brainDumpOpen || doNowOpen || oneThingOpen || pickOpen || somedayOpen || weeklyResetOpen || upcomingOpen;
   const focusScreen = useFocusScreen({
     tasks,
     tasksReady,
@@ -184,16 +180,17 @@ export function TaskListScreen({ userId }: Props) {
   // list left open past midnight updates on the next foreground reload.
   const now = new Date();
   const todayKey = toLocalDateKey(now);
+  const dayKey = shownDayKey ?? todayKey;
+  const isToday = dayKey === todayKey;
   const usuals = useMemo(() => selectUsuals(tasks, todayKey), [tasks, todayKey]);
-  const { pending, done: completedTasks } = useMemo(
-    () => selectTodayTasks(tasks, todayKey),
-    [tasks, todayKey]
+  // Today's own lists drive the hero, the helpers and Focus; the day on screen may be another one.
+  // The Done section only shows what was finished that day; older history lives on the Pace tab.
+  const { pending, done } = useMemo(() => selectDayTasks(tasks, todayKey, todayKey), [tasks, todayKey]);
+  const shownDay = useMemo(
+    () => (isToday ? { pending, done } : selectDayTasks(tasks, dayKey, todayKey)),
+    [isToday, pending, done, tasks, dayKey, todayKey]
   );
-  // The Done section only shows what was finished today; older history lives on the Pace tab.
-  const done = useMemo(
-    () => completedTasks.filter((t) => t.completed_at && toLocalDateKey(new Date(t.completed_at)) === todayKey),
-    [completedTasks, todayKey]
-  );
+  const shownFilter: TodayFilter = isToday ? filter : "all";
   const somedayTasks = useMemo(() => selectSomedayTasks(tasks), [tasks]);
   const upcomingTasks = useMemo(() => selectUpcomingTasks(tasks, todayKey), [tasks, todayKey]);
   const upcomingDays = useMemo(() => groupUpcomingByDay(upcomingTasks), [upcomingTasks]);
@@ -202,21 +199,27 @@ export function TaskListScreen({ userId }: Props) {
   const filterCounts = { all: summary.count, quick: summary.quickWinCount, due: summary.dueCount };
 
   const sections: ListSection[] = useMemo(() => {
-    const shown = filterTodayTasks(pending, filter, appearance.quickWinMinutes, todayKey);
+    const shown = filterTodayTasks(shownDay.pending, shownFilter, appearance.quickWinMinutes, todayKey);
+    // The one-list heading says "Today's plan"; another day's list is that day's plan.
     const grouped = groupTodayTasks(shown, appearance.groupBy, appearance.quickWinMinutes).map(
-      ({ key, title, totalMinutes, tasks: sectionTasks }) => ({ key, title, totalMinutes, data: sectionTasks })
+      ({ key, title, totalMinutes, tasks: sectionTasks }) => ({
+        key,
+        title: !isToday && key === "all" ? t("The plan") : title,
+        totalMinutes,
+        data: sectionTasks,
+      })
     );
     // Finished tasks belong to the unfiltered view only.
-    if (filter === "all" && done.length > 0) {
+    if (shownFilter === "all" && shownDay.done.length > 0) {
       grouped.push({
         key: "done",
         title: t("Done"),
-        totalMinutes: done.reduce((total, t) => total + (t.actual_minutes ?? t.estimated_minutes), 0),
-        data: done,
+        totalMinutes: shownDay.done.reduce((total, t) => total + (t.actual_minutes ?? t.estimated_minutes), 0),
+        data: shownDay.done,
       });
     }
     return grouped;
-  }, [pending, done, filter, todayKey, appearance.groupBy, appearance.quickWinMinutes]);
+  }, [shownDay, shownFilter, isToday, todayKey, appearance.groupBy, appearance.quickWinMinutes]);
 
   // Today's Focus tasks (any task with a fixed start time) ordered by that time —
   // this is what "SESSION X OF Y" in the Focus modal counts against.
@@ -262,7 +265,10 @@ export function TaskListScreen({ userId }: Props) {
     );
   };
 
-  const week = useMemo(() => buildWeek(todayKey, tasks), [todayKey, tasks]);
+  const week = useMemo(() => buildWeek(todayKey, tasks, dayKey), [todayKey, tasks, dayKey]);
+  // Picking today again follows today from then on.
+  const showDay = (key: string) => setShownDayKey(key === todayKey ? null : key);
+  const shownMinutes = shownDay.pending.reduce((total, task) => total + task.estimated_minutes, 0);
 
   return (
     <LinearGradient
@@ -274,12 +280,23 @@ export function TaskListScreen({ userId }: Props) {
           <View style={styles.headerTop}>
             <View style={styles.headerTitles}>
               <Text style={styles.eyebrow} numberOfLines={1}>
-                {dateEyebrow(now)}
+                {dayEyebrow(dayKey)}
               </Text>
-              <Text style={styles.title} accessibilityRole="header">
-                {greetingForHour(now.getHours())}
+              <Text style={styles.title} accessibilityRole="header" numberOfLines={1}>
+                {dayTitle(dayKey, todayKey, now.getHours())}
               </Text>
             </View>
+            {!isToday && (
+              <TouchableOpacity
+                style={styles.todayButton}
+                onPress={() => setShownDayKey(null)}
+                accessibilityRole="button"
+                accessibilityLabel={t("Back to today")}
+              >
+                <Ionicons name="arrow-undo" size={14} color={theme.colors.onAccent} />
+                <Text style={styles.todayButtonText}>{t("Today")}</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
         </View>
@@ -313,30 +330,48 @@ export function TaskListScreen({ userId }: Props) {
               />
             }
             ListEmptyComponent={
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyText}>{emptyFilterMessage(filter)}</Text>
-              </View>
+              // Another day's hero already says what the day holds.
+              isToday ? (
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyText}>{emptyFilterMessage(filter)}</Text>
+                </View>
+              ) : null
             }
             ListHeaderComponent={
               <>
                 {/* The hero (with the main action), the week, the carried-over
                     row and the filters scroll away with the list. */}
-                <TodayHero
-                  message={heroMessage({
-                    count: summary.count,
-                    quickWinCount: summary.quickWinCount,
-                    quickWinMinutes: appearance.quickWinMinutes,
-                    streakDays: stats.currentStreakDays,
-                    doneToday: stats.todayCompleted > 0,
-                    allDone,
-                    start: heroStart(oneThing.firstPick, todayKey, appearance.quickWinMinutes),
-                  })}
-                  totals={summary.count > 0 ? totalsLine(summary.count, summary.totalMinutes) : ""}
-                  showAction={summary.count > 0}
-                  onPick={() => setPickOpen(true)}
+                {isToday ? (
+                  <TodayHero
+                    message={heroMessage({
+                      count: summary.count,
+                      quickWinCount: summary.quickWinCount,
+                      quickWinMinutes: appearance.quickWinMinutes,
+                      streakDays: stats.currentStreakDays,
+                      doneToday: stats.todayCompleted > 0,
+                      allDone,
+                      start: heroStart(oneThing.firstPick, todayKey, appearance.quickWinMinutes),
+                    })}
+                    totals={summary.count > 0 ? totalsLine(summary.count, summary.totalMinutes) : ""}
+                    showAction={summary.count > 0}
+                    onPick={() => setPickOpen(true)}
+                  />
+                ) : (
+                  <TodayHero
+                    message={dayHeroMessage(dayKey, todayKey, shownDay.pending.length, shownDay.done.length)}
+                    totals={shownDay.pending.length > 0 ? totalsLine(shownDay.pending.length, shownMinutes) : ""}
+                    showAction={false}
+                    onPick={() => setPickOpen(true)}
+                  />
+                )}
+                <WeekStrip
+                  days={week}
+                  onSelectDay={showDay}
+                  onPreviousWeek={() => showDay(addDays(dayKey, -7))}
+                  onNextWeek={() => showDay(addDays(dayKey, 7))}
                 />
-                <WeekStrip days={week} onPressDay={(day: WeekDay) => setUpcoming({ open: true, dayKey: day.key })} />
-                {rollover.visible && (
+                {/* Carrying over, rescuing and filtering are about today only. */}
+                {isToday && rollover.visible && (
                   <MoveTasksCard
                     summary={rolloverSummary(rollover.choices.length)}
                     subtitle={rolloverSubtitle()}
@@ -349,7 +384,7 @@ export function TaskListScreen({ userId }: Props) {
                   />
                 )}
                 {/* Yesterday's leftovers are settled first, then the rest of today. */}
-                {!rollover.visible && rescue.visible && (
+                {isToday && !rollover.visible && rescue.visible && (
                   <MoveTasksCard
                     summary={rescueSummary(rescue.moveCount)}
                     subtitle={rescueSubtitle(rescue.minutesLeft, rescue.minutesPlanned)}
@@ -361,20 +396,22 @@ export function TaskListScreen({ userId }: Props) {
                     onDismiss={rescue.dismiss}
                   />
                 )}
-                <View style={styles.filterRow}>
-                  <TodayFilterBar
-                    filter={filter}
-                    counts={filterCounts}
-                    groupBy={appearance.groupBy}
-                    onChangeFilter={setFilter}
-                    onChangeGroupBy={(groupBy) => updateAppearance({ groupBy })}
-                  />
-                </View>
+                {isToday && (
+                  <View style={styles.filterRow}>
+                    <TodayFilterBar
+                      filter={filter}
+                      counts={filterCounts}
+                      groupBy={appearance.groupBy}
+                      onChangeFilter={setFilter}
+                      onChangeGroupBy={(groupBy) => updateAppearance({ groupBy })}
+                    />
+                  </View>
+                )}
               </>
             }
             ListFooterComponent={
               <>
-                {allDone && (
+                {isToday && allDone && (
                   <EndOfDayCard
                     tasksToday={stats.todayCompleted}
                     minutesToday={stats.todayActualMinutes}
@@ -392,7 +429,7 @@ export function TaskListScreen({ userId }: Props) {
                 )}
                 {upcomingTasks.length > 0 && (
                   <TouchableOpacity
-                    onPress={() => setUpcoming({ open: true, dayKey: null })}
+                    onPress={() => setUpcomingOpen(true)}
                     style={styles.footerLink}
                     accessibilityRole="button"
                   >
@@ -442,6 +479,7 @@ export function TaskListScreen({ userId }: Props) {
           workStartHour={workStartHour}
           workEndHour={workEndHour}
           taskRemindersEnabled={settings?.task_reminder_enabled ?? true}
+          plannedDayKey={plannedDayKey(dayKey, todayKey)}
           onAdd={create}
           onUndo={remove}
           onSave={update}
@@ -519,16 +557,15 @@ export function TaskListScreen({ userId }: Props) {
         />
 
         <UpcomingSheet
-          visible={upcoming.open}
+          visible={upcomingOpen}
           days={upcomingDays}
           todayKey={todayKey}
-          focusDayKey={upcoming.dayKey}
           errorMessage={error}
           onMoveToToday={(task) => update(task.id, reschedulePatch(task, todayKey))}
           onDelete={remove}
-          onEdit={editTaskFrom(() => setUpcoming((current) => ({ ...current, open: false })))}
+          onEdit={editTaskFrom(() => setUpcomingOpen(false))}
           onDismissed={sheetHandoff.onDismissed}
-          onClose={() => setUpcoming((current) => ({ ...current, open: false }))}
+          onClose={() => setUpcomingOpen(false)}
         />
 
         <WeeklyResetSheet
@@ -586,6 +623,7 @@ const useStyles = makeStyles((theme) => ({
   },
   headerTitles: {
     flex: 1,
+    minWidth: 0,
     gap: 8, // breathing room between the date label and the greeting
   },
   title: {
@@ -600,6 +638,22 @@ const useStyles = makeStyles((theme) => ({
     fontSize: theme.typography.eyebrow.fontSize,
     fontWeight: theme.typography.eyebrow.fontWeight,
     letterSpacing: theme.typography.eyebrow.letterSpacing,
+  },
+  // "Today" on another day: the way back, in the accent like the main button.
+  todayButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    minHeight: 32,
+    paddingHorizontal: 12,
+    marginBottom: 6,
+    borderRadius: theme.radius.pill,
+    backgroundColor: theme.colors.accentDark,
+  },
+  todayButtonText: {
+    color: theme.colors.onAccent,
+    fontSize: theme.typography.footnote.fontSize,
+    fontWeight: "700",
   },
   filterRow: {
     paddingTop: 4,

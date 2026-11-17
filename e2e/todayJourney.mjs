@@ -8,6 +8,7 @@ import { runJourney } from "./harness.mjs";
 
 const NEW_TASK_TITLE = "Buy cat food";
 const LATER_TASK_TITLE = "Water the plants";
+const PLANNED_TASK_TITLE = "Pick up the parcel";
 // Thursday of the harness's fixed week (it starts on Monday 12 October 2026).
 const LATER_DAY = { pickerLabel: /^Thu 15 /, weekStripLabel: /^Thu 15(,|$)/, heading: "Thu 15 Oct" };
 const SOMEDAY_TASK_TITLE = "Learn Spanish";
@@ -114,10 +115,25 @@ const passed = await runJourney("today-journey", async ({ page, baseUrl, step, s
     await page.getByText("UPCOMING", { exact: true }).waitFor({ state: "detached" });
   });
 
-  await step("Thursday in the week strip opens that day, and the task moves to Today", async () => {
+  await step("Thursday in the week strip shows that day, and a task added there is set for it", async () => {
     await page.getByLabel(LATER_DAY.weekStripLabel).click();
-    await page.getByText("UPCOMING", { exact: true }).waitFor();
-    await snapshot("Upcoming opened on Thursday");
+    await page.getByText("Planned ahead.").waitFor();
+    await page.getByLabel(`Complete ${LATER_TASK_TITLE}`).waitFor();
+    await snapshot("Thursday shown in place of today");
+    await page.getByLabel("Add a task").click();
+    await page.getByPlaceholder("What needs doing?").fill(PLANNED_TASK_TITLE);
+    await page.getByLabel("Day: Thu").waitFor();
+    await page.getByText(`Add “${PLANNED_TASK_TITLE}”`).click();
+    await page.getByText(`Added “${PLANNED_TASK_TITLE}” for Thu`).waitFor();
+    await page.getByLabel("Close", { exact: true }).click();
+    await page.getByLabel(`Complete ${PLANNED_TASK_TITLE}`).waitFor();
+    await page.getByLabel("Back to today").click();
+    await page.getByText("Good morning").waitFor();
+    await page.getByLabel(`Complete ${PLANNED_TASK_TITLE}`).waitFor({ state: "detached" });
+  });
+
+  await step("Upcoming moves Thursday's task to Today", async () => {
+    await page.getByText(/^Upcoming · \d+$/).click();
     await page.getByLabel(`Move to Today: ${LATER_TASK_TITLE}`).click();
     await page.getByLabel(`Move to Today: ${LATER_TASK_TITLE}`).waitFor({ state: "detached" });
     await page.getByLabel("Close").last().click();

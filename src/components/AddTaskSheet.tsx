@@ -96,6 +96,7 @@ interface Props {
   workStartHour: number; // picks "before work"/"after work" from a chosen time
   workEndHour: number;
   taskRemindersEnabled: boolean; // the Settings switch; the sheet says so when it is off
+  plannedDayKey: string | null; // a later day shown on Today: new tasks and usuals are set for it
   onAdd: (draft: TaskDraft) => Promise<Task | undefined>; // undefined when saving failed
   onUndo: (taskId: string) => Promise<boolean>; // false when the delete failed
   onSave: (taskId: string, patch: TaskPatch) => Promise<boolean>; // saves an edit; false when it failed
@@ -117,6 +118,7 @@ export function AddTaskSheet({
   workStartHour,
   workEndHour,
   taskRemindersEnabled,
+  plannedDayKey,
   onAdd,
   onUndo,
   onSave,
@@ -152,11 +154,14 @@ export function AddTaskSheet({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // A later day being planned on Today is where a new task goes until another day is picked.
+  const plannedDue: DueChoice = plannedDayKey ? { kind: "day", dateKey: plannedDayKey } : DEFAULT_DUE_CHOICE;
+
   const resetDraft = () => {
     setTitle("");
     setMinutes(TASK_LIMITS.defaultEstimatedMinutes);
     setTiming("anytime");
-    setDue(DEFAULT_DUE_CHOICE);
+    setDue(plannedDue);
     setRepeat(null);
     setCategory(null);
     setEnergy(null);
@@ -194,7 +199,7 @@ export function AddTaskSheet({
     setAddedKeys([]);
     setLastAdded(null);
     setError(null);
-  }, [visible, editing?.id]);
+  }, [visible, editing?.id, plannedDayKey]);
 
   // The reminder panel says up front when notifications are off for the app.
   useEffect(() => {
@@ -206,6 +211,8 @@ export function AddTaskSheet({
 
   const now = new Date();
   const todayKey = toLocalDateKey(now);
+  // "Tomorrow", "Thu", "2 Nov": named on the usuals while a later day is being planned.
+  const plannedDayLabel = plannedDayKey ? formatDueLabel(plannedDayKey, "on", todayKey) : null;
   const trimmedTitle = title.trim();
   const exactMatch = trimmedTitle ? findExactMatch(history, title) : undefined;
   const suggestions = trimmedTitle && !exactMatch ? findMatches(history, title, 3) : [];
@@ -364,14 +371,18 @@ export function AddTaskSheet({
   const addUsual = (rhythm: TaskRhythm) => {
     // An added usual stays added until Undo: a second tap must not create a duplicate.
     if (saving || addedKeys.includes(rhythm.key)) return;
-    save({
-      title: rhythm.title,
-      estimated_minutes: usualMinutesOf(rhythm),
-      timing: rhythm.timing,
-      category: rhythm.category,
-      energy_level: findExactMatch(history, rhythm.title)?.energyLevel ?? null,
-      source: "app",
-    });
+    save(
+      {
+        title: rhythm.title,
+        estimated_minutes: usualMinutesOf(rhythm),
+        timing: rhythm.timing,
+        category: rhythm.category,
+        energy_level: findExactMatch(history, rhythm.title)?.energyLevel ?? null,
+        ...resolveDueChoice(plannedDue, todayKey),
+        source: "app",
+      },
+      dueChoiceSummary(plannedDue, todayKey)
+    );
   };
 
   const adjustUsual = (rhythm: TaskRhythm) => {
@@ -778,7 +789,11 @@ export function AddTaskSheet({
 
             {showUsuals && shownUsuals.length > 0 && (
               <View style={styles.usuals}>
-                <Text style={styles.sectionTitle}>{t("YOUR USUALS · ONE TAP ADDS FOR TODAY")}</Text>
+                <Text style={styles.sectionTitle}>
+                  {plannedDayLabel
+                    ? t("YOUR USUALS · ONE TAP ADDS FOR {0}", plannedDayLabel.toUpperCase())
+                    : t("YOUR USUALS · ONE TAP ADDS FOR TODAY")}
+                </Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.usualRow} keyboardShouldPersistTaps="handled">
                   {shownUsuals.map((rhythm) => {
                     const added = addedKeys.includes(rhythm.key);
@@ -792,7 +807,11 @@ export function AddTaskSheet({
                         disabled={saving || added}
                         accessibilityState={{ disabled: saving || added }}
                         accessibilityLabel={
-                          added
+                          plannedDayLabel
+                            ? added
+                              ? t("{0}, added for {1}", rhythm.title, plannedDayLabel)
+                              : t("Add {0} for {1}. {2} min, {3}", rhythm.title, plannedDayLabel, usualMinutesOf(rhythm), describeLastDone(rhythm))
+                            : added
                             ? t("{0}, added for today", rhythm.title)
                             : t("Add {0} for today. {1} min, {2}", rhythm.title, usualMinutesOf(rhythm), describeLastDone(rhythm))
                         }

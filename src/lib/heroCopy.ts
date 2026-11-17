@@ -1,6 +1,6 @@
 import { isQuickWin } from "@domain/todayTasks";
 import { Task } from "./types";
-import { t } from "../i18n";
+import { t, tn } from "../i18n";
 
 // The encouraging headline and line in the Today hero card. Picked from the
 // real state of the day so it never promises something that isn't there.
@@ -71,4 +71,16 @@ export function heroMessage({
     case "other":
       return { title: t("One step at a time."), body: t("Pick one task and give it your full attention.") };
   }
+}
+
+// The hero on a day other than today: a later day is for planning, an earlier one for looking back.
+export function dayHeroMessage(dayKey: string, todayKey: string, pendingCount: number, doneCount: number): HeroMessage {
+  if (dayKey > todayKey) {
+    return pendingCount > 0
+      ? { title: t("Planned ahead."), body: t("Anything you add now is set for this day too.") }
+      : { title: t("Nothing planned yet."), body: t("Add a task and it's set for this day.") };
+  }
+  return doneCount > 0
+    ? { title: t("Look what you did."), body: tn(doneCount, "You finished 1 task this day.", "You finished {0} tasks this day.") }
+    : { title: t("A quiet day."), body: t("Nothing was finished this day.") };
 }
