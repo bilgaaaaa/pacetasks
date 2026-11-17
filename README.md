@@ -88,6 +88,17 @@ you compete only with your own past pace.
 - **Day cleared card** — appears once nothing is left, with today's count,
   minutes and streak.
 
+### DeskFocus (iPhone tab)
+
+- **Accounts** — **Apple Calendar and Reminders**: one tap connects iCloud and
+  every calendar account on the iPhone. **Google Calendar** comes in through
+  the Google account added to the iPhone (Settings › Calendar › Accounts); the
+  tab shows which Google accounts are connected.
+- **Calendars and reminder lists** — every one, grouped by account, with a switch:
+  what the DeskFocus widget and Today's calendar switch show. Undated reminders on/off.
+- **Widget look and focus length** — glass and accent colors, and the length ▶ uses.
+- The gear on the widget opens this tab (`pacetasks://deskfocus-settings`).
+
 ### Pace
 
 - **Your pace** — done today, minutes today, current and best streak, best day,
@@ -110,10 +121,6 @@ you compete only with your own past pace.
   are scheduled on the phone and planned a few days ahead, so they stop by
   themselves if the app stays closed.
 - **Work schedule, timer chime, haptics, Pomodoro length.**
-- **DeskFocus widget** (iPhone) — calendar and reminders access, and **Widget settings**: which
-  calendars and reminder lists it shows (every account on the iPhone, Google and Outlook included),
-  undated reminders, glass and accent colors, and the focus length for ▶. The gear on the widget opens
-  the same sheet through `pacetasks://deskfocus-settings`.
 - **Your data** — privacy policy, help and support, and **Delete account**
   (or **Delete my data** before sign-up), which erases everything on the server.
 

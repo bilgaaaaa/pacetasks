@@ -11,16 +11,3 @@ export const COMPLETION_TAP_TITLE = msg("Completion tap");
 export const COMPLETION_TAP_SUBTITLE = msg("A light tap you can feel when you complete a task");
 
 export const BRAIN_DUMP_AUTO_CREATE_TITLE = msg("Add clear brain dumps directly");
-
-// The DeskFocus widget card (iOS only). The widget reads the calendar itself, with the app's permission.
-export const DESKFOCUS_SECTION_LABEL = msg("DESKFOCUS WIDGET");
-export const DESKFOCUS_CARD_TITLE = msg("Calendar and Reminders");
-export const DESKFOCUS_CARD_SUBTITLE =
-  msg("The DeskFocus widget shows today's tasks with ▶ to focus. Allow access to add your calendar events and reminders, and to hear when focus time is up.");
-export const DESKFOCUS_ALLOW_ACTION = msg("Allow calendar and alerts");
-export const DESKFOCUS_GRANTED_MESSAGE = msg("Today's events and reminders show in the widget.");
-export const DESKFOCUS_DENIED_MESSAGE = msg("Turn on Calendars and Reminders for PaceTasks in Settings to see them in the widget.");
-export const DESKFOCUS_DENIED_ACTION = msg("Open Settings");
-// The DeskFocus settings sheet, opened from this card and from the gear on the widget.
-export const DESKFOCUS_SETTINGS_TITLE = msg("Widget settings");
-export const DESKFOCUS_SETTINGS_SUBTITLE = msg("Calendars, reminder lists, colors and focus length.");

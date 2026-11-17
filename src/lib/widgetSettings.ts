@@ -11,11 +11,15 @@ export type WidgetAccent = (typeof WIDGET_ACCENTS)[number];
 
 export type WidgetCalendarKind = "calendar" | "reminders";
 
+export const ACCOUNT_KINDS = ["icloud", "google", "exchange", "local", "subscribed", "other"] as const;
+export type AccountKind = (typeof ACCOUNT_KINDS)[number];
+
 export interface WidgetCalendar {
   key: string; // what the widget stores to hide it
   kind: WidgetCalendarKind;
   title: string;
   account: string; // "iCloud", a Gmail address, "On My iPhone"…
+  accountKind: AccountKind;
   colorHex: string;
   visible: boolean;
 }
@@ -66,12 +70,10 @@ export const WIDGET_ACCENT_OPTIONS: { id: WidgetAccent; label: string; swatch: s
 // Focus lengths offered for ▶, the same as the Mac's presets (DeskfocusSettings.focusPresets).
 export const WIDGET_FOCUS_PRESETS = [15, 25, 45, 60, 90] as const;
 
-// The link the widget's gear opens (DeskfocusConstants.settingsURL); the scheme is `scheme` in app.json.
-export const DESKFOCUS_SETTINGS_URL = "pacetasks://deskfocus-settings";
-
-export function isDeskfocusSettingsUrl(url: string): boolean {
-  return url.split("?")[0].replace(/\/+$/, "") === DESKFOCUS_SETTINGS_URL;
-}
+// The path the widget's gear opens (DeskfocusConstants.settingsURL, "pacetasks://deskfocus-settings"): the
+// DeskFocus tab. The scheme is `scheme` in app.json.
+export const DESKFOCUS_LINK_PREFIX = "pacetasks://";
+export const DESKFOCUS_SETTINGS_PATH = "deskfocus-settings";
 
 function pick<T extends string>(options: readonly T[], value: unknown): T | null {
   return typeof value === "string" && (options as readonly string[]).includes(value) ? (value as T) : null;
@@ -96,6 +98,7 @@ function parseCalendar(value: unknown): WidgetCalendar | null {
     kind,
     title: calendar.title,
     account: calendar.account,
+    accountKind: pick(ACCOUNT_KINDS, calendar.accountKind) ?? "other",
     colorHex: calendar.colorHex,
     visible: calendar.visible,
   };
@@ -139,6 +142,7 @@ export function applyWidgetSettingsPatch(settings: WidgetSettings, patch: Widget
 
 export interface CalendarAccount {
   account: string;
+  accountKind: AccountKind;
   calendars: WidgetCalendar[];
 }
 
@@ -149,7 +153,12 @@ export function groupCalendarsByAccount(calendars: WidgetCalendar[], kind: Widge
     if (calendar.kind !== kind) continue;
     const last = accounts[accounts.length - 1];
     if (last?.account === calendar.account) last.calendars.push(calendar);
-    else accounts.push({ account: calendar.account, calendars: [calendar] });
+    else accounts.push({ account: calendar.account, accountKind: calendar.accountKind, calendars: [calendar] });
   }
   return accounts;
+}
+
+// The Google accounts added to the iPhone, by name, which is how their calendars reach PaceTasks.
+export function googleAccounts(calendars: WidgetCalendar[]): string[] {
+  return [...new Set(calendars.filter((calendar) => calendar.accountKind === "google").map((calendar) => calendar.account))];
 }

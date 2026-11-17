@@ -677,30 +677,32 @@ export const it: Record<string, string> = {
   "Completion tap": "Tocco di completamento",
   "A light tap you can feel when you complete a task": "Un leggero tocco che senti quando completi un'attività",
   "Add clear brain dumps directly": "Aggiungi direttamente i Brain Dump chiari",
-  "DESKFOCUS WIDGET": "WIDGET DESKFOCUS",
-  "Calendar and Reminders": "Calendario e Promemoria",
-  "The DeskFocus widget shows today's tasks with ▶ to focus. Allow access to add your calendar events and reminders, and to hear when focus time is up.":
-    "Il widget DeskFocus mostra le attività di oggi con ▶ per il focus. Consenti l'accesso per aggiungere gli eventi del calendario e i promemoria, e per sentire quando il tempo di focus è finito.",
-  "Allow calendar and alerts": "Consenti calendario e avvisi",
-  "Today's events and reminders show in the widget.": "Gli eventi e i promemoria di oggi compaiono nel widget.",
-  // DeskFocus widget settings
-  "Widget settings": "Impostazioni del widget",
-  "Calendars, reminder lists, colors and focus length.": "Calendari, elenchi di promemoria, colori e durata del focus.",
-  "What the DeskFocus widget shows next to your PaceTasks tasks, and how it looks.":
-    "Cosa mostra il widget DeskFocus accanto alle attività di PaceTasks, e il suo aspetto.",
-  "Allow access to pick the calendars and lists the widget shows.":
-    "Consenti l'accesso per scegliere i calendari e gli elenchi che il widget mostra.",
+  // DeskFocus tab
+  "Connect your calendars, then pick what the DeskFocus widget and Today show next to your PaceTasks tasks.":
+    "Collega i tuoi calendari, poi scegli cosa mostrano il widget DeskFocus e Oggi accanto alle attività di PaceTasks.",
+  ACCOUNTS: "ACCOUNT",
+  "Apple Calendar and Reminders": "Calendario e Promemoria di Apple",
+  "Connected: iCloud and every account on this iPhone.": "Collegato: iCloud e ogni account di questo iPhone.",
+  "Turned off. Turn on Calendars and Reminders for PaceTasks in the iPhone's Settings.":
+    "Disattivato. Attiva Calendari e Promemoria per PaceTasks nelle Impostazioni dell'iPhone.",
+  "iCloud and every calendar account on this iPhone.": "iCloud e ogni account di calendario di questo iPhone.",
+  Connect: "Collega",
+  "Google Calendar": "Google Calendar",
+  "Connected: {0}": "Collegato: {0}",
+  "In the iPhone's Settings, open Calendar › Accounts and add your Google account. Its calendars then show up here, in the widget and on Today.":
+    "Nelle Impostazioni dell'iPhone apri Calendario › Account e aggiungi il tuo account Google. I suoi calendari compaiono qui, nel widget e su Oggi.",
+  "Connect Apple Calendar first: Google calendars come in through it.":
+    "Prima collega il Calendario di Apple: i calendari Google arrivano da lì.",
+  "Switch on what the widget and Today show.": "Attiva quello che mostrano il widget e Oggi.",
+  "WIDGET LOOK": "ASPETTO DEL WIDGET",
   "The widget's settings could not be loaded.": "Non è stato possibile caricare le impostazioni del widget.",
   CALENDARS: "CALENDARI",
-  "Every account on this iPhone is here, Google and Outlook included. Switch on what the widget and Today show.":
-    "Qui c'è ogni account di questo iPhone, anche Google e Outlook. Attiva quello che il widget e Oggi mostrano.",
   "No calendars on this iPhone yet.": "Ancora nessun calendario su questo iPhone.",
   "No reminder lists on this iPhone yet.": "Ancora nessun elenco di promemoria su questo iPhone.",
   "On this iPhone": "Su questo iPhone",
   "Show {0}": "Mostra {0}",
   "REMINDER LISTS": "ELENCHI DI PROMEMORIA",
   "Reminders without a date": "Promemoria senza data",
-  LOOK: "ASPETTO",
   "Glass color": "Colore del vetro",
   "Focus length for ▶": "Durata del focus per ▶",
   "For a task or event without its own length.": "Per un'attività o un evento senza una durata propria.",
@@ -721,8 +723,6 @@ export const it: Record<string, string> = {
   Mint: "Menta",
   Lime: "Lime",
   White: "Bianco",
-  "Turn on Calendars and Reminders for PaceTasks in Settings to see them in the widget.":
-    "Attiva Calendari e Promemoria per PaceTasks nelle Impostazioni per vederli nel widget.",
   "Open Settings": "Apri le Impostazioni",
   // Task time: at, after, before, between
   "At": "Alle",

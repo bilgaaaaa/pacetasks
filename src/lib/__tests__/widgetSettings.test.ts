@@ -1,7 +1,7 @@
 import {
   applyWidgetSettingsPatch,
   groupCalendarsByAccount,
-  isDeskfocusSettingsUrl,
+  googleAccounts,
   parseWidgetSettings,
   WidgetCalendar,
   WidgetSettings,
@@ -12,6 +12,7 @@ const calendar = (overrides: Partial<WidgetCalendar>): WidgetCalendar => ({
   kind: "calendar",
   title: "Home",
   account: "iCloud",
+  accountKind: "icloud",
   colorHex: "#34C759",
   visible: true,
   ...overrides,
@@ -25,7 +26,7 @@ const SETTINGS: WidgetSettings = {
   calendars: [
     calendar({}),
     calendar({ key: "appleCalendar|work", title: "Work" }),
-    calendar({ key: "appleCalendar|g", title: "Team", account: "ada@gmail.com" }),
+    calendar({ key: "appleCalendar|g", title: "Team", account: "ada@gmail.com", accountKind: "google" }),
     calendar({ key: "appleReminders|list", kind: "reminders", title: "Groceries" }),
   ],
 };
@@ -37,6 +38,8 @@ describe("parseWidgetSettings", () => {
 
   it("refuses unknown colors and drops unreadable calendars", () => {
     expect(parseWidgetSettings({ ...SETTINGS, glassTint: "neon" })).toBeNull();
+    const unknownKind = parseWidgetSettings({ ...SETTINGS, calendars: [{ ...SETTINGS.calendars[0], accountKind: "yahoo" }] });
+    expect(unknownKind?.calendars[0].accountKind).toBe("other");
     expect(parseWidgetSettings(null)).toBeNull();
     const parsed = parseWidgetSettings({ ...SETTINGS, calendars: [{ key: 1 }, SETTINGS.calendars[0]] });
     expect(parsed?.calendars).toEqual([SETTINGS.calendars[0]]);
@@ -70,11 +73,9 @@ describe("groupCalendarsByAccount", () => {
   });
 });
 
-describe("isDeskfocusSettingsUrl", () => {
-  it("knows the widget's gear link", () => {
-    expect(isDeskfocusSettingsUrl("pacetasks://deskfocus-settings")).toBe(true);
-    expect(isDeskfocusSettingsUrl("pacetasks://deskfocus-settings/?from=widget")).toBe(true);
-    expect(isDeskfocusSettingsUrl("pacetasks://")).toBe(false);
-    expect(isDeskfocusSettingsUrl("http://localhost:8081/")).toBe(false);
+describe("googleAccounts", () => {
+  it("names each Google account on the iPhone once", () => {
+    expect(googleAccounts(SETTINGS.calendars)).toEqual(["ada@gmail.com"]);
+    expect(googleAccounts([SETTINGS.calendars[0]])).toEqual([]);
   });
 });

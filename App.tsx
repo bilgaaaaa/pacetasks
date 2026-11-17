@@ -8,11 +8,8 @@ import { useSession } from "./src/hooks/useSession";
 import { useAppUpdate } from "./src/hooks/useAppUpdate";
 import { UpdateSheet } from "./src/components/UpdateSheet";
 import { PaywallSheet } from "./src/components/PaywallSheet";
-import { DeskfocusSettingsSheet } from "./src/components/DeskfocusSettingsSheet";
-import { DeskfocusSettingsProvider, useDeskfocusSettings } from "./src/hooks/useDeskfocusSettings";
-import { useDeskfocusAccess } from "./src/hooks/useDeskfocusAccess";
-import { useWidgetSettings } from "./src/hooks/useWidgetSettings";
-import { openAppSettings } from "./src/lib/links";
+import { isFocusBridgeAvailable } from "./src/lib/deskfocusBridge";
+import { DESKFOCUS_LINK_PREFIX, DESKFOCUS_SETTINGS_PATH } from "./src/lib/widgetSettings";
 import { ProProvider, usePro } from "./src/hooks/usePro";
 import { SettingsProvider } from "./src/hooks/useSettings";
 import { TasksProvider } from "./src/hooks/useTasks";
@@ -21,9 +18,19 @@ import { SESSION_ERROR_HINT, SESSION_ERROR_TITLE, SESSION_RETRY_LABEL } from "./
 import { TaskListScreen } from "./src/screens/TaskListScreen";
 import { StatsScreen } from "./src/screens/StatsScreen";
 import { SettingsScreen } from "./src/screens/SettingsScreen";
+import { DeskfocusScreen } from "./src/screens/DeskfocusScreen";
 import { Language, t } from "./src/i18n";
 
 const Tab = createBottomTabNavigator();
+
+// DeskFocus is the iPhone widget, so its tab exists only where the widget does.
+const hasDeskfocus = isFocusBridgeAvailable();
+
+// The widget's gear opens pacetasks://deskfocus-settings, which lands on the DeskFocus tab.
+const LINKING = {
+  prefixes: [DESKFOCUS_LINK_PREFIX],
+  config: { screens: { DeskFocus: DESKFOCUS_SETTINGS_PATH } },
+};
 
 // Text-only pill tab bar matching the design: a single rounded bar, the
 // active tab shown as a filled ink pill, inactive tabs plain secondary text.
@@ -61,6 +68,8 @@ function PillTabBar({ state, descriptors, navigation, insets }: any) {
               <Text
                 style={[styles.tabLabel, isFocused && styles.tabLabelActive]}
                 numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.75}
                 maxFontSizeMultiplier={1.3}
               >
                 {label}
@@ -89,34 +98,9 @@ function ProPaywall() {
   );
 }
 
-// The one DeskFocus settings sheet, opened from Settings or the widget's gear; it loads only while open.
-function DeskfocusSettings() {
-  const deskfocus = useDeskfocusSettings();
-  const widget = useWidgetSettings(deskfocus.visible);
-  const access = useDeskfocusAccess();
-  const allowAccess = async () => {
-    await access.allow();
-    await widget.reload();
-  };
-  return (
-    <DeskfocusSettingsSheet
-      visible={deskfocus.visible}
-      settings={widget.settings}
-      failed={widget.failed}
-      access={access.access}
-      needsAccess={access.needsAccess}
-      onAllowAccess={() => void allowAccess()}
-      onOpenPhoneSettings={openAppSettings}
-      onChange={(patch) => void widget.update(patch)}
-      onRetry={() => void widget.reload()}
-      onClose={deskfocus.close}
-    />
-  );
-}
-
 // Waits for the anonymous Supabase session and the saved appearance, loads the
 // user's settings, tasks and Pro status once (SettingsProvider, TasksProvider, ProProvider), then wires the
-// three tabs (Today / Pace / Settings) behind the pill tab bar.
+// tabs (Today / Pace / DeskFocus on iPhone / Settings) behind the pill tab bar.
 // A newer App Store version is offered on top, once the app is ready.
 function AppContent() {
   const { theme, language, appearanceLoaded } = useTheme();
@@ -173,29 +157,27 @@ function AppContent() {
     <SettingsProvider userId={userId}>
       <TasksProvider userId={userId}>
         <ProProvider userId={userId}>
-          <DeskfocusSettingsProvider>
-            <NavigationContainer key={language} theme={navigationTheme}>
-              <StatusBar style={theme.isDark ? "light" : "dark"} />
-              <Tab.Navigator
-                initialRouteName={languageChanged.current ? "Settings" : "Tasks"}
-                screenOptions={{ headerShown: false }}
-                tabBar={(props) => <PillTabBar {...props} />}
-              >
-                <Tab.Screen name="Tasks" options={{ tabBarLabel: t("Today") }}>
-                  {() => <TaskListScreen userId={userId} />}
-                </Tab.Screen>
-                <Tab.Screen name="Stats" options={{ tabBarLabel: t("Pace") }}>
-                  {() => <StatsScreen />}
-                </Tab.Screen>
-                <Tab.Screen name="Settings" options={{ tabBarLabel: t("Settings") }}>
-                  {() => <SettingsScreen userId={userId} session={session} />}
-                </Tab.Screen>
-              </Tab.Navigator>
-            </NavigationContainer>
-            <UpdateSheet update={appUpdate.update} onUpdateNow={appUpdate.updateNow} onLater={appUpdate.later} />
-            <ProPaywall />
-            <DeskfocusSettings />
-          </DeskfocusSettingsProvider>
+          <NavigationContainer key={language} theme={navigationTheme} linking={hasDeskfocus ? LINKING : undefined}>
+            <StatusBar style={theme.isDark ? "light" : "dark"} />
+            <Tab.Navigator
+              initialRouteName={languageChanged.current ? "Settings" : "Tasks"}
+              screenOptions={{ headerShown: false }}
+              tabBar={(props) => <PillTabBar {...props} />}
+            >
+              <Tab.Screen name="Tasks" options={{ tabBarLabel: t("Today") }}>
+                {() => <TaskListScreen userId={userId} />}
+              </Tab.Screen>
+              <Tab.Screen name="Stats" options={{ tabBarLabel: t("Pace") }}>
+                {() => <StatsScreen />}
+              </Tab.Screen>
+              {hasDeskfocus && <Tab.Screen name="DeskFocus" component={DeskfocusScreen} options={{ tabBarLabel: "DeskFocus" }} />}
+              <Tab.Screen name="Settings" options={{ tabBarLabel: t("Settings") }}>
+                {() => <SettingsScreen userId={userId} session={session} />}
+              </Tab.Screen>
+            </Tab.Navigator>
+          </NavigationContainer>
+          <UpdateSheet update={appUpdate.update} onUpdateNow={appUpdate.updateNow} onLater={appUpdate.later} />
+          <ProPaywall />
         </ProProvider>
       </TasksProvider>
     </SettingsProvider>

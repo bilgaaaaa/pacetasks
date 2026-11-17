@@ -21,6 +21,8 @@ struct WidgetCalendarPayload: Encodable {
     let title: String
     /// The account the calendar belongs to, e.g. "iCloud" or a Gmail address.
     let account: String
+    /// "icloud", "google", "exchange", "local", "subscribed" or "other", for the account's icon and status.
+    let accountKind: String
     let colorHex: String
     let visible: Bool
 }
@@ -90,12 +92,30 @@ enum WidgetSettingsBridge {
         return result.sorted { ($0.kind, $0.account, $0.title) < ($1.kind, $1.account, $1.title) }
     }
 
+    /// What kind of account a calendar comes from; a Google account added to the iPhone syncs over CalDAV.
+    private static func accountKind(of source: EKSource?) -> String {
+        guard let source else { return "other" }
+        switch source.sourceType {
+        case .local: return "local"
+        case .exchange: return "exchange"
+        case .mobileMe: return "icloud"
+        case .subscribed, .birthdays: return "subscribed"
+        case .calDAV:
+            let title = source.title.lowercased()
+            if title == "icloud" { return "icloud" }
+            if title.contains("gmail") || title.contains("google") { return "google" }
+            return "other"
+        @unknown default: return "other"
+        }
+    }
+
     private static func payload(for calendar: EKCalendar, source: TaskSourceKind, kind: String, settings: DeskfocusSettings) -> WidgetCalendarPayload {
         WidgetCalendarPayload(
             key: DeskTask.containerKey(source: source, containerIdentifier: calendar.calendarIdentifier),
             kind: kind,
             title: calendar.title,
             account: calendar.source?.title ?? "",
+            accountKind: accountKind(of: calendar.source),
             colorHex: UIColor(cgColor: calendar.cgColor).hexString ?? Self.fallbackColorHex,
             visible: settings.isContainerVisible(source: source, containerIdentifier: calendar.calendarIdentifier)
         )
