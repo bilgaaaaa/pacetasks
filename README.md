@@ -331,6 +331,11 @@ missing (or when demo mode is set), so a broken build never reaches a phone.
 npm run ios:testflight         # builds, then uploads to App Store Connect by itself
 ```
 
+TestFlight builds use the `testflight` profile, which sets `EXPO_PUBLIC_TESTER_BUILD=1`: every Pro
+feature is unlocked for you and your testers, with no purchase. The build for the App Store comes from
+`npm run ios:release` (the `production` profile), where Pro is sold as usual. Don't send a TestFlight
+build to App Review.
+
 The first run asks you to sign in with your Apple ID and lets EAS create the
 certificate, the profile and the App Store Connect app for `com.pacetasks.app`.
 About 15–30 minutes later the build appears in **App Store Connect → TestFlight**.

@@ -27,7 +27,7 @@ export interface PaywallState {
 interface ProContextValue {
   isPro: boolean;
   status: ProStatus;
-  storeAvailable: boolean; // false where nothing can be bought (web demo, Android, no key): everyone is Pro there
+  storeAvailable: boolean; // false where nothing can be bought (web demo, Android, no key): everyone is Pro there, as in TestFlight builds
   // Runs `action` for Pro users, otherwise opens the paywall for that feature.
   requirePro: (feature: ProFeature, action: () => void) => void;
   openPaywall: (reason?: ProFeature | null) => void;
@@ -50,7 +50,11 @@ const CLOSED_PAYWALL: PaywallState = {
 };
 
 const storeAvailable = isPurchasesAvailable();
+// TestFlight builds (the "testflight" EAS profile) unlock every Pro feature for testers; App Store builds never set it.
+const testerBuild = process.env.EXPO_PUBLIC_TESTER_BUILD === "1";
+const UNLOCKED_STATUS: ProStatus = { ...FREE_STATUS, active: true, lifetime: true };
 if (!storeAvailable) console.log("[usePro] no store in this build, Pro is unlocked");
+if (testerBuild) console.log("[usePro] tester build, Pro is unlocked");
 
 // Holds the user's Pro status for the whole app: the saved one at once, then the store's answer for this
 // PaceTasks account, kept current on foreground and on store updates. Every paywall flow goes through here.
@@ -102,8 +106,7 @@ export function ProProvider({ userId, children }: { userId: string | undefined; 
   }, [userId, applyLive, refreshStatus]);
 
   const status = useMemo<ProStatus>(
-    () =>
-      storeAvailable ? effectiveProStatus(live, saved, Date.now()) : { ...FREE_STATUS, active: true, lifetime: true },
+    () => (storeAvailable && !testerBuild ? effectiveProStatus(live, saved, Date.now()) : UNLOCKED_STATUS),
     [live, saved],
   );
   const isPro = status.active;
