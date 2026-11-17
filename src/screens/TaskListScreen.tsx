@@ -48,6 +48,8 @@ import { PARK_PATCH, reschedulePatch, UNPARK_PATCH } from "@domain/taskPatch";
 import { addDays, toLocalDateKey } from "@domain/dates";
 import { AddTaskSheet } from "../components/AddTaskSheet";
 import { CalendarAgenda } from "../components/CalendarAgenda";
+import { GradientSwitch } from "../components/GradientSwitch";
+import { isFocusBridgeAvailable } from "../lib/deskfocusBridge";
 import { TaskItem } from "../components/TaskItem";
 import { FocusSessionModal } from "../components/FocusSessionModal";
 import { EndOfDayCard } from "../components/EndOfDayCard";
@@ -90,8 +92,8 @@ interface ListSection {
 // Upcoming sheet (tasks set for a later day) and to the Someday sheet (parked tasks). An end-of-day card
 // appears once nothing is left pending. The week strip shows any other day in place of today: a later day
 // lists what is set for it, and tasks added there are set for it; an earlier day lists what was finished.
-// The calendar button beside the title shows or hides the day's events and reminders, from the calendars
-// picked in the DeskFocus widget's settings.
+// The calendars switch beside the title opens Today to the day's events and reminders (Apple, Google and every
+// account picked in the DeskFocus tab) next to the PaceTasks tasks; closed, only PaceTasks tasks show.
 export function TaskListScreen({ userId }: Props) {
   const { theme, appearance, updateAppearance } = useTheme();
   const styles = useStyles();
@@ -197,16 +199,13 @@ export function TaskListScreen({ userId }: Props) {
     [isToday, pending, done, tasks, dayKey, todayKey]
   );
   const shownFilter: TodayFilter = isToday ? filter : "all";
-  // Calendars show only with access; the button asks for it, or opens the phone's Settings once it was refused.
+  // Calendars show only with access; the switch asks for it, or opens the phone's Settings once it was refused.
   const calendarAccess = useCalendarAccess();
   const calendarsShown = appearance.showCalendars && calendarAccess.access === "granted";
   const calendar = useCalendarItems(dayKey, calendarsShown);
-  const toggleCalendars = async () => {
-    if (calendarsShown) {
-      updateAppearance({ showCalendars: false });
-      return;
-    }
-    updateAppearance({ showCalendars: true });
+  const switchCalendars = async (open: boolean) => {
+    updateAppearance({ showCalendars: open });
+    if (!open) return;
     if (calendarAccess.access === "undetermined") await calendarAccess.request();
     else if (calendarAccess.access === "denied") openAppSettings();
   };
@@ -316,20 +315,15 @@ export function TaskListScreen({ userId }: Props) {
                 <Text style={styles.todayButtonText}>{t("Today")}</Text>
               </TouchableOpacity>
             )}
-            {calendarAccess.access !== "unavailable" && (
-              <TouchableOpacity
-                style={[styles.calendarButton, calendarsShown && styles.calendarButtonOn]}
-                onPress={() => void toggleCalendars()}
-                accessibilityRole="switch"
-                accessibilityState={{ checked: calendarsShown }}
-                accessibilityLabel={t("Calendars on Today")}
-              >
-                <Ionicons
-                  name={calendarsShown ? "calendar" : "calendar-outline"}
-                  size={20}
-                  color={calendarsShown ? theme.colors.onAccent : theme.colors.textSecondary}
+            {isFocusBridgeAvailable() && (
+              <View style={styles.calendarSwitch}>
+                <Text style={styles.calendarSwitchLabel}>{t("CALENDARS")}</Text>
+                <GradientSwitch
+                  value={calendarsShown}
+                  onValueChange={(open) => void switchCalendars(open)}
+                  accessibilityLabel={t("Calendars on Today")}
                 />
-              </TouchableOpacity>
+              </View>
             )}
           </View>
 
@@ -685,21 +679,17 @@ const useStyles = makeStyles((theme) => ({
     borderRadius: theme.radius.pill,
     backgroundColor: theme.colors.accentDark,
   },
-  // Shows or hides the calendars: filled in the accent while they show.
-  calendarButton: {
-    width: 40,
-    height: 40,
-    marginBottom: 2,
-    borderRadius: theme.radius.pill,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+  // The calendars switch, named by a small label over it.
+  calendarSwitch: {
     alignItems: "center",
-    justifyContent: "center",
+    gap: 4,
+    marginBottom: 4,
   },
-  calendarButtonOn: {
-    backgroundColor: theme.colors.accentDark,
-    borderColor: theme.colors.accentDark,
+  calendarSwitchLabel: {
+    color: theme.colors.textSecondary,
+    fontSize: 10,
+    fontWeight: theme.typography.eyebrow.fontWeight,
+    letterSpacing: theme.typography.eyebrow.letterSpacing,
   },
   todayButtonText: {
     color: theme.colors.onAccent,

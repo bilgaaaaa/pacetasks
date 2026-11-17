@@ -43,9 +43,10 @@ you compete only with your own past pace.
   tasks dated there. Tap any day to show it in place of today, ‹ › for another
   week: a later day lists what is set for it, and tasks added while it shows
   are set for it; an earlier day lists what was finished. **Today** goes back.
-- **Calendar button** — beside the greeting: shows or hides the day's calendar
-  events and reminders under their own heading, from the calendars picked in
-  the DeskFocus widget's settings. A reminder's circle checks it off in Reminders.
+- **Calendars switch** — beside the greeting. Open: the day's events and
+  reminders (Apple, Google and every account picked in the DeskFocus tab) show
+  under their own heading next to the PaceTasks tasks; closed: only PaceTasks
+  tasks. A reminder's circle checks it off in Reminders.
 - **Carried over** — when earlier tasks are still open, one slim row
   ("4 tasks carried over · Review") proposes where each should go: Today,
   Tomorrow, the Weekend or Someday. Change any of them, then apply.
