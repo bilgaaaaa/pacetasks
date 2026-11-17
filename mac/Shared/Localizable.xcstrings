@@ -3012,6 +3012,26 @@
           }
         }
       }
+    },
+    "Hide calendars": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nascondi i calendari"
+          }
+        }
+      }
+    },
+    "Show calendars": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra i calendari"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

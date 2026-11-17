@@ -39,8 +39,13 @@ you compete only with your own past pace.
     **Done** logs how long it took and offers the next one; **Not now** skips it.
   - **Fit my time** asks how much time (5 min to 1 hour) and energy (low, normal,
     high) you have, then lists the tasks that fit back to back.
-- **Week strip** — this week at a glance, with a dot under each day that has
-  tasks due.
+- **Week strip** — the week at a glance, with a dot under each day that has
+  tasks dated there. Tap any day to show it in place of today, ‹ › for another
+  week: a later day lists what is set for it, and tasks added while it shows
+  are set for it; an earlier day lists what was finished. **Today** goes back.
+- **Calendar button** — beside the greeting: shows or hides the day's calendar
+  events and reminders under their own heading, from the calendars picked in
+  the DeskFocus widget's settings. A reminder's circle checks it off in Reminders.
 - **Carried over** — when earlier tasks are still open, one slim row
   ("4 tasks carried over · Review") proposes where each should go: Today,
   Tomorrow, the Weekend or Someday. Change any of them, then apply.

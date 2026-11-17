@@ -6,6 +6,7 @@ import { requireOptionalNativeModule } from "expo";
 import type { LanguageChoice } from "./appearance";
 import { FocusReply, parseFocusReply } from "./focusSession";
 import { parseWidgetSettings, WidgetSettings, WidgetSettingsPatch } from "./widgetSettings";
+import { CalendarItem, parseCalendarItems } from "./calendarItems";
 
 export type FocusBridgeAction =
   | "state"
@@ -16,7 +17,9 @@ export type FocusBridgeAction =
   | "end"
   | "reconcile"
   | "widgetSettings"
-  | "updateWidgetSettings";
+  | "updateWidgetSettings"
+  | "calendarItems"
+  | "completeReminder";
 
 // Field names match FocusBridgeCommand in targets/deskfocus/_shared/DeskfocusBridgeHandler.swift.
 interface FocusBridgeCommand {
@@ -26,6 +29,8 @@ interface FocusBridgeCommand {
   timerSoundEnabled?: boolean;
   language?: LanguageChoice; // the app's language choice, so the widget reads in the same language
   widgetSettings?: WidgetSettingsPatch; // the change for "updateWidgetSettings"
+  dayKey?: string; // "YYYY-MM-DD" for "calendarItems"
+  reminderId?: string; // the reminder "completeReminder" checks off
 }
 
 interface FocusBridgeSubscription {
@@ -87,25 +92,42 @@ export async function syncWidgetLanguage(language: LanguageChoice): Promise<void
   if (!reply.error) console.log("[deskfocusBridge] widget language", language);
 }
 
-// Sends a widget settings command and reads the settings it answers with; null off iOS or when the call failed.
-async function sendWidgetSettingsCommand(command: FocusBridgeCommand): Promise<WidgetSettings | null> {
+interface BridgeReply {
+  error?: unknown;
+  widget?: unknown;
+  calendarItems?: unknown;
+}
+
+// Sends a command that is not about Focus and returns its reply; null off iOS, when the call failed or when the
+// handler answered with an error.
+async function sendCommand(command: FocusBridgeCommand): Promise<BridgeReply | null> {
   if (!bridge) return null;
   try {
-    const reply = JSON.parse(await bridge.send(JSON.stringify(command))) as { widget?: unknown; error?: unknown };
-    if (typeof reply.error === "string") console.warn(`[deskfocusBridge] ${command.action} answered ${reply.error}`);
-    return parseWidgetSettings(reply.widget);
+    const reply = JSON.parse(await bridge.send(JSON.stringify(command))) as BridgeReply;
+    if (typeof reply.error !== "string") return reply;
+    console.warn(`[deskfocusBridge] ${command.action} answered ${reply.error}`);
   } catch (e) {
     console.warn(`[deskfocusBridge] ${command.action} failed`, e);
-    return null;
   }
+  return null;
 }
 
 // The widget's colors, focus length and every calendar and list on the phone with its switch.
-export function fetchWidgetSettings(): Promise<WidgetSettings | null> {
-  return sendWidgetSettingsCommand({ action: "widgetSettings" });
+export async function fetchWidgetSettings(): Promise<WidgetSettings | null> {
+  return parseWidgetSettings((await sendCommand({ action: "widgetSettings" }))?.widget);
 }
 
 // Saves one change for the widget, which redraws with it, and returns the settings as saved.
-export function updateWidgetSettings(patch: WidgetSettingsPatch): Promise<WidgetSettings | null> {
-  return sendWidgetSettingsCommand({ action: "updateWidgetSettings", widgetSettings: patch });
+export async function updateWidgetSettings(patch: WidgetSettingsPatch): Promise<WidgetSettings | null> {
+  return parseWidgetSettings((await sendCommand({ action: "updateWidgetSettings", widgetSettings: patch }))?.widget);
+}
+
+// A day's events and reminders from the calendars switched on for the widget; null when they can't be read.
+export async function fetchCalendarItems(dayKey: string): Promise<CalendarItem[] | null> {
+  return parseCalendarItems((await sendCommand({ action: "calendarItems", dayKey }))?.calendarItems);
+}
+
+// Checks a reminder off in Reminders (and in the widget); false when it could not be saved.
+export async function completeCalendarReminder(reminderId: string): Promise<boolean> {
+  return (await sendCommand({ action: "completeReminder", reminderId })) !== null;
 }

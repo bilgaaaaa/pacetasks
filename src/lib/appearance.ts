@@ -52,6 +52,7 @@ export interface AppearancePrefs {
   groupBy: GroupBy; // how the Today list is split into sections
   quickWinMinutes: number; // tasks this short or shorter count as quick wins
   language: LanguageChoice; // "system" follows the phone's language
+  showCalendars: boolean; // calendar events and reminders on Today, from the calendars picked for the widget
 }
 
 export const DEFAULT_APPEARANCE: AppearancePrefs = {
@@ -61,6 +62,7 @@ export const DEFAULT_APPEARANCE: AppearancePrefs = {
   groupBy: "all",
   quickWinMinutes: 5,
   language: "system",
+  showCalendars: true,
 };
 
 function pick<T extends string>(options: readonly T[], value: unknown, fallback: T): T {
@@ -89,5 +91,6 @@ export function parseAppearance(raw: string | null): AppearancePrefs {
       ? Math.min(QUICK_WIN_LIMITS.max, Math.max(QUICK_WIN_LIMITS.min, minutes))
       : DEFAULT_APPEARANCE.quickWinMinutes,
     language: pick(LANGUAGE_CHOICES, data.language, DEFAULT_APPEARANCE.language),
+    showCalendars: typeof data.showCalendars === "boolean" ? data.showCalendars : DEFAULT_APPEARANCE.showCalendars,
   };
 }

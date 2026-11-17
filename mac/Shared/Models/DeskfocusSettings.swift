@@ -130,6 +130,8 @@ struct DeskfocusSettings: Codable, Equatable {
     var hiddenContainerKeys: Set<String> = []
     /// False until the welcome guide was finished or closed once.
     var hasCompletedOnboarding: Bool = false
+    /// Calendar events, reminders and Google items in the panel and the menu bar; off leaves only PaceTasks tasks.
+    var showsCalendars: Bool = true
 
     init() {}
 
@@ -155,6 +157,7 @@ struct DeskfocusSettings: Codable, Equatable {
         language = (try? container.decodeIfPresent(AppLanguage.self, forKey: .language)) ?? defaults.language
         hiddenContainerKeys = try container.decodeIfPresent(Set<String>.self, forKey: .hiddenContainerKeys) ?? defaults.hiddenContainerKeys
         hasCompletedOnboarding = try container.decodeIfPresent(Bool.self, forKey: .hasCompletedOnboarding) ?? defaults.hasCompletedOnboarding
+        showsCalendars = try container.decodeIfPresent(Bool.self, forKey: .showsCalendars) ?? defaults.showsCalendars
     }
 
     /// True unless the user switched this calendar or list off in Settings.

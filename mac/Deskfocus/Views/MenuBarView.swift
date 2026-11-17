@@ -68,6 +68,14 @@ struct MenuBarView: View {
             Button { model.showAddTask() } label: { Image(systemName: "plus") }
                 .buttonStyle(.borderless)
                 .help("New task")
+            let showsCalendars = model.snapshot.settings.showsCalendars
+            let calendarsHelp: LocalizedStringKey = showsCalendars ? "Hide calendars" : "Show calendars"
+            Button { model.updateSettings { $0.showsCalendars.toggle() } } label: {
+                Image(systemName: showsCalendars ? "calendar" : "calendar.badge.minus")
+                    .foregroundStyle(showsCalendars ? Color.accentColor : Color.secondary)
+            }
+            .buttonStyle(.borderless)
+            .help(calendarsHelp)
             if !agenda.isShowingToday {
                 Button("Today") { agenda.goToToday() }
                     .buttonStyle(.borderless)

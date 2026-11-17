@@ -5,6 +5,7 @@ PaceTasks for Mac: a menu bar app that brings the **DeskFocus widget** to the Ma
 - Today's list merges **iCloud Calendar, iCloud Reminders, Google Calendar and Google Tasks**; each calendar or list can be switched on or off in Settings.
 - Shown as a **glass panel on the desktop** (Liquid Glass on macOS 26), as a WidgetKit widget, and in the menu bar; the panel and the widget share the same view.
 - Browse **any day** with the ‹ › arrows, or switch the desktop panel to the wider **week view** with seven columns.
+- The calendar button (panel and menu bar) shows or hides calendar events and reminders, leaving PaceTasks tasks.
 - Press ▶ on any task, on any day, to start a focus timer for it.
 - While the timer runs, the apps you chose are **hidden** or, in strict mode, **quit** (and quit again if you open them, then reopened when the session ends). An optional macOS Focus mode silences notifications.
 - Apple's Screen Time API (FamilyControls) only works on iOS and iPadOS, so blocking on the Mac is done by hiding or quitting apps.

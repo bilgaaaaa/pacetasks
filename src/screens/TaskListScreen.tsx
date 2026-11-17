@@ -27,6 +27,9 @@ import { useOneThing } from "../hooks/useOneThing";
 import { useRescue } from "../hooks/useRescue";
 import { useRollover } from "../hooks/useRollover";
 import { useWeeklyReset } from "../hooks/useWeeklyReset";
+import { useCalendarAccess } from "../hooks/useCalendarAccess";
+import { useCalendarItems } from "../hooks/useCalendarItems";
+import { openAppSettings } from "../lib/links";
 import { DEFAULT_SETTINGS } from "../lib/settingsApi";
 import { computeStats } from "../lib/stats";
 import { filterTodayTasks, groupTodayTasks, summarizePending, TodayFilter } from "../lib/taskSections";
@@ -44,6 +47,7 @@ import { groupUpcomingByDay, selectSomedayTasks, selectUpcomingTasks } from "@do
 import { PARK_PATCH, reschedulePatch, UNPARK_PATCH } from "@domain/taskPatch";
 import { addDays, toLocalDateKey } from "@domain/dates";
 import { AddTaskSheet } from "../components/AddTaskSheet";
+import { CalendarAgenda } from "../components/CalendarAgenda";
 import { TaskItem } from "../components/TaskItem";
 import { FocusSessionModal } from "../components/FocusSessionModal";
 import { EndOfDayCard } from "../components/EndOfDayCard";
@@ -86,6 +90,8 @@ interface ListSection {
 // Upcoming sheet (tasks set for a later day) and to the Someday sheet (parked tasks). An end-of-day card
 // appears once nothing is left pending. The week strip shows any other day in place of today: a later day
 // lists what is set for it, and tasks added there are set for it; an earlier day lists what was finished.
+// The calendar button beside the title shows or hides the day's events and reminders, from the calendars
+// picked in the DeskFocus widget's settings.
 export function TaskListScreen({ userId }: Props) {
   const { theme, appearance, updateAppearance } = useTheme();
   const styles = useStyles();
@@ -191,6 +197,19 @@ export function TaskListScreen({ userId }: Props) {
     [isToday, pending, done, tasks, dayKey, todayKey]
   );
   const shownFilter: TodayFilter = isToday ? filter : "all";
+  // Calendars show only with access; the button asks for it, or opens the phone's Settings once it was refused.
+  const calendarAccess = useCalendarAccess();
+  const calendarsShown = appearance.showCalendars && calendarAccess.access === "granted";
+  const calendar = useCalendarItems(dayKey, calendarsShown);
+  const toggleCalendars = async () => {
+    if (calendarsShown) {
+      updateAppearance({ showCalendars: false });
+      return;
+    }
+    updateAppearance({ showCalendars: true });
+    if (calendarAccess.access === "undetermined") await calendarAccess.request();
+    else if (calendarAccess.access === "denied") openAppSettings();
+  };
   const somedayTasks = useMemo(() => selectSomedayTasks(tasks), [tasks]);
   const upcomingTasks = useMemo(() => selectUpcomingTasks(tasks, todayKey), [tasks, todayKey]);
   const upcomingDays = useMemo(() => groupUpcomingByDay(upcomingTasks), [upcomingTasks]);
@@ -295,6 +314,21 @@ export function TaskListScreen({ userId }: Props) {
               >
                 <Ionicons name="arrow-undo" size={14} color={theme.colors.onAccent} />
                 <Text style={styles.todayButtonText}>{t("Today")}</Text>
+              </TouchableOpacity>
+            )}
+            {calendarAccess.access !== "unavailable" && (
+              <TouchableOpacity
+                style={[styles.calendarButton, calendarsShown && styles.calendarButtonOn]}
+                onPress={() => void toggleCalendars()}
+                accessibilityRole="switch"
+                accessibilityState={{ checked: calendarsShown }}
+                accessibilityLabel={t("Calendars on Today")}
+              >
+                <Ionicons
+                  name={calendarsShown ? "calendar" : "calendar-outline"}
+                  size={20}
+                  color={calendarsShown ? theme.colors.onAccent : theme.colors.textSecondary}
+                />
               </TouchableOpacity>
             )}
           </View>
@@ -407,6 +441,7 @@ export function TaskListScreen({ userId }: Props) {
                     />
                   </View>
                 )}
+                {calendarsShown && <CalendarAgenda items={calendar.items} onCompleteReminder={calendar.complete} />}
               </>
             }
             ListFooterComponent={
@@ -649,6 +684,22 @@ const useStyles = makeStyles((theme) => ({
     marginBottom: 6,
     borderRadius: theme.radius.pill,
     backgroundColor: theme.colors.accentDark,
+  },
+  // Shows or hides the calendars: filled in the accent while they show.
+  calendarButton: {
+    width: 40,
+    height: 40,
+    marginBottom: 2,
+    borderRadius: theme.radius.pill,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  calendarButtonOn: {
+    backgroundColor: theme.colors.accentDark,
+    borderColor: theme.colors.accentDark,
   },
   todayButtonText: {
     color: theme.colors.onAccent,

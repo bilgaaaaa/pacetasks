@@ -8,6 +8,10 @@ private struct FocusBridgeCommand: Decodable {
     let minutes: Int?
     /// The change for "updateWidgetSettings".
     let widgetSettings: WidgetSettingsPatch?
+    /// "YYYY-MM-DD" for "calendarItems".
+    let dayKey: String?
+    /// The EventKit id for "completeReminder".
+    let reminderId: String?
     /// PaceTasks' timer sound setting, mirrored into the shared settings so the widget's alerts follow it too.
     let timerSoundEnabled: Bool?
     /// PaceTasks' language choice ("system", "en" or "it"), mirrored into the shared settings so the widget reads in it too.
@@ -32,11 +36,13 @@ private struct FocusBridgeReply: Encodable {
     var error: String?
     /// The widget's settings, after "widgetSettings" and "updateWidgetSettings".
     var widget: WidgetSettingsPayload?
+    /// The asked day's events and reminders, after "calendarItems".
+    var calendarItems: [CalendarItemPayload]?
 }
 
 /// Runs PaceTasks' focus commands in the app's process, through the same FocusController the widget buttons use,
 /// so the app and the widget share one session, one alert and one Live Activity. It also reads and changes the
-/// widget's settings for PaceTasks' DeskFocus settings sheet. The native module finds it by name at run time
+/// widget's settings for PaceTasks' DeskFocus settings sheet, and serves the calendar items Today shows. The native module finds it by name at run time
 /// because a pod cannot see the app target's Swift types.
 @objc(DeskfocusBridgeHandler)
 final class DeskfocusBridgeHandler: NSObject {
@@ -75,6 +81,25 @@ final class DeskfocusBridgeHandler: NSObject {
             WidgetSettingsBridge.apply(patch)
             FocusController.notifyChange()
             return FocusBridgeReply(focus: currentFocus(), widget: WidgetSettingsBridge.current())
+        case "calendarItems":
+            guard let dayKey = command.dayKey, let items = await CalendarItemsBridge.items(dayKey: dayKey) else {
+                return FocusBridgeReply(focus: currentFocus(), error: "invalid_command")
+            }
+            return FocusBridgeReply(focus: currentFocus(), calendarItems: items)
+        case "completeReminder":
+            guard let reminderId = command.reminderId else {
+                return FocusBridgeReply(focus: currentFocus(), error: "invalid_command")
+            }
+            do {
+                try EventKitTasks.complete(reminderId: reminderId)
+            } catch {
+                Log.app.error("Bridge: reminder not completed: \(error.localizedDescription, privacy: .public)")
+                return FocusBridgeReply(focus: currentFocus(), error: "complete_failed")
+            }
+            // The widget drops it from its list too.
+            await WidgetTaskSync.refresh()
+            FocusController.notifyChange()
+            return FocusBridgeReply(focus: currentFocus())
         case "start":
             guard let paceTaskId = command.paceTaskId, await start(paceTaskId: paceTaskId, minutes: command.minutes) else {
                 return FocusBridgeReply(focus: currentFocus(), error: "unknown_task")

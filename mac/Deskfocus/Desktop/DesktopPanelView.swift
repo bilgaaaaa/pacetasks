@@ -507,6 +507,7 @@ struct PanelNavigation: View {
     var body: some View {
         HStack(spacing: 4) {
             PanelIconButton(systemName: "plus", label: "New task") { model.showAddTask() }
+            CalendarsToggleButton()
                 .padding(.trailing, 4)
             PanelIconButton(systemName: "chevron.left", label: layout == .day ? "Previous day" : "Previous week") {
                 withAnimation(DeskfocusMotion.navigate, onPrevious)
@@ -526,6 +527,21 @@ struct PanelNavigation: View {
                 .padding(.leading, 4)
         }
         .fixedSize()
+    }
+}
+
+/// Shows or hides calendar events and reminders, leaving PaceTasks tasks; lit while they show.
+private struct CalendarsToggleButton: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        let isOn = model.snapshot.settings.showsCalendars
+        let label: LocalizedStringKey = isOn ? "Hide calendars" : "Show calendars"
+        PanelIconButton(systemName: isOn ? "calendar" : "calendar.badge.minus", label: label, isProminent: isOn) {
+            withAnimation(DeskfocusMotion.list) {
+                model.updateSettings { $0.showsCalendars.toggle() }
+            }
+        }
     }
 }
 
