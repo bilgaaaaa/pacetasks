@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   SafeAreaView,
@@ -15,7 +15,8 @@ import { makeStyles, useTheme } from "../hooks/useTheme";
 import { useSettings } from "../hooks/useSettings";
 import { useAccount } from "../hooks/useAccount";
 import { useNotificationPermission } from "../hooks/useNotificationPermission";
-import { useCalendarAccess } from "../hooks/useCalendarAccess";
+import { useDeskfocusAccess } from "../hooks/useDeskfocusAccess";
+import { useDeskfocusSettings } from "../hooks/useDeskfocusSettings";
 import { AccountCard } from "../components/AccountCard";
 import { ProCard } from "../components/ProCard";
 import { PRO_SECTION_LABEL } from "../lib/proCopy";
@@ -51,6 +52,8 @@ import {
   DESKFOCUS_DENIED_MESSAGE,
   DESKFOCUS_GRANTED_MESSAGE,
   DESKFOCUS_SECTION_LABEL,
+  DESKFOCUS_SETTINGS_SUBTITLE,
+  DESKFOCUS_SETTINGS_TITLE,
   TIMER_SOUND_SUBTITLE,
   TIMER_SOUND_TITLE,
 } from "../lib/settingsCopy";
@@ -119,14 +122,8 @@ export function SettingsScreen({ userId, session }: Props) {
   // Turning a reminder on is the moment to ask iOS for permission; the phone's
   // schedule itself follows the saved settings through useReminders.
   const notifications = useNotificationPermission();
-  const calendarAccess = useCalendarAccess();
-  // The widget's focus timer alerts through notifications, so the card asks for them with the calendar.
-  const deskfocusNeedsAccess = calendarAccess.access === "undetermined" || notifications.permission === "undetermined";
-  const allowDeskfocusAccess = useCallback(async () => {
-    await calendarAccess.request();
-    await requestNotificationPermission().catch((e) => console.warn("[SettingsScreen] permission request failed", e));
-    notifications.refresh();
-  }, [calendarAccess.request, notifications.refresh]);
+  const deskfocusAccess = useDeskfocusAccess();
+  const deskfocusSettings = useDeskfocusSettings();
   const saveReminderSwitch = async (patch: { reminder_enabled?: boolean; task_reminder_enabled?: boolean }) => {
     const saved = await save(patch);
     if (!saved || !(patch.reminder_enabled || patch.task_reminder_enabled)) return;
@@ -471,23 +468,35 @@ export function SettingsScreen({ userId, session }: Props) {
             />
           </View>
 
-          {calendarAccess.access !== "unavailable" && (
+          {deskfocusAccess.access !== "unavailable" && (
             <>
               <Text style={styles.sectionLabel}>{t(DESKFOCUS_SECTION_LABEL)}</Text>
               <View style={styles.card}>
                 <Text style={styles.cardTitle}>{t(DESKFOCUS_CARD_TITLE)}</Text>
                 <Text style={styles.cardSubtitle}>{t(DESKFOCUS_CARD_SUBTITLE)}</Text>
-                {calendarAccess.access === "granted" && <Text style={styles.cardSubtitle}>{t(DESKFOCUS_GRANTED_MESSAGE)}</Text>}
-                {deskfocusNeedsAccess && calendarAccess.access !== "denied" && (
-                  <Button label={t(DESKFOCUS_ALLOW_ACTION)} variant="secondary" onPress={allowDeskfocusAccess} />
+                {deskfocusAccess.access === "granted" && <Text style={styles.cardSubtitle}>{t(DESKFOCUS_GRANTED_MESSAGE)}</Text>}
+                {deskfocusAccess.needsAccess && deskfocusAccess.access !== "denied" && (
+                  <Button label={t(DESKFOCUS_ALLOW_ACTION)} variant="secondary" onPress={() => void deskfocusAccess.allow()} />
                 )}
-                {calendarAccess.access === "denied" && (
+                {deskfocusAccess.access === "denied" && (
                   <>
                     <Text style={styles.cardSubtitle}>{t(DESKFOCUS_DENIED_MESSAGE)}</Text>
                     <Button label={t(DESKFOCUS_DENIED_ACTION)} variant="secondary" onPress={openAppSettings} />
                   </>
                 )}
               </View>
+              <TouchableOpacity
+                style={styles.toggleRow}
+                onPress={deskfocusSettings.open}
+                accessibilityRole="button"
+                accessibilityLabel={t(DESKFOCUS_SETTINGS_TITLE)}
+              >
+                <View style={styles.toggleText}>
+                  <Text style={styles.toggleTitle}>{t(DESKFOCUS_SETTINGS_TITLE)}</Text>
+                  <Text style={styles.toggleSubtitle}>{t(DESKFOCUS_SETTINGS_SUBTITLE)}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={theme.colors.textSecondary} />
+              </TouchableOpacity>
             </>
           )}
 

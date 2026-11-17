@@ -1,12 +1,22 @@
 // The only caller of the DeskfocusBridge native module (modules/deskfocus-bridge), which runs Focus through the same
-// session the DeskFocus widget uses. Only iOS builds have it: elsewhere `isFocusBridgeAvailable()` is false and
-// the Focus screen keeps its own countdown.
+// session the DeskFocus widget uses and reads and changes the widget's settings. Only iOS builds have it: elsewhere
+// `isFocusBridgeAvailable()` is false, the Focus screen keeps its own countdown and there are no widget settings.
 import { Platform } from "react-native";
 import { requireOptionalNativeModule } from "expo";
 import type { LanguageChoice } from "./appearance";
 import { FocusReply, parseFocusReply } from "./focusSession";
+import { parseWidgetSettings, WidgetSettings, WidgetSettingsPatch } from "./widgetSettings";
 
-export type FocusBridgeAction = "state" | "start" | "pause" | "resume" | "extend" | "end" | "reconcile";
+export type FocusBridgeAction =
+  | "state"
+  | "start"
+  | "pause"
+  | "resume"
+  | "extend"
+  | "end"
+  | "reconcile"
+  | "widgetSettings"
+  | "updateWidgetSettings";
 
 // Field names match FocusBridgeCommand in targets/deskfocus/_shared/DeskfocusBridgeHandler.swift.
 interface FocusBridgeCommand {
@@ -15,6 +25,7 @@ interface FocusBridgeCommand {
   minutes?: number;
   timerSoundEnabled?: boolean;
   language?: LanguageChoice; // the app's language choice, so the widget reads in the same language
+  widgetSettings?: WidgetSettingsPatch; // the change for "updateWidgetSettings"
 }
 
 interface FocusBridgeSubscription {
@@ -74,4 +85,27 @@ export async function syncWidgetLanguage(language: LanguageChoice): Promise<void
   if (!bridge) return;
   const reply = await sendFocusCommand({ action: "state", language });
   if (!reply.error) console.log("[deskfocusBridge] widget language", language);
+}
+
+// Sends a widget settings command and reads the settings it answers with; null off iOS or when the call failed.
+async function sendWidgetSettingsCommand(command: FocusBridgeCommand): Promise<WidgetSettings | null> {
+  if (!bridge) return null;
+  try {
+    const reply = JSON.parse(await bridge.send(JSON.stringify(command))) as { widget?: unknown; error?: unknown };
+    if (typeof reply.error === "string") console.warn(`[deskfocusBridge] ${command.action} answered ${reply.error}`);
+    return parseWidgetSettings(reply.widget);
+  } catch (e) {
+    console.warn(`[deskfocusBridge] ${command.action} failed`, e);
+    return null;
+  }
+}
+
+// The widget's colors, focus length and every calendar and list on the phone with its switch.
+export function fetchWidgetSettings(): Promise<WidgetSettings | null> {
+  return sendWidgetSettingsCommand({ action: "widgetSettings" });
+}
+
+// Saves one change for the widget, which redraws with it, and returns the settings as saved.
+export function updateWidgetSettings(patch: WidgetSettingsPatch): Promise<WidgetSettings | null> {
+  return sendWidgetSettingsCommand({ action: "updateWidgetSettings", widgetSettings: patch });
 }

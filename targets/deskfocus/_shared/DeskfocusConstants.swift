@@ -12,6 +12,8 @@ enum DeskfocusConstants {
     static let paceTasksKey = "deskfocus.paceTasks"
     /// App Group defaults key listing PaceTasks tasks checked off in the widget, for the app to complete in Supabase.
     static let completedPaceTaskIdsKey = "deskfocus.completedPaceTaskIds"
+    /// Opens PaceTasks on the DeskFocus settings; the scheme is `scheme` in app.json, the path matches src/lib/widgetSettings.ts.
+    static let settingsURL = URL(string: "pacetasks://deskfocus-settings")!
     /// Color of PaceTasks rows, the app's brand green.
     static let paceTasksColorHex = "#3F7446"
 }

@@ -33,8 +33,11 @@ struct DeskfocusDashboardView: View {
             let done = snapshot.completedCount(on: date)
             VStack(alignment: .leading, spacing: layout == .expanded ? 10 : 8) {
                 DayHeaderView(date: date, density: layout.density) {
-                    DayProgressRing(done: done, total: done + tasks.count, density: layout.density)
-                        .invalidatableContent()
+                    HStack(alignment: .top, spacing: 8) {
+                        WidgetSettingsLink(density: layout.density)
+                        DayProgressRing(done: done, total: done + tasks.count, density: layout.density)
+                            .invalidatableContent()
+                    }
                 }
                 DayAgendaView(
                     tasks: tasks,
@@ -62,5 +65,22 @@ struct DeskfocusDashboardView: View {
             }
             .transition(.opacity)
         }
+    }
+}
+
+/// The gear in the widget's header: opens PaceTasks on its DeskFocus settings (calendars, colors, focus length).
+private struct WidgetSettingsLink: View {
+    let density: AgendaDensity
+
+    var body: some View {
+        let size: CGFloat = density == .compact ? 24 : 28
+        Link(destination: DeskfocusConstants.settingsURL) {
+            Image(systemName: "gearshape.fill")
+                .font(.system(size: size * 0.46, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .frame(width: size, height: size)
+                .background(Circle().fill(Color.white.opacity(0.14)))
+        }
+        .accessibilityLabel(Text("Widget settings"))
     }
 }

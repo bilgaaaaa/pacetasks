@@ -105,6 +105,10 @@ you compete only with your own past pace.
   are scheduled on the phone and planned a few days ahead, so they stop by
   themselves if the app stays closed.
 - **Work schedule, timer chime, haptics, Pomodoro length.**
+- **DeskFocus widget** (iPhone) — calendar and reminders access, and **Widget settings**: which
+  calendars and reminder lists it shows (every account on the iPhone, Google and Outlook included),
+  undated reminders, glass and accent colors, and the focus length for ▶. The gear on the widget opens
+  the same sheet through `pacetasks://deskfocus-settings`.
 - **Your data** — privacy policy, help and support, and **Delete account**
   (or **Delete my data** before sign-up), which erases everything on the server.
 

@@ -8,6 +8,11 @@ import { useSession } from "./src/hooks/useSession";
 import { useAppUpdate } from "./src/hooks/useAppUpdate";
 import { UpdateSheet } from "./src/components/UpdateSheet";
 import { PaywallSheet } from "./src/components/PaywallSheet";
+import { DeskfocusSettingsSheet } from "./src/components/DeskfocusSettingsSheet";
+import { DeskfocusSettingsProvider, useDeskfocusSettings } from "./src/hooks/useDeskfocusSettings";
+import { useDeskfocusAccess } from "./src/hooks/useDeskfocusAccess";
+import { useWidgetSettings } from "./src/hooks/useWidgetSettings";
+import { openAppSettings } from "./src/lib/links";
 import { ProProvider, usePro } from "./src/hooks/usePro";
 import { SettingsProvider } from "./src/hooks/useSettings";
 import { TasksProvider } from "./src/hooks/useTasks";
@@ -84,6 +89,31 @@ function ProPaywall() {
   );
 }
 
+// The one DeskFocus settings sheet, opened from Settings or the widget's gear; it loads only while open.
+function DeskfocusSettings() {
+  const deskfocus = useDeskfocusSettings();
+  const widget = useWidgetSettings(deskfocus.visible);
+  const access = useDeskfocusAccess();
+  const allowAccess = async () => {
+    await access.allow();
+    await widget.reload();
+  };
+  return (
+    <DeskfocusSettingsSheet
+      visible={deskfocus.visible}
+      settings={widget.settings}
+      failed={widget.failed}
+      access={access.access}
+      needsAccess={access.needsAccess}
+      onAllowAccess={() => void allowAccess()}
+      onOpenPhoneSettings={openAppSettings}
+      onChange={(patch) => void widget.update(patch)}
+      onRetry={() => void widget.reload()}
+      onClose={deskfocus.close}
+    />
+  );
+}
+
 // Waits for the anonymous Supabase session and the saved appearance, loads the
 // user's settings, tasks and Pro status once (SettingsProvider, TasksProvider, ProProvider), then wires the
 // three tabs (Today / Pace / Settings) behind the pill tab bar.
@@ -143,26 +173,29 @@ function AppContent() {
     <SettingsProvider userId={userId}>
       <TasksProvider userId={userId}>
         <ProProvider userId={userId}>
-          <NavigationContainer key={language} theme={navigationTheme}>
-            <StatusBar style={theme.isDark ? "light" : "dark"} />
-            <Tab.Navigator
-              initialRouteName={languageChanged.current ? "Settings" : "Tasks"}
-              screenOptions={{ headerShown: false }}
-              tabBar={(props) => <PillTabBar {...props} />}
-            >
-              <Tab.Screen name="Tasks" options={{ tabBarLabel: t("Today") }}>
-                {() => <TaskListScreen userId={userId} />}
-              </Tab.Screen>
-              <Tab.Screen name="Stats" options={{ tabBarLabel: t("Pace") }}>
-                {() => <StatsScreen />}
-              </Tab.Screen>
-              <Tab.Screen name="Settings" options={{ tabBarLabel: t("Settings") }}>
-                {() => <SettingsScreen userId={userId} session={session} />}
-              </Tab.Screen>
-            </Tab.Navigator>
-          </NavigationContainer>
-          <UpdateSheet update={appUpdate.update} onUpdateNow={appUpdate.updateNow} onLater={appUpdate.later} />
-          <ProPaywall />
+          <DeskfocusSettingsProvider>
+            <NavigationContainer key={language} theme={navigationTheme}>
+              <StatusBar style={theme.isDark ? "light" : "dark"} />
+              <Tab.Navigator
+                initialRouteName={languageChanged.current ? "Settings" : "Tasks"}
+                screenOptions={{ headerShown: false }}
+                tabBar={(props) => <PillTabBar {...props} />}
+              >
+                <Tab.Screen name="Tasks" options={{ tabBarLabel: t("Today") }}>
+                  {() => <TaskListScreen userId={userId} />}
+                </Tab.Screen>
+                <Tab.Screen name="Stats" options={{ tabBarLabel: t("Pace") }}>
+                  {() => <StatsScreen />}
+                </Tab.Screen>
+                <Tab.Screen name="Settings" options={{ tabBarLabel: t("Settings") }}>
+                  {() => <SettingsScreen userId={userId} session={session} />}
+                </Tab.Screen>
+              </Tab.Navigator>
+            </NavigationContainer>
+            <UpdateSheet update={appUpdate.update} onUpdateNow={appUpdate.updateNow} onLater={appUpdate.later} />
+            <ProPaywall />
+            <DeskfocusSettings />
+          </DeskfocusSettingsProvider>
         </ProProvider>
       </TasksProvider>
     </SettingsProvider>

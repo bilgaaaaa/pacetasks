@@ -6,6 +6,8 @@ private struct FocusBridgeCommand: Decodable {
     let action: String
     let paceTaskId: String?
     let minutes: Int?
+    /// The change for "updateWidgetSettings".
+    let widgetSettings: WidgetSettingsPatch?
     /// PaceTasks' timer sound setting, mirrored into the shared settings so the widget's alerts follow it too.
     let timerSoundEnabled: Bool?
     /// PaceTasks' language choice ("system", "en" or "it"), mirrored into the shared settings so the widget reads in it too.
@@ -28,11 +30,14 @@ private struct SharedFocusSession: Encodable {
 private struct FocusBridgeReply: Encodable {
     var focus: SharedFocusSession?
     var error: String?
+    /// The widget's settings, after "widgetSettings" and "updateWidgetSettings".
+    var widget: WidgetSettingsPayload?
 }
 
 /// Runs PaceTasks' focus commands in the app's process, through the same FocusController the widget buttons use,
-/// so the app and the widget share one session, one alert and one Live Activity. The native module finds it by
-/// name at run time because a pod cannot see the app target's Swift types.
+/// so the app and the widget share one session, one alert and one Live Activity. It also reads and changes the
+/// widget's settings for PaceTasks' DeskFocus settings sheet. The native module finds it by name at run time
+/// because a pod cannot see the app target's Swift types.
 @objc(DeskfocusBridgeHandler)
 final class DeskfocusBridgeHandler: NSObject {
     /// Called by the native module with a JSON command; answers with the focus state as JSON.
@@ -61,6 +66,15 @@ final class DeskfocusBridgeHandler: NSObject {
         switch command.action {
         case "state":
             return FocusBridgeReply(focus: currentFocus())
+        case "widgetSettings":
+            return FocusBridgeReply(focus: currentFocus(), widget: WidgetSettingsBridge.current())
+        case "updateWidgetSettings":
+            guard let patch = command.widgetSettings else {
+                return FocusBridgeReply(focus: currentFocus(), error: "invalid_command")
+            }
+            WidgetSettingsBridge.apply(patch)
+            FocusController.notifyChange()
+            return FocusBridgeReply(focus: currentFocus(), widget: WidgetSettingsBridge.current())
         case "start":
             guard let paceTaskId = command.paceTaskId, await start(paceTaskId: paceTaskId, minutes: command.minutes) else {
                 return FocusBridgeReply(focus: currentFocus(), error: "unknown_task")

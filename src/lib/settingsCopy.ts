@@ -21,3 +21,6 @@ export const DESKFOCUS_ALLOW_ACTION = msg("Allow calendar and alerts");
 export const DESKFOCUS_GRANTED_MESSAGE = msg("Today's events and reminders show in the widget.");
 export const DESKFOCUS_DENIED_MESSAGE = msg("Turn on Calendars and Reminders for PaceTasks in Settings to see them in the widget.");
 export const DESKFOCUS_DENIED_ACTION = msg("Open Settings");
+// The DeskFocus settings sheet, opened from this card and from the gear on the widget.
+export const DESKFOCUS_SETTINGS_TITLE = msg("Widget settings");
+export const DESKFOCUS_SETTINGS_SUBTITLE = msg("Calendars, reminder lists, colors and focus length.");
