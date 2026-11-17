@@ -38,6 +38,8 @@ private struct FocusBridgeReply: Encodable {
     var widget: WidgetSettingsPayload?
     /// The asked day's events and reminders, after "calendarItems".
     var calendarItems: [CalendarItemPayload]?
+    /// Calendar and Reminders access, after "calendarAccess" and "requestCalendarAccess".
+    var calendarAccess: CalendarAccessPayload?
 }
 
 /// Runs PaceTasks' focus commands in the app's process, through the same FocusController the widget buttons use,
@@ -81,6 +83,13 @@ final class DeskfocusBridgeHandler: NSObject {
             WidgetSettingsBridge.apply(patch)
             FocusController.notifyChange()
             return FocusBridgeReply(focus: currentFocus(), widget: WidgetSettingsBridge.current())
+        case "calendarAccess":
+            return FocusBridgeReply(focus: currentFocus(), calendarAccess: CalendarAccessBridge.current())
+        case "requestCalendarAccess":
+            let access = await CalendarAccessBridge.request()
+            // The widget can show the calendars now.
+            FocusController.notifyChange()
+            return FocusBridgeReply(focus: currentFocus(), calendarAccess: access)
         case "calendarItems":
             guard let dayKey = command.dayKey, let items = await CalendarItemsBridge.items(dayKey: dayKey) else {
                 return FocusBridgeReply(focus: currentFocus(), error: "invalid_command")

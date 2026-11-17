@@ -7,6 +7,7 @@ import type { LanguageChoice } from "./appearance";
 import { FocusReply, parseFocusReply } from "./focusSession";
 import { parseWidgetSettings, WidgetSettings, WidgetSettingsPatch } from "./widgetSettings";
 import { CalendarItem, parseCalendarItems } from "./calendarItems";
+import { CalendarAccess, parseCalendarAccess } from "./calendarAccess";
 
 export type FocusBridgeAction =
   | "state"
@@ -19,7 +20,9 @@ export type FocusBridgeAction =
   | "widgetSettings"
   | "updateWidgetSettings"
   | "calendarItems"
-  | "completeReminder";
+  | "completeReminder"
+  | "calendarAccess"
+  | "requestCalendarAccess";
 
 // Field names match FocusBridgeCommand in targets/deskfocus/_shared/DeskfocusBridgeHandler.swift.
 interface FocusBridgeCommand {
@@ -96,6 +99,7 @@ interface BridgeReply {
   error?: unknown;
   widget?: unknown;
   calendarItems?: unknown;
+  calendarAccess?: unknown;
 }
 
 // Sends a command that is not about Focus and returns its reply; null off iOS, when the call failed or when the
@@ -130,4 +134,16 @@ export async function fetchCalendarItems(dayKey: string): Promise<CalendarItem[]
 // Checks a reminder off in Reminders (and in the widget); false when it could not be saved.
 export async function completeCalendarReminder(reminderId: string): Promise<boolean> {
   return (await sendCommand({ action: "completeReminder", reminderId })) !== null;
+}
+
+// Calendar and Reminders access as iOS reports it to EventKit; "unavailable" off iOS or when it can't be read.
+export async function fetchCalendarAccess(): Promise<CalendarAccess> {
+  if (!bridge) return "unavailable";
+  return parseCalendarAccess((await sendCommand({ action: "calendarAccess" }))?.calendarAccess);
+}
+
+// Shows iOS' Calendar and Reminders prompts for whatever was never asked, and returns the access afterwards.
+export async function requestCalendarAccessFromBridge(): Promise<CalendarAccess> {
+  if (!bridge) return "unavailable";
+  return parseCalendarAccess((await sendCommand({ action: "requestCalendarAccess" }))?.calendarAccess);
 }
