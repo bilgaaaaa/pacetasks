@@ -30,6 +30,8 @@ struct DeskfocusSnapshot: Codable, Equatable {
     var taskFocusMinutesUpdated: [String: Date] = [:]
     /// Unfinished sessions by task id, resumed by the next ▶ on that task.
     var savedProgress: [String: SavedFocusProgress] = [:]
+    /// Which page of each column the widget shows.
+    var widgetPages = WidgetPages()
     var focus: FocusSession?
     var settings = DeskfocusSettings()
     var lastSyncDate: Date?
@@ -48,6 +50,7 @@ struct DeskfocusSnapshot: Codable, Equatable {
         taskFocusMinutes = try container.decodeIfPresent([String: Int].self, forKey: .taskFocusMinutes) ?? [:]
         taskFocusMinutesUpdated = try container.decodeIfPresent([String: Date].self, forKey: .taskFocusMinutesUpdated) ?? [:]
         savedProgress = try container.decodeIfPresent([String: SavedFocusProgress].self, forKey: .savedProgress) ?? [:]
+        widgetPages = try container.decodeIfPresent(WidgetPages.self, forKey: .widgetPages) ?? WidgetPages()
         focus = try container.decodeIfPresent(FocusSession.self, forKey: .focus)
         settings = try container.decodeIfPresent(DeskfocusSettings.self, forKey: .settings) ?? DeskfocusSettings()
         lastSyncDate = try container.decodeIfPresent(Date.self, forKey: .lastSyncDate)

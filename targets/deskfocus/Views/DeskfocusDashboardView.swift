@@ -6,31 +6,16 @@ enum DashboardLayout {
     case compact
     case expanded
 
-    var maxRows: Int { self == .expanded ? 4 : 0 }
-
     var density: AgendaDensity { self == .expanded ? .regular : .compact }
 
-    /// Splits the rows between today and tomorrow. With tomorrow's items, the large widget keeps two rows for today
-    /// and gives tomorrow two lines for each row today leaves free; the medium widget shows tomorrow only once today is clear.
-    func rowBudget(todayRows: Int, hasTodayItems: Bool, tomorrowCount: Int) -> AgendaRowBudget {
-        guard tomorrowCount > 0 else { return AgendaRowBudget(today: maxRows, tomorrow: 0) }
-        switch self {
-        case .expanded:
-            let today = min(todayRows, 2)
-            return AgendaRowBudget(today: today, tomorrow: 2 + (2 - today) * 2)
-        case .compact:
-            return AgendaRowBudget(today: 0, tomorrow: hasTodayItems ? 0 : 2)
-        }
-    }
+    /// Today's items per page, the first one included; more would run past the widget's edge.
+    var todayPageSize: Int { self == .expanded ? 6 : 2 }
+
+    /// Tomorrow's items per page; they are about as tall as today's rows, so the columns line up.
+    var tomorrowPageSize: Int { self == .expanded ? 7 : 2 }
 }
 
-/// How many rows today and tomorrow get under the header; "Up next" is not counted.
-struct AgendaRowBudget: Equatable {
-    let today: Int
-    let tomorrow: Int
-}
-
-/// Today's list with tomorrow below it, or the focus session while one exists; the WidgetKit widget's content.
+/// Today and tomorrow side by side, or the focus session while one exists; the WidgetKit widget's content.
 /// Everything a button changes is marked invalidatable, so it dims until the widget reloads.
 struct DeskfocusDashboardView: View {
     let snapshot: DeskfocusSnapshot
@@ -48,60 +33,29 @@ struct DeskfocusDashboardView: View {
             .invalidatableContent()
             .transition(.scale(scale: 0.94).combined(with: .opacity))
         } else {
-            let tasks = snapshot.visibleTasks(at: date)
-            let tomorrowTasks = snapshot.visibleTomorrowTasks(after: date)
-            let done = snapshot.completedCount(on: date)
-            let budget = layout.rowBudget(
-                todayRows: max(tasks.count - 1, 0),
-                hasTodayItems: !tasks.isEmpty,
-                tomorrowCount: tomorrowTasks.count
-            )
-            VStack(alignment: .leading, spacing: layout == .expanded ? 10 : 8) {
-                DayHeaderView(date: date, density: layout.density) {
-                    HStack(alignment: .top, spacing: 8) {
-                        WidgetSettingsLink(density: layout.density)
-                        DayProgressRing(done: done, total: done + tasks.count, density: layout.density)
-                            .invalidatableContent()
+            AgendaColumnsView(
+                today: snapshot.visibleTasks(at: date),
+                tomorrow: snapshot.visibleTomorrowTasks(after: date),
+                date: date,
+                pages: snapshot.widgetPages,
+                layout: layout,
+                doneCount: snapshot.completedCount(on: date),
+                savedProgress: snapshot.savedProgress,
+                completeAction: { task in
+                    Button(intent: CompleteTaskIntent(taskId: task.id)) { CheckGlyph(size: layout == .expanded ? 20 : 18) }
+                        .buttonStyle(DeskfocusPressStyle())
+                        .accessibilityLabel("Mark as done")
+                },
+                startAction: { task, isNext in
+                    Button(intent: StartFocusIntent(taskId: task.id)) {
+                        PlayGlyph(size: isNext ? (layout == .expanded ? 32 : 28) : 24, isProminent: isNext)
                     }
-                }
-                // The medium widget swaps the "All clear" card for one line, so tomorrow fits below it.
-                if layout == .compact, tasks.isEmpty, budget.tomorrow > 0 {
-                    TodayClearLine()
-                } else {
-                    todayAgenda(tasks: tasks, maxRows: budget.today)
-                }
-                if budget.tomorrow > 0 {
-                    TomorrowSectionView(tasks: tomorrowTasks, maxRows: budget.tomorrow, density: layout.density)
-                }
-                Spacer(minLength: 0)
-            }
+                    .buttonStyle(DeskfocusPressStyle())
+                },
+                tomorrowAccessory: { WidgetSettingsLink(density: layout.density) }
+            )
             .transition(.opacity)
         }
-    }
-
-    private func todayAgenda(tasks: [DeskTask], maxRows: Int) -> some View {
-        DayAgendaView(
-            tasks: tasks,
-            now: date,
-            maxRows: maxRows,
-            showsUpNext: true,
-            savedProgress: snapshot.savedProgress,
-            density: layout.density,
-            completeAction: { task in
-                Button(intent: CompleteTaskIntent(taskId: task.id)) { CheckGlyph() }
-                    .buttonStyle(DeskfocusPressStyle())
-                    .accessibilityLabel("Mark as done")
-            },
-            rowAction: { task in
-                Button(intent: StartFocusIntent(taskId: task.id)) { PlayGlyph(size: 26) }
-                    .buttonStyle(DeskfocusPressStyle())
-            },
-            upNextAction: { task in
-                Button(intent: StartFocusIntent(taskId: task.id)) { PlayGlyph(size: layout == .expanded ? 38 : 32, isProminent: true) }
-                    .buttonStyle(DeskfocusPressStyle())
-            }
-        )
-        .invalidatableContent()
     }
 }
 

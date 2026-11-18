@@ -181,6 +181,26 @@
         }
       }
     },
+    "Back to start": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Torna all'inizio"
+          }
+        }
+      }
+    },
+    "Column": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colonna"
+          }
+        }
+      }
+    },
     "Nothing left today": {
       "localizations": {
         "it": {
@@ -191,12 +211,72 @@
         }
       }
     },
+    "Nothing planned": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niente in programma"
+          }
+        }
+      }
+    },
     "Open tomorrow": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Apri domani"
+          }
+        }
+      }
+    },
+    "Page": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pagina"
+          }
+        }
+      }
+    },
+    "Show %lld more": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra altri %lld"
+          }
+        }
+      }
+    },
+    "Show More Tasks": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra altre attività"
+          }
+        }
+      }
+    },
+    "Show the first tasks again": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra di nuovo le prime attività"
+          }
+        }
+      }
+    },
+    "Shows the next tasks of a column in the widget.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra le attività successive di una colonna nel widget."
           }
         }
       }
