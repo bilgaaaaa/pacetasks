@@ -1,0 +1,26 @@
+# Builds the tester app and gives it to every TestFlight group, so no build is ever left to add by hand.
+# Run with `npm run ios:testflight`. Team (Expo) gets each build on its own; external groups are listed here.
+name: TestFlight
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  build_ios:
+    name: Build iOS (tester)
+    type: build
+    params:
+      platform: ios
+      profile: testflight
+
+  testflight:
+    name: Send to TestFlight testers
+    type: testflight
+    needs: [build_ios]
+    params:
+      build_id: ${{ needs.build_ios.outputs.build_id }}
+      profile: testflight
+      # External groups need Beta App Review: the job submits each build for it, then Apple releases it to the group.
+      external_groups: ['testers']
+      changelog: |
+        Latest PaceTasks build. Use the app as usual and send any feedback through TestFlight.

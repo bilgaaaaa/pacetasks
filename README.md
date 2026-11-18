@@ -345,8 +345,13 @@ missing (or when demo mode is set), so a broken build never reaches a phone.
 ### Put the app on your iPhone (TestFlight)
 
 ```bash
-npm run ios:testflight         # builds, then uploads to App Store Connect by itself
+npm run ios:testflight         # builds, uploads, and hands the build to every tester group
 ```
+
+The command runs the EAS workflow in `.eas/workflows/testflight.yml`: it builds with the `testflight`
+profile, then gives the build to **Team (Expo)** (internal) and to the external **testers** group, with
+its Beta App Review submitted for you. A new external group only needs its name added to
+`external_groups` there; never add builds to groups by hand.
 
 TestFlight builds use the `testflight` profile, which sets `EXPO_PUBLIC_TESTER_BUILD=1`: every Pro
 feature is unlocked for you and your testers, with no purchase. The build for the App Store comes from
@@ -365,7 +370,9 @@ phone and accept the invite. Internal builds need no review.
 2. App Store Connect → TestFlight → **External Testing** → create a group, add
    the build, and fill in the test info (what to test, feedback email).
 3. The first build goes through a short Beta App Review (usually under a day).
-4. Turn on **Public Link** for the group and send the link. Friends install
+4. Add the group's name to `external_groups` in `.eas/workflows/testflight.yml`,
+   so every `npm run ios:testflight` reaches it.
+5. Turn on **Public Link** for the group and send the link. Friends install
    TestFlight, open the link, and get every new build automatically.
 
 Each build expires after 90 days; `npm run ios:testflight` again replaces it.
