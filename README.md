@@ -345,17 +345,14 @@ missing (or when demo mode is set), so a broken build never reaches a phone.
 ### Put the app on your iPhone (TestFlight)
 
 ```bash
-npm run ios:testflight                    # builds and uploads; Team (Expo) gets it on its own
-npm run ios:testers -- asc_build_id=<id>  # then gives that build to the external testers group
+npm run ios:testflight         # builds and uploads; Team (Expo) gets it on its own
 ```
 
-`ios:testflight` builds with the `testflight` profile and uploads to App Store Connect, where the internal
-**Team (Expo)** group gets every build on its own. External groups need one more step, because on the
-free EAS plan a workflow can only distribute a build that is already in App Store Connect:
-once the build has processed, open it in App Store Connect → TestFlight and copy the id at the end of its
-URL into `ios:testers`. That runs `.eas/workflows/testers.yml`, which adds the build to the external
-**testers** group and submits its Beta App Review. A new external group only needs its name added to
-`external_groups` there.
+The command builds with the `testflight` profile and uploads to App Store Connect, where the internal
+**Team (Expo)** group gets every build on its own. The external **testers** group still needs each build
+added: App Store Connect → TestFlight → the build → **Group +** → testers → **Submit for Review**
+(Apple usually clears it within minutes). EAS can do this step itself only on a paid plan, or on the free
+plan once an App Store Connect API key is connected in the Expo project settings.
 
 TestFlight builds use the `testflight` profile, which sets `EXPO_PUBLIC_TESTER_BUILD=1`: every Pro
 feature is unlocked for you and your testers, with no purchase. The build for the App Store comes from
@@ -374,8 +371,7 @@ phone and accept the invite. Internal builds need no review.
 2. App Store Connect → TestFlight → **External Testing** → create a group, add
    the build, and fill in the test info (what to test, feedback email).
 3. The first build goes through a short Beta App Review (usually under a day).
-4. Add the group's name to `external_groups` in `.eas/workflows/testers.yml`,
-   so `npm run ios:testers` reaches it.
+4. Add each new build to the group, as above, so it reaches the group's testers.
 5. Turn on **Public Link** for the group and send the link. Friends install
    TestFlight, open the link, and get every new build automatically.
 
