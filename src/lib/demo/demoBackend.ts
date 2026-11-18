@@ -1,6 +1,7 @@
 import type { TaskDraft } from "@domain/task";
 import { commitDemoBrainDump, discardDemoBrainDump, invokeDemoBrainDump } from "./demoBrainDump";
 import {
+  completeDemoTask,
   createDemoTask,
   deleteDemoAccount,
   demoTables,
@@ -156,6 +157,8 @@ async function callRpc(name: string, args: Record<string, any>): Promise<QueryRe
     switch (name) {
       case "create_task":
         return { data: createDemoTask(args.draft as TaskDraft), error: null };
+      case "complete_task":
+        return { data: completeDemoTask(args.task_id, args.actual_minutes ?? null, args.local_day), error: null };
       case "commit_brain_dump":
         return { data: commitDemoBrainDump(args.session_id, args.drafts as TaskDraft[]), error: null };
       case "discard_brain_dump":

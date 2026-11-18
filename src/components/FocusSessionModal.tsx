@@ -1,105 +1,81 @@
-import React, { useEffect, useRef, useState } from "react";
+import React from "react";
 import { Modal, SafeAreaView, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
 import { makeStyles, useTheme } from "../hooks/useTheme";
+import { FocusSessionView } from "../hooks/useFocusSession";
+import { formatClock } from "../lib/countdown";
 import { Task } from "../lib/types";
+import { Button } from "./Button";
+import { t } from "../i18n";
 
 interface Props {
   task: Task | null;
-  sessionIndex: number; // 1-based position of this task among today's Focus tasks
+  session: FocusSessionView | null; // null for the moment between tapping Focus and the session starting
+  sessionIndex: number; // 1-based position of this task among today's Focus tasks; 0 for a task without a fixed time
   sessionTotal: number; // how many Focus tasks are scheduled today
-  workMinutes: number;
+  workMinutes: number; // shown until the session reports its own length
   breakMinutes: number;
-  chimeEnabled: boolean; // "Timer chime" setting — played as a haptic pulse (no audio asset pipeline in this build)
   onClose: () => void;
-  onComplete: (taskId: string, actualMinutes: number) => void;
+  onPause: () => void;
+  onResume: () => void;
+  onDoneEarly: (taskId: string, actualMinutes: number) => void;
 }
 
-function formatClock(totalSeconds: number): string {
-  const m = Math.floor(totalSeconds / 60);
-  const s = totalSeconds % 60;
-  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-}
+// A long title shrinks before it is cut off, so it never pushes the clock off the screen.
+const LONG_TITLE_MIN_SCALE = 0.6;
 
-// Full-screen Pomodoro countdown, opened by tapping a task's Focus pill.
-// Counts down from `workMinutes`; reaching zero auto-completes the task
-// (actual_minutes = workMinutes) so the "estimate accuracy" stat still gets
-// a real data point for Focus tasks, same as manually confirmed ones.
+// Full-screen Focus countdown (focus minutes, then a break), opened by tapping a task's Focus pill or by a session started in the widget.
+// It only shows the session from useFocusSession, which keeps time while the phone is locked, schedules the
+// "time is up" alert and, on iOS, shares the session with the DeskFocus widget and the Live Activity.
 export function FocusSessionModal({
   task,
+  session,
   sessionIndex,
   sessionTotal,
   workMinutes,
   breakMinutes,
-  chimeEnabled,
   onClose,
-  onComplete,
+  onPause,
+  onResume,
+  onDoneEarly,
 }: Props) {
   const { theme } = useTheme();
   const styles = useStyles();
-  const [remainingSeconds, setRemainingSeconds] = useState(workMinutes * 60);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  // Reset the countdown whenever a new task is opened into focus mode.
-  useEffect(() => {
-    if (task) setRemainingSeconds(workMinutes * 60);
-  }, [task?.id, workMinutes]);
-
-  useEffect(() => {
-    if (!task) return;
-    intervalRef.current = setInterval(() => {
-      setRemainingSeconds((prev) => Math.max(0, prev - 1));
-    }, 1000);
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [task?.id]);
-
-  useEffect(() => {
-    if (task && remainingSeconds === 0) {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      if (chimeEnabled) {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
-          () => {}
-        );
-      }
-      onComplete(task.id, workMinutes);
-    }
-  }, [remainingSeconds, task, chimeEnabled, workMinutes, onComplete]);
 
   if (!task) return null;
 
-  const totalSeconds = workMinutes * 60;
-  const elapsedFraction = 1 - remainingSeconds / totalSeconds;
-  const elapsedMinutes = Math.floor((totalSeconds - remainingSeconds) / 60);
-
-  const handleClose = () => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    onClose();
-  };
+  const totalSeconds = session?.plannedSeconds ?? workMinutes * 60;
+  const remainingSeconds = session?.remainingSeconds ?? totalSeconds;
+  const elapsedSeconds = Math.max(0, totalSeconds - remainingSeconds);
+  const elapsedFraction = totalSeconds > 0 ? elapsedSeconds / totalSeconds : 0;
+  const elapsedMinutes = Math.floor(elapsedSeconds / 60);
+  const isPaused = session?.phase === "paused";
+  // A session started in the widget can be for a task without a fixed time, which is not one of today's Focus slots.
+  const isScheduledSession = sessionIndex > 0;
 
   return (
-    <Modal visible={!!task} animationType="slide" onRequestClose={handleClose}>
+    <Modal visible={!!task} animationType="slide" onRequestClose={onClose}>
       <SafeAreaView style={styles.screen}>
         <View style={styles.content}>
           <View style={styles.header}>
-            <TouchableOpacity style={styles.closeButton} onPress={handleClose} accessibilityLabel="Close focus session">
+            <TouchableOpacity style={styles.closeButton} onPress={onClose} accessibilityLabel={t("Close focus session")}>
               <Ionicons name="chevron-down" size={20} color={theme.colors.textPrimary} />
             </TouchableOpacity>
             <Text style={styles.eyebrow}>
-              FOCUS · SESSION {sessionIndex} OF {sessionTotal}
+              {isScheduledSession ? t("FOCUS · SESSION {0} OF {1}", sessionIndex, sessionTotal) : t("FOCUS")}
             </Text>
             <View style={styles.headerSpacer} />
           </View>
 
-          <Text style={styles.fixedTime}>{task.scheduled_time} · fixed time</Text>
-          <Text style={styles.taskTitle}>{task.title}</Text>
+          {task.scheduled_time && <Text style={styles.fixedTime}>{t("{0} · fixed time", task.scheduled_time)}</Text>}
+          <Text style={styles.taskTitle} numberOfLines={3} adjustsFontSizeToFit minimumFontScale={LONG_TITLE_MIN_SCALE}>
+            {task.title}
+          </Text>
 
           <View style={styles.clockArea}>
             <Text style={styles.countdown}>{formatClock(remainingSeconds)}</Text>
             <Text style={styles.caption}>
-              {elapsedMinutes} min in · a {breakMinutes} minute break follows
+              {isPaused ? t("Paused") : t("{0} min in", elapsedMinutes)} · {t("a {0} minute break follows", breakMinutes)}
             </Text>
           </View>
 
@@ -109,7 +85,7 @@ export function FocusSessionModal({
           </View>
 
           <View style={styles.segmentRow}>
-            {Array.from({ length: sessionTotal }, (_, i) => {
+            {isScheduledSession && Array.from({ length: sessionTotal }, (_, i) => {
               const segmentNumber = i + 1;
               if (segmentNumber < sessionIndex) {
                 return <View key={i} style={[styles.segment, styles.segmentDone]} />;
@@ -128,12 +104,20 @@ export function FocusSessionModal({
             })}
           </View>
 
+          <Button
+            label={isPaused ? t("Resume") : t("Pause")}
+            variant="secondary"
+            onPress={isPaused ? onResume : onPause}
+            disabled={!session}
+            style={styles.pauseButton}
+          />
+
           <TouchableOpacity
             style={styles.doneButton}
-            onPress={() => onComplete(task.id, Math.max(1, Math.round((totalSeconds - remainingSeconds) / 60)))}
+            onPress={() => onDoneEarly(task.id, Math.max(1, Math.round(elapsedSeconds / 60)))}
           >
             <Ionicons name="checkmark" size={20} color={theme.colors.onAccent} />
-            <Text style={styles.doneButtonText}>Done early</Text>
+            <Text style={styles.doneButtonText}>{t("Done early")}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -236,6 +220,9 @@ const useStyles = makeStyles((theme) => ({
   },
   segmentFill: {
     backgroundColor: theme.colors.accentLight,
+  },
+  pauseButton: {
+    marginBottom: theme.spacing.sm,
   },
   doneButton: {
     flexDirection: "row",

@@ -52,6 +52,20 @@ describe("computePaceInsights", () => {
     expect(paceInsightLines(insights)[2]).toBe(line);
   });
 
+  it("calls a window edge at midnight \"midnight\", never 24:00", () => {
+    const window = (startHour: number, endHour: number) =>
+      paceInsightLines({
+        ready: true,
+        completedCount: 20,
+        bestWindow: { startHour, endHour, sharePercent: 60 },
+        bestWeekday: null,
+        estimateBias: null,
+      });
+
+    expect(window(21, 24)).toEqual(["You finish most tasks between 21:00 and midnight (60% of them)."]);
+    expect(window(0, 3)).toEqual(["You finish most tasks between midnight and 03:00 (60% of them)."]);
+  });
+
   it("says nothing about estimates until enough tasks have a logged duration", () => {
     const tasks = Array.from({ length: 10 }, (_, i) => doneAt(`2026-09-22T07:${10 + i}:00Z`, 10, i < 4 ? 20 : null));
 

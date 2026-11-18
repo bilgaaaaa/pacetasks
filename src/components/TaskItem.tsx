@@ -1,56 +1,53 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Alert, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
 import { makeStyles, useTheme } from "../hooks/useTheme";
+import { useCountdown } from "../hooks/useCountdown";
+import { useHaptics } from "../hooks/useHaptics";
+import { useTimerAlert } from "../hooks/useTimerAlert";
 import { Task } from "../lib/types";
 import { categoryColor, getCategory } from "../lib/categories";
+import { formatClock } from "../lib/countdown";
 import { formatDueLabel } from "../lib/dueLabel";
 import { TIMING_LABELS } from "../lib/taskSections";
-import { toLocalDateKey } from "@domain/dates";
+import { rangeTimeUpCopy } from "../lib/timerAlertCopy";
 import { isQuickWin } from "@domain/todayTasks";
-
-function formatClock(totalSeconds: number): string {
-  const m = Math.floor(totalSeconds / 60);
-  const s = totalSeconds % 60;
-  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-}
-
-// While the minutes stepper narrows the row, the detail line may wrap instead of being cut off.
-const CONFIRMING_META_LINES = 2;
+import { toLocalDateKey } from "@domain/dates";
+import { t } from "../i18n";
+import { taskTimeOf } from "@domain/taskTime";
+import { repeatTag } from "../lib/repeatCopy";
+import { taskTimeLabel } from "../lib/taskTimeLabel";
 
 interface Props {
   task: Task;
-  pomodoroWorkMinutes: number;
-  pomodoroBreakMinutes: number;
   suggestedMin: number; // range-timer lower bound (from task history, falls back to estimated_minutes)
   suggestedMax: number; // range-timer upper bound
   quickWinMinutes: number; // tasks this short get the highlighted "quick win" pill
-  chimeEnabled: boolean;
   onComplete: (taskId: string, actualMinutes: number) => void;
   onDelete: (taskId: string) => void;
   onPark: (taskId: string) => void; // "Move to Someday": parks the task out of the daily lists
+  onEdit: (task: Task) => void; // opens the task sheet on this task
   onStartFocus: (task: Task) => void;
 }
 
-// A single row in the task list. Three ways to log time on a task:
-// 1) tap the circle any time to open the manual actual-minutes stepper,
+// A single row in the task list. Tapping the title (or "Edit" in the menu)
+// opens the task to change it. Three ways to log time on a task:
+// 1) tap the circle any time to open the manual actual-minutes stepper on a
+//    line of its own (Cancel backs out of an accidental tap),
 // 2) tap the minutes pill to start a simple range timer (counts down from
 //    the task's suggested max, turns green once past the suggested min),
 // 3) tap the Focus pill (only on tasks with a fixed scheduled_time) for the
-//    full Pomodoro modal instead — the range timer is hidden for those, since
+//    full Focus session instead — the range timer is hidden for those, since
 //    Focus mode already covers timing them.
 export function TaskItem({
   task,
-  pomodoroWorkMinutes,
-  pomodoroBreakMinutes,
   suggestedMin,
   suggestedMax,
   quickWinMinutes,
-  chimeEnabled,
   onComplete,
   onDelete,
   onPark,
+  onEdit,
   onStartFocus,
 }: Props) {
   const { theme } = useTheme();
@@ -59,76 +56,94 @@ export function TaskItem({
     task.estimated_minutes
   );
   const [isConfirming, setIsConfirming] = useState(false);
-  const [isTiming, setIsTiming] = useState(false);
-  const [remainingSeconds, setRemainingSeconds] = useState(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const isDone = task.status === "done";
   const category = task.category ? getCategory(task.category) : null;
   const quickWin = isQuickWin(task, quickWinMinutes);
   const maxSeconds = Math.max(1, suggestedMax) * 60;
   const minSeconds = Math.max(0, suggestedMin) * 60;
-  const inRange = maxSeconds - remainingSeconds >= minSeconds;
 
-  const stopTimer = () => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    intervalRef.current = null;
-    setIsTiming(false);
+  const haptics = useHaptics();
+  // Running out the range timer means the task took its longest usual time: ask to confirm that.
+  const timer = useCountdown(() => {
+    haptics.play("timerEnded");
+    setConfirmingMinutes(Math.round(maxSeconds / 60));
+    setIsConfirming(true);
+  });
+  const elapsedSeconds = maxSeconds - timer.remainingSeconds;
+  const inRange = elapsedSeconds >= minSeconds;
+
+  // The alert at the timer's end sounds even with the phone locked, when the buzz above cannot run.
+  const timerAlert = useTimerAlert();
+  const alertKey = `range-${task.id}`;
+  const startRangeTimer = () => {
+    timer.start(maxSeconds);
+    timerAlert.schedule(alertKey, maxSeconds, rangeTimeUpCopy(task.title, Math.round(maxSeconds / 60)));
+  };
+  const stopRangeTimer = () => {
+    timer.stop();
+    timerAlert.cancel(alertKey);
   };
 
+  // A row that goes away mid-timer (deleted, filtered out) takes its timer along, so its alert must go too.
+  const runningRef = useRef(false);
+  runningRef.current = timer.isRunning;
+  const { cancel: cancelAlert } = timerAlert;
+  useEffect(
+    () => () => {
+      if (runningRef.current) cancelAlert(alertKey);
+    },
+    [alertKey, cancelAlert]
+  );
+
+  // Done elsewhere (the widget, another phone) while its timer runs: nothing is left to time.
   useEffect(() => {
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, []);
-
-  const startTimer = () => {
-    setRemainingSeconds(maxSeconds);
-    setIsTiming(true);
-    intervalRef.current = setInterval(() => {
-      setRemainingSeconds((prev) => {
-        if (prev <= 1) {
-          if (intervalRef.current) clearInterval(intervalRef.current);
-          intervalRef.current = null;
-          setIsTiming(false);
-          if (chimeEnabled) {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
-              () => {}
-            );
-          }
-          setConfirmingMinutes(Math.round(maxSeconds / 60));
-          setIsConfirming(true);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  };
+    if (!isDone || !runningRef.current) return;
+    timer.stop();
+    cancelAlert(alertKey);
+  }, [isDone, timer.stop, cancelAlert, alertKey]);
 
   const openConfirm = () => {
-    if (isTiming) {
-      const elapsedMinutes = Math.max(1, Math.round((maxSeconds - remainingSeconds) / 60));
-      stopTimer();
-      setConfirmingMinutes(elapsedMinutes);
+    if (timer.isRunning) {
+      stopRangeTimer();
+      setConfirmingMinutes(Math.max(1, Math.round(elapsedSeconds / 60)));
     }
     setIsConfirming(true);
   };
 
-  const baseSubtitle = task.scheduled_time
-    ? `${task.scheduled_time} · Pomodoro ${pomodoroWorkMinutes}+${pomodoroBreakMinutes}`
-    : category
-    ? `${TIMING_LABELS[task.timing]} · ${category.label}`
-    : TIMING_LABELS[task.timing];
+  // Backing out forgets the adjusted minutes, so the next attempt starts from the estimate again.
+  const cancelConfirm = () => {
+    setConfirmingMinutes(task.estimated_minutes);
+    setIsConfirming(false);
+  };
+
+  // A timed task shows its minutes here: its pill shows the start time instead. A window ("after 20:00") leads the line.
+  const windowLabel = task.scheduled_time ? null : taskTimeLabel(taskTimeOf(task));
+  const baseSubtitle = [
+    windowLabel,
+    task.scheduled_time ? t("{0} min", task.estimated_minutes) : null,
+    TIMING_LABELS[task.timing],
+    category?.label,
+  ]
+    .filter(Boolean)
+    .join(" · ");
   // Due day and "maybe" come first when set (e.g. from Brain Dump): "by Fri · maybe · Anytime · Work".
   const dueLabel =
     task.due_date && !isDone ? formatDueLabel(task.due_date, task.due_kind, toLocalDateKey(new Date())) : null;
-  const restSubtitle = [task.flexible && !isDone ? "maybe" : null, baseSubtitle].filter(Boolean).join(" · ");
+  const restSubtitle = [
+    task.repeat_rule && !isDone ? repeatTag(task.repeat_rule) : null,
+    task.flexible && !isDone ? "maybe" : null,
+    baseSubtitle,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   const showMenu = () => {
-    Alert.alert(task.title, undefined, [
-      ...(isDone ? [] : [{ text: "Move to Someday", onPress: () => onPark(task.id) }]),
-      { text: "Delete", style: "destructive" as const, onPress: () => onDelete(task.id) },
-      { text: "Cancel", style: "cancel" as const },
+    Alert.alert(task.title, task.notes ?? undefined, [
+      ...(isDone ? [] : [{ text: t("Edit"), onPress: () => onEdit(task) }]),
+      ...(isDone ? [] : [{ text: t("Move to Someday"), onPress: () => onPark(task.id) }]),
+      { text: t("Delete"), style: "destructive" as const, onPress: () => onDelete(task.id) },
+      { text: t("Cancel"), style: "cancel" as const },
     ]);
   };
 
@@ -138,7 +153,7 @@ export function TaskItem({
 
   if (isDone) {
     return (
-      <View style={[styles.row, styles.rowDone]}>
+      <View style={[styles.card, styles.cardDone, styles.row]}>
         <View style={styles.checkTarget}>
           <View style={[styles.checkCircle, styles.checkCircleDone]}>
             <Ionicons name="checkmark" size={15} color={theme.colors.onAccent} />
@@ -149,7 +164,7 @@ export function TaskItem({
           <Text style={styles.metaDone} numberOfLines={1}>{restSubtitle}</Text>
         </View>
         <Text style={styles.minutesDone}>{task.actual_minutes ?? task.estimated_minutes} min</Text>
-        <TouchableOpacity style={styles.menuButton} onPress={showMenu} accessibilityLabel={`Options for ${task.title}`}>
+        <TouchableOpacity style={styles.menuButton} onPress={showMenu} accessibilityLabel={t("Options for {0}", task.title)}>
           <Ionicons name="ellipsis-horizontal" size={16} color={theme.colors.textTertiary} />
         </TouchableOpacity>
       </View>
@@ -157,94 +172,125 @@ export function TaskItem({
   }
 
   return (
-    <View style={styles.row}>
-      <TouchableOpacity
-        style={styles.checkTarget}
-        onPress={openConfirm}
-        accessibilityRole="checkbox"
-        accessibilityState={{ checked: false }}
-        accessibilityLabel={`Complete ${task.title}`}
-      >
-        <View style={styles.checkCircle} />
-      </TouchableOpacity>
+    <View style={styles.card}>
+      <View style={styles.row}>
+        <TouchableOpacity
+          style={styles.checkTarget}
+          onPress={openConfirm}
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: false }}
+          accessibilityLabel={t("Complete {0}", task.title)}
+        >
+          <View style={styles.checkCircle} />
+        </TouchableOpacity>
 
-      <View style={styles.mainLine}>
-        <Text style={styles.title} numberOfLines={2}>{task.title}</Text>
-        <View style={styles.metaRow}>
-          {categoryDot}
-          <Text style={styles.meta} numberOfLines={isConfirming ? CONFIRMING_META_LINES : 1}>
-            {dueLabel && (
-              <Text style={dueLabel === "Overdue" ? styles.metaOverdue : styles.metaDue}>
-                {dueLabel}
-                {restSubtitle ? " · " : ""}
-              </Text>
+        <TouchableOpacity
+          style={styles.mainLine}
+          onPress={() => onEdit(task)}
+          accessibilityRole="button"
+          accessibilityLabel={t("Edit {0}", task.title)}
+        >
+          <Text style={styles.title} numberOfLines={2}>{task.title}</Text>
+          <View style={styles.metaRow}>
+            {categoryDot}
+            {task.notes && (
+              <Ionicons name="document-text-outline" size={12} color={theme.colors.textTertiary} accessibilityLabel={t("Has details")} />
             )}
-            {restSubtitle}
-          </Text>
-        </View>
+            <Text style={styles.meta} numberOfLines={1}>
+              {dueLabel && (
+                <Text style={dueLabel === "Overdue" ? styles.metaOverdue : styles.metaDue}>
+                  {dueLabel}
+                  {restSubtitle ? " · " : ""}
+                </Text>
+              )}
+              {restSubtitle}
+            </Text>
+          </View>
+        </TouchableOpacity>
+
+        {!isConfirming && (
+          <>
+            {task.scheduled_time ? (
+              <TouchableOpacity
+                style={[styles.pill, styles.pillFocus]}
+                onPress={() => onStartFocus(task)}
+                accessibilityLabel={t("Start focus session for {0}", task.title)}
+              >
+                {task.reminder_minutes_before !== null && (
+                  <Ionicons name="notifications" size={12} color={theme.colors.surface} accessibilityLabel={t("Reminder set")} />
+                )}
+                <Text style={[styles.pillText, styles.pillTextFocus]}>{t("Focus {0}", task.scheduled_time)}</Text>
+              </TouchableOpacity>
+            ) : timer.isRunning ? (
+              <TouchableOpacity
+                style={[styles.pill, inRange && styles.pillQuick]}
+                onPress={stopRangeTimer}
+                accessibilityLabel={t("Stop timer")}
+              >
+                <Text style={[styles.pillText, inRange && styles.pillTextQuick]}>
+                  {formatClock(timer.remainingSeconds)}
+                </Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={[styles.pill, quickWin && styles.pillQuick]}
+                onPress={startRangeTimer}
+                accessibilityLabel={t("Start {0} minute timer", task.estimated_minutes)}
+              >
+                <Text style={[styles.pillText, quickWin && styles.pillTextQuick]}>{task.estimated_minutes} min</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity style={styles.menuButton} onPress={showMenu} accessibilityLabel={t("Options for {0}", task.title)}>
+              <Ionicons name="ellipsis-horizontal" size={16} color={theme.colors.textTertiary} />
+            </TouchableOpacity>
+          </>
+        )}
       </View>
 
-      {isConfirming ? (
+      {/* On its own line, so the title and details above keep the row's full width. */}
+      {isConfirming && (
         <View style={styles.confirmRow}>
+          <Text style={styles.confirmLabel}>{t("It took")}</Text>
           <TouchableOpacity
             onPress={() => setConfirmingMinutes((m) => Math.max(1, m - 1))}
-            accessibilityLabel="One minute less"
+            hitSlop={8}
+            accessibilityLabel={t("One minute less")}
           >
             <Ionicons name="remove-circle" size={26} color={theme.colors.accent} />
           </TouchableOpacity>
           <Text style={styles.stepperValue}>{confirmingMinutes}m</Text>
-          <TouchableOpacity onPress={() => setConfirmingMinutes((m) => m + 1)} accessibilityLabel="One minute more">
+          <TouchableOpacity
+            onPress={() => setConfirmingMinutes((m) => m + 1)}
+            hitSlop={8}
+            accessibilityLabel={t("One minute more")}
+          >
             <Ionicons name="add-circle" size={26} color={theme.colors.accent} />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.confirmButton}
-            onPress={() => onComplete(task.id, confirmingMinutes)}
-          >
-            <Text style={styles.confirmButtonText}>Done</Text>
-          </TouchableOpacity>
+          <View style={styles.confirmActions}>
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={cancelConfirm}
+              accessibilityRole="button"
+              accessibilityLabel={t("Cancel completing {0}", task.title)}
+            >
+              <Text style={styles.cancelButtonText}>{t("Cancel")}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.confirmButton}
+              onPress={() => onComplete(task.id, confirmingMinutes)}
+              accessibilityRole="button"
+            >
+              <Text style={styles.confirmButtonText}>{t("Done")}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      ) : (
-        <>
-          {task.scheduled_time ? (
-            <TouchableOpacity
-              style={[styles.pill, styles.pillFocus]}
-              onPress={() => onStartFocus(task)}
-              accessibilityLabel={`Start focus session for ${task.title}`}
-            >
-              <Text style={[styles.pillText, styles.pillTextFocus]}>Focus {task.scheduled_time}</Text>
-            </TouchableOpacity>
-          ) : isTiming ? (
-            <TouchableOpacity
-              style={[styles.pill, inRange && styles.pillQuick]}
-              onPress={stopTimer}
-              accessibilityLabel="Stop timer"
-            >
-              <Text style={[styles.pillText, inRange && styles.pillTextQuick]}>
-                {formatClock(remainingSeconds)}
-              </Text>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              style={[styles.pill, quickWin && styles.pillQuick]}
-              onPress={startTimer}
-              accessibilityLabel={`Start ${task.estimated_minutes} minute timer`}
-            >
-              <Text style={[styles.pillText, quickWin && styles.pillTextQuick]}>{task.estimated_minutes} min</Text>
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity style={styles.menuButton} onPress={showMenu} accessibilityLabel={`Options for ${task.title}`}>
-            <Ionicons name="ellipsis-horizontal" size={16} color={theme.colors.textTertiary} />
-          </TouchableOpacity>
-        </>
       )}
     </View>
   );
 }
 
 const useStyles = makeStyles((theme) => ({
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
+  card: {
     backgroundColor: theme.colors.surface,
     borderRadius: theme.radius.md,
     borderWidth: 1,
@@ -253,11 +299,16 @@ const useStyles = makeStyles((theme) => ({
     paddingVertical: 6,
     paddingRight: 4,
     marginBottom: theme.spacing.sm,
-    gap: 4,
+    justifyContent: "center",
   },
-  rowDone: {
+  cardDone: {
     backgroundColor: "transparent",
     borderColor: "transparent",
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
   },
   checkTarget: {
     width: 44,
@@ -332,6 +383,8 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: theme.colors.quickFill,
   },
   pillFocus: {
+    flexDirection: "row",
+    gap: 4,
     backgroundColor: theme.colors.textPrimary,
   },
   pillText: {
@@ -352,10 +405,38 @@ const useStyles = makeStyles((theme) => ({
     fontFamily: theme.fonts.mono,
     fontVariant: ["tabular-nums"],
   },
+  // Indented to the title's left edge (past the 44pt check target and the row gap).
   confirmRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: theme.spacing.xs,
+    paddingLeft: 48,
+    paddingRight: theme.spacing.sm,
+    paddingTop: 2,
+    paddingBottom: 4,
+  },
+  confirmLabel: {
+    color: theme.colors.textSecondary,
+    fontSize: theme.typography.footnote.fontSize,
+    marginRight: theme.spacing.xs,
+  },
+  confirmActions: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: theme.spacing.xs,
+  },
+  cancelButton: {
+    borderRadius: theme.radius.pill,
+    paddingHorizontal: 12,
+    height: 32,
+    justifyContent: "center",
+  },
+  cancelButtonText: {
+    color: theme.colors.textSecondary,
+    fontWeight: "600",
+    fontSize: theme.typography.footnote.fontSize,
   },
   stepperValue: {
     color: theme.colors.textPrimary,
@@ -366,7 +447,6 @@ const useStyles = makeStyles((theme) => ({
     fontVariant: ["tabular-nums"],
   },
   confirmButton: {
-    marginLeft: theme.spacing.xs,
     backgroundColor: theme.colors.accentDark,
     borderRadius: theme.radius.pill,
     paddingHorizontal: 12,

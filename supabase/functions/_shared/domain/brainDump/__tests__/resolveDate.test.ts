@@ -29,6 +29,41 @@ describe("resolveDate", () => {
     expect(resolveDate(sunday, MONDAY)).toMatchObject({ dueDate: "2026-10-04" });
   });
 
+  it("resolves next-week weekdays inside the week after this one", () => {
+    const friday = { kind: "weekday" as const, weekday: 5, relation: "next_week" as const, text: "haftaya cuma" };
+    expect(resolveDate(friday, MONDAY)).toMatchObject({ dueDate: "2026-10-09", dueKind: "on" });
+    expect(resolveDate(friday, "2026-10-04")).toMatchObject({ dueDate: "2026-10-09" }); // a Sunday
+    expect(resolveDate({ ...friday, weekday: 1 }, MONDAY)).toMatchObject({ dueDate: "2026-10-05" });
+  });
+
+  it("resolves the weekend to Saturday, or to today once it has started", () => {
+    const weekend = { kind: "weekend" as const, relation: "on" as const, text: "this weekend" };
+    expect(resolveDate(weekend, MONDAY)).toMatchObject({ dueDate: "2026-10-03", dueKind: "on" });
+    expect(resolveDate(weekend, "2026-10-03")).toMatchObject({ dueDate: "2026-10-03" });
+    expect(resolveDate({ ...weekend, relation: "by" }, "2026-10-04")).toMatchObject({ dueDate: "2026-10-04", dueKind: "by" });
+  });
+
+  it("resolves a day of the month to its next occurrence, today included", () => {
+    const day = (month: number | null, dayOfMonth: number) =>
+      resolveDate({ kind: "month_day", month, day: dayOfMonth, relation: "on", text: "x" }, MONDAY);
+
+    expect(day(10, 15)).toMatchObject({ dueDate: "2026-10-15", inPast: false });
+    expect(day(9, 28)).toMatchObject({ dueDate: MONDAY });
+    expect(day(9, 15)).toMatchObject({ dueDate: "2027-09-15" });
+    expect(day(null, 28)).toMatchObject({ dueDate: MONDAY });
+    expect(day(null, 15)).toMatchObject({ dueDate: "2026-10-15" });
+    expect(day(null, 31)).toMatchObject({ dueDate: "2026-10-31" }); // September has no 31st
+    expect(day(2, 29)).toMatchObject({ dueDate: "2028-02-29" });
+    expect(day(2, 30)).toEqual({ ok: false, reason: "invalid_date" });
+  });
+
+  it("resolves the end of the month to its last day", () => {
+    const monthEnd = { kind: "month_end" as const, relation: "by" as const, text: "fine mese" };
+    expect(resolveDate(monthEnd, MONDAY)).toMatchObject({ dueDate: "2026-09-30", dueKind: "by" });
+    expect(resolveDate(monthEnd, "2026-12-31")).toMatchObject({ dueDate: "2026-12-31" });
+    expect(resolveDate(monthEnd, "2028-02-10")).toMatchObject({ dueDate: "2028-02-29" });
+  });
+
   it("crosses the Oct 25 DST change by calendar days", () => {
     expect(
       resolveDate({ kind: "weekday", weekday: 1, relation: "next", text: "next Monday" }, "2026-10-24")

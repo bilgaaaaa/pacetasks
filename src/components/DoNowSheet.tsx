@@ -4,11 +4,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { DO_NOW_MINUTE_OPTIONS } from "@domain/doNow";
 import type { DoNowSelection } from "@domain/doNow";
 import { makeStyles, useTheme } from "../hooks/useTheme";
-import { emptyMessage, minutesLabel, planSummary } from "../lib/doNowCopy";
+import { emptyMessage, minutesLabel, paceNote, planSummary } from "../lib/doNowCopy";
 import { ENERGY_OPTIONS } from "../lib/energy";
 import { EnergyLevel, Task } from "../lib/types";
 import { ChoiceChips } from "./ChoiceChips";
 import { ErrorBanner } from "./ErrorBanner";
+import { t } from "../i18n";
 
 const MINUTE_OPTIONS = DO_NOW_MINUTE_OPTIONS.map((minutes) => ({ value: minutes as number, label: minutesLabel(minutes) }));
 // Enough to offer a real choice without turning the sheet back into the full list.
@@ -20,11 +21,13 @@ interface Props {
   energy: EnergyLevel;
   selection: DoNowSelection;
   hasPendingToday: boolean;
+  atYourPace: boolean; // lengths come from learned pace; the plan says so
   errorMessage: string | null; // a failed save from the task list, which this sheet covers
   onChangeMinutes: (minutes: number) => void;
   onChangeEnergy: (energy: EnergyLevel) => void;
   renderTask: (task: Task) => React.ReactElement; // the screen's own task row, so timers and completion work as on Today
   onClose: () => void;
+  onDismissed: () => void; // the sheet has fully gone (iOS): lets the screen open the Focus session a row asked for
 }
 
 // Full-screen sheet for "What can I do now?": pick how much time and energy you
@@ -36,11 +39,13 @@ export function DoNowSheet({
   energy,
   selection,
   hasPendingToday,
+  atYourPace,
   errorMessage,
   onChangeMinutes,
   onChangeEnergy,
   renderTask,
   onClose,
+  onDismissed,
 }: Props) {
   const { theme } = useTheme();
   const styles = useStyles();
@@ -48,33 +53,39 @@ export function DoNowSheet({
   const shownAlternatives = alternatives.slice(0, MAX_ALTERNATIVES_SHOWN);
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+      onDismiss={onDismissed}
+    >
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <View style={styles.flex}>
-            <Text style={styles.eyebrow}>DO NOW</Text>
-            <Text style={styles.title}>What can I do now?</Text>
+            <Text style={styles.eyebrow}>{t("DO NOW")}</Text>
+            <Text style={styles.title}>{t("What can I do now?")}</Text>
           </View>
-          <TouchableOpacity onPress={onClose} hitSlop={8} style={styles.closeButton} accessibilityLabel="Close">
+          <TouchableOpacity onPress={onClose} hitSlop={8} style={styles.closeButton} accessibilityLabel={t("Close")}>
             <Ionicons name="close" size={18} color={theme.colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
         <ScrollView style={styles.flex} contentContainerStyle={styles.content}>
-          <Text style={styles.label}>I HAVE</Text>
+          <Text style={styles.label}>{t("I HAVE")}</Text>
           <ChoiceChips
             options={MINUTE_OPTIONS}
             value={availableMinutes}
             onChange={onChangeMinutes}
-            accessibilityLabel="Time available"
+            accessibilityLabel={t("Time available")}
           />
 
-          <Text style={styles.label}>MY ENERGY</Text>
+          <Text style={styles.label}>{t("MY ENERGY")}</Text>
           <ChoiceChips
             options={ENERGY_OPTIONS}
             value={energy}
             onChange={onChangeEnergy}
-            accessibilityLabel="Energy level"
+            accessibilityLabel={t("Energy level")}
           />
 
           {errorMessage && <ErrorBanner style={styles.error} message={errorMessage} />}
@@ -86,9 +97,10 @@ export function DoNowSheet({
           ) : (
             <>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Do these now</Text>
+                <Text style={styles.sectionTitle}>{t("Do these now")}</Text>
                 <Text style={styles.sectionMeta}>{planSummary(plan.length, planMinutes, availableMinutes)}</Text>
               </View>
+              {atYourPace && <Text style={styles.paceNote}>{paceNote()}</Text>}
               {plan.map((task) => (
                 <React.Fragment key={task.id}>{renderTask(task)}</React.Fragment>
               ))}
@@ -96,7 +108,7 @@ export function DoNowSheet({
               {shownAlternatives.length > 0 && (
                 <>
                   <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Or instead</Text>
+                    <Text style={styles.sectionTitle}>{t("Or instead")}</Text>
                   </View>
                   {shownAlternatives.map((task) => (
                     <React.Fragment key={task.id}>{renderTask(task)}</React.Fragment>
@@ -178,6 +190,12 @@ const useStyles = makeStyles((theme) => ({
     color: theme.colors.textSecondary,
     fontSize: theme.typography.footnote.fontSize,
     fontWeight: theme.typography.footnote.fontWeight,
+  },
+  paceNote: {
+    color: theme.colors.textTertiary,
+    fontSize: theme.typography.footnote.fontSize,
+    marginTop: -theme.spacing.xs,
+    marginBottom: theme.spacing.xs,
   },
   empty: {
     backgroundColor: theme.colors.surfaceAlt,

@@ -9,6 +9,12 @@ import { Task } from "../lib/types";
 import { Button } from "./Button";
 import { ErrorBanner } from "./ErrorBanner";
 import { Stepper } from "./Stepper";
+import { t } from "../i18n";
+
+// A title can be 200 characters: it shrinks, then is cut off, so it never runs into the header or the buttons.
+const TITLE_MAX_LINES = 4;
+const TITLE_MIN_SCALE = 0.6;
+const NOTES_MAX_LINES = 4;
 
 interface Props {
   visible: boolean;
@@ -60,8 +66,8 @@ export function OneThingSheet({
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <Text style={styles.eyebrow}>ONE THING</Text>
-          <TouchableOpacity onPress={onClose} hitSlop={8} style={styles.closeButton} accessibilityLabel="Close">
+          <Text style={styles.eyebrow}>{t("ONE THING")}</Text>
+          <TouchableOpacity onPress={onClose} hitSlop={8} style={styles.closeButton} accessibilityLabel={t("Close")}>
             <Ionicons name="close" size={18} color={theme.colors.textSecondary} />
           </TouchableOpacity>
         </View>
@@ -72,19 +78,21 @@ export function OneThingSheet({
               <View style={styles.doneIcon}>
                 <Ionicons name="checkmark" size={32} color={theme.colors.onAccent} />
               </View>
-              <Text style={styles.title}>Done.</Text>
-              <Text style={styles.meta}>{completedTitle}</Text>
+              <Text style={styles.title}>{t("Done.")}</Text>
+              <Text style={styles.meta} numberOfLines={TITLE_MAX_LINES}>
+                {completedTitle}
+              </Text>
             </View>
             <View style={styles.actions}>
               {task ? (
                 <>
-                  <Button label="Next one" onPress={onNext} />
-                  <Button label="That's enough for now" variant="secondary" onPress={onClose} />
+                  <Button label={t("Next one")} onPress={onNext} />
+                  <Button label={t("That's enough for now")} variant="secondary" onPress={onClose} />
                 </>
               ) : (
                 <>
                   <Text style={styles.footnote}>{oneThingEmptyMessage(skippedCount)}</Text>
-                  <Button label="Close" onPress={onClose} />
+                  <Button label={t("Close")} onPress={onClose} />
                 </>
               )}
             </View>
@@ -92,31 +100,37 @@ export function OneThingSheet({
         ) : task ? (
           <View style={styles.body}>
             <View style={styles.center}>
-              <Text style={styles.title}>{task.title}</Text>
+              <Text style={styles.title} numberOfLines={TITLE_MAX_LINES} adjustsFontSizeToFit minimumFontScale={TITLE_MIN_SCALE}>
+                {task.title}
+              </Text>
               <Text style={styles.meta}>{oneThingMeta(task, todayKey)}</Text>
-              {task.notes && <Text style={styles.notes}>{task.notes}</Text>}
+              {task.notes && (
+                <Text style={styles.notes} numberOfLines={NOTES_MAX_LINES}>
+                  {task.notes}
+                </Text>
+              )}
             </View>
             {phase === "confirming" ? (
               <View style={styles.actions}>
                 <View style={styles.card}>
                   <Stepper
-                    label="It took"
+                    label={t("It took")}
                     value={minutes}
                     min={TASK_LIMITS.minEstimatedMinutes}
                     max={TASK_LIMITS.maxEstimatedMinutes}
-                    format={(value) => `${value} min`}
+                    format={(value) => t("{0} min", value)}
                     onChange={onChangeMinutes}
                   />
                 </View>
                 {errorMessage && <ErrorBanner message={errorMessage} />}
-                <Button label={saving ? "Saving…" : "Log it"} loading={saving} onPress={onConfirm} />
-                <Button label="Not finished yet" variant="secondary" disabled={saving} onPress={onCancelConfirm} />
+                <Button label={saving ? t("Saving…") : t("Log it")} loading={saving} onPress={onConfirm} />
+                <Button label={t("Not finished yet")} variant="secondary" disabled={saving} onPress={onCancelConfirm} />
               </View>
             ) : (
               <View style={styles.actions}>
                 <Text style={styles.footnote}>{remainingLabel(remainingCount)}</Text>
-                <Button label="Done" onPress={onStartConfirm} />
-                <Button label="Not now" variant="secondary" onPress={onSkip} />
+                <Button label={t("Done")} onPress={onStartConfirm} />
+                <Button label={t("Not now")} variant="secondary" onPress={onSkip} />
               </View>
             )}
           </View>
@@ -126,8 +140,8 @@ export function OneThingSheet({
               <Text style={styles.meta}>{oneThingEmptyMessage(skippedCount)}</Text>
             </View>
             <View style={styles.actions}>
-              {skippedCount > 0 && <Button label="Start over" onPress={onResetSkipped} />}
-              <Button label="Close" variant={skippedCount > 0 ? "secondary" : "primary"} onPress={onClose} />
+              {skippedCount > 0 && <Button label={t("Start over")} onPress={onResetSkipped} />}
+              <Button label={t("Close")} variant={skippedCount > 0 ? "secondary" : "primary"} onPress={onClose} />
             </View>
           </View>
         )}

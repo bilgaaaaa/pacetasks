@@ -1,10 +1,11 @@
 import React from "react";
 import { Switch, Text, View } from "react-native";
 import type { AccountMode, Profile } from "../lib/accountApi";
-import { MARKETING_CONSENT_LABEL } from "../lib/accountCopy";
+import { accountEmailLabel, MARKETING_CONSENT_HINT, MARKETING_CONSENT_LABEL } from "../lib/accountCopy";
 import { makeStyles, useTheme } from "../hooks/useTheme";
 import { Button } from "./Button";
 import { ErrorBanner } from "./ErrorBanner";
+import { t } from "../i18n";
 
 interface Props {
   isSignedUp: boolean;
@@ -35,15 +36,15 @@ export function AccountCard({
   if (!isSignedUp) {
     return (
       <View style={styles.card}>
-        <Text style={styles.title}>Your account</Text>
+        <Text style={styles.title}>{t("Your account")}</Text>
         <Text style={styles.subtitle}>
-          Your tasks live only on this phone for now. Create an account to keep them safe and open them on another phone.
+          {t("Your tasks live only on this phone for now. Create an account to keep them safe and open them on another phone.")}
         </Text>
         <View style={styles.actions}>
-          <Button label="Create account" onPress={() => onOpen("sign_up")} />
+          <Button label={t("Create account")} onPress={() => onOpen("sign_up")} />
           <Button
             style={styles.secondaryOnCard}
-            label="I already have an account"
+            label={t("I already have an account")}
             variant="secondary"
             onPress={() => onOpen("sign_in")}
           />
@@ -54,18 +55,21 @@ export function AccountCard({
 
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>{profile ? `${profile.first_name} ${profile.last_name}` : "Your account"}</Text>
-      <Text style={styles.subtitle}>{email}</Text>
+      <Text style={styles.title}>{profile ? `${profile.first_name} ${profile.last_name}` : t("Your account")}</Text>
+      <Text style={styles.subtitle}>{accountEmailLabel(email)}</Text>
 
       {profile && (
         <View style={styles.consentRow}>
-          <Text style={styles.consentLabel}>{MARKETING_CONSENT_LABEL}</Text>
+          <View style={styles.consentText}>
+            <Text style={styles.consentLabel}>{t(MARKETING_CONSENT_LABEL)}</Text>
+            <Text style={styles.consentHint}>{t(MARKETING_CONSENT_HINT)}</Text>
+          </View>
           <Switch
             value={profile.marketing_opt_in}
             disabled={busy}
             onValueChange={onChangeMarketingOptIn}
             trackColor={{ false: theme.colors.border, true: theme.colors.accentDark }}
-            accessibilityLabel={MARKETING_CONSENT_LABEL}
+            accessibilityLabel={t(MARKETING_CONSENT_LABEL)}
           />
         </View>
       )}
@@ -75,12 +79,12 @@ export function AccountCard({
       <View style={styles.actions}>
         <Button
           style={styles.secondaryOnCard}
-          label="Sign out"
+          label={t("Sign out")}
           variant="secondary"
           disabled={busy}
           onPress={onSignOut}
         />
-        <Text style={styles.hint}>Your tasks stay in your account. This phone starts again empty.</Text>
+        <Text style={styles.hint}>{t("Your tasks stay in your account. This phone starts again empty.")}</Text>
       </View>
     </View>
   );
@@ -109,10 +113,17 @@ const useStyles = makeStyles((theme) => ({
     gap: theme.spacing.sm,
     marginTop: theme.spacing.xs,
   },
-  consentLabel: {
+  consentText: {
     flex: 1,
+    gap: 2,
+  },
+  consentLabel: {
     color: theme.colors.textPrimary,
     fontSize: theme.typography.subhead.fontSize,
+  },
+  consentHint: {
+    color: theme.colors.textTertiary,
+    fontSize: theme.typography.caption.fontSize,
   },
   actions: {
     gap: theme.spacing.sm,

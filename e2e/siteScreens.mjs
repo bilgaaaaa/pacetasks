@@ -1,12 +1,13 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import { OUTPUT_DIR, runJourney } from "./harness.mjs";
+import { fileURLToPath } from "node:url";
+import { runJourney } from "./harness.mjs";
 
-// Photographs the web demo for the website (bilgaaaaa/PaceTasksWebsite), on the same
-// fixed Monday as the simulated journey. After a UI change, with both repositories
-// side by side: `npm run site:screens -- ../PaceTasksWebsite/screens`.
+// Photographs the web demo for the website's docs/screens/, on the same fixed Monday
+// as the simulated journey. Run `npm run site:screens` after a visible UI change;
+// pass another folder to write the screenshots there instead.
 
-const SCREENS_DIR = resolve(process.argv[2] ?? join(OUTPUT_DIR, "site-screens"));
+const SCREENS_DIR = resolve(process.argv[2] ?? fileURLToPath(new URL("../docs/screens/", import.meta.url)));
 const BRAIN_DUMP_TEXT = "Tomorrow call the vet, domani comprare il pane, cuma günü faturayı öde";
 const WEBP_QUALITY = 0.86;
 

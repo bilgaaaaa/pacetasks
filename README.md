@@ -9,7 +9,7 @@ you compete only with your own past pace.
 
 - **App:** Expo SDK 57 (React Native 0.86, TypeScript)
 - **Backend:** Supabase (Postgres with row-level security, Auth, Realtime, one Edge Function)
-- **Status:** preparing the first TestFlight build; iPhone only for v1
+- **Status:** ready for the first TestFlight build; iPhone only for v1
 
 ## Contents
 
@@ -20,7 +20,8 @@ you compete only with your own past pace.
 5. [Tests](#tests)
 6. [Web demo](#web-demo)
 7. [Build for TestFlight and the App Store](#build-for-testflight-and-the-app-store)
-8. [Website](#website)
+   - [PaceTasks Pro](#pacetasks-pro)
+8. [Privacy policy and support page](#privacy-policy-and-support-page)
 9. [Project structure](#project-structure)
 10. [Working together](#working-together)
 11. [Troubleshooting](#troubleshooting)
@@ -38,21 +39,36 @@ you compete only with your own past pace.
     **Done** logs how long it took and offers the next one; **Not now** skips it.
   - **Fit my time** asks how much time (5 min to 1 hour) and energy (low, normal,
     high) you have, then lists the tasks that fit back to back.
-- **Week strip** — this week at a glance, with a dot under each day that has
-  tasks due.
+- **Week strip** — the week at a glance, with a dot under each day that has
+  tasks dated there. Tap any day to show it in place of today, ‹ › for another
+  week: a later day lists what is set for it, and tasks added while it shows
+  are set for it; an earlier day lists what was finished. **Today** goes back.
+- **Calendars switch** — beside the greeting. Open: the day's events and
+  reminders (Apple, Google and every account picked in the DeskFocus tab) show
+  under their own heading next to the PaceTasks tasks; closed: only PaceTasks
+  tasks. A reminder's circle checks it off in Reminders.
 - **Carried over** — when earlier tasks are still open, one slim row
   ("4 tasks carried over · Review") proposes where each should go: Today,
   Tomorrow, the Weekend or Someday. Change any of them, then apply.
 - **Quick filters** — All, Quick wins, Due today. The filter button next to
   them groups the list by size, place, category or time of day.
-- **Add a task** — the bar at the bottom opens on **your usuals**: tasks you
-  have done before, one tap to add (with Undo). Typing something new asks what,
-  how long and when. A name you have used before fills in its usual details.
+- **Add a task** — the bar at the bottom opens a short sheet: one card with
+  the name and a row of pills (**day**, **duration**, **time**, and a small
+  options pill for part of the day, category and energy). Each pill opens its
+  own panel under the card, one at a time. With the name still empty, **your
+  usuals** sit underneath: tasks you have done before, one tap to add (with
+  Undo). A name you have used before fills in its usual details.
 - **When** — pick a day from the next seven, or open **Whole month** for any
   later date. Or choose no exact day: **Any day** (stays on Today until done),
   **This week** or **Next week** (a deadline on that week's Sunday). A task set
   for one exact later day stays out of Today until that day; a task with a
   deadline shows on Today right away, because it can be done any day before it.
+- **Start time and reminder** — the time pill sets an hour (arrows in
+  5-minute steps, or one tap: In 1 hour, 09:00, 12:30, 18:00, 20:30) and a
+  nudge before it starts (Off, at start, 5, 10, 15, 30 minutes or 1 hour; 10
+  minutes by default). The time also places the task before or after work, and
+  turns on its Focus session. iOS asks for notification permission the first
+  time a reminder is picked.
 - **Brain Dump** — the microphone button. Type or dictate everything on your
   mind in English, Italian, Turkish or a mix; PaceTasks shows the tasks it
   understood before anything is added.
@@ -73,6 +89,17 @@ you compete only with your own past pace.
 - **Day cleared card** — appears once nothing is left, with today's count,
   minutes and streak.
 
+### DeskFocus (iPhone tab)
+
+- **Accounts** — **Apple Calendar and Reminders**: one tap connects iCloud and
+  every calendar account on the iPhone. **Google Calendar** comes in through
+  the Google account added to the iPhone (Settings › Calendar › Accounts); the
+  tab shows which Google accounts are connected.
+- **Calendars and reminder lists** — every one, grouped by account, with a switch:
+  what the DeskFocus widget and Today's calendar switch show. Undated reminders on/off.
+- **Widget look and focus length** — glass and accent colors, and the length ▶ uses.
+- The gear on the widget opens this tab (`pacetasks://deskfocus-settings`).
+
 ### Pace
 
 - **Your pace** — done today, minutes today, current and best streak, best day,
@@ -85,18 +112,35 @@ you compete only with your own past pace.
 
 - **Account (optional)** — the app works with no login. Creating an account
   asks for first name, last name and email, then for the code emailed
-  to you: no password. Your existing tasks stay. Email tips are a separate
+  to you: no password. On iPhone, **Continue with Apple** does the same in one tap. Your existing tasks stay. Email tips are a separate
   switch that starts off.
 - **Look** — theme (Match phone, Light, Dark) and colour theme (Sage, Pastel
   Night, Sunny). Sage also lets you pick an accent. These are saved on the phone.
-- **Work schedule, evening review, timer chime, haptics, Pomodoro length.**
+- **Reminders** — a **daily check-in** at the time you choose, sent only when
+  tasks are still open and without a sound, and **task reminders**: the nudge
+  picked on each task with a start time (one switch turns them all off). Both
+  are scheduled on the phone and planned a few days ahead, so they stop by
+  themselves if the app stays closed.
+- **Work schedule, timer chime, haptics, Pomodoro length.**
 - **Your data** — privacy policy, help and support, and **Delete account**
   (or **Delete my data** before sign-up), which erases everything on the server.
 
 ### Behind the scenes
 
+- **New version prompt** — when the app opens (and when it comes back, at most
+  every 6 hours), it asks Apple's public App Store lookup which version is
+  live. If it's newer than the one installed, a prompt shows what's new with
+  **Update now** (opens the App Store page) and **Later** (quiet for 3 days for
+  that version; a newer one shows at once). It needs no setup: it follows each
+  release as soon as Apple approves it. TestFlight builds ahead of the store,
+  the web demo and Expo Go never see it.
 - **Live sync** — changes made elsewhere appear immediately through Supabase
   Realtime, and the list reloads when the app returns to the foreground.
+- **When a task reminder fires** — a task set for a later day is reminded on
+  that day; one with no day, a deadline or overdue on the next time its hour
+  comes (today, or tomorrow once today's moment has passed), never after a
+  deadline that is still ahead. Done or parked tasks are never reminded. The
+  rule lives in `@domain/reminders`.
 - **"Today" comes from the phone** — its local calendar day, never the server's.
 
 ## Quick start
@@ -149,10 +193,29 @@ after `npm install`.
    code must be in the email. In both **Change Email Address** (sign-up) and
    **Magic Link** (sign-in), put `{{ .Token }}` in the body, for example
    `Your PaceTasks code: {{ .Token }}`. The default templates contain only a link.
+   The emails PaceTasks uses are kept in `supabase/templates/` (`sign_up_code.html`
+   and `sign_in_code.html`, each with its subject line on top): paste them in.
 3. **Authentication → SMTP Settings**: Supabase's built-in sender is for testing
    only. Set a mail service before real users sign up.
 4. **Authentication → Sign In / Providers → Email → Email OTP Length**: any
    value works (the app accepts 6 to 10 digits); 6 is the easiest to type.
+
+### Sign in with Apple
+
+Shown on iPhone only, under the email form. The app asks iOS for an Apple ID
+token and Supabase verifies it; nothing is stored on the phone.
+
+1. **Authentication → Sign In / Providers → Apple**: enable it and fill only
+   **Client IDs** with `com.pacetasks.app,host.exp.Exponent`. The first is the
+   app, the second is Expo Go (for testing; remove it before the App Store
+   release). The secret key field stays empty: it is only for sign-in on the web.
+2. **Authentication → Sign In / Providers → User Signups**: turn on **Allow
+   manual linking**. It lets the Apple ID attach to the anonymous user the phone
+   already has, which is what keeps the tasks made before signing up.
+
+It works in Expo Go without an Apple Developer Program membership. A real build
+needs the membership, with the **Sign in with Apple** capability on the app ID
+(`app.json` already asks for it).
 
 ## Brain Dump backend
 
@@ -190,7 +253,7 @@ npx supabase secrets set BRAIN_DUMP_DAILY_LIMIT=30    # optional, default 30 per
 
 Switching between free mode, a vendor or a model is only a `secrets set`: no
 code change or redeploy. API keys live only in Supabase secrets, never in the
-app. Update the [privacy policy](#website) *before*
+app. Update the [privacy policy](#privacy-policy-and-support-page) *before*
 moving off `rules`, because it says the text is not sent to an AI company.
 
 **Compare models** with the evaluation set (30 English, Italian, Turkish and
@@ -257,110 +320,203 @@ reload. To export a static build:
 EXPO_PUBLIC_DEMO_MODE=1 npx expo export --platform web
 ```
 
+To serve it from a subpath, set `WEB_BASE_URL`: `bilgaaaaa/PaceTasksWebsite`
+builds the demo with `WEB_BASE_URL=/PaceTasksWebsite/demo`, which `app.config.js`
+turns into Expo's `experiments.baseUrl` so the demo's files load from there.
+
 ## Build for TestFlight and the App Store
 
-Builds run on Expo's servers (EAS). Needs an Apple Developer Program membership
-and a free Expo account.
+Builds run on Expo's servers (EAS), so no Xcode is needed. Needs the Apple
+Developer Program membership and a free Expo account.
 
-One-time setup:
+### One-time setup
+
+The npm build scripts run EAS through `npx`, so no global install is needed.
+For the one-off commands below, either install it (`npm install -g eas-cli`)
+or prefix each with `npx eas-cli@latest` instead of `eas`.
 
 ```bash
-npm install -g eas-cli
 eas login
-eas init                       # links this folder to an Expo project
+eas init                       # links this folder to an Expo project (writes the project id)
 # The app's Supabase address and publishable key, for builds made on EAS (.env is not uploaded):
 eas env:create --environment production --name EXPO_PUBLIC_SUPABASE_URL --value https://<your-project-ref>.supabase.co --visibility plaintext
 eas env:create --environment production --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value sb_publishable_... --visibility plaintext
 ```
 
-Every release:
+`app.config.js` stops an EAS build at its first step when either value is
+missing (or when demo mode is set), so a broken build never reaches a phone.
+
+### Put the app on your iPhone (TestFlight)
 
 ```bash
-eas build --platform ios --profile production    # the build number goes up by itself
-eas submit --platform ios --profile production   # uploads to App Store Connect / TestFlight
+npm run ios:testflight         # builds, uploads, and hands the build to every tester group
 ```
 
-- `eas.json` holds two profiles: `production` (App Store and TestFlight) and
-  `preview` (installs directly on registered test phones; repeat the two
-  `eas env:create` lines with `--environment preview` to use it).
+The command runs the EAS workflow in `.eas/workflows/testflight.yml`: it builds with the `testflight`
+profile, then gives the build to **Team (Expo)** (internal) and to the external **testers** group, with
+its Beta App Review submitted for you. A new external group only needs its name added to
+`external_groups` there; never add builds to groups by hand.
+
+TestFlight builds use the `testflight` profile, which sets `EXPO_PUBLIC_TESTER_BUILD=1`: every Pro
+feature is unlocked for you and your testers, with no purchase. The build for the App Store comes from
+`npm run ios:release` (the `production` profile), where Pro is sold as usual. Don't send a TestFlight
+build to App Review.
+
+The first run asks you to sign in with your Apple ID and lets EAS create the
+certificate, the profile and the App Store Connect app for `com.pacetasks.app`.
+About 15–30 minutes later the build appears in **App Store Connect → TestFlight**.
+Add yourself under **Internal Testing**, install the **TestFlight** app on the
+phone and accept the invite. Internal builds need no review.
+
+### Send it to friends
+
+1. Publish the privacy policy first (next section): Apple asks for its link.
+2. App Store Connect → TestFlight → **External Testing** → create a group, add
+   the build, and fill in the test info (what to test, feedback email).
+3. The first build goes through a short Beta App Review (usually under a day).
+4. Add the group's name to `external_groups` in `.eas/workflows/testflight.yml`,
+   so every `npm run ios:testflight` reaches it.
+5. Turn on **Public Link** for the group and send the link. Friends install
+   TestFlight, open the link, and get every new build automatically.
+
+Each build expires after 90 days; `npm run ios:testflight` again replaces it.
+
+### Accounts for testers
+
+The app works without an account (every phone gets an anonymous session). For
+friends to create one, Supabase needs a custom SMTP server: the built-in email
+sender only delivers to members of the Supabase team. Set it in Supabase →
+**Authentication → Emails → SMTP Settings**, then name the service in
+`docs/privacy.html`.
+
+### Notes
+
+- `npm run ios:preview` builds the `preview` profile instead: it installs
+  straight from a link, but only on phones registered with
+  `eas device:create`. Repeat the two `eas env:create` lines with
+  `--environment preview` to use it.
 - The version shown in the store is `version` in `app.json`; raise it for each
-  release. Build numbers are kept by EAS.
+  release (1.0.0 → 1.0.1 → 1.1.0). Build numbers are kept by EAS and go up by
+  themselves. The new version prompt compares this version, so a release that
+  keeps the same one is never offered to people.
 - The app is iPhone-only for now (`supportsTablet: false`): no iPad layout has
   been designed, and Apple does not let iPad support be removed once shipped.
 - The icon and splash images live in `assets/`. They are drawn by
   `design/icon/build_icon_svgs.py` and rendered by
   `design/icon/render_icon_pngs.py` (needs Python with Playwright).
 
-### App Store listing
+### PaceTasks Pro
 
-`store.config.json` holds the App Store listing, sent to App Store Connect with
-[EAS Metadata](https://docs.expo.dev/eas/metadata/) (beta): name, subtitle,
-description, keywords, the Productivity category, the age rating (every answer
-"none") and the marketing, support and privacy links to the [website](#website).
-Upload a build first, then:
+One Pro, bought on iPhone, unlocks PaceTasks and DeskFocus for Mac. On iPhone it covers Brain Dump, the
+Pace tab beyond today and, once it ships, Siri. Purchases go through RevenueCat with StoreKit. The
+RevenueCat app user ID is the PaceTasks (Supabase) user ID, so the Mac sees the same Pro once it signs in
+to that account.
 
-```bash
-eas metadata:push      # sends store.config.json to App Store Connect
-eas metadata:pull      # brings edits made on the website back into the file
-```
+One-time setup:
 
-Two things the file can't hold, set once in App Store Connect:
+1. App Store Connect › **Business**: accept the Paid Apps agreement, with bank and tax details.
+2. App Store Connect › PaceTasks › **Subscriptions**: create a group **PaceTasks Pro** with `pro_monthly`
+   (€2.99) and `pro_yearly` (€19.99, introductory offer: 1 week free). Then **In-App Purchases**: a
+   non-consumable `pro_lifetime` (€39.99, or the founding price).
+3. RevenueCat: a project with the PaceTasks iOS app (paste an App Store Connect in-app purchase key),
+   the entitlement `pro` attached to all three products, and a **current** offering with the three
+   packages.
+4. Add the public iOS key: `.env` for local builds, and on EAS
+   `eas env:create --environment production --name EXPO_PUBLIC_REVENUECAT_IOS_KEY --value appl_... --visibility plaintext`.
 
-- **App Review contact.** Apple needs a phone number, so the review block is not
-  in the file. Add it with your number, or fill it in on the website:
-  ```json
-  "review": {
-    "firstName": "Bilge",
-    "lastName": "Ozcanbaz",
-    "email": "ozcanbazbilge@gmail.com",
-    "phone": "+39 ...",
-    "demoRequired": false,
-    "notes": "No sign-in is needed: PaceTasks opens straight onto Today and every feature works without an account. Creating an account is optional (Settings > Create account) and uses a one-time code sent by email, so there is no demo account. Brain Dump (the microphone next to Add a task) reads typed or dictated text with the app's own rules; no AI service is used. To delete an account or all data: Settings > Your data > Delete account."
-  }
-  ```
-- **App Privacy.** Answer it from the [privacy policy](#website): name and email
-  (only with an account), the tasks and Brain Dump text, and the user ID are
-  linked to the user and used for app functionality; the email is also used for
-  marketing only when tips are switched on; nothing is used for tracking.
+`react-native-purchases` is pinned to 10.12.1: later versions need native libraries that CocoaPods
+no longer receives, so `pod install` (and EAS) can't find them. Before upgrading, check with
+`pod trunk info PurchasesHybridCommon` that the version its podspec asks for exists.
 
-## Website
+Without the key (web demo, Android, a local build without it) nobody can buy, and Pro is unlocked for
+everyone. So set it before any App Store release. Sandbox tests: buy, then restore on a fresh install,
+cancel the trial, lifetime shows "You're Pro", and offline keeps Pro (the last status is kept a few days
+past renewal).
 
-The public website lives in its own repository,
-[bilgaaaaa/PaceTasksWebsite](https://github.com/bilgaaaaa/PaceTasksWebsite), served by GitHub Pages at
-**https://bilgaaaaa.github.io/PaceTasksWebsite/**: a landing page, the privacy
-policy, help and support, and the [web demo](#web-demo) at `/demo/`. The app's
-links (`src/lib/links.ts`) and the App Store listing point there.
+### Store listing and screenshots
 
-Its deploy workflow checks out this repository and exports the web demo with
-`WEB_BASE_URL` set to the site's path; `app.config.js` turns that into Expo's
-`experiments.baseUrl` so the demo's files load from that subpath. It runs on
-every push to the website and once a day, so the demo follows `main` here.
+- `store.config.json` holds the App Store listing in English, Italian and
+  Turkish: name, subtitle, promo text, description, keywords and the support
+  and privacy links. `eas metadata:push` uploads it to App Store Connect.
+  `storeListing.test.ts` keeps every field within Apple's character limits.
+- `design/store/screenshots/<locale>/` holds five 1320x2868 screenshots per
+  language (iPhone 6.9", the only size App Store Connect requires). They are
+  built from the web demo by `design/store/build_store_screenshots.py`; its
+  header has the three commands. Rebuild them when a screen changes.
+- The interface is English-only in v1, so the Italian and Turkish listings say
+  so and keep the feature names in English.
 
-- **After a UI change:** with both repositories cloned side by side, run
-  `npm run site:screens -- ../PaceTasksWebsite/screens` to take the website's
-  screenshots again from the web demo, on the simulated journey's fixed Monday.
-  It fails if the demo sends any request outside the browser, because the site
-  promises it never does. Without a folder, the screenshots go to
-  `e2e/output/site-screens/`.
-- **When what the app stores changes** (a new table, an AI provider, analytics),
-  update `privacy.html` in the website repository before that version is released.
+## Website, privacy policy, terms and support page
+
+`docs/` is the public website for PaceTasks and DeskFocus (`mac/`), the Mac app
+and widget sold together with it, at **https://pacetasks.bilgalog.dev/**. The
+app and the App Store listing link to its pages, served for free by GitHub
+Pages. Plain HTML, CSS and JavaScript, no build step.
+
+| File | Purpose |
+| --- | --- |
+| `index.html` | Landing page: the hero with a working DeskFocus widget, a day with both apps, the two apps side by side |
+| `support.html` | Help and support, one part per app |
+| `privacy.html` | Privacy policy for both apps |
+| `terms.html` | Terms of use and the 14-day refund policy for App Store and Paddle purchases |
+| `CNAME` | The custom domain, `pacetasks.bilgalog.dev`, which GitHub Pages reads from here |
+| `site.css` | Shared look: PaceTasks' Sage theme, DeskFocus' ink panels and ember focus ring |
+| `site.js` | Starts the PaceTasks web demo inside the hero phone on wide screens |
+| `widget.js` | The DeskFocus widget preview: tasks, focus timer, apps hidden during focus |
+| `screens/` | Screenshots of the web demo, taken again with `npm run site:screens` after a visible UI change |
+| `fonts/` | Bricolage Grotesque for headings, served from the site itself (SIL Open Font License) |
+| `og-image.png` | Link preview, rendered from the hero by `node design/site/build_og_image.mjs` |
+| `icon.png`, `deskfocus-icon.svg`, `grain.png` | Both app icons, and the grain the app lays over its hero card |
+
+1. The pages name Bilge Ozcanbaz as the developer and `pacetasks@bilgalog.dev`
+   as the contact address (forwarded by Cloudflare Email Routing), in the policy
+   texts and every footer; update all four pages if either changes.
+2. On GitHub: **Settings → Pages → Deploy from a branch**, branch `main`,
+   folder `/docs`.
+3. Custom domain: Cloudflare has a DNS-only (grey cloud) CNAME `pacetasks` →
+   `bilgaaaaa.github.io`, and `docs/CNAME` names the domain. Once GitHub has
+   issued the certificate, tick **Settings → Pages → Enforce HTTPS**. The old
+   address, `https://bilgaaaaa.github.io/pacetasks/`, redirects to the new one,
+   so the app's links (`src/lib/links.ts`) keep working.
+4. "Try PaceTasks in your browser" opens the web demo that
+   `bilgaaaaa/PaceTasksWebsite` builds and publishes; keep that site running or
+   change the two demo links in `index.html`.
+5. "Download DeskFocus for Mac" still points to the releases of the old
+   `bilgaaaaa/deskfocus` repository. Once `mac/Scripts/release.sh --publish` has
+   published the first `mac-v` release here, switch the links in `index.html`
+   and `support.html` to `https://github.com/bilgaaaaa/pacetasks/releases/latest`.
+6. Preview locally with `python3 -m http.server 4173` inside `docs/`, then open
+   http://localhost:4173.
+
+When what either app stores changes (a new table, an AI provider, analytics, a
+payment provider), update `docs/privacy.html` in the same pull request, and
+change its effective date. When PaceTasks is live,
+replace "coming soon to iPhone" in `index.html` with the App Store link, and add
+the bundle price where the comment in its "Two apps, sold together" section says.
+Once DeskFocus shows PaceTasks tasks, remove the "coming soon" wording from
+`index.html` (search for "coming soon").
 
 ## Project structure
 
 ```
 App.tsx                    Root: theme provider, session, the three tabs
 app.json, eas.json         Expo config and EAS build profiles
-store.config.json          App Store listing for `eas metadata:push`
-app.config.js              Extends app.json: serves the web export from a subpath, for the website's demo
+app.config.js              stops an EAS build that has no Supabase settings; builds the web demo for a subpath (`WEB_BASE_URL`)
+store.config.json          App Store listing (EN, IT, TR) for `eas metadata:push`
 assets/                    App icon, splash images, notification icon, favicon
 design/icon/               Scripts and SVG sources for the icon set
+design/store/              App Store screenshots and the script that builds them
+design/site/               Script that renders the website's link preview
+docs/                      Website for PaceTasks and DeskFocus (landing, privacy, terms, support) at pacetasks.bilgalog.dev
+mac/                       DeskFocus for Mac (Swift, XcodeGen): menu bar app, desktop widget, Sparkle updates; see mac/README.md
 src/screens/               TaskListScreen (Today), StatsScreen (Pace), SettingsScreen
 src/components/            Presentational pieces: sheets, cards, rows, buttons
 src/hooks/                 One hook per feature; all data access for a screen goes through these
 src/lib/                   Supabase client and API files, pure logic, UI copy, theme
 src/lib/demo/              In-memory backend for the web demo
-e2e/                       Simulated journey: `harness.mjs` (browser, film, steps), the journeys and the website screenshots
+e2e/                       Simulated journey: `harness.mjs` (browser, film, steps) and the journeys
 supabase/migrations/       Database schema, security policies and functions
+supabase/templates/        The sign-up and sign-in emails, pasted into the Supabase dashboard
 supabase/tests/database/   pgTAP tests for the database
 supabase/functions/_shared/domain/   Pure TypeScript shared by the app and Edge Functions (`@domain/...`)
 supabase/functions/_shared/server/   Deno-only server code: AI layer, Brain Dump service
@@ -419,5 +575,9 @@ The full conventions are in `.cursor/rules/pacetasks.mdc`.
 - **Tasks added elsewhere don't appear live** — check that Realtime is enabled
   for the `tasks` table (Dashboard → Database → Publications →
   `supabase_realtime`).
-- **The privacy or support link opens "not found"** — the website is not
-  deployed yet. See [Website](#website).
+- **EAS build fails at "Read app config" with "Missing EXPO_PUBLIC_SUPABASE_…"**
+  — the EAS environment for that profile has no Supabase values. Run the two
+  `eas env:create` lines from [Build for TestFlight](#build-for-testflight-and-the-app-store)
+  with that profile's `--environment`.
+- **The privacy or support link opens "not found"** — GitHub Pages is not
+  enabled yet. See [Privacy policy and support page](#privacy-policy-and-support-page).

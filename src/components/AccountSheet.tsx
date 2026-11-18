@@ -15,6 +15,7 @@ import { ACCOUNT_LIMITS, isCompleteCode, normalizeEmail } from "@domain/account"
 import type { AccountField } from "@domain/account";
 import type { AccountMode } from "../lib/accountApi";
 import {
+  appleHint,
   codePrompt,
   doneMessage,
   fieldErrorLabel,
@@ -22,6 +23,7 @@ import {
   MARKETING_CONSENT_HINT,
   MARKETING_CONSENT_LABEL,
   PRIVACY_POLICY_LABEL,
+  PROVIDER_DIVIDER_LABEL,
   sheetSubtitle,
   SIGN_UP_PRIVACY_NOTE,
   sheetTitle,
@@ -29,21 +31,25 @@ import {
 } from "../lib/accountCopy";
 import { AccountState } from "../lib/accountState";
 import { makeStyles, useTheme } from "../hooks/useTheme";
+import { AppleSignInButton } from "./AppleSignInButton";
 import { Button } from "./Button";
 import { ErrorBanner } from "./ErrorBanner";
 import { TextField } from "./TextField";
+import { t } from "../i18n";
 
 interface Props {
   visible: boolean;
   state: AccountState;
   profileFirstName: string | null; // for the greeting after signing in
   resending: boolean;
+  appleAvailable: boolean; // this phone can Sign in with Apple
   onChangeField: (field: AccountField, value: string) => void;
   onChangeMarketingOptIn: (value: boolean) => void;
   onChangeCode: (code: string) => void;
   onChangeMode: (mode: AccountMode) => void;
   onSubmit: () => void;
   onVerify: () => void;
+  onContinueWithApple: () => void;
   onResendCode: () => void;
   onEditEmail: () => void;
   onOpenPrivacyPolicy: () => void;
@@ -51,19 +57,21 @@ interface Props {
 }
 
 // Full-screen sheet for creating an account or signing in, without a password:
-// details, then the code from the email, then done. Purely
+// details, then the code from the email, then done; or one tap on Apple's button. Purely
 // presentational — every transition comes from useAccount.
 export function AccountSheet({
   visible,
   state,
   profileFirstName,
   resending,
+  appleAvailable,
   onChangeField,
   onChangeMarketingOptIn,
   onChangeCode,
   onChangeMode,
   onSubmit,
   onVerify,
+  onContinueWithApple,
   onResendCode,
   onEditEmail,
   onOpenPrivacyPolicy,
@@ -73,7 +81,7 @@ export function AccountSheet({
   const styles = useStyles();
   const { mode, phase, fieldErrors } = state;
   const isSignUp = mode === "sign_up";
-  const isFormPhase = phase === "form" || phase === "sending";
+  const isFormPhase = phase === "form" || phase === "sending" || phase === "connecting";
   const isCodePhase = phase === "code" || phase === "verifying";
   const errorFor = (field: AccountField) => {
     const issue = fieldErrors[field];
@@ -86,10 +94,10 @@ export function AccountSheet({
         <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <View style={styles.header}>
             <View style={styles.flex}>
-              <Text style={styles.eyebrow}>ACCOUNT</Text>
-              <Text style={styles.title}>{phase === "done" ? "Done" : sheetTitle(mode)}</Text>
+              <Text style={styles.eyebrow}>{t("ACCOUNT")}</Text>
+              <Text style={styles.title}>{phase === "done" ? t("Done") : sheetTitle(mode)}</Text>
             </View>
-            <TouchableOpacity onPress={onClose} hitSlop={8} style={styles.closeButton} accessibilityLabel="Close">
+            <TouchableOpacity onPress={onClose} hitSlop={8} style={styles.closeButton} accessibilityLabel={t("Close")}>
               <Ionicons name="close" size={18} color={theme.colors.textSecondary} />
             </TouchableOpacity>
           </View>
@@ -145,24 +153,24 @@ export function AccountSheet({
               {isSignUp && (
                 <View style={styles.consentRow}>
                   <View style={styles.consentText}>
-                    <Text style={styles.consentLabel}>{MARKETING_CONSENT_LABEL}</Text>
-                    <Text style={styles.hint}>{MARKETING_CONSENT_HINT}</Text>
+                    <Text style={styles.consentLabel}>{t(MARKETING_CONSENT_LABEL)}</Text>
+                    <Text style={styles.hint}>{t(MARKETING_CONSENT_HINT)}</Text>
                   </View>
                   <Switch
                     value={state.marketingOptIn}
                     disabled={phase !== "form"}
                     onValueChange={onChangeMarketingOptIn}
                     trackColor={{ false: theme.colors.border, true: theme.colors.accentDark }}
-                    accessibilityLabel={MARKETING_CONSENT_LABEL}
+                    accessibilityLabel={t(MARKETING_CONSENT_LABEL)}
                   />
                 </View>
               )}
 
               {isSignUp && (
                 <View style={styles.privacyNote}>
-                  <Text style={styles.hint}>{SIGN_UP_PRIVACY_NOTE}</Text>
+                  <Text style={styles.hint}>{t(SIGN_UP_PRIVACY_NOTE)}</Text>
                   <TouchableOpacity onPress={onOpenPrivacyPolicy} hitSlop={12} accessibilityRole="link">
-                    <Text style={styles.link}>{PRIVACY_POLICY_LABEL}</Text>
+                    <Text style={styles.link}>{t(PRIVACY_POLICY_LABEL)}</Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -170,14 +178,32 @@ export function AccountSheet({
               {state.error && <ErrorBanner message={state.error} />}
 
               <Button
-                label={phase === "sending" ? "Sending the code…" : "Email me a code"}
+                label={phase === "sending" ? t("Sending the code…") : t("Email me a code")}
                 loading={phase === "sending"}
+                disabled={phase === "connecting"}
                 onPress={onSubmit}
               />
+
+              {appleAvailable && (
+                <>
+                  <View style={styles.divider}>
+                    <View style={styles.dividerLine} />
+                    <Text style={styles.hint}>{PROVIDER_DIVIDER_LABEL}</Text>
+                    <View style={styles.dividerLine} />
+                  </View>
+                  <AppleSignInButton
+                    loading={phase === "connecting"}
+                    disabled={phase === "sending"}
+                    onPress={onContinueWithApple}
+                  />
+                  <Text style={[styles.hint, styles.centered]}>{appleHint(mode)}</Text>
+                </>
+              )}
+
               <Button
                 label={switchModeLabel(mode)}
                 variant="secondary"
-                disabled={phase === "sending"}
+                disabled={phase !== "form"}
                 onPress={() => onChangeMode(isSignUp ? "sign_in" : "sign_up")}
               />
             </ScrollView>
@@ -187,7 +213,7 @@ export function AccountSheet({
             <ScrollView style={styles.flex} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
               <Text style={styles.subtitle}>{codePrompt(normalizeEmail(state.email))}</Text>
               <TextField
-                label="Code"
+                label={t("Code")}
                 value={state.code}
                 onChangeText={onChangeCode}
                 editable={phase === "code"}
@@ -203,24 +229,24 @@ export function AccountSheet({
               {state.error && <ErrorBanner message={state.error} />}
 
               <Button
-                label={phase === "verifying" ? "Checking…" : "Confirm"}
+                label={phase === "verifying" ? t("Checking…") : t("Confirm")}
                 loading={phase === "verifying"}
                 disabled={!isCompleteCode(state.code)}
                 onPress={onVerify}
               />
               <Button
-                label={resending ? "Sending a new code…" : "Send a new code"}
+                label={resending ? t("Sending a new code…") : t("Send a new code")}
                 variant="secondary"
                 disabled={phase === "verifying" || resending}
                 onPress={onResendCode}
               />
               <Button
-                label="Use a different email"
+                label={t("Use a different email")}
                 variant="secondary"
                 disabled={phase === "verifying" || resending}
                 onPress={onEditEmail}
               />
-              <Text style={styles.hint}>The code can take a minute to arrive. Check your spam folder too.</Text>
+              <Text style={styles.hint}>{t("The code can take a minute to arrive. Check your spam folder too.")}</Text>
             </ScrollView>
           )}
 
@@ -230,9 +256,9 @@ export function AccountSheet({
                 <Ionicons name="checkmark" size={32} color={theme.colors.onAccent} />
               </View>
               <Text style={styles.doneText}>
-                {doneMessage(mode, isSignUp ? state.firstName.trim() || null : profileFirstName)}
+                {doneMessage(mode, (isSignUp && state.firstName.trim()) || profileFirstName)}
               </Text>
-              <Button style={styles.doneButton} label="Close" onPress={onClose} />
+              <Button style={styles.doneButton} label={t("Close")} onPress={onClose} />
             </View>
           )}
         </KeyboardAvoidingView>
@@ -308,6 +334,19 @@ const useStyles = makeStyles((theme) => ({
     fontSize: theme.typography.footnote.fontSize,
     fontWeight: "400",
   },
+  divider: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.spacing.sm,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: theme.colors.border,
+  },
+  centered: {
+    textAlign: "center",
+  },
   privacyNote: {
     gap: theme.spacing.xs,
     alignItems: "flex-start",
@@ -340,7 +379,8 @@ const useStyles = makeStyles((theme) => ({
     fontFamily: theme.typography.title.fontFamily,
     textAlign: "center",
   },
+  // The same space around the button as Brain Dump's "All set", so both results sit alike.
   doneButton: {
-    marginTop: theme.spacing.sm,
+    marginVertical: theme.spacing.md,
   },
 }));
