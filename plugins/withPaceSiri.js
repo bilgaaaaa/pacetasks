@@ -1,6 +1,9 @@
 // Expo config plugin for PaceTasks' Siri support. At prebuild it copies the App
-// Intents in native/siri into the iOS app target, adds their EN/IT/TR string
-// catalogs, and writes the Supabase address Siri calls into Info.plist.
+// Intents in native/siri into the iOS app target, adds their English/Italian
+// phrase catalog, and writes the Supabase address Siri calls into Info.plist.
+// Siri's other texts live in the app's Localizable.xcstrings, which
+// targets/deskfocus/_shared already builds into the app (a second
+// Localizable.xcstrings would clash with it).
 const fs = require("fs");
 const path = require("path");
 const { IOSConfig, withInfoPlist, withXcodeProject } = require("expo/config-plugins");
@@ -8,8 +11,8 @@ const { IOSConfig, withInfoPlist, withXcodeProject } = require("expo/config-plug
 const SIRI_SOURCE_DIR = path.join(__dirname, "..", "native", "siri");
 const SIRI_GROUP = "Siri";
 const SWIFT_FILES = ["PaceIntents.swift", "PaceShortcuts.swift"];
-const STRING_CATALOGS = ["AppShortcuts.xcstrings", "Localizable.xcstrings"];
-const SIRI_LANGUAGES = ["en", "it", "tr"];
+const STRING_CATALOGS = ["AppShortcuts.xcstrings"];
+const SIRI_LANGUAGES = ["en", "it"];
 const XCSTRINGS_FILE_TYPE = "text.json.xcstrings";
 
 // Info.plist keys PaceSupabaseConfig.swift reads; the anon key is public, like in the JS bundle.
@@ -23,7 +26,7 @@ function applySiriInfoPlist(infoPlist, env) {
     ...infoPlist,
     PaceSupabaseURL: supabaseUrl ?? "",
     PaceSupabaseAnonKey: supabaseAnonKey ?? "",
-    // Lets iOS pick the Italian or Turkish Siri phrases and replies.
+    // Lets iOS pick the Italian Siri phrases and replies.
     CFBundleLocalizations: [...new Set([...(infoPlist.CFBundleLocalizations ?? []), ...SIRI_LANGUAGES])],
   };
 }

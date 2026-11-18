@@ -1,18 +1,17 @@
 import { z } from "zod";
 import { isEntitlementActive } from "../../domain/pro.ts";
-import type { ProStatus } from "../../domain/pro.ts";
+import type { ProSyncStatus } from "../../domain/pro.ts";
 import { ApiError, CORS_HEADERS, errorResponse, jsonResponse } from "../http/apiError.ts";
 import { isPaceUserId, syncProEntitlement } from "./proSync.ts";
 import type { ProSyncDeps } from "./proSync.ts";
 
 export interface ProSyncHandlerDeps extends ProSyncDeps {
   authenticate: (authorizationHeader: string) => Promise<string | null>; // the caller's user id
-  aiBrainDump: () => boolean; // whether Pro Brain Dump runs on an AI model right now
   now: () => Date;
 }
 
 // POST /pro-sync — the app calls it after a purchase or restore (and when it opens)
-// so Siri and the server see Pro at once, without waiting for RevenueCat's webhook.
+// so Siri sees Pro at once, without waiting for RevenueCat's webhook.
 export async function handleProSyncHttp(request: Request, deps: ProSyncHandlerDeps): Promise<Response> {
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS_HEADERS });
   try {
@@ -22,11 +21,7 @@ export async function handleProSyncHttp(request: Request, deps: ProSyncHandlerDe
     if (!userId) throw new ApiError(401, "unauthorized", "Sign in to check PaceTasks Pro");
 
     const entitlement = await syncProEntitlement(userId, deps);
-    const status: ProStatus = {
-      isPro: isEntitlementActive(entitlement, deps.now()),
-      entitlement,
-      aiBrainDump: deps.aiBrainDump(),
-    };
+    const status: ProSyncStatus = { isPro: isEntitlementActive(entitlement, deps.now()), entitlement };
     return jsonResponse(200, status);
   } catch (error) {
     const apiError =

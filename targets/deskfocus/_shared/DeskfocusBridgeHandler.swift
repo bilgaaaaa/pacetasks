@@ -1,0 +1,201 @@
+import Foundation
+
+/// What PaceTasks' JavaScript sends through the native module in modules/deskfocus-bridge; field names match
+/// `FocusBridgeCommand` in src/lib/deskfocusBridge.ts.
+private struct FocusBridgeCommand: Decodable {
+    let action: String
+    let paceTaskId: String?
+    let minutes: Int?
+    /// The change for "updateWidgetSettings".
+    let widgetSettings: WidgetSettingsPatch?
+    /// "YYYY-MM-DD" for "calendarItems".
+    let dayKey: String?
+    /// The EventKit id for "completeReminder".
+    let reminderId: String?
+    /// PaceTasks' timer sound setting, mirrored into the shared settings so the widget's alerts follow it too.
+    let timerSoundEnabled: Bool?
+    /// PaceTasks' language choice ("system", "en" or "it"), mirrored into the shared settings so the widget reads in it too.
+    let language: String?
+}
+
+/// The focus session as JavaScript reads it; field names match `SharedFocusSession` in src/lib/focusSession.ts.
+private struct SharedFocusSession: Encodable {
+    let sessionId: String
+    /// Nil when the session belongs to a calendar event or reminder rather than a PaceTasks task.
+    let paceTaskId: String?
+    let taskTitle: String
+    let phase: String
+    /// Milliseconds since 1970 while running, so JavaScript counts down against the same end as the alert.
+    let endsAt: Double?
+    let remainingSeconds: Double
+    let plannedSeconds: Double
+}
+
+private struct FocusBridgeReply: Encodable {
+    var focus: SharedFocusSession?
+    var error: String?
+    /// The widget's settings, after "widgetSettings" and "updateWidgetSettings".
+    var widget: WidgetSettingsPayload?
+    /// The asked day's events and reminders, after "calendarItems".
+    var calendarItems: [CalendarItemPayload]?
+    /// Calendar and Reminders access, after "calendarAccess" and "requestCalendarAccess".
+    var calendarAccess: CalendarAccessPayload?
+}
+
+/// Runs PaceTasks' focus commands in the app's process, through the same FocusController the widget buttons use,
+/// so the app and the widget share one session, one alert and one Live Activity. It also reads and changes the
+/// widget's settings for PaceTasks' DeskFocus settings sheet, and serves the calendar items Today shows. The native module finds it by name at run time
+/// because a pod cannot see the app target's Swift types.
+@objc(DeskfocusBridgeHandler)
+final class DeskfocusBridgeHandler: NSObject {
+    /// Called by the native module with a JSON command; answers with the focus state as JSON.
+    @objc(handle:completion:)
+    static func handle(_ command: NSString, completion: @escaping @Sendable (NSString) -> Void) {
+        let json = command as String
+        Task { @MainActor in
+            let reply = await run(json)
+            completion(encode(reply) as NSString)
+        }
+    }
+
+    @MainActor
+    private static func run(_ json: String) async -> FocusBridgeReply {
+        guard let data = json.data(using: .utf8), let command = try? JSONDecoder().decode(FocusBridgeCommand.self, from: data) else {
+            Log.app.error("Bridge: unreadable command")
+            return FocusBridgeReply(focus: currentFocus(), error: "invalid_command")
+        }
+        if let enabled = command.timerSoundEnabled {
+            applyTimerSound(enabled)
+        }
+        if let choice = command.language {
+            applyLanguage(choice)
+        }
+
+        switch command.action {
+        case "state":
+            return FocusBridgeReply(focus: currentFocus())
+        case "widgetSettings":
+            return FocusBridgeReply(focus: currentFocus(), widget: WidgetSettingsBridge.current())
+        case "updateWidgetSettings":
+            guard let patch = command.widgetSettings else {
+                return FocusBridgeReply(focus: currentFocus(), error: "invalid_command")
+            }
+            WidgetSettingsBridge.apply(patch)
+            FocusController.notifyChange()
+            return FocusBridgeReply(focus: currentFocus(), widget: WidgetSettingsBridge.current())
+        case "calendarAccess":
+            return FocusBridgeReply(focus: currentFocus(), calendarAccess: CalendarAccessBridge.current())
+        case "requestCalendarAccess":
+            let access = await CalendarAccessBridge.request()
+            // The widget can show the calendars now.
+            FocusController.notifyChange()
+            return FocusBridgeReply(focus: currentFocus(), calendarAccess: access)
+        case "calendarItems":
+            guard let dayKey = command.dayKey, let items = await CalendarItemsBridge.items(dayKey: dayKey) else {
+                return FocusBridgeReply(focus: currentFocus(), error: "invalid_command")
+            }
+            return FocusBridgeReply(focus: currentFocus(), calendarItems: items)
+        case "completeReminder":
+            guard let reminderId = command.reminderId else {
+                return FocusBridgeReply(focus: currentFocus(), error: "invalid_command")
+            }
+            do {
+                try EventKitTasks.complete(reminderId: reminderId)
+            } catch {
+                Log.app.error("Bridge: reminder not completed: \(error.localizedDescription, privacy: .public)")
+                return FocusBridgeReply(focus: currentFocus(), error: "complete_failed")
+            }
+            // The widget drops it from its list too.
+            await WidgetTaskSync.refresh()
+            FocusController.notifyChange()
+            return FocusBridgeReply(focus: currentFocus())
+        case "start":
+            guard let paceTaskId = command.paceTaskId, await start(paceTaskId: paceTaskId, minutes: command.minutes) else {
+                return FocusBridgeReply(focus: currentFocus(), error: "unknown_task")
+            }
+        case "pause":
+            FocusController.pause()
+        case "resume":
+            FocusController.resume()
+        case "extend":
+            FocusController.extend()
+        case "end":
+            FocusController.end()
+        case "reconcile":
+            // The app came to the front: settle what the widget did while it was closed.
+            await WidgetTaskSync.refresh()
+        default:
+            Log.app.error("Bridge: unknown action \(command.action, privacy: .public)")
+            return FocusBridgeReply(focus: currentFocus(), error: "unknown_action")
+        }
+        Log.app.info("Bridge: \(command.action, privacy: .public) done")
+        await FocusRuntime.afterChange()
+        return FocusBridgeReply(focus: currentFocus())
+    }
+
+    /// Starts focus on a PaceTasks task, reloading today's list first when the task was added after the last widget refresh.
+    @MainActor
+    private static func start(paceTaskId: String, minutes: Int?) async -> Bool {
+        let taskId = DeskTask.makeId(source: .paceTasks, containerIdentifier: PaceTasksFeed.containerIdentifier, sourceIdentifier: paceTaskId)
+        if SharedStore.shared.load().task(withId: taskId) == nil {
+            await WidgetTaskSync.refresh()
+        }
+        // The app's Pomodoro length is its own setting, so it never replaces the length the widget's ▶ uses for this task.
+        return FocusController.start(taskId: taskId, minutes: minutes, remembersMinutes: false) != nil
+    }
+
+    /// Saves the sound setting only when it changed, so routine commands never rewrite the shared state.
+    private static func applyTimerSound(_ enabled: Bool) {
+        guard SharedStore.shared.load().settings.timerSoundEnabled != enabled else { return }
+        SharedStore.shared.update { $0.settings.timerSoundEnabled = enabled }
+        Log.app.info("Bridge: timer sound \(enabled ? "on" : "off", privacy: .public)")
+        FocusController.notifyChange()
+    }
+
+    /// Saves the language only when it changed, then reloads the widget so it picks the new one up.
+    private static func applyLanguage(_ choice: String) {
+        guard let language = AppLanguage.allCases.first(where: { ($0.code ?? "system") == choice }) else {
+            Log.app.error("Bridge: unknown language \(choice, privacy: .public)")
+            return
+        }
+        guard SharedStore.shared.load().settings.language != language else { return }
+        SharedStore.shared.update { $0.settings.language = language }
+        LanguagePreference.apply(language)
+        Log.app.info("Bridge: language \(choice, privacy: .public)")
+        FocusController.notifyChange()
+    }
+
+    private static func currentFocus(now: Date = .now) -> SharedFocusSession? {
+        let snapshot = SharedStore.shared.load()
+        guard let session = snapshot.focus else { return nil }
+        let task = snapshot.task(withId: session.taskId)
+        let phase: String
+        var endsAt: Double?
+        switch session.phase(at: now) {
+        case .running(let endDate):
+            phase = "running"
+            endsAt = endDate.timeIntervalSince1970 * 1000
+        case .paused:
+            phase = "paused"
+        case .finished:
+            phase = "finished"
+        }
+        return SharedFocusSession(
+            sessionId: session.id.uuidString,
+            paceTaskId: task?.source == .paceTasks ? task?.sourceIdentifier : nil,
+            taskTitle: session.taskTitle,
+            phase: phase,
+            endsAt: endsAt,
+            remainingSeconds: session.remaining(at: now),
+            plannedSeconds: session.plannedDuration
+        )
+    }
+
+    private static func encode(_ reply: FocusBridgeReply) -> String {
+        guard let data = try? JSONEncoder().encode(reply), let json = String(data: data, encoding: .utf8) else {
+            Log.app.error("Bridge: could not encode the reply")
+            return #"{"error":"encoding_failed"}"#
+        }
+        return json
+    }
+}

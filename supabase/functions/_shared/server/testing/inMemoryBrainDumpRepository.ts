@@ -10,16 +10,11 @@ export class InMemoryBrainDumpRepository implements BrainDumpRepository {
 
   constructor(
     private readonly userId: string | null,
-    private readonly context: BrainDumpUserContext,
-    private readonly pro = false
+    private readonly context: BrainDumpUserContext
   ) {}
 
   getUserId() {
     return Promise.resolve(this.userId);
-  }
-
-  isPro() {
-    return Promise.resolve(this.pro);
   }
 
   incrementUsage() {
@@ -56,6 +51,8 @@ export class InMemoryBrainDumpRepository implements BrainDumpRepository {
       timing: draft.timing ?? "anytime",
       category: draft.category ?? null,
       scheduled_time: draft.scheduled_time ?? null,
+      window_start: draft.window_start ?? null,
+      window_end: draft.window_end ?? null,
       reminder_minutes_before: draft.reminder_minutes_before ?? null,
       status: "pending",
       created_at: "2026-09-28T20:00:00.000Z",
@@ -71,6 +68,9 @@ export class InMemoryBrainDumpRepository implements BrainDumpRepository {
       source_language: draft.source_language ?? null,
       ai_confidence: draft.ai_confidence ?? null,
       postponed_count: 0,
+      repeat_rule: draft.repeat_rule ?? null,
+      repeat_anchor: draft.repeat_rule ? draft.due_date ?? "2026-09-28" : null,
+      repeat_source_id: null,
     };
   }
 }

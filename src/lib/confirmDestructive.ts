@@ -1,4 +1,5 @@
 import { Alert, Platform } from "react-native";
+import { t } from "../i18n";
 
 export interface DestructivePrompt {
   title: string;
@@ -17,7 +18,7 @@ export function confirmDestructive(prompt: DestructivePrompt, onConfirm: () => v
     return;
   }
   Alert.alert(prompt.title, prompt.message, [
-    { text: "Cancel", style: "cancel" },
+    { text: t("Cancel"), style: "cancel" },
     { text: prompt.confirmLabel, style: "destructive", onPress: onConfirm },
   ]);
 }

@@ -30,31 +30,21 @@ function scriptedAI(result: BrainDumpAiResult | AIError): AIProvider & { calls: 
   };
 }
 
-function setup(
-  options: { autoCreate?: boolean; ai?: AIProvider; userId?: string | null; dailyLimit?: number; pro?: boolean } = {}
-) {
-  const repository = new InMemoryBrainDumpRepository(
-    options.userId === undefined ? "user-1" : options.userId,
-    {
-      workStartHour: 9,
-      workEndHour: 17,
-      autoCreateEnabled: options.autoCreate ?? false,
-      tasks: [],
-    },
-    options.pro ?? false
-  );
+function setup(options: { autoCreate?: boolean; ai?: AIProvider; userId?: string | null; dailyLimit?: number } = {}) {
+  const repository = new InMemoryBrainDumpRepository(options.userId === undefined ? "user-1" : options.userId, {
+    workStartHour: 9,
+    workEndHour: 17,
+    autoCreateEnabled: options.autoCreate ?? false,
+    tasks: [],
+  });
   const ai = options.ai ?? scriptedAI(SAMPLE_AI_RESULT);
-  const aiTiers: boolean[] = []; // the isPro value each request chose its provider with
   const deps: BrainDumpHandlerDeps = {
     createRepository: () => repository,
-    createAI: (isPro) => {
-      aiTiers.push(isPro);
-      return ai;
-    },
+    createAI: () => ai,
     now: () => NOW,
     dailyLimit: options.dailyLimit ?? 30,
   };
-  return { repository, ai, deps, aiTiers };
+  return { repository, ai, deps };
 }
 
 function post(body: unknown, headers: Record<string, string> = { authorization: "Bearer token" }): Request {
@@ -83,6 +73,8 @@ Deno.test("propose: returns reviewable drafts dated from the phone's today, with
     timing: "anytime",
     category: "personal",
     scheduled_time: null,
+    window_start: null,
+    window_end: null,
     due_date: "2026-09-30", // "domani" from Tuesday 29 Sep in Rome
     due_kind: "on",
     notes: null,
@@ -126,7 +118,7 @@ Deno.test("auto: creates the tasks only when the user enabled auto-create and no
 });
 
 Deno.test("siri channel: tasks are sourced as siri", async () => {
-  const { deps } = setup({ pro: true });
+  const { deps } = setup();
   const proposal = (await (await handleBrainDumpHttp(post({ ...VALID, channel: "siri" }), deps)).json()) as BrainDumpProposal;
   assert.equal(proposal.candidates[0].draft.source, "siri");
 });
@@ -192,39 +184,32 @@ Deno.test("AI failures map to stable, user-safe errors", async () => {
   assert.equal((await response.json()).error.code, "ai_not_configured");
 });
 
-Deno.test("pro: free users choose the free provider, Pro users the configured one", async () => {
-  const free = setup();
-  await handleBrainDumpHttp(post(VALID), free.deps);
-  assert.deepEqual(free.aiTiers, [false]);
-
-  const pro = setup({ pro: true });
-  await handleBrainDumpHttp(post(VALID), pro.deps);
-  assert.deepEqual(pro.aiTiers, [true]);
-});
-
-Deno.test("pro: Siri needs Pro and never touches the quota without it", async () => {
-  const { repository, deps } = setup();
-  const response = await handleBrainDumpHttp(post({ ...VALID, channel: "siri", mode: "auto" }), deps);
-  const body = await response.json();
-  assert.equal(response.status, 402);
-  assert.equal(body.error.code, "pro_required");
-  assert.equal(repository.usageCount, 0);
-  assert.equal(repository.sessions.length, 0);
-});
-
-Deno.test("pro: Siri adds what it understood right away, even with auto-create off", async () => {
-  const { repository, deps } = setup({ pro: true, autoCreate: false });
-  const response = await handleBrainDumpHttp(post({ ...VALID, channel: "siri", mode: "auto" }), deps);
-  const proposal = (await response.json()) as BrainDumpProposal;
-  assert.equal(response.status, 200);
-  assert.equal(proposal.status, "committed");
-  assert.equal(proposal.createdTasks.length, 2);
-  assert.ok(repository.createdTasks.every((task) => task.source === "siri"));
-});
-
 Deno.test("CORS preflight is answered", async () => {
   const { deps } = setup();
   const response = await handleBrainDumpHttp(new Request("http://localhost/brain-dump", { method: "OPTIONS" }), deps);
   assert.equal(response.status, 204);
   assert.equal(response.headers.get("access-control-allow-origin"), "*");
+});
+
+Deno.test("an interpretation made on the phone is used instead of the server's AI, and recorded as such", async () => {
+  const { deps, repository, ai } = setup();
+  const scripted = ai as ReturnType<typeof scriptedAI>;
+  const response = await handleBrainDumpHttp(
+    post({ ...VALID, interpretation: { model: "apple-foundation-models", promptVersion: "on-device.v1", result: SAMPLE_AI_RESULT } }),
+    deps
+  );
+  assert.equal(response.status, 200);
+  const proposal = (await response.json()) as BrainDumpProposal;
+  assert.equal(proposal.candidates.length, SAMPLE_AI_RESULT.candidates.length);
+  assert.equal(scripted.calls.length, 0);
+  assert.equal(repository.sessions[0].aiProvider, "apple_on_device");
+});
+
+Deno.test("a malformed phone interpretation is refused like any invalid request", async () => {
+  const { deps } = setup();
+  const response = await handleBrainDumpHttp(
+    post({ ...VALID, interpretation: { model: "x", promptVersion: "y", result: { candidates: "nope" } } }),
+    deps
+  );
+  assert.equal(response.status, 400);
 });

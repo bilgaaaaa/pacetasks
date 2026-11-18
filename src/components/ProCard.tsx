@@ -1,55 +1,42 @@
 import React from "react";
 import { Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import type { ProEntitlement } from "@domain/pro";
-import { makeStyles, useTheme } from "../hooks/useTheme";
-import {
-  MANAGE_LABEL,
-  PRO_FREE_CARD_ACTION,
-  PRO_FREE_CARD_TITLE,
-  PRO_SIRI_HINT,
-  proFreeCardSubtitle,
-  proStatusLine,
-} from "../lib/proCopy";
+import { makeStyles } from "../hooks/useTheme";
+import { ProStatus } from "../lib/pro";
+import { PRO_MANAGE_LABEL, PRO_RESTORE_LABEL, PRO_SEE_PLANS_LABEL, proStatusLine } from "../lib/proCopy";
 import { Button } from "./Button";
+import { t } from "../i18n";
 
 interface Props {
-  isPro: boolean;
-  entitlement: ProEntitlement | null;
-  trialDays: number | null; // the free trial this user can still take, from the default plan
-  onOpenPaywall: () => void;
+  status: ProStatus;
+  restoring: boolean;
+  message: string | null; // a restore that found nothing or failed
+  onSeePlans: () => void;
+  onRestore: () => void;
   onManage: () => void;
 }
 
-// Settings card for PaceTasks Pro. Free users see what Pro adds and open the
-// paywall; subscribers see their plan, how to use Siri and where to manage it.
-// Purely presentational — state comes from usePro.
-export function ProCard({ isPro, entitlement, trialDays, onOpenPaywall, onManage }: Props) {
-  const { theme } = useTheme();
+// Settings card for Pro: what the user has, then the plans and restore for a free user, or managing a subscription.
+export function ProCard({ status, restoring, message, onSeePlans, onRestore, onManage }: Props) {
   const styles = useStyles();
-
-  if (!isPro) {
-    return (
-      <View style={styles.card}>
-        <View style={styles.titleRow}>
-          <Ionicons name="mic-outline" size={20} color={theme.colors.accentDark} />
-          <Text style={styles.title}>{PRO_FREE_CARD_TITLE}</Text>
-        </View>
-        <Text style={styles.subtitle}>{proFreeCardSubtitle(trialDays)}</Text>
-        <Button label={PRO_FREE_CARD_ACTION} onPress={onOpenPaywall} />
-      </View>
-    );
-  }
-
   return (
     <View style={styles.card}>
-      <View style={styles.titleRow}>
-        <Ionicons name="checkmark-circle" size={20} color={theme.colors.accentDark} />
-        <Text style={styles.title}>PaceTasks Pro</Text>
-      </View>
-      <Text style={styles.subtitle}>{proStatusLine(entitlement, new Date())}</Text>
-      <Text style={styles.hint}>{PRO_SIRI_HINT}</Text>
-      <Button style={styles.secondaryOnCard} label={MANAGE_LABEL} variant="secondary" onPress={onManage} />
+      <Text style={styles.status}>{proStatusLine(status)}</Text>
+      {!status.active && (
+        <>
+          <Button label={t(PRO_SEE_PLANS_LABEL)} onPress={onSeePlans} />
+          <Button
+            label={t(PRO_RESTORE_LABEL)}
+            variant="secondary"
+            loading={restoring}
+            onPress={onRestore}
+            style={styles.onCard}
+          />
+        </>
+      )}
+      {message && <Text style={styles.message}>{message}</Text>}
+      {status.active && !status.lifetime && (
+        <Button label={t(PRO_MANAGE_LABEL)} variant="secondary" onPress={onManage} style={styles.onCard} />
+      )}
     </View>
   );
 }
@@ -57,30 +44,20 @@ export function ProCard({ isPro, entitlement, trialDays, onOpenPaywall, onManage
 const useStyles = makeStyles((theme) => ({
   card: {
     backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.xl,
+    borderRadius: theme.radius.lg,
     padding: theme.spacing.md,
     gap: theme.spacing.sm,
   },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: theme.spacing.sm,
-  },
-  title: {
+  status: {
     color: theme.colors.textPrimary,
-    fontSize: theme.typography.headline.fontSize,
-    fontWeight: theme.typography.headline.fontWeight,
+    fontSize: theme.typography.body.fontSize,
   },
-  subtitle: {
-    color: theme.colors.textSecondary,
-    fontSize: theme.typography.footnote.fontSize,
+  message: {
+    color: theme.colors.danger,
+    fontSize: theme.typography.subhead.fontSize,
   },
-  hint: {
-    color: theme.colors.textTertiary,
-    fontSize: theme.typography.caption.fontSize,
-  },
-  // The secondary button's own fill is the card's color, so on a card it uses the nested fill.
-  secondaryOnCard: {
+  // The button's own fill is the card's color, so on a card it uses the nested fill.
+  onCard: {
     backgroundColor: theme.colors.surfaceAlt,
   },
 }));

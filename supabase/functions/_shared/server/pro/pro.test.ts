@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
-import type { ProEntitlement, ProStatus } from "../../domain/pro.ts";
+import type { ProEntitlement, ProSyncStatus } from "../../domain/pro.ts";
 import { fakeFetch } from "../testing/fakeFetch.ts";
+import { siriRequiresPro } from "./proAccess.ts";
 import { affectedUserIds, handleProSyncHttp, handleRevenueCatWebhookHttp } from "./proHttp.ts";
 import type { ProEntitlementStore } from "./proEntitlementStore.ts";
 import { createRevenueCatClient, RevenueCatError } from "./revenueCatClient.ts";
@@ -11,7 +12,7 @@ const OTHER_USER = "22222222-2222-4222-8222-222222222222";
 const NOW = new Date("2026-11-01T10:00:00Z");
 
 const TRIAL: ProEntitlement = {
-  productId: "pacetasks_pro_yearly",
+  productId: "pro_yearly",
   periodType: "trial",
   expiresAt: "2026-11-08T10:00:00Z",
   willRenew: true,
@@ -55,8 +56,8 @@ Deno.test("revenueCat: reads the pro entitlement, its trial and whether it renew
     {
       status: 200,
       body: subscriber(
-        { pro: { expires_date: TRIAL.expiresAt, product_identifier: "pacetasks_pro_yearly", purchase_date: "2026-11-01T10:00:00Z" } },
-        { pacetasks_pro_yearly: { period_type: "trial", unsubscribe_detected_at: null, store: "app_store" } }
+        { pro: { expires_date: TRIAL.expiresAt, product_identifier: "pro_yearly", purchase_date: "2026-11-01T10:00:00Z" } },
+        { pro_yearly: { period_type: "trial", unsubscribe_detected_at: null, store: "app_store" } }
       ),
     },
   ]);
@@ -66,23 +67,30 @@ Deno.test("revenueCat: reads the pro entitlement, its trial and whether it renew
   assert.equal(calls[0].headers.authorization, "Bearer sk_test");
 });
 
-Deno.test("revenueCat: a cancelled plan still counts until it ends, and no entitlement is null", async () => {
+Deno.test("revenueCat: a cancelled plan still counts until it ends, lifetime never ends, and no entitlement is null", async () => {
   const { fetchFn } = fakeFetch([
     {
       status: 200,
       body: subscriber(
-        { pro: { expires_date: TRIAL.expiresAt, product_identifier: "pacetasks_pro_monthly" } },
-        { pacetasks_pro_monthly: { period_type: "normal", unsubscribe_detected_at: "2026-11-02T08:00:00Z" } }
+        { pro: { expires_date: TRIAL.expiresAt, product_identifier: "pro_monthly" } },
+        { pro_monthly: { period_type: "normal", unsubscribe_detected_at: "2026-11-02T08:00:00Z" } }
       ),
     },
+    { status: 200, body: subscriber({ pro: { expires_date: null, product_identifier: "pro_lifetime" } }) },
     { status: 200, body: subscriber({}) },
   ]);
   const client = createRevenueCatClient("sk_test", fetchFn);
   assert.deepEqual(await client.fetchProEntitlement(USER), {
-    productId: "pacetasks_pro_monthly",
+    productId: "pro_monthly",
     periodType: "normal",
     expiresAt: TRIAL.expiresAt,
     willRenew: false,
+  });
+  assert.deepEqual(await client.fetchProEntitlement(USER), {
+    productId: "pro_lifetime",
+    periodType: "normal",
+    expiresAt: null,
+    willRenew: true,
   });
   assert.equal(await client.fetchProEntitlement(USER), null);
 });
@@ -92,8 +100,8 @@ Deno.test("revenueCat: a billing grace period keeps Pro until it ends", async ()
     {
       status: 200,
       body: subscriber(
-        { pro: { expires_date: "2026-11-01T09:00:00Z", product_identifier: "pacetasks_pro_monthly" } },
-        { pacetasks_pro_monthly: { period_type: "normal", grace_period_expires_date: "2026-11-17T09:00:00Z" } }
+        { pro: { expires_date: "2026-11-01T09:00:00Z", product_identifier: "pro_monthly" } },
+        { pro_monthly: { period_type: "normal", grace_period_expires_date: "2026-11-17T09:00:00Z" } }
       ),
     },
   ]);
@@ -109,18 +117,17 @@ Deno.test("revenueCat: errors and odd answers become RevenueCatError", async () 
   await assert.rejects(client.fetchProEntitlement(USER), RevenueCatError); // network down: the queue is empty
 });
 
-Deno.test("pro-sync: stores the caller's state and reports it with the AI flag", async () => {
+Deno.test("pro-sync: stores the caller's state and reports it", async () => {
   const store = new MemoryStore();
   const response = await handleProSyncHttp(post("http://localhost/pro-sync", {}, { authorization: "Bearer jwt" }), {
     store,
     revenueCat: scriptedRevenueCat({ [USER]: TRIAL }),
     authenticate: () => Promise.resolve(USER),
-    aiBrainDump: () => false,
     now: () => NOW,
   });
-  const status = (await response.json()) as ProStatus;
+  const status = (await response.json()) as ProSyncStatus;
   assert.equal(response.status, 200);
-  assert.deepEqual(status, { isPro: true, entitlement: TRIAL, aiBrainDump: false });
+  assert.deepEqual(status, { isPro: true, entitlement: TRIAL });
   assert.deepEqual(store.rows.get(USER), TRIAL);
 });
 
@@ -131,12 +138,10 @@ Deno.test("pro-sync: an expired plan is not Pro; without RevenueCat the stored r
     store,
     revenueCat: null,
     authenticate: () => Promise.resolve(USER),
-    aiBrainDump: () => true,
     now: () => NOW,
   });
-  const status = (await response.json()) as ProStatus;
+  const status = (await response.json()) as ProSyncStatus;
   assert.equal(status.isPro, false);
-  assert.equal(status.aiBrainDump, true);
 });
 
 Deno.test("pro-sync: needs a signed-in caller", async () => {
@@ -144,7 +149,6 @@ Deno.test("pro-sync: needs a signed-in caller", async () => {
     store: new MemoryStore(),
     revenueCat: null,
     authenticate: () => Promise.resolve(null),
-    aiBrainDump: () => false,
     now: () => NOW,
   });
   assert.equal(response.status, 401);
@@ -196,4 +200,10 @@ Deno.test("webhook: a transfer refreshes both sides and ignores RevenueCat's ano
     [USER, OTHER_USER]
   );
   assert.deepEqual(affectedUserIds({ type: "TEST", app_user_id: "$RCAnonymousID:abc" }), []);
+});
+
+Deno.test("siriRequiresPro: off unless SIRI_REQUIRES_PRO is exactly 1", () => {
+  assert.equal(siriRequiresPro(() => undefined), false);
+  assert.equal(siriRequiresPro(() => "true"), false);
+  assert.equal(siriRequiresPro(() => "1"), true);
 });

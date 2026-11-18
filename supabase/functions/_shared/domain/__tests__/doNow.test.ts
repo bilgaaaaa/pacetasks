@@ -19,6 +19,15 @@ describe("fitsNow", () => {
     expect(fitsNow(makeTask({ energy_level: "medium" }), makeContext({ energy: "low" }))).toBe(false);
   });
 
+  it("leaves out a task whose time window is closed, once the time of day is known", () => {
+    const evening = makeTask({ window_start: "20:00" });
+    const morning = makeTask({ window_end: "12:00" });
+    expect(fitsNow(evening, makeContext({ timeOfDay: "15:00" }))).toBe(false);
+    expect(fitsNow(evening, makeContext({ timeOfDay: "20:00" }))).toBe(true);
+    expect(fitsNow(morning, makeContext({ timeOfDay: "12:00" }))).toBe(false);
+    expect(fitsNow(evening, makeContext())).toBe(true);
+  });
+
   it("never hides a task whose energy is unknown", () => {
     expect(fitsNow(makeTask({ energy_level: null }), makeContext({ energy: "low" }))).toBe(true);
   });

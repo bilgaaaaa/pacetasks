@@ -2,6 +2,8 @@ import { isCategoryId } from "../categories.ts";
 import { TASK_LIMITS } from "../task.ts";
 import type { Task, TaskDraft, TaskSource, TaskTiming } from "../task.ts";
 import { buildTaskHistory, findExactMatch, normalizeTitle } from "../taskHistory.ts";
+import { ANY_TIME, isValidTaskTime, timeFields } from "../taskTime.ts";
+import type { TaskTime } from "../taskTime.ts";
 import type { TaskHistoryEntry } from "../taskHistory.ts";
 import { timingForHour } from "../timing.ts";
 import type { AiTaskCandidate, BrainDumpAiResult, TimeOfDay } from "./aiResult.ts";
@@ -95,8 +97,9 @@ function normalizeCandidate(
   }
 
   const historyEntry = findExactMatch(history, title);
-  const scheduledTime = ai.dueTime;
-  const timing = timingFor(scheduledTime, ai.timeOfDay, historyEntry?.timing ?? null, context);
+  const time = taskTimeFromAi(ai);
+  const fields = timeFields(time);
+  const timing = timingFor(fields.scheduled_time ?? fields.window_start ?? fields.window_end, ai.timeOfDay, historyEntry?.timing ?? null, context);
 
   const duplicateId = pendingByTitle.get(normalizeTitle(title)) ?? null;
   if (duplicateId) {
@@ -119,7 +122,7 @@ function normalizeCandidate(
     estimated_minutes: estimatedMinutesFor(ai.estimatedDurationMinutes, historyEntry),
     timing,
     category,
-    scheduled_time: scheduledTime,
+    ...fields,
     due_date: dueDate,
     due_kind: dueKind,
     notes,
@@ -148,6 +151,16 @@ function normalizeCandidate(
 function estimatedMinutesFor(aiMinutes: number | null, historyEntry: TaskHistoryEntry | undefined): number {
   const minutes = historyEntry?.lastMinutes ?? aiMinutes ?? TASK_LIMITS.defaultEstimatedMinutes;
   return clamp(Math.round(minutes), TASK_LIMITS.minEstimatedMinutes, TASK_LIMITS.maxEstimatedMinutes);
+}
+
+// The AI's fixed time or window as one TaskTime; a window that ends before it starts is dropped.
+function taskTimeFromAi(ai: AiTaskCandidate): TaskTime {
+  if (ai.dueTime) return { kind: "at", time: ai.dueTime };
+  const start = ai.timeWindow?.start ?? null;
+  const end = ai.timeWindow?.end ?? null;
+  const time: TaskTime =
+    start && end ? { kind: "between", start, end } : start ? { kind: "after", start } : end ? { kind: "before", end } : ANY_TIME;
+  return isValidTaskTime(time) ? time : ANY_TIME;
 }
 
 // Maps a fixed time or a part of the day onto the app's before/after-work

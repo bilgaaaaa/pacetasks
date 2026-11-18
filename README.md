@@ -8,8 +8,7 @@ before or after work. It plans around the time and energy you really have, and
 you compete only with your own past pace.
 
 - **App:** Expo SDK 57 (React Native 0.86, TypeScript)
-- **Backend:** Supabase (Postgres with row-level security, Auth, Realtime, Edge Functions)
-- **Payments:** App Store subscriptions through RevenueCat (PaceTasks Pro)
+- **Backend:** Supabase (Postgres with row-level security, Auth, Realtime, one Edge Function)
 - **Status:** ready for the first TestFlight build; iPhone only for v1
 
 ## Contents
@@ -18,14 +17,14 @@ you compete only with your own past pace.
 2. [Quick start](#quick-start)
 3. [Set up Supabase](#set-up-supabase)
 4. [Brain Dump backend](#brain-dump-backend)
-5. [PaceTasks Pro and Siri](#pacetasks-pro-and-siri)
-6. [Tests](#tests)
-7. [Web demo](#web-demo)
-8. [Build for TestFlight and the App Store](#build-for-testflight-and-the-app-store)
-9. [Privacy policy and support page](#privacy-policy-and-support-page)
-10. [Project structure](#project-structure)
-11. [Working together](#working-together)
-12. [Troubleshooting](#troubleshooting)
+5. [Tests](#tests)
+6. [Web demo](#web-demo)
+7. [Build for TestFlight and the App Store](#build-for-testflight-and-the-app-store)
+   - [PaceTasks Pro](#pacetasks-pro)
+8. [Privacy policy and support page](#privacy-policy-and-support-page)
+9. [Project structure](#project-structure)
+10. [Working together](#working-together)
+11. [Troubleshooting](#troubleshooting)
 
 ## What the app does
 
@@ -40,8 +39,14 @@ you compete only with your own past pace.
     **Done** logs how long it took and offers the next one; **Not now** skips it.
   - **Fit my time** asks how much time (5 min to 1 hour) and energy (low, normal,
     high) you have, then lists the tasks that fit back to back.
-- **Week strip** — this week at a glance, with a dot under each day that has
-  tasks due.
+- **Week strip** — the week at a glance, with a dot under each day that has
+  tasks dated there. Tap any day to show it in place of today, ‹ › for another
+  week: a later day lists what is set for it, and tasks added while it shows
+  are set for it; an earlier day lists what was finished. **Today** goes back.
+- **Calendars switch** — beside the greeting. Open: the day's events and
+  reminders (Apple, Google and every account picked in the DeskFocus tab) show
+  under their own heading next to the PaceTasks tasks; closed: only PaceTasks
+  tasks. A reminder's circle checks it off in Reminders.
 - **Carried over** — when earlier tasks are still open, one slim row
   ("4 tasks carried over · Review") proposes where each should go: Today,
   Tomorrow, the Weekend or Someday. Change any of them, then apply.
@@ -84,6 +89,17 @@ you compete only with your own past pace.
 - **Day cleared card** — appears once nothing is left, with today's count,
   minutes and streak.
 
+### DeskFocus (iPhone tab)
+
+- **Accounts** — **Apple Calendar and Reminders**: one tap connects iCloud and
+  every calendar account on the iPhone. **Google Calendar** comes in through
+  the Google account added to the iPhone (Settings › Calendar › Accounts); the
+  tab shows which Google accounts are connected.
+- **Calendars and reminder lists** — every one, grouped by account, with a switch:
+  what the DeskFocus widget and Today's calendar switch show. Undated reminders on/off.
+- **Widget look and focus length** — glass and accent colors, and the length ▶ uses.
+- The gear on the widget opens this tab (`pacetasks://deskfocus-settings`).
+
 ### Pace
 
 - **Your pace** — done today, minutes today, current and best streak, best day,
@@ -91,24 +107,6 @@ you compete only with your own past pace.
 - **My Pace** — plain sentences about your own history: the hours in which you
   finish most, your strongest weekday, whether tasks take longer than you
   estimate. It stays quiet until you have completed 10 tasks.
-
-### Pro and Siri
-
-- **Pro** — a monthly or yearly App Store subscription; both start with a free
-  week. Settings shows a **Try PaceTasks Pro** card that opens the plans, with
-  the trial and renewal terms next to the button, **Restore purchases**, and the
-  Terms of Use and Privacy Policy links. Subscribers see their plan, when it
-  renews and **Manage subscription**.
-- **Siri** (Pro) — works in English, Italian and Turkish, no setup needed:
-  - "Hey Siri, add to PaceTasks" → Siri asks what to add; say several tasks at
-    once and they go through Brain Dump and are added straight away.
-  - "What's next in PaceTasks?" → the one task Decide for me would pick.
-  - "What's on today in PaceTasks?" → how many tasks are left, how long they
-    take, and the first three by name.
-  The same actions appear in the Shortcuts app.
-- **AI Brain Dump** (Pro, when switched on) — with an AI provider configured,
-  Pro users' Brain Dumps are read by the AI model and everyone else's by the free
-  rules. The paywall lists it only while it is really on.
 
 ### Settings
 
@@ -277,69 +275,6 @@ zone), optional `locale`, `channel` (`app` | `siri` | `shortcut`), `mode`
 **Privacy.** Raw Brain Dump text is erased after 30 days by a nightly `pg_cron`
 job, and function logs never contain the text.
 
-## PaceTasks Pro and Siri
-
-```
-App Store ⇄ RevenueCat ──webhook──▶ revenuecat-webhook ─┐
-app (react-native-purchases) ──▶ pro-sync ──────────────┤──▶ pro_entitlements ──▶ is_pro()
-                                                        │
-iPhone Siri → App Intent → POST /functions/v1/siri ─────┘  (add → Brain Dump; next / today → shared Today rules)
-```
-
-- The app buys through RevenueCat (`src/lib/purchases.ts`, `src/hooks/usePro.tsx`).
-  After a purchase or restore it calls `pro-sync`, which reads RevenueCat with
-  the secret key and writes `pro_entitlements`. The webhook keeps it right on
-  renewals, cancellations, refunds and transfers.
-- Siri runs in the app's own process. The Supabase session lives in the
-  Keychain (`modules/pace-session-store`), so the intent calls the `siri`
-  function as the signed-in user and refreshes the token when needed. The
-  server writes what Siri says (`@domain/siri/siriSpeech`), in the phone's
-  language.
-- `plugins/withPaceSiri.js` copies `native/siri/` (the App Intents, the App
-  Shortcuts phrases and their EN/IT/TR string catalogs) into the iOS app at
-  prebuild. Siri needs a real build: it does not work in Expo Go.
-
-### One-time setup
-
-1. **App Store Connect → your app → Subscriptions**: create a group
-   "PaceTasks Pro" with two auto-renewable subscriptions,
-   `pacetasks_pro_monthly` (1 month) and `pacetasks_pro_yearly` (1 year). On
-   each, add an **Introductory Offer → Free → 1 week**, set the prices, and
-   fill the localizations and review screenshot (the paywall).
-   Sign the **Paid Apps agreement** under Agreements, Tax, and Banking first.
-2. **RevenueCat** (free up to $2.5k monthly revenue): create a project, add the
-   iOS app with its **In-App Purchase Key** from App Store Connect, import the
-   two products, create an entitlement named exactly `pro` with both attached,
-   and a **current offering** with a Monthly and an Annual package.
-3. **Keys.** The app's key is RevenueCat's public Apple key (`appl_...`):
-   ```bash
-   eas env:create --environment production --name EXPO_PUBLIC_REVENUECAT_IOS_KEY --value appl_... --visibility plaintext
-   ```
-   Add it to `.env` too for local builds. The server's key is the **secret**
-   key (`sk_...`), never shipped in the app:
-   ```bash
-   npx supabase secrets set REVENUECAT_SECRET_API_KEY=sk_... REVENUECAT_WEBHOOK_AUTH=<a long random string>
-   ```
-4. **RevenueCat → Integrations → Webhooks**: URL
-   `https://<project-ref>.supabase.co/functions/v1/revenuecat-webhook`,
-   Authorization header = the same `REVENUECAT_WEBHOOK_AUTH` value.
-5. **Deploy** the migration and the functions:
-   ```bash
-   npx supabase db push
-   npx supabase functions deploy brain-dump siri pro-sync revenuecat-webhook
-   ```
-6. **Build** with `npm run ios:testflight`. Test purchases with a Sandbox tester
-   (App Store Connect → Users and Access → Sandbox) or in TestFlight, where
-   subscriptions are free and renew every few minutes.
-
-Without `EXPO_PUBLIC_REVENUECAT_IOS_KEY` the app still runs; Settings says
-subscriptions aren't available. Without `REVENUECAT_SECRET_API_KEY` the server
-keeps the last state the webhook wrote.
-
-To turn on **AI Brain Dump for Pro**, set an AI provider as in
-[Brain Dump backend](#brain-dump-backend) and update the privacy policy first:
-free users keep the rules, and the paywall starts listing the AI line by itself.
-
 ## Tests
 
 ```bash
@@ -361,9 +296,7 @@ The clock is fixed to a Monday morning in Europe/Rome, so every run sees the
 same day. It writes a film (`e2e/output/today-journey.webm`) and a screenshot
 per step (`e2e/output/shots/`), and fails on a broken step or a console error.
 
-First run on a new machine: `npx playwright install chromium`. Where that
-download isn't possible, point the run at an installed Chrome with
-`E2E_CHROME_PATH=/path/to/chrome npm run e2e`.
+First run on a new machine: `npx playwright install chromium`.
 
 It runs against the demo backend, in a browser. What only a real iPhone has
 (notifications, haptics, the keyboard, safe areas) is still checked by hand.
@@ -412,8 +345,18 @@ missing (or when demo mode is set), so a broken build never reaches a phone.
 ### Put the app on your iPhone (TestFlight)
 
 ```bash
-npm run ios:testflight         # builds, then uploads to App Store Connect by itself
+npm run ios:testflight         # builds, uploads, and hands the build to every tester group
 ```
+
+The command runs the EAS workflow in `.eas/workflows/testflight.yml`: it builds with the `testflight`
+profile, then gives the build to **Team (Expo)** (internal) and to the external **testers** group, with
+its Beta App Review submitted for you. A new external group only needs its name added to
+`external_groups` there; never add builds to groups by hand.
+
+TestFlight builds use the `testflight` profile, which sets `EXPO_PUBLIC_TESTER_BUILD=1`: every Pro
+feature is unlocked for you and your testers, with no purchase. The build for the App Store comes from
+`npm run ios:release` (the `production` profile), where Pro is sold as usual. Don't send a TestFlight
+build to App Review.
 
 The first run asks you to sign in with your Apple ID and lets EAS create the
 certificate, the profile and the App Store Connect app for `com.pacetasks.app`.
@@ -427,7 +370,9 @@ phone and accept the invite. Internal builds need no review.
 2. App Store Connect → TestFlight → **External Testing** → create a group, add
    the build, and fill in the test info (what to test, feedback email).
 3. The first build goes through a short Beta App Review (usually under a day).
-4. Turn on **Public Link** for the group and send the link. Friends install
+4. Add the group's name to `external_groups` in `.eas/workflows/testflight.yml`,
+   so every `npm run ios:testflight` reaches it.
+5. Turn on **Public Link** for the group and send the link. Friends install
    TestFlight, open the link, and get every new build automatically.
 
 Each build expires after 90 days; `npm run ios:testflight` again replaces it.
@@ -456,6 +401,50 @@ sender only delivers to members of the Supabase team. Set it in Supabase →
   `design/icon/build_icon_svgs.py` and rendered by
   `design/icon/render_icon_pngs.py` (needs Python with Playwright).
 
+### PaceTasks Pro
+
+One Pro, bought on iPhone, unlocks PaceTasks and DeskFocus for Mac. On iPhone it covers Brain Dump, the
+Pace tab beyond today and Siri. Purchases go through RevenueCat with StoreKit. The
+RevenueCat app user ID is the PaceTasks (Supabase) user ID, so the Mac sees the same Pro once it signs in
+to that account.
+
+One-time setup:
+
+1. App Store Connect › **Business**: accept the Paid Apps agreement, with bank and tax details.
+2. App Store Connect › PaceTasks › **Subscriptions**: create a group **PaceTasks Pro** with `pro_monthly`
+   (€2.99) and `pro_yearly` (€19.99, introductory offer: 1 week free). Then **In-App Purchases**: a
+   non-consumable `pro_lifetime` (€39.99, or the founding price).
+3. RevenueCat: a project with the PaceTasks iOS app (paste an App Store Connect in-app purchase key),
+   the entitlement `pro` attached to all three products, and a **current** offering with the three
+   packages.
+4. Add the public iOS key: `.env` for local builds, and on EAS
+   `eas env:create --environment production --name EXPO_PUBLIC_REVENUECAT_IOS_KEY --value appl_... --visibility plaintext`.
+
+`react-native-purchases` is pinned to 10.12.1: later versions need native libraries that CocoaPods
+no longer receives, so `pod install` (and EAS) can't find them. Before upgrading, check with
+`pod trunk info PurchasesHybridCommon` that the version its podspec asks for exists.
+
+#### The server's copy (for Siri)
+
+The app can't be trusted to say who is Pro, so the server keeps its own copy in `pro_entitlements`,
+read by `is_pro()`. RevenueCat stays the source: `pro-sync` (called by the app whenever the store's
+answer changes) and `revenuecat-webhook` (renewals, cancellations, refunds, transfers, billing grace
+periods) always re-read the user from RevenueCat's API with the secret key.
+
+1. `npx supabase db push`, then
+   `npx supabase functions deploy siri pro-sync revenuecat-webhook`.
+2. `npx supabase secrets set REVENUECAT_SECRET_API_KEY=sk_... REVENUECAT_WEBHOOK_AUTH=<a long random string>`.
+3. RevenueCat › Integrations › **Webhooks**: URL
+   `https://<project-ref>.supabase.co/functions/v1/revenuecat-webhook`, Authorization header = the same
+   `REVENUECAT_WEBHOOK_AUTH` value.
+4. At launch: `npx supabase secrets set SIRI_REQUIRES_PRO=1`. Until then Siri works for everyone, like
+   TestFlight's unlocked Pro; once it is on, testers need a sandbox purchase to use Siri.
+
+Without the key (web demo, Android, a local build without it) nobody can buy, and Pro is unlocked for
+everyone. So set it before any App Store release. Sandbox tests: buy, then restore on a fresh install,
+cancel the trial, lifetime shows "You're Pro", and offline keeps Pro (the last status is kept a few days
+past renewal).
+
 ### Store listing and screenshots
 
 - `store.config.json` holds the App Store listing in English, Italian and
@@ -469,22 +458,55 @@ sender only delivers to members of the Supabase team. Set it in Supabase →
 - The interface is English-only in v1, so the Italian and Turkish listings say
   so and keep the feature names in English.
 
-## Privacy policy and support page
+## Website, privacy policy, terms and support page
 
-`docs/` holds the public pages the app and the App Store listing link to:
-`privacy.html`, `support.html` and a small `index.html`, served for free by
-GitHub Pages.
+`docs/` is the public website for PaceTasks and DeskFocus (`mac/`), the Mac app
+and widget sold together with it, at **https://pacetasks.bilgalog.dev/**. The
+app and the App Store listing link to its pages, served for free by GitHub
+Pages. Plain HTML, CSS and JavaScript, no build step.
+
+| File | Purpose |
+| --- | --- |
+| `index.html` | Landing page: the hero with a working DeskFocus widget, a day with both apps, the two apps side by side |
+| `support.html` | Help and support, one part per app |
+| `privacy.html` | Privacy policy for both apps |
+| `terms.html` | Terms of use and the 14-day refund policy for App Store and Paddle purchases |
+| `CNAME` | The custom domain, `pacetasks.bilgalog.dev`, which GitHub Pages reads from here |
+| `site.css` | Shared look: PaceTasks' Sage theme, DeskFocus' ink panels and ember focus ring |
+| `site.js` | Starts the PaceTasks web demo inside the hero phone on wide screens |
+| `widget.js` | The DeskFocus widget preview: tasks, focus timer, apps hidden during focus |
+| `screens/` | Screenshots of the web demo |
+| `fonts/` | Bricolage Grotesque for headings, served from the site itself (SIL Open Font License) |
+| `og-image.png` | Link preview, rendered from the hero by `node design/site/build_og_image.mjs` |
+| `icon.png`, `deskfocus-icon.svg`, `grain.png` | Both app icons, and the grain the app lays over its hero card |
 
 1. The pages name Bilge Ozcanbaz as the developer and `pacetasks@bilgalog.dev`
-   as the contact address (forwarded by Cloudflare Email Routing); update both
-   files if either changes.
+   as the contact address (forwarded by Cloudflare Email Routing), in the policy
+   texts and every footer; update all four pages if either changes.
 2. On GitHub: **Settings → Pages → Deploy from a branch**, branch `main`,
    folder `/docs`.
-3. The pages appear at `https://bilgaaaaa.github.io/pacetasks/`. The app's links
-   (`src/lib/links.ts`) already point there.
+3. Custom domain: Cloudflare has a DNS-only (grey cloud) CNAME `pacetasks` →
+   `bilgaaaaa.github.io`, and `docs/CNAME` names the domain. Once GitHub has
+   issued the certificate, tick **Settings → Pages → Enforce HTTPS**. The old
+   address, `https://bilgaaaaa.github.io/pacetasks/`, redirects to the new one,
+   so the app's links (`src/lib/links.ts`) keep working.
+4. "Try PaceTasks in your browser" opens the web demo that
+   `bilgaaaaa/PaceTasksWebsite` builds and publishes; keep that site running or
+   change the two demo links in `index.html`.
+5. "Download DeskFocus for Mac" still points to the releases of the old
+   `bilgaaaaa/deskfocus` repository. Once `mac/Scripts/release.sh --publish` has
+   published the first `mac-v` release here, switch the links in `index.html`
+   and `support.html` to `https://github.com/bilgaaaaa/pacetasks/releases/latest`.
+6. Preview locally with `python3 -m http.server 4173` inside `docs/`, then open
+   http://localhost:4173.
 
-When what the app stores changes (a new table, an AI provider, analytics),
-update `docs/privacy.html` in the same pull request.
+When what either app stores changes (a new table, an AI provider, analytics, a
+payment provider), update `docs/privacy.html` in the same pull request, and
+change its effective date. When PaceTasks is live,
+replace "coming soon to iPhone" in `index.html` with the App Store link, and add
+the bundle price where the comment in its "Two apps, sold together" section says.
+Once DeskFocus shows PaceTasks tasks, remove the "coming soon" wording from
+`index.html` (search for "coming soon").
 
 ## Project structure
 
@@ -496,7 +518,9 @@ store.config.json          App Store listing (EN, IT, TR) for `eas metadata:push
 assets/                    App icon, splash images, notification icon, favicon
 design/icon/               Scripts and SVG sources for the icon set
 design/store/              App Store screenshots and the script that builds them
-docs/                      Public pages (privacy policy, support) for GitHub Pages
+design/site/               Script that renders the website's link preview
+docs/                      Website for PaceTasks and DeskFocus (landing, privacy, terms, support) at pacetasks.bilgalog.dev
+mac/                       DeskFocus for Mac (Swift, XcodeGen): menu bar app, desktop widget, Sparkle updates; see mac/README.md
 src/screens/               TaskListScreen (Today), StatsScreen (Pace), SettingsScreen
 src/components/            Presentational pieces: sheets, cards, rows, buttons
 src/hooks/                 One hook per feature; all data access for a screen goes through these
@@ -509,12 +533,9 @@ supabase/tests/database/   pgTAP tests for the database
 supabase/functions/_shared/domain/   Pure TypeScript shared by the app and Edge Functions (`@domain/...`)
 supabase/functions/_shared/server/   Deno-only server code: AI layer, Brain Dump, Siri and Pro services
 supabase/functions/brain-dump/       The Brain Dump Edge Function
-supabase/functions/siri/             What Siri calls: add, what's next, today (Pro)
+supabase/functions/siri/             What Siri calls: add, what's next, today
 supabase/functions/pro-sync/         Refreshes the caller's Pro state from RevenueCat
 supabase/functions/revenuecat-webhook/  RevenueCat's subscription events
-modules/pace-session-store/          Local Expo module: Keychain session store and the Swift Siri client
-native/siri/                         App Intents, Siri phrases and their EN/IT/TR strings (copied in at prebuild)
-plugins/withPaceSiri.js              Config plugin that adds native/siri to the iOS app
 supabase/functions/_eval/            AI evaluation set and runner (never deployed)
 ```
 
@@ -528,7 +549,7 @@ How the code is organised:
 - **Wording is separate.** User-facing text lives in `src/lib/*Copy.ts`, so it
   can be translated without touching logic.
 - **One creation path.** Tasks are created only through the `create_task`
-  database function, which Brain Dump and Siri share.
+  database function, which Brain Dump shares and Siri will too.
 - **Colours come from the theme.** `src/lib/theme.ts` holds every colour theme
   in light and dark; components read it through `useTheme()` and `makeStyles()`
   and never hardcode a colour.

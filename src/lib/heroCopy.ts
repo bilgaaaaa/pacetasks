@@ -1,5 +1,6 @@
 import { isQuickWin } from "@domain/todayTasks";
 import { Task } from "./types";
+import { t, tn } from "../i18n";
 
 // The encouraging headline and line in the Today hero card. Picked from the
 // real state of the day so it never promises something that isn't there.
@@ -45,29 +46,41 @@ export function heroMessage({
 }: HeroState): HeroMessage {
   if (count === 0) {
     return allDone
-      ? { title: "You did it.", body: "Everything's done. Enjoy the rest of your day." }
-      : { title: "A clean slate.", body: "Add whatever's on your mind and take it from there." };
+      ? { title: t("You did it."), body: t("Everything's done. Enjoy the rest of your day.") }
+      : { title: t("A clean slate."), body: t("Add whatever's on your mind and take it from there.") };
   }
   if (streakDays >= 2 && !doneToday) {
     return {
-      title: `${streakDays} days in a row.`,
-      body: "One task today keeps your streak alive.",
+      title: t("{0} days in a row.", streakDays),
+      body: t("One task today keeps your streak alive."),
     };
   }
   switch (start) {
     case "overdue":
       return {
-        title: "Pick up where you left off.",
-        body: "Something has been waiting a little while. It's a good place to start.",
+        title: t("Pick up where you left off."),
+        body: t("Something has been waiting a little while. It's a good place to start."),
       };
     case "quick_win": {
-      const tasks = quickWinCount === 1 ? "1 task takes" : `${quickWinCount} tasks take`;
+      const tasks = quickWinCount === 1 ? t("1 task takes") : t("{0} tasks take", quickWinCount);
       return {
-        title: "Start small, win big.",
-        body: `${tasks} ${quickWinMinutes} minutes or less. One is a great start.`,
+        title: t("Start small, win big."),
+        body: t("{0} {1} minutes or less. One is a great start.", tasks, quickWinMinutes),
       };
     }
     case "other":
-      return { title: "One step at a time.", body: "Pick one task and give it your full attention." };
+      return { title: t("One step at a time."), body: t("Pick one task and give it your full attention.") };
   }
+}
+
+// The hero on a day other than today: a later day is for planning, an earlier one for looking back.
+export function dayHeroMessage(dayKey: string, todayKey: string, pendingCount: number, doneCount: number): HeroMessage {
+  if (dayKey > todayKey) {
+    return pendingCount > 0
+      ? { title: t("Planned ahead."), body: t("Anything you add now is set for this day too.") }
+      : { title: t("Nothing planned yet."), body: t("Add a task and it's set for this day.") };
+  }
+  return doneCount > 0
+    ? { title: t("Look what you did."), body: tn(doneCount, "You finished 1 task this day.", "You finished {0} tasks this day.") }
+    : { title: t("A quiet day."), body: t("Nothing was finished this day.") };
 }

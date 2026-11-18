@@ -24,18 +24,6 @@ export function toLocalDateKey(date: Date, timeZone?: string): string {
   return `${part("year")}-${part("month")}-${part("day")}`;
 }
 
-// Returns the 24h "HH:MM" wall-clock time of `date` in `timeZone`, e.g. "07:05".
-export function toLocalTimeOfDay(date: Date, timeZone: string): string {
-  const parts = new Intl.DateTimeFormat("en-GB", {
-    timeZone,
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  }).formatToParts(date);
-  const part = (type: string) => parts.find((p) => p.type === type)?.value ?? "00";
-  return `${part("hour")}:${part("minute")}`;
-}
-
 // True for a real calendar day such as "2026-02-28" (rejects "2026-02-30").
 export function isValidDateKey(value: string): boolean {
   if (!DATE_KEY_PATTERN.test(value)) return false;
@@ -46,6 +34,18 @@ export function isValidDateKey(value: string): boolean {
 // True for a 24h "HH:MM" time, the format of tasks.scheduled_time.
 export function isValidTimeOfDay(value: string): boolean {
   return TIME_OF_DAY_PATTERN.test(value);
+}
+
+// The local clock time "HH:MM" of `date` in `timeZone`, e.g. for "what's next?" on the phone's own clock.
+export function toLocalTimeOfDay(date: Date, timeZone: string): string {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone,
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const part = (type: string) => parts.find((p) => p.type === type)?.value ?? "00";
+  return `${part("hour")}:${part("minute")}`;
 }
 
 // Shifts a date key by whole days; pure calendar math, unaffected by DST.

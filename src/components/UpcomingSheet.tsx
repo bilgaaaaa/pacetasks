@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React from "react";
 import { Modal, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { UpcomingDay } from "@domain/todayTasks";
@@ -15,15 +15,17 @@ import {
 import { Task } from "../lib/types";
 import { ErrorBanner } from "./ErrorBanner";
 import { TaskActionRow } from "./TaskActionRow";
+import { t } from "../i18n";
 
 interface Props {
   visible: boolean;
   days: UpcomingDay[]; // from selectUpcomingTasks + groupUpcomingByDay, nearest day first
   todayKey: string;
-  focusDayKey: string | null; // the day to open on (a tap in the week strip); null opens at the top
   errorMessage: string | null; // a failed save from the task list, which this sheet covers
   onMoveToToday: (task: Task) => void;
   onDelete: (taskId: string) => void; // already confirmed by the row
+  onEdit: (task: Task) => void; // the screen closes this sheet, then opens the task sheet
+  onDismissed: () => void; // the sheet has fully gone (iOS): lets the screen open the next sheet
   onClose: () => void;
 }
 
@@ -35,49 +37,47 @@ export function UpcomingSheet({
   visible,
   days,
   todayKey,
-  focusDayKey,
   errorMessage,
   onMoveToToday,
   onDelete,
+  onEdit,
+  onDismissed,
   onClose,
 }: Props) {
   const { theme } = useTheme();
   const styles = useStyles();
-  const scrollView = useRef<ScrollView>(null);
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+      onDismiss={onDismissed}
+    >
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <View style={styles.flex}>
             <Text style={styles.eyebrow}>{UPCOMING_EYEBROW}</Text>
-            <Text style={styles.title}>{UPCOMING_TITLE}</Text>
+            <Text style={styles.title}>{t(UPCOMING_TITLE)}</Text>
           </View>
-          <TouchableOpacity onPress={onClose} hitSlop={8} style={styles.closeButton} accessibilityLabel="Close">
+          <TouchableOpacity onPress={onClose} hitSlop={8} style={styles.closeButton} accessibilityLabel={t("Close")}>
             <Ionicons name="close" size={18} color={theme.colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
-        <ScrollView ref={scrollView} style={styles.flex} contentContainerStyle={styles.content}>
-          <Text style={styles.subtitle}>{UPCOMING_SUBTITLE}</Text>
+        <ScrollView style={styles.flex} contentContainerStyle={styles.content}>
+          <Text style={styles.subtitle}>{t(UPCOMING_SUBTITLE)}</Text>
 
           {errorMessage && <ErrorBanner style={styles.error} message={errorMessage} />}
 
           {days.length === 0 ? (
             <View style={styles.empty}>
-              <Text style={styles.emptyText}>{UPCOMING_EMPTY}</Text>
+              <Text style={styles.emptyText}>{t(UPCOMING_EMPTY)}</Text>
             </View>
           ) : (
             days.map((day) => (
-              <View
-                key={day.dateKey}
-                // The day asked for is brought to the top as soon as its position is known.
-                onLayout={
-                  day.dateKey === focusDayKey
-                    ? (event) => scrollView.current?.scrollTo({ y: event.nativeEvent.layout.y, animated: false })
-                    : undefined
-                }
-              >
+              <View key={day.dateKey}>
                 <View style={styles.dayHeader}>
                   <Text style={styles.dayTitle} accessibilityRole="header">
                     {upcomingDayHeading(day.dateKey, todayKey)}
@@ -88,8 +88,9 @@ export function UpcomingSheet({
                   <TaskActionRow
                     key={task.id}
                     task={task}
-                    actionLabel={MOVE_TO_TODAY_LABEL}
+                    actionLabel={t(MOVE_TO_TODAY_LABEL)}
                     onAction={onMoveToToday}
+                    onEdit={onEdit}
                     onDelete={onDelete}
                   />
                 ))}

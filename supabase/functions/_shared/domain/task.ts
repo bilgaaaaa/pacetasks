@@ -1,3 +1,5 @@
+import type { RepeatRule } from "./repeat.ts";
+
 // PaceTasks task model shared by the app and Edge Functions. Must stay in sync
 // with the tasks table and its check constraints in supabase/migrations.
 
@@ -14,6 +16,7 @@ export type TaskPriority = (typeof TASK_PRIORITIES)[number];
 export type EnergyLevel = (typeof ENERGY_LEVELS)[number];
 export type DueKind = (typeof DUE_KINDS)[number]; // "on" = that day, "by" = deadline
 export type TaskSource = (typeof TASK_SOURCES)[number];
+export type { RepeatRule } from "./repeat.ts";
 
 // Same limits the database enforces, so callers can validate before a round trip.
 export const TASK_LIMITS = {
@@ -26,6 +29,11 @@ export const TASK_LIMITS = {
   maxReminderMinutesBefore: 1440,
 } as const;
 
+// Any typed number of minutes, brought inside the limits the database enforces.
+export function clampEstimatedMinutes(minutes: number): number {
+  return Math.min(TASK_LIMITS.maxEstimatedMinutes, Math.max(TASK_LIMITS.minEstimatedMinutes, Math.round(minutes)));
+}
+
 export interface Task {
   id: string;
   user_id: string;
@@ -34,8 +42,10 @@ export interface Task {
   actual_minutes: number | null;
   timing: TaskTiming;
   category: string | null; // Category id from src/lib/categories.ts, or null for "No category"
-  scheduled_time: string | null; // "HH:MM", 24h — a fixed start time enables Focus/Pomodoro mode
-  reminder_minutes_before: number | null; // notify this many minutes before scheduled_time; null = no reminder
+  scheduled_time: string | null; // "HH:MM", 24h — a fixed start time enables a Focus session
+  window_start: string | null; // "HH:MM" — do it after this time; never together with scheduled_time
+  window_end: string | null; // "HH:MM" — be done by this time; never together with scheduled_time
+  reminder_minutes_before: number | null; // notify this many minutes before scheduled_time or window_start; null = no reminder
   status: TaskStatus;
   created_at: string;
   completed_at: string | null;
@@ -50,6 +60,9 @@ export interface Task {
   source_language: string | null; // BCP-47 language the task was written in, e.g. "it"
   ai_confidence: number | null; // 0–1, only set for AI-interpreted tasks
   postponed_count: number; // times the due date moved later; kept by a database trigger, never written by callers
+  repeat_rule: RepeatRule | null; // null = does not repeat; completing a repeating task adds the next occurrence
+  repeat_anchor: string | null; // "YYYY-MM-DD" the repeat counts from (weekday, day of the month); set with the rule
+  repeat_source_id: string | null; // the completed occurrence this one was made from; set by complete_task only
 }
 
 // Input for public.create_task — the one creation path for app, Brain Dump and Siri.
@@ -60,7 +73,9 @@ export interface TaskDraft {
   timing?: TaskTiming;
   category?: string | null;
   scheduled_time?: string | null;
-  reminder_minutes_before?: number | null; // needs scheduled_time
+  window_start?: string | null;
+  window_end?: string | null;
+  reminder_minutes_before?: number | null; // needs scheduled_time or window_start
   due_date?: string | null;
   due_kind?: DueKind | null;
   notes?: string | null;
@@ -71,4 +86,5 @@ export interface TaskDraft {
   source?: TaskSource;
   source_language?: string | null;
   ai_confidence?: number | null;
+  repeat_rule?: RepeatRule | null; // anchored on due_date (else today) by create_task
 }

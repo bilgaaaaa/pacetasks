@@ -9,8 +9,6 @@
     "eval": "deno run --allow-env --allow-net --allow-read --allow-write=_eval/brainDump/results _eval/brainDump/run.ts"
   },
   "test": {
-    "exclude": [
-      "_shared/domain/"
-    ]
+    "exclude": ["_shared/domain/"]
   }
 }

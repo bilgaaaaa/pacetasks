@@ -9,21 +9,26 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { makeStyles, useTheme } from "../hooks/useTheme";
 import { useTasks } from "../hooks/useTasks";
+import { usePro } from "../hooks/usePro";
 import { computeStats, buildWeekdayHeatmap } from "../lib/stats";
 import { computePaceInsights } from "../lib/paceInsights";
 import { paceInsightLines } from "../lib/paceInsightsCopy";
+import { PACE_LOCK_BODY, PACE_LOCK_EYEBROW, PACE_LOCK_TITLE } from "../lib/proCopy";
 import { formatDayLabel } from "../lib/dueLabel";
 import { Button } from "../components/Button";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { PaceInsightsCard } from "../components/PaceInsightsCard";
+import { ProLockCard } from "../components/ProLockCard";
 import { StatCard } from "../components/StatCard";
 import { WeekHeatmap } from "../components/WeekHeatmap";
+import { t } from "../i18n";
 
 // "Compete with yourself" ("Your pace"): a 2-column stat grid, the "My Pace"
 // insights (best hours, strongest day, estimates vs reality), a weekday
 // contribution heatmap, and a per-day history list with a relative progress
 // bar — no comparisons to anyone else's numbers, only your own history.
 // A failed load shows the error with a retry: zeros would read as "no history".
+// Today's numbers are free; everything over time (streaks, insights, heatmap, history) is Pro.
 export function StatsScreen() {
   const { theme } = useTheme();
   const styles = useStyles();
@@ -32,6 +37,7 @@ export function StatsScreen() {
   const stats = useMemo(() => computeStats(tasks), [tasks]);
   const heatmap = useMemo(() => buildWeekdayHeatmap(stats.dailyBreakdown), [stats]);
   const paceLines = useMemo(() => paceInsightLines(computePaceInsights(tasks)), [tasks]);
+  const { isPro, openPaywall } = usePro();
 
   return (
     <LinearGradient
@@ -40,9 +46,9 @@ export function StatsScreen() {
     >
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Your pace</Text>
+          <Text style={styles.headerTitle}>{t("Your pace")}</Text>
           <Text style={styles.headerSubtitle}>
-            Beat yesterday's you, not anyone else.
+            {t("Beat yesterday's you, not anyone else.")}
           </Text>
         </View>
 
@@ -50,48 +56,62 @@ export function StatsScreen() {
           <ActivityIndicator color={theme.colors.accent} style={styles.loader} />
         ) : loadFailed ? (
           <View style={styles.loadError}>
-            <ErrorBanner message={`Your history could not be loaded. ${error}`} />
-            <Button label="Try again" variant="secondary" onPress={refresh} />
+            <ErrorBanner message={t("Your history could not be loaded. {0}", error)} />
+            <Button label={t("Try again")} variant="secondary" onPress={refresh} />
           </View>
         ) : (
           <FlatList
-            data={stats.dailyBreakdown}
+            data={isPro ? stats.dailyBreakdown : []}
             keyExtractor={(item) => item.date}
             contentContainerStyle={styles.listContent}
             ListHeaderComponent={
               <View>
                 <View style={styles.grid}>
-                  <StatCard label="Done today" value={String(stats.todayCompleted)} />
-                  <StatCard label="Minutes today" value={String(stats.todayActualMinutes)} />
-                  <StatCard
-                    label="Current streak"
-                    value={`${stats.currentStreakDays}d`}
-                    valueColor={theme.colors.accentDark}
-                    hint="consecutive days with a task done"
-                  />
-                  <StatCard label="Best streak" value={`${stats.bestStreakDays}d`} />
-                  <StatCard
-                    label="Best day"
-                    value={String(stats.bestDayCount)}
-                    hint="most tasks done in one day"
-                  />
-                  <StatCard
-                    label="Estimate accuracy"
-                    value={
-                      stats.estimateAccuracyPercent === null
-                        ? "—"
-                        : `${stats.estimateAccuracyPercent}%`
-                    }
-                    hint="estimates vs reality"
-                  />
+                  <StatCard label={t("Done today")} value={String(stats.todayCompleted)} />
+                  <StatCard label={t("Minutes today")} value={String(stats.todayActualMinutes)} />
+                  {isPro && (
+                    <>
+                      <StatCard
+                        label={t("Current streak")}
+                        value={t("{0}d", stats.currentStreakDays)}
+                        valueColor={theme.colors.accentDark}
+                        hint={t("consecutive days with a task done")}
+                      />
+                      <StatCard label={t("Best streak")} value={t("{0}d", stats.bestStreakDays)} />
+                      <StatCard
+                        label={t("Best day")}
+                        value={String(stats.bestDayCount)}
+                        hint={t("most tasks done in one day")}
+                      />
+                      <StatCard
+                        label={t("Estimate accuracy")}
+                        value={
+                          stats.estimateAccuracyPercent === null
+                            ? "—"
+                            : `${stats.estimateAccuracyPercent}%`
+                        }
+                        hint={t("estimates vs reality")}
+                      />
+                    </>
+                  )}
                 </View>
 
-                <PaceInsightsCard lines={paceLines} />
+                {isPro ? (
+                  <>
+                    <PaceInsightsCard lines={paceLines} />
+                    <WeekHeatmap heatmap={heatmap} />
+                  </>
+                ) : (
+                  <ProLockCard
+                    eyebrow={PACE_LOCK_EYEBROW}
+                    title={t(PACE_LOCK_TITLE)}
+                    body={t(PACE_LOCK_BODY)}
+                    onSeePlans={() => openPaywall("paceHistory")}
+                  />
+                )}
 
-                <WeekHeatmap heatmap={heatmap} />
-
-                {stats.dailyBreakdown.length > 0 && (
-                  <Text style={styles.sectionHeader}>History</Text>
+                {isPro && stats.dailyBreakdown.length > 0 && (
+                  <Text style={styles.sectionHeader}>{t("History")}</Text>
                 )}
               </View>
             }
@@ -105,7 +125,7 @@ export function StatsScreen() {
                   <View style={styles.dayInfo}>
                     <Text style={styles.dayDate}>{formatDayLabel(item.date)}</Text>
                     <Text style={styles.dayMeta}>
-                      {item.completedCount === 1 ? "1 task" : `${item.completedCount} tasks`} · {item.actualMinutes} min
+                      {item.completedCount === 1 ? t("1 task") : t("{0} tasks", item.completedCount)} · {item.actualMinutes} min
                     </Text>
                   </View>
                   <View style={styles.dayProgressTrack}>
@@ -116,11 +136,13 @@ export function StatsScreen() {
               );
             }}
             ListEmptyComponent={
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyText}>
-                  Complete a task to start building your history.
-                </Text>
-              </View>
+              isPro ? (
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyText}>
+                    {t("Complete a task to start building your history.")}
+                  </Text>
+                </View>
+              ) : null
             }
           />
         )}

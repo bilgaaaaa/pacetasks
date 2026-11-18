@@ -5,6 +5,7 @@ import { makeStyles, useTheme } from "../hooks/useTheme";
 import { GROUP_BY_LABELS, GROUP_BY_OPTIONS, GroupBy } from "../lib/appearance";
 import { TODAY_FILTERS, TodayFilter } from "../lib/taskSections";
 import { GROUP_PANEL_TITLE, TODAY_FILTER_LABELS } from "../lib/todayCopy";
+import { t } from "../i18n";
 
 interface Props {
   filter: TodayFilter;
@@ -26,7 +27,7 @@ export function TodayFilterBar({ filter, counts, groupBy, onChangeFilter, onChan
 
   return (
     <View style={styles.bar}>
-      <View style={styles.chips} accessibilityRole="radiogroup" accessibilityLabel="Show tasks">
+      <View style={styles.chips} accessibilityRole="radiogroup" accessibilityLabel={t("Show tasks")}>
         {TODAY_FILTERS.map((option) => {
           const active = filter === option;
           const count = option === "all" ? null : counts[option];
@@ -55,7 +56,7 @@ export function TodayFilterBar({ filter, counts, groupBy, onChangeFilter, onChan
         style={[styles.filterButton, grouped && styles.filterButtonActive]}
         onPress={() => setSheetOpen(true)}
         accessibilityRole="button"
-        accessibilityLabel={grouped ? `${GROUP_PANEL_TITLE}: ${GROUP_BY_LABELS[groupBy].label}` : GROUP_PANEL_TITLE}
+        accessibilityLabel={grouped ? `${t(GROUP_PANEL_TITLE)}: ${GROUP_BY_LABELS[groupBy].label}` : t(GROUP_PANEL_TITLE)}
       >
         <Ionicons
           name="options-outline"
@@ -65,10 +66,10 @@ export function TodayFilterBar({ filter, counts, groupBy, onChangeFilter, onChan
       </TouchableOpacity>
 
       <Modal visible={sheetOpen} transparent animationType="fade" onRequestClose={() => setSheetOpen(false)}>
-        <Pressable style={styles.backdrop} onPress={() => setSheetOpen(false)} accessibilityLabel="Close">
+        <Pressable style={styles.backdrop} onPress={() => setSheetOpen(false)} accessibilityLabel={t("Close")}>
           <Pressable style={styles.panel} onPress={() => {}}>
             <Text style={styles.panelTitle} accessibilityRole="header">
-              {GROUP_PANEL_TITLE}
+              {t(GROUP_PANEL_TITLE)}
             </Text>
             {GROUP_BY_OPTIONS.map((option) => {
               const active = groupBy === option;

@@ -8,12 +8,6 @@
             "state": "translated",
             "value": "Aggiungi a ${applicationName}"
           }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "${applicationName}'a ekle"
-          }
         }
       }
     },
@@ -23,12 +17,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Aggiungi un'attività in ${applicationName}"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "${applicationName}'a görev ekle"
           }
         }
       }
@@ -40,12 +28,6 @@
             "state": "translated",
             "value": "Svuota la mente in ${applicationName}"
           }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "${applicationName}'a aklımdakileri ekle"
-          }
         }
       }
     },
@@ -55,12 +37,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cosa c'è dopo in ${applicationName}"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "${applicationName}'ta sırada ne var"
           }
         }
       }
@@ -72,12 +48,6 @@
             "state": "translated",
             "value": "Cosa faccio adesso in ${applicationName}"
           }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "${applicationName}'ta şimdi ne yapayım"
-          }
         }
       }
     },
@@ -87,12 +57,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cosa c'è oggi in ${applicationName}"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "${applicationName}'ta bugün ne var"
           }
         }
       }
@@ -104,11 +68,85 @@
             "state": "translated",
             "value": "Cosa mi resta oggi in ${applicationName}"
           }
-        },
-        "tr": {
+        }
+      }
+    },
+    "New task in ${applicationName}": {
+      "localizations": {
+        "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "${applicationName}'ta bugün ne kaldı"
+            "value": "Nuova attività in ${applicationName}"
+          }
+        }
+      }
+    },
+    "Add something to ${applicationName}": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi qualcosa a ${applicationName}"
+          }
+        }
+      }
+    },
+    "Add on ${applicationName}": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi su ${applicationName}"
+          }
+        }
+      }
+    },
+    "Add in ${applicationName}": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi in ${applicationName}"
+          }
+        }
+      }
+    },
+    "New event in ${applicationName}": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nuovo evento in ${applicationName}"
+          }
+        }
+      }
+    },
+    "New plan in ${applicationName}": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nuovo impegno in ${applicationName}"
+          }
+        }
+      }
+    },
+    "Write down in ${applicationName}": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Segna su ${applicationName}"
+          }
+        }
+      }
+    },
+    "${applicationName} add": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "${applicationName} aggiungi"
           }
         }
       }

@@ -1,111 +1,85 @@
-import type { ProEntitlement } from "@domain/pro";
-import type { ProPlan } from "./proPlans";
+// Wording for PaceTasks Pro: the paywall, its plan cards and the Settings section.
+import { Plan, PlanId, ProFeature, ProStatus } from "./pro";
+import { getLocale, localized, msg, t } from "../i18n";
 
-// Wording for PaceTasks Pro: the paywall, the Settings card and their fine print.
-// Kept in one place so what the paywall promises and what the card says never drift.
+export const PRO_TITLE = msg("PaceTasks Pro");
+export const PRO_SUBTITLE = msg("One Pro for PaceTasks on iPhone and DeskFocus on Mac.");
 
-export const PRO_SECTION_LABEL = "PACETASKS PRO";
-export const PRO_EYEBROW = "PACETASKS PRO";
-export const PRO_TITLE = "Your tasks, hands-free";
-export const PRO_SUBTITLE = "Talk to PaceTasks through Siri while you walk, drive or cook.";
+// Why the paywall opened, shown above the plans; null when opened from Settings.
+export const PRO_FEATURE_REASONS: Record<ProFeature, string> = localized({
+  brainDump: msg("Brain Dump is part of Pro."),
+  paceHistory: msg("Your pace over weeks and months is part of Pro."),
+  siri: msg("Adding tasks with Siri is part of Pro."),
+});
 
-export interface ProFeature {
-  icon: "mic-outline" | "arrow-forward-circle-outline" | "sunny-outline" | "sparkles-outline";
-  title: string;
-  detail: string;
-}
+// What every plan includes; the checklist on each card.
+export const PRO_INCLUDES: readonly string[] = localized([
+  msg("Brain Dump: say everything at once"),
+  msg("Your pace over weeks and months"),
+  msg("Siri: add tasks by voice (coming soon)"),
+  msg("DeskFocus Pro on Mac: Google, app blocking, history"),
+]);
 
-// Siri works the same in English, Italian and Turkish, so the paywall says so once.
-export const PRO_SIRI_FEATURES: ProFeature[] = [
-  {
-    icon: "mic-outline",
-    title: "Add tasks with Siri",
-    detail: "“Hey Siri, add to PaceTasks” — say several at once, in English, Italian or Turkish.",
-  },
-  {
-    icon: "arrow-forward-circle-outline",
-    title: "Ask what’s next",
-    detail: "“What’s next in PaceTasks?” — Siri picks the one task to do now.",
-  },
-  {
-    icon: "sunny-outline",
-    title: "Hear your day",
-    detail: "“What’s on today in PaceTasks?” — what’s left and how long it takes.",
-  },
-];
+export const PLAN_NAMES: Record<PlanId, string> = localized({
+  pro_monthly: msg("Monthly"),
+  pro_yearly: msg("Yearly"),
+  pro_lifetime: msg("Lifetime"),
+});
 
-// Listed only while the server really runs Brain Dump on an AI model for Pro (pro-sync's aiBrainDump).
-export const PRO_AI_FEATURE: ProFeature = {
-  icon: "sparkles-outline",
-  title: "Smarter Brain Dump",
-  detail: "Rambling thoughts become clear tasks, read by AI instead of simple rules.",
-};
+export const PLAN_BADGES: Partial<Record<PlanId, string>> = localized({
+  pro_yearly: msg("Best value"),
+});
 
-export function proFeatures(aiBrainDump: boolean): ProFeature[] {
-  return aiBrainDump ? [...PRO_SIRI_FEATURES, PRO_AI_FEATURE] : PRO_SIRI_FEATURES;
-}
-
-export const PRO_PLAN_NAMES: Record<ProPlan["id"], string> = { yearly: "Yearly", monthly: "Monthly" };
-const PERIOD_WORD: Record<ProPlan["id"], string> = { yearly: "year", monthly: "month" };
-
-export function planPriceLabel(plan: ProPlan): string {
-  return `${plan.priceString} / ${PERIOD_WORD[plan.id]}`;
-}
-
-export function planHint(plan: ProPlan): string | null {
-  if (plan.perMonthString) return `Just ${plan.perMonthString} a month`;
-  return null;
-}
-
-export function savingsBadge(plan: ProPlan): string | null {
-  return plan.savingsPercent ? `Save ${plan.savingsPercent}%` : null;
-}
-
-export function purchaseButtonLabel(plan: ProPlan | null): string {
-  if (plan?.trialDays) return `Start my ${plan.trialDays}-day free trial`;
-  return "Subscribe";
-}
-
-// Apple asks for the price, the period, the trial and how to cancel next to the button.
-export function purchaseFinePrint(plan: ProPlan | null): string {
-  if (!plan) return "";
-  const renewal = `${plan.priceString} a ${PERIOD_WORD[plan.id]}`;
-  const cancel = "Cancel anytime in Settings › Apple Account › Subscriptions, at least 24 hours before the period ends.";
-  if (plan.trialDays) {
-    return `Free for ${plan.trialDays} days, then ${renewal}. Renews automatically. ${cancel} Nothing is charged if you cancel during the trial.`;
+// The price line under a plan's name.
+export function planPriceLine(plan: Plan): string {
+  switch (plan.id) {
+    case "pro_monthly":
+      return t("{0} a month", plan.price);
+    case "pro_yearly":
+      return plan.trialDays ? t("{0} days free, then {1} a year", plan.trialDays, plan.price) : t("{0} a year", plan.price);
+    case "pro_lifetime":
+      return t("{0} once, yours for good", plan.price);
   }
-  return `${renewal}, renewed automatically. ${cancel}`;
 }
 
-export const RESTORE_LABEL = "Restore purchases";
-export const MANAGE_LABEL = "Manage subscription";
-export const NOTHING_TO_RESTORE = "No PaceTasks Pro purchase was found for this Apple Account.";
-export const PRO_UNAVAILABLE_MESSAGE = "Subscriptions aren’t available here. Open PaceTasks on your iPhone to start Pro.";
-export const PRO_LOAD_FAILED = "Couldn’t load the plans. Check your connection and try again.";
-export const PURCHASE_FAILED = "The purchase didn’t go through. You haven’t been charged — try again.";
-
-export const PRO_WELCOME_TITLE = "Welcome to Pro";
-export const PRO_WELCOME_HINT = "Try it now: say “Hey Siri, add to PaceTasks”.";
-
-// The Settings card line under "PaceTasks Pro" for a subscriber.
-export function proStatusLine(entitlement: ProEntitlement | null, now: Date): string {
-  if (!entitlement?.expiresAt) return "Pro is on.";
-  const date = new Date(entitlement.expiresAt);
-  const day = date.toLocaleDateString("en-GB", { day: "numeric", month: "long" });
-  const daysLeft = Math.max(0, Math.ceil((date.getTime() - now.getTime()) / (24 * 60 * 60 * 1000)));
-  if (entitlement.periodType === "trial") {
-    return entitlement.willRenew
-      ? `Free trial · ${daysLeft} ${daysLeft === 1 ? "day" : "days"} left, renews on ${day}`
-      : `Free trial · ends on ${day}`;
-  }
-  return entitlement.willRenew ? `Renews on ${day}` : `Ends on ${day}`;
+export function planButtonLabel(plan: Plan): string {
+  if (plan.id === "pro_lifetime") return t("Buy once");
+  return plan.trialDays ? t("Start {0}-day free trial", plan.trialDays) : t("Subscribe");
 }
 
-export const PRO_FREE_CARD_TITLE = "Try PaceTasks Pro";
-// Mentions the free week only when this user can still take it.
-export function proFreeCardSubtitle(trialDays: number | null): string {
-  const base = "Add tasks and hear your day with Siri.";
-  return trialDays ? `${base} The first ${trialDays} days are free.` : base;
+export const PRO_SKIP_LABEL = msg("Not now");
+export const PRO_RESTORE_LABEL = msg("Restore purchases");
+export const PRO_SEE_PLANS_LABEL = msg("See plans");
+export const PRO_MANAGE_LABEL = msg("Manage subscription");
+export const PRO_SECTION_LABEL = "PRO";
+
+export const PRO_PLANS_LOADING = msg("Loading plans…");
+export const PRO_PLANS_UNAVAILABLE = msg("The plans couldn't load. Check your connection and try again.");
+export const PRO_PURCHASE_FAILED = msg("The purchase didn't go through. You were not charged.");
+export const PRO_RESTORE_NOTHING = msg("There's no Pro purchase on this Apple ID to restore.");
+export const PRO_RESTORE_FAILED = msg("Purchases couldn't be restored. Check your connection and try again.");
+
+// Apple requires this next to auto-renewing subscriptions.
+export const PRO_LEGAL =
+  msg("Subscriptions renew automatically unless cancelled at least 24 hours before the period ends. Payment is charged to your Apple ID. Manage or cancel in your App Store account settings.");
+export const PRO_TERMS_LABEL = msg("Terms of Use");
+export const PRO_PRIVACY_LABEL = msg("Privacy Policy");
+
+export const PRO_ACTIVE_TITLE = msg("You're Pro");
+
+// One line on what the user has, for the paywall's "You're Pro" panel and Settings.
+export function proStatusLine(status: ProStatus): string {
+  if (!status.active) return t("Free. Brain Dump and your pace over time come with Pro.");
+  if (status.lifetime || status.expiresAt === null) return t("Lifetime: Pro is yours for good, on iPhone and Mac.");
+  const date = new Date(status.expiresAt).toLocaleDateString(getLocale(), {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  return t("Pro on iPhone and Mac. Renews or ends on {0}.", date);
 }
-export const PRO_FREE_CARD_ACTION = "See Pro";
-export const PRO_SIRI_HINT = "Say “Hey Siri, add to PaceTasks”, “What’s next in PaceTasks?” or “What’s on today in PaceTasks?”";
+
+// The Pace tab's card where the history starts, for free users.
+export const PACE_LOCK_EYEBROW = "PRO";
+export const PACE_LOCK_TITLE = msg("Your pace over time");
+export const PACE_LOCK_BODY = msg("Streaks, your best hours and days, estimates vs reality, and every day's history.");

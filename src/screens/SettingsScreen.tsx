@@ -15,27 +15,19 @@ import { makeStyles, useTheme } from "../hooks/useTheme";
 import { useSettings } from "../hooks/useSettings";
 import { useAccount } from "../hooks/useAccount";
 import { useNotificationPermission } from "../hooks/useNotificationPermission";
-import { usePro } from "../hooks/usePro";
 import { AccountCard } from "../components/AccountCard";
+import { ProCard } from "../components/ProCard";
+import { PRO_SECTION_LABEL } from "../lib/proCopy";
+import { usePro } from "../hooks/usePro";
 import { AccountSheet } from "../components/AccountSheet";
 import { DataCard } from "../components/DataCard";
 import { DeleteAccountSheet } from "../components/DeleteAccountSheet";
-import { ProCard } from "../components/ProCard";
-import { ProSheet } from "../components/ProSheet";
 import { Button } from "../components/Button";
+import { ChoiceChips } from "../components/ChoiceChips";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { Stepper } from "../components/Stepper";
 import { DATA_SECTION_LABEL } from "../lib/accountCopy";
-import {
-  MANAGE_SUBSCRIPTIONS_URL,
-  openAppSettings,
-  openExternalLink,
-  PRIVACY_POLICY_URL,
-  SUPPORT_URL,
-  TERMS_OF_USE_URL,
-} from "../lib/links";
-import { PRO_SECTION_LABEL } from "../lib/proCopy";
-import { DEFAULT_PRO_PLAN } from "../lib/proPlans";
+import { openAppSettings, openExternalLink, PRIVACY_POLICY_URL, SUPPORT_URL } from "../lib/links";
 import { requestNotificationPermission } from "../lib/notifications";
 import {
   CHECK_IN_TITLE,
@@ -51,8 +43,8 @@ import {
   BRAIN_DUMP_AUTO_CREATE_TITLE,
   COMPLETION_TAP_SUBTITLE,
   COMPLETION_TAP_TITLE,
-  TIMER_BUZZ_SUBTITLE,
-  TIMER_BUZZ_TITLE,
+  TIMER_SOUND_SUBTITLE,
+  TIMER_SOUND_TITLE,
 } from "../lib/settingsCopy";
 import { reviveSession } from "../lib/supabase";
 import { formatTimeOfDay, parseTimeOfDay } from "../lib/timeFormat";
@@ -64,7 +56,9 @@ import {
   THEME_MODES,
   THEME_MODE_LABELS,
   ThemeMode,
+  languageChoiceOptions,
 } from "../lib/appearance";
+import { t } from "../i18n";
 
 interface Props {
   userId: string | undefined;
@@ -73,7 +67,8 @@ interface Props {
 
 const STALLED_AFTER_MS = 4000; // how long Settings waits for a session before offering a retry
 
-const POMODORO_PRESETS: { work: number; break: number; label: string }[] = [
+// Focus session lengths: minutes of focus + minutes of break.
+const FOCUS_PRESETS: { work: number; break: number; label: string }[] = [
   { work: 15, break: 3, label: "15 + 3" },
   { work: 25, break: 5, label: "25 + 5" },
   { work: 50, break: 10, label: "50 + 10" },
@@ -89,25 +84,19 @@ function themePreviews(palette: PaletteId): Record<ThemeMode, [PreviewColors, Pr
   return { system: [light, dark], light: [light, light], dark: [dark, dark] };
 }
 
-// The account (create one, sign in, email consent, sign out), PaceTasks Pro
-// (paywall, or the plan and Siri phrases for subscribers), then "Make it
+// The account (create one, sign in, email consent, sign out), then "Make it
 // yours" (theme, accent, Today's sections, quick-win size — saved on this
 // phone), the work schedule (feeds the before/after-work labels), the
-// reminders, the two vibrations (timer buzz, completion tap; see
-// src/lib/haptics.ts), Brain Dump auto-create, the Pomodoro length, and "Your data" (privacy policy, help,
+// reminders, the timer sound and the completion tap (see src/lib/haptics.ts and
+// src/hooks/useTimerAlert.ts), Brain Dump auto-create, the Focus timer length, and "Your data" (privacy policy, help,
 // delete the account).
 export function SettingsScreen({ userId, session }: Props) {
   const { theme, appearance, updateAppearance } = useTheme();
   const styles = useStyles();
+  const pro = usePro();
   const { settings, loading, error, refresh, save } = useSettings();
   const account = useAccount(session);
   const [accountSheetOpen, setAccountSheetOpen] = useState(false);
-  const pro = usePro();
-  const [proSheetOpen, setProSheetOpen] = useState(false);
-  const closeProSheet = () => {
-    setProSheetOpen(false);
-    pro.clearMessages();
-  };
   const [reminderHour, setReminderHour] = useState(18);
   const [reminderMinute, setReminderMinute] = useState(30);
 
@@ -177,29 +166,12 @@ export function SettingsScreen({ userId, session }: Props) {
         onConfirm={account.confirmDeletion}
         onClose={account.closeDeletion}
       />
-      <ProSheet
-        visible={proSheetOpen}
-        available={pro.available}
-        isPro={pro.isPro}
-        aiBrainDump={pro.aiBrainDump}
-        plans={pro.plans}
-        plansState={pro.plansState}
-        busy={pro.busy}
-        errorMessage={pro.error}
-        notice={pro.notice}
-        onPurchase={(planId) => void pro.purchase(planId)}
-        onRestore={() => void pro.restore()}
-        onReloadPlans={() => void pro.reloadPlans()}
-        onOpenTerms={() => openExternalLink(TERMS_OF_USE_URL)}
-        onOpenPrivacyPolicy={() => openExternalLink(PRIVACY_POLICY_URL)}
-        onClose={closeProSheet}
-      />
     </>
   );
 
   if (!settings) {
     // Still loading shows the spinner; a failed load says so and offers another try.
-    const loadError = loading ? null : error ?? account.cardError ?? (stalled ? "Check your connection." : null);
+    const loadError = loading ? null : error ?? account.cardError ?? (stalled ? t("Check your connection.") : null);
     return (
       <LinearGradient
         colors={[theme.colors.background, theme.colors.backgroundEnd]}
@@ -208,8 +180,8 @@ export function SettingsScreen({ userId, session }: Props) {
         <SafeAreaView style={styles.safeArea}>
           {loadError ? (
             <View style={styles.loadFailed}>
-              <ErrorBanner message={`Your settings could not be loaded. ${loadError}`} />
-              <Button label="Try again" variant="secondary" onPress={retryLoading} />
+              <ErrorBanner message={t("Your settings could not be loaded. {0}", loadError)} />
+              <Button label={t("Try again")} variant="secondary" onPress={retryLoading} />
             </View>
           ) : (
             <ActivityIndicator color={theme.colors.accent} style={styles.loader} />
@@ -229,11 +201,11 @@ export function SettingsScreen({ userId, session }: Props) {
     >
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.content}>
-          <Text style={styles.headerTitle} accessibilityRole="header">Settings</Text>
+          <Text style={styles.headerTitle} accessibilityRole="header">{t("Settings")}</Text>
 
           {error && <Text style={styles.errorText}>{error}</Text>}
 
-          <Text style={styles.sectionLabel}>ACCOUNT</Text>
+          <Text style={styles.sectionLabel}>{t("ACCOUNT")}</Text>
           <AccountCard
             isSignedUp={account.isSignedUp}
             email={account.email}
@@ -248,20 +220,32 @@ export function SettingsScreen({ userId, session }: Props) {
             onSignOut={account.signOut}
           />
 
-          <Text style={styles.sectionLabel}>{PRO_SECTION_LABEL}</Text>
-          <ProCard
-            isPro={pro.isPro}
-            entitlement={pro.entitlement}
-            trialDays={(pro.plans.find((plan) => plan.id === DEFAULT_PRO_PLAN) ?? pro.plans[0])?.trialDays ?? null}
-            onOpenPaywall={() => {
-              if (pro.plansState === "failed") void pro.reloadPlans();
-              setProSheetOpen(true);
-            }}
-            onManage={() => openExternalLink(MANAGE_SUBSCRIPTIONS_URL)}
-          />
+          {pro.storeAvailable && (
+            <>
+              <Text style={styles.sectionLabel}>{PRO_SECTION_LABEL}</Text>
+              <ProCard
+                status={pro.status}
+                restoring={pro.paywall.restoring}
+                message={pro.paywall.visible ? null : pro.paywall.message}
+                onSeePlans={() => pro.openPaywall()}
+                onRestore={() => void pro.restore()}
+                onManage={pro.manageSubscription}
+              />
+            </>
+          )}
 
-          <Text style={styles.sectionLabel}>THEME</Text>
-          <View style={styles.themeRow} accessibilityRole="radiogroup" accessibilityLabel="Theme">
+          <Text style={styles.sectionLabel}>{t("LANGUAGE")}</Text>
+          <View style={styles.card}>
+            <ChoiceChips
+              options={languageChoiceOptions()}
+              value={appearance.language}
+              onChange={(language) => updateAppearance({ language })}
+              accessibilityLabel={t("Language")}
+            />
+          </View>
+
+          <Text style={styles.sectionLabel}>{t("THEME")}</Text>
+          <View style={styles.themeRow} accessibilityRole="radiogroup" accessibilityLabel={t("Theme")}>
             {THEME_MODES.map((mode) => {
               const isActive = appearance.themeMode === mode;
               const [left, right] = themePreviews(appearance.palette)[mode];
@@ -291,12 +275,12 @@ export function SettingsScreen({ userId, session }: Props) {
 
           <View style={styles.card}>
             <View style={styles.cardHeaderRow}>
-              <Text style={styles.cardTitle}>Color theme</Text>
+              <Text style={styles.cardTitle}>{t("Color theme")}</Text>
               <Text style={styles.cardValue}>
                 {PALETTE_OPTIONS.find((p) => p.id === appearance.palette)?.label}
               </Text>
             </View>
-            <View style={styles.paletteList} accessibilityRole="radiogroup" accessibilityLabel="Color theme">
+            <View style={styles.paletteList} accessibilityRole="radiogroup" accessibilityLabel={t("Color theme")}>
               {PALETTE_OPTIONS.map((option) => {
                 const isActive = appearance.palette === option.id;
                 return (
@@ -328,12 +312,12 @@ export function SettingsScreen({ userId, session }: Props) {
           {paletteUsesAccent(appearance.palette) && (
             <View style={styles.card}>
               <View style={styles.cardHeaderRow}>
-                <Text style={styles.cardTitle}>Accent color</Text>
+                <Text style={styles.cardTitle}>{t("Accent color")}</Text>
                 <Text style={styles.cardValue}>
                   {ACCENT_OPTIONS.find((a) => a.id === appearance.accent)?.label}
                 </Text>
               </View>
-              <View style={styles.swatchRow} accessibilityRole="radiogroup" accessibilityLabel="Accent color">
+              <View style={styles.swatchRow} accessibilityRole="radiogroup" accessibilityLabel={t("Accent color")}>
                 {ACCENT_OPTIONS.map((option) => {
                   const isActive = appearance.accent === option.id;
                   const swatch = option.swatch[theme.scheme];
@@ -355,9 +339,9 @@ export function SettingsScreen({ userId, session }: Props) {
           )}
 
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Sections on Today</Text>
-            <Text style={styles.cardSubtitle}>You can also switch this right on the Today screen.</Text>
-            <View accessibilityRole="radiogroup" accessibilityLabel="Group Today by">
+            <Text style={styles.cardTitle}>{t("Sections on Today")}</Text>
+            <Text style={styles.cardSubtitle}>{t("You can also switch this right on the Today screen.")}</Text>
+            <View accessibilityRole="radiogroup" accessibilityLabel={t("Group Today by")}>
               {GROUP_BY_OPTIONS.map((option) => {
                 const isActive = appearance.groupBy === option;
                 return (
@@ -380,23 +364,23 @@ export function SettingsScreen({ userId, session }: Props) {
               })}
             </View>
             <Stepper
-              label="A quick win is up to"
+              label={t("A quick win is up to")}
               value={appearance.quickWinMinutes}
               min={QUICK_WIN_LIMITS.min}
               max={QUICK_WIN_LIMITS.max}
-              format={(m) => `${m} min`}
+              format={(m) => t("{0} min", m)}
               onChange={(minutes) => updateAppearance({ quickWinMinutes: minutes })}
             />
           </View>
 
-          <Text style={styles.sectionLabel}>YOUR DAY</Text>
+          <Text style={styles.sectionLabel}>{t("YOUR DAY")}</Text>
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Work schedule</Text>
+            <Text style={styles.cardTitle}>{t("Work schedule")}</Text>
             <Text style={styles.cardSubtitle}>
-              Tasks get tagged "before work" or "after work" relative to this window.
+              {t("Tasks get tagged \"before work\" or \"after work\" relative to this window.")}
             </Text>
             <Stepper
-              label="Starts at"
+              label={t("Starts at")}
               value={settings.work_start_hour}
               min={0}
               max={23}
@@ -404,7 +388,7 @@ export function SettingsScreen({ userId, session }: Props) {
               onChange={(hour) => save({ work_start_hour: hour })}
             />
             <Stepper
-              label="Ends at"
+              label={t("Ends at")}
               value={settings.work_end_hour}
               min={0}
               max={23}
@@ -416,25 +400,25 @@ export function SettingsScreen({ userId, session }: Props) {
           <Text style={styles.sectionLabel}>{REMINDERS_SECTION_LABEL}</Text>
           {notifications.permission === "denied" && (settings.reminder_enabled || (settings.task_reminder_enabled ?? true)) && (
             <View style={styles.card}>
-              <Text style={styles.cardSubtitle}>{REMINDERS_BLOCKED_MESSAGE}</Text>
-              <Button label={REMINDERS_BLOCKED_ACTION} variant="secondary" onPress={openAppSettings} />
+              <Text style={styles.cardSubtitle}>{t(REMINDERS_BLOCKED_MESSAGE)}</Text>
+              <Button label={t(REMINDERS_BLOCKED_ACTION)} variant="secondary" onPress={openAppSettings} />
             </View>
           )}
           <View style={styles.toggleRow}>
             <View style={styles.toggleText}>
-              <Text style={styles.toggleTitle}>{CHECK_IN_TITLE}</Text>
+              <Text style={styles.toggleTitle}>{t(CHECK_IN_TITLE)}</Text>
               <Text style={styles.toggleSubtitle}>{checkInSubtitle(formatTimeOfDay(reminderHour, reminderMinute))}</Text>
             </View>
             <Switch
               value={settings.reminder_enabled}
               onValueChange={(enabled) => saveReminderSwitch({ reminder_enabled: enabled })}
-              accessibilityLabel={CHECK_IN_TITLE}
+              accessibilityLabel={t(CHECK_IN_TITLE)}
               {...switchColors}
             />
           </View>
           <View style={styles.card}>
             <Stepper
-              label="Hour"
+              label={t("Hour")}
               value={reminderHour}
               min={0}
               max={23}
@@ -445,7 +429,7 @@ export function SettingsScreen({ userId, session }: Props) {
               }}
             />
             <Stepper
-              label="Minute"
+              label={t("Minute")}
               value={reminderMinute}
               min={0}
               max={55}
@@ -460,63 +444,64 @@ export function SettingsScreen({ userId, session }: Props) {
 
           <View style={styles.toggleRow}>
             <View style={styles.toggleText}>
-              <Text style={styles.toggleTitle}>{TASK_REMINDER_TITLE}</Text>
-              <Text style={styles.toggleSubtitle}>{TASK_REMINDER_SUBTITLE}</Text>
+              <Text style={styles.toggleTitle}>{t(TASK_REMINDER_TITLE)}</Text>
+              <Text style={styles.toggleSubtitle}>{t(TASK_REMINDER_SUBTITLE)}</Text>
             </View>
             <Switch
               value={settings.task_reminder_enabled ?? true}
               onValueChange={(enabled) => saveReminderSwitch({ task_reminder_enabled: enabled })}
-              accessibilityLabel={TASK_REMINDER_TITLE}
+              accessibilityLabel={t(TASK_REMINDER_TITLE)}
               {...switchColors}
             />
           </View>
 
-          <Text style={styles.sectionLabel}>WHILE YOU WORK</Text>
+          <Text style={styles.sectionLabel}>{t("WHILE YOU WORK")}</Text>
           <View style={styles.toggleRow}>
             <View style={styles.toggleText}>
-              <Text style={styles.toggleTitle}>{TIMER_BUZZ_TITLE}</Text>
-              <Text style={styles.toggleSubtitle}>{TIMER_BUZZ_SUBTITLE}</Text>
+              <Text style={styles.toggleTitle}>{t(TIMER_SOUND_TITLE)}</Text>
+              <Text style={styles.toggleSubtitle}>{t(TIMER_SOUND_SUBTITLE)}</Text>
             </View>
             <Switch
               value={settings.timer_chime_enabled}
               onValueChange={(enabled) => void save({ timer_chime_enabled: enabled })}
-              accessibilityLabel={TIMER_BUZZ_TITLE}
+              accessibilityLabel={t(TIMER_SOUND_TITLE)}
               {...switchColors}
             />
           </View>
 
           <View style={styles.toggleRow}>
             <View style={styles.toggleText}>
-              <Text style={styles.toggleTitle}>{COMPLETION_TAP_TITLE}</Text>
-              <Text style={styles.toggleSubtitle}>{COMPLETION_TAP_SUBTITLE}</Text>
+              <Text style={styles.toggleTitle}>{t(COMPLETION_TAP_TITLE)}</Text>
+              <Text style={styles.toggleSubtitle}>{t(COMPLETION_TAP_SUBTITLE)}</Text>
             </View>
             <Switch
               value={settings.haptics_enabled}
               onValueChange={(enabled) => void save({ haptics_enabled: enabled })}
-              accessibilityLabel={COMPLETION_TAP_TITLE}
+              accessibilityLabel={t(COMPLETION_TAP_TITLE)}
               {...switchColors}
             />
           </View>
 
           <View style={styles.toggleRow}>
             <View style={styles.toggleText}>
-              <Text style={styles.toggleTitle}>{BRAIN_DUMP_AUTO_CREATE_TITLE}</Text>
+              <Text style={styles.toggleTitle}>{t(BRAIN_DUMP_AUTO_CREATE_TITLE)}</Text>
               <Text style={styles.toggleSubtitle}>
-                Skip the review when every task is clear. Anything unclear still asks first.
+                {t("Skip the review when every task is clear. Anything unclear still asks first.")}
               </Text>
             </View>
             <Switch
               value={settings.brain_dump_auto_create}
               onValueChange={(enabled) => void save({ brain_dump_auto_create: enabled })}
-              accessibilityLabel={BRAIN_DUMP_AUTO_CREATE_TITLE}
+              accessibilityLabel={t(BRAIN_DUMP_AUTO_CREATE_TITLE)}
               {...switchColors}
             />
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Pomodoro length</Text>
+            <Text style={styles.cardTitle}>{t("Focus timer")}</Text>
+            <Text style={styles.cardSubtitle}>{t("Minutes of focus, then minutes of break.")}</Text>
             <View style={styles.segmentedRow}>
-              {POMODORO_PRESETS.map((preset) => {
+              {FOCUS_PRESETS.map((preset) => {
                 const isActive =
                   settings.pomodoro_work_minutes === preset.work &&
                   settings.pomodoro_break_minutes === preset.break;
@@ -542,7 +527,7 @@ export function SettingsScreen({ userId, session }: Props) {
             </View>
           </View>
 
-          <Text style={styles.sectionLabel}>{DATA_SECTION_LABEL}</Text>
+          <Text style={styles.sectionLabel}>{t(DATA_SECTION_LABEL)}</Text>
           <DataCard
             hasAccount={account.isSignedUp}
             busy={account.busy}

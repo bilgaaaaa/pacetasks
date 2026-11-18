@@ -1,14 +1,9 @@
-// PaceTasks Pro, shared by the app and Edge Functions. Must stay in sync with
+// PaceTasks Pro as the server sees it. Must stay in sync with
 // public.pro_entitlements in supabase/migrations and the RevenueCat dashboard.
 
-// The RevenueCat entitlement that unlocks Pro; every Pro product grants it.
+// The RevenueCat entitlement every Pro plan grants (pro_monthly, pro_yearly, pro_lifetime);
+// the same value as PRO_ENTITLEMENT in src/lib/pro.ts.
 export const PRO_ENTITLEMENT_ID = "pro";
-
-// App Store product ids sold in the paywall; both start with a 7-day free trial.
-export const PRO_PRODUCT_IDS = {
-  monthly: "pacetasks_pro_monthly",
-  yearly: "pacetasks_pro_yearly",
-} as const;
 
 export const PRO_PERIOD_TYPES = ["trial", "intro", "normal"] as const;
 export type ProPeriodType = (typeof PRO_PERIOD_TYPES)[number];
@@ -17,15 +12,14 @@ export type ProPeriodType = (typeof PRO_PERIOD_TYPES)[number];
 export interface ProEntitlement {
   productId: string;
   periodType: ProPeriodType;
-  expiresAt: string | null; // ISO time; null = never expires
+  expiresAt: string | null; // ISO time; null = never expires (lifetime)
   willRenew: boolean;
 }
 
-// What pro-sync returns to the app: the subscription and the Pro features the server offers today.
-export interface ProStatus {
+// What pro-sync returns to the app after refreshing the server's copy.
+export interface ProSyncStatus {
   isPro: boolean;
   entitlement: ProEntitlement | null;
-  aiBrainDump: boolean; // true once Brain Dump runs on an AI model for Pro users (not the free rules)
 }
 
 // An entitlement counts until its expiry; one without an expiry never ends.

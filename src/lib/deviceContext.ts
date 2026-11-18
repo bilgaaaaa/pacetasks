@@ -16,3 +16,9 @@ export function getDeviceLocale(): string | null {
 export function getCurrentTiming(workStartHour: number, workEndHour: number): TaskTiming {
   return timingForHour(new Date().getHours(), workStartHour, workEndHour);
 }
+
+// The phone's local time as "HH:MM", the format of task times and windows.
+export function getCurrentTimeOfDay(): string {
+  const now = new Date();
+  return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+}

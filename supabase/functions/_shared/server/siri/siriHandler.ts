@@ -14,12 +14,14 @@ import type { SiriLanguage } from "../../domain/siri/siriSpeech.ts";
 import { timingForHour } from "../../domain/timing.ts";
 import { ApiError, CORS_HEADERS, jsonResponse } from "../http/apiError.ts";
 import type { BrainDumpRequest } from "../brainDump/brainDumpRequest.ts";
-import type { SiriRepository } from "./siriRepository.ts";
+import type { TaskRepository } from "../tasks/taskRepository.ts";
 import { siriRequestSchema } from "./siriRequest.ts";
 import type { SiriOutcome, SiriReply, SiriRequest } from "./siriRequest.ts";
 
 export interface SiriServiceDeps {
-  repository: SiriRepository;
+  repository: Pick<TaskRepository, "getUserId" | "loadUserContext">;
+  // Whether this user may use Siri: their PaceTasks Pro subscription, or always true before the check is switched on.
+  hasSiriAccess: () => Promise<boolean>;
   runBrainDump: (request: BrainDumpRequest) => Promise<BrainDumpProposal>; // the same use case the app's Brain Dump runs
   now: () => Date;
 }
@@ -28,14 +30,16 @@ export interface SiriHandlerDeps {
   createDeps: (authorizationHeader: string) => SiriServiceDeps;
 }
 
-// Answers one Siri request. Every action is Pro; adding goes through Brain Dump
-// (which creates the tasks right away for Siri), the others read Today.
+// Answers one Siri request. Siri is a Pro feature: the server knows who is Pro
+// from pro_entitlements, which pro-sync and the RevenueCat webhook keep current.
+// Adding goes through Brain Dump (which creates the tasks right away for Siri),
+// the others read Today.
 export async function answerSiri(request: SiriRequest, deps: SiriServiceDeps): Promise<SiriReply> {
   const language = siriLanguage(request.locale);
   const { repository } = deps;
 
   if (!(await repository.getUserId())) throw new ApiError(401, "unauthorized", "Sign in to use Siri");
-  if (!(await repository.isPro())) throw new ApiError(402, "pro_required", "Siri is part of PaceTasks Pro");
+  if (!(await deps.hasSiriAccess())) throw new ApiError(402, "pro_required", "Siri is part of PaceTasks Pro");
 
   if (request.action === "add") {
     const proposal = await deps.runBrainDump({

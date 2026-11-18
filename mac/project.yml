@@ -1,0 +1,116 @@
+# XcodeGen spec: run `xcodegen generate` to create Deskfocus.xcodeproj (the project file is not committed).
+name: Deskfocus
+
+options:
+  bundleIdPrefix: com.bilgaaaaa
+  developmentLanguage: en
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+
+# Sparkle gives the Mac app in-app updates.
+packages:
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    from: "2.6.4"
+
+configFiles:
+  Debug: Config/Deskfocus.xcconfig
+  Release: Config/Deskfocus.xcconfig
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "0.3.0"
+    # Sparkle compares this build number, so raise it with every release.
+    CURRENT_PROJECT_VERSION: "3"
+    DEVELOPMENT_TEAM: $(DESKFOCUS_TEAM_ID)
+    CODE_SIGN_STYLE: Automatic
+    ENABLE_HARDENED_RUNTIME: YES
+    # English and Italian via String Catalogs; texts are extracted from code at build time.
+    SWIFT_EMIT_LOC_STRINGS: YES
+    LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+
+targets:
+  Deskfocus:
+    type: application
+    platform: macOS
+    sources:
+      - Deskfocus
+      - Shared
+    dependencies:
+      - target: DeskfocusWidget
+      - package: Sparkle
+    # Shared "Deskfocus" scheme, so command-line builds (release script, CI) find it.
+    scheme: {}
+    info:
+      path: Deskfocus/Info.plist
+      properties:
+        # The Mac app is PaceTasks; its widget keeps the name DeskFocus.
+        CFBundleDisplayName: PaceTasks
+        # Version comes from MARKETING_VERSION / CURRENT_PROJECT_VERSION above, never hardcoded.
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleDevelopmentRegion: en
+        CFBundleLocalizations: [en, it]
+        LSApplicationCategoryType: public.app-category.productivity
+        LSUIElement: true
+        NSCalendarsUsageDescription: PaceTasks shows today's events so you can focus on them.
+        NSCalendarsFullAccessUsageDescription: PaceTasks shows today's events so you can focus on them.
+        NSRemindersUsageDescription: PaceTasks shows today's reminders and marks them done when you finish.
+        NSRemindersFullAccessUsageDescription: PaceTasks shows today's reminders and marks them done when you finish.
+        GoogleClientID: $(GOOGLE_CLIENT_ID)
+        # PaceTasks server (Supabase) host and public key, from Config/Secrets.xcconfig.
+        PaceSupabaseHost: $(PACE_SUPABASE_HOST)
+        PaceSupabaseAnonKey: $(PACE_SUPABASE_ANON_KEY)
+        GoogleSyncEnabled: $(GOOGLE_SYNC_ENABLED)
+        DeskfocusAppGroupIdentifier: $(TeamIdentifierPrefix)com.bilgaaaaa.deskfocus
+        # Update feed: release.sh attaches appcast.xml to each GitHub release, and "latest" always points to the newest.
+        SUFeedURL: https://github.com/bilgaaaaa/pacetasks/releases/latest/download/appcast.xml
+        # Public half of the update signing key, written by Scripts/update-keys.sh; empty means the build never updates itself.
+        SUPublicEDKey: ""
+        SUEnableAutomaticChecks: true
+        SUScheduledCheckInterval: 86400
+    entitlements:
+      path: Deskfocus/Deskfocus.entitlements
+      properties:
+        com.apple.security.app-sandbox: false
+        com.apple.security.application-groups:
+          - $(TeamIdentifierPrefix)com.bilgaaaaa.deskfocus
+        com.apple.security.personal-information.calendars: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.bilgaaaaa.deskfocus
+        # The app file is PaceTasks.app; targets and schemes keep their code names.
+        PRODUCT_NAME: PaceTasks
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+
+  DeskfocusWidget:
+    type: app-extension
+    platform: macOS
+    sources:
+      - DeskfocusWidget
+      - Shared
+    info:
+      path: DeskfocusWidget/Info.plist
+      properties:
+        CFBundleDisplayName: DeskFocus
+        # Must match the app's version, or macOS warns about a mismatched embedded extension.
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleDevelopmentRegion: en
+        CFBundleLocalizations: [en, it]
+        DeskfocusAppGroupIdentifier: $(TeamIdentifierPrefix)com.bilgaaaaa.deskfocus
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: DeskfocusWidget/DeskfocusWidget.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.application-groups:
+          - $(TeamIdentifierPrefix)com.bilgaaaaa.deskfocus
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.bilgaaaaa.deskfocus.widget
+        PRODUCT_NAME: DeskfocusWidget
+        SKIP_INSTALL: YES

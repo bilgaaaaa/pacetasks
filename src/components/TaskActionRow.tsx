@@ -6,30 +6,37 @@ import { confirmDestructive } from "../lib/confirmDestructive";
 import { deleteTaskPrompt, taskDetailLine } from "../lib/taskActionsCopy";
 import { makeStyles, useTheme } from "../hooks/useTheme";
 import { Task } from "../lib/types";
+import { t } from "../i18n";
 
 interface Props {
   task: Task;
   actionLabel: string; // the one way back onto Today, e.g. "Bring back"
   onAction: (task: Task) => void;
+  onEdit: (task: Task) => void; // tapping the title opens the task to change it
   onDelete: (taskId: string) => void; // called only after the user confirmed
 }
 
-// A task that is off the Today list (parked, or set for a later day): its title,
-// one pill to bring it onto Today, and a small trash that asks before deleting.
+// A task that is off the Today list (parked, or set for a later day): its title
+// (tap to edit), one pill to bring it onto Today, and a small trash that asks before deleting.
 // Shared by the Someday and Upcoming sheets so both behave the same.
-export function TaskActionRow({ task, actionLabel, onAction, onDelete }: Props) {
+export function TaskActionRow({ task, actionLabel, onAction, onEdit, onDelete }: Props) {
   const { theme } = useTheme();
   const styles = useStyles();
   return (
     <View style={styles.row}>
-      <View style={styles.rowText}>
+      <TouchableOpacity
+        style={styles.rowText}
+        onPress={() => onEdit(task)}
+        accessibilityRole="button"
+        accessibilityLabel={t("Edit {0}", task.title)}
+      >
         <Text style={styles.taskTitle} numberOfLines={3}>
           {task.title}
         </Text>
         <Text style={styles.meta} numberOfLines={1}>
           {taskDetailLine(task.category ? getCategory(task.category).label : null, task.estimated_minutes)}
         </Text>
-      </View>
+      </TouchableOpacity>
       <TouchableOpacity
         style={styles.actionButton}
         onPress={() => onAction(task)}
@@ -43,7 +50,7 @@ export function TaskActionRow({ task, actionLabel, onAction, onDelete }: Props) 
         onPress={() => confirmDestructive(deleteTaskPrompt(task.title), () => onDelete(task.id))}
         hitSlop={8}
         accessibilityRole="button"
-        accessibilityLabel={`Delete ${task.title}`}
+        accessibilityLabel={t("Delete {0}", task.title)}
       >
         <Ionicons name="trash-outline" size={16} color={theme.colors.textTertiary} />
       </TouchableOpacity>

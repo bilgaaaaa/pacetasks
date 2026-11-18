@@ -54,6 +54,8 @@ describe("normalizeBrainDump", () => {
       timing: "anytime",
       category: "personal",
       scheduled_time: null,
+      window_start: null,
+      window_end: null,
       due_date: "2026-09-29",
       due_kind: "on",
       notes: null,
@@ -162,5 +164,28 @@ describe("normalizeBrainDump", () => {
     expect(candidates[1].draft.source_language).toBeNull();
     expect(candidates[1].draft.tags).toEqual(["phone"]);
     expect(unparsedFragments).toEqual(["boh", "ehm"]);
+  });
+});
+
+describe("normalizeBrainDump time windows", () => {
+  it("stores an AI window as the task's window, and a fixed time as its start", () => {
+    const result = makeAiResult([
+      makeAiCandidate({ title: "Aperitivo", timeWindow: { start: "19:00", end: "21:00" } }),
+      makeAiCandidate({ title: "Walk the dog", timeWindow: { start: "20:00", end: null } }),
+      makeAiCandidate({ title: "Dentist", dueTime: "15:30" }),
+    ]);
+    const drafts = normalizeBrainDump(result, context).candidates.map((c) => c.draft);
+    expect(drafts.map((d) => [d.scheduled_time, d.window_start, d.window_end])).toEqual([
+      [null, "19:00", "21:00"],
+      [null, "20:00", null],
+      ["15:30", null, null],
+    ]);
+    expect(drafts[0].timing).toBe("after_work");
+  });
+
+  it("drops a window that ends before it starts", () => {
+    const result = makeAiResult([makeAiCandidate({ title: "Odd", timeWindow: { start: "21:00", end: "19:00" } })]);
+    const [draft] = normalizeBrainDump(result, context).candidates.map((c) => c.draft);
+    expect([draft.window_start, draft.window_end]).toEqual([null, null]);
   });
 });

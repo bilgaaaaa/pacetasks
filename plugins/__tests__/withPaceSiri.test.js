@@ -30,14 +30,14 @@ describe("addSiriFilesToProject", () => {
       expect.arrayContaining(["PaceIntents.swift in Sources", "PaceShortcuts.swift in Sources"])
     );
     expect(phaseFiles(project, "PBXResourcesBuildPhase")).toEqual(
-      expect.arrayContaining(["AppShortcuts.xcstrings in Resources", "Localizable.xcstrings in Resources"])
+      expect.arrayContaining(["AppShortcuts.xcstrings in Resources"])
     );
 
     const written = project.writeSync();
     expect(written).toContain('path = "PaceTasks/Siri/AppShortcuts.xcstrings"');
     expect(written).toMatch(/AppShortcuts\.xcstrings"; sourceTree = "<group>"; lastKnownFileType = text\.json\.xcstrings;/);
     expect(written).not.toContain("undefined");
-    expect(project.getFirstProject().firstProject.knownRegions).toEqual(expect.arrayContaining(["en", "it", "tr"]));
+    expect(project.getFirstProject().firstProject.knownRegions).toEqual(expect.arrayContaining(["en", "it"]));
   });
 
   it("adds nothing twice when prebuild runs again", () => {
@@ -58,7 +58,7 @@ describe("applySiriInfoPlist", () => {
     );
     expect(plist).toEqual({
       CFBundleName: "PaceTasks",
-      CFBundleLocalizations: ["en", "it", "tr"],
+      CFBundleLocalizations: ["en", "it"],
       PaceSupabaseURL: "https://ref.supabase.co",
       PaceSupabaseAnonKey: "sb_publishable_x",
     });

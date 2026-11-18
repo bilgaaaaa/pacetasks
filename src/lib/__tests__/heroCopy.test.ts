@@ -1,5 +1,5 @@
 import { makeTask } from "@domain/testing/makeTask";
-import { heroMessage, heroStart, HeroState } from "../heroCopy";
+import { dayHeroMessage, heroMessage, heroStart, HeroState } from "../heroCopy";
 
 const TODAY = "2026-09-28";
 
@@ -67,5 +67,18 @@ describe("heroMessage", () => {
       title: "One step at a time.",
       body: "Pick one task and give it your full attention.",
     });
+  });
+});
+
+describe("dayHeroMessage", () => {
+  it("plans a later day", () => {
+    expect(dayHeroMessage("2026-09-30", TODAY, 2, 0).title).toBe("Planned ahead.");
+    expect(dayHeroMessage("2026-09-30", TODAY, 0, 0).title).toBe("Nothing planned yet.");
+  });
+
+  it("looks back on an earlier day", () => {
+    expect(dayHeroMessage("2026-09-27", TODAY, 0, 3).body).toBe("You finished 3 tasks this day.");
+    expect(dayHeroMessage("2026-09-27", TODAY, 0, 1).body).toBe("You finished 1 task this day.");
+    expect(dayHeroMessage("2026-09-27", TODAY, 0, 0).title).toBe("A quiet day.");
   });
 });

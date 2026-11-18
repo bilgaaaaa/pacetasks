@@ -1,192 +1,236 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { isEntitlementActive } from "@domain/pro";
-import type { ProEntitlement, ProStatus } from "@domain/pro";
-import { syncProStatus } from "../lib/proApi";
-import { NOTHING_TO_RESTORE, PRO_LOAD_FAILED, PURCHASE_FAILED } from "../lib/proCopy";
-import type { ProPlan, ProPlanId } from "../lib/proPlans";
-import { proStore } from "../lib/purchases";
+import { AppState } from "react-native";
+import { effectiveProStatus, FREE_STATUS, Plan, PlanId, ProFeature, ProStatus } from "../lib/pro";
+import { PRO_PLANS_UNAVAILABLE, PRO_PURCHASE_FAILED, PRO_RESTORE_FAILED, PRO_RESTORE_NOTHING } from "../lib/proCopy";
+import { syncProWithServer } from "../lib/proApi";
+import { loadProStatus, saveProStatus } from "../lib/proStorage";
+import {
+  connectPurchases,
+  fetchPlans,
+  isPurchasesAvailable,
+  onProStatusChange,
+  purchasePlan,
+  restorePurchases,
+  showManageSubscriptions,
+} from "../lib/purchasesApi";
+import { t } from "../i18n";
 
-type PlansState = "loading" | "ready" | "failed";
+// What the paywall sheet shows; App renders it once for the whole app.
+export interface PaywallState {
+  visible: boolean;
+  reason: ProFeature | null; // the feature that opened it, or null from Settings
+  plans: Plan[] | null; // null while loading
+  message: string | null; // a load, purchase or restore problem
+  busyPlanId: PlanId | null;
+  restoring: boolean;
+}
 
 interface ProContextValue {
-  available: boolean; // the App Store can be used on this device and build
   isPro: boolean;
-  entitlement: ProEntitlement | null;
-  aiBrainDump: boolean; // the server runs Brain Dump on AI for Pro right now
-  plans: ProPlan[];
-  plansState: PlansState;
-  busy: "purchase" | "restore" | null;
-  error: string | null; // a failure to show near the action that caused it
-  notice: string | null; // a calm message, e.g. nothing to restore
-  reloadPlans: () => Promise<void>;
-  purchase: (planId: ProPlanId) => Promise<boolean>; // true once the user is Pro
-  restore: () => Promise<boolean>;
-  clearMessages: () => void;
+  status: ProStatus;
+  storeAvailable: boolean; // false where nothing can be bought (web demo, Android, no key): everyone is Pro there, as in TestFlight builds
+  // Runs `action` for Pro users, otherwise opens the paywall for that feature.
+  requirePro: (feature: ProFeature, action: () => void) => void;
+  openPaywall: (reason?: ProFeature | null) => void;
+  closePaywall: () => void;
+  purchase: (planId: PlanId) => Promise<void>;
+  restore: () => Promise<void>;
+  manageSubscription: () => void;
+  paywall: PaywallState;
 }
 
 const ProContext = createContext<ProContextValue | null>(null);
 
-// PaceTasks Pro for the whole app: ties the App Store to the current user, keeps
-// their subscription and the plans, and copies every change to the server so
-// Siri and Brain Dump see it at once. Dropped and reloaded when the user changes.
+const CLOSED_PAYWALL: PaywallState = {
+  visible: false,
+  reason: null,
+  plans: null,
+  message: null,
+  busyPlanId: null,
+  restoring: false,
+};
+
+const storeAvailable = isPurchasesAvailable();
+// TestFlight builds (the "testflight" EAS profile) unlock every Pro feature for testers; App Store builds never set it.
+const testerBuild = process.env.EXPO_PUBLIC_TESTER_BUILD === "1";
+const UNLOCKED_STATUS: ProStatus = { ...FREE_STATUS, active: true, lifetime: true };
+if (!storeAvailable) console.log("[usePro] no store in this build, Pro is unlocked");
+if (testerBuild) console.log("[usePro] tester build, Pro is unlocked");
+
+// Holds the user's Pro status for the whole app: the saved one at once, then the store's answer for this
+// PaceTasks account, kept current on foreground and on store updates. Every paywall flow goes through here.
 export function ProProvider({ userId, children }: { userId: string | undefined; children: React.ReactNode }) {
-  const [storeEntitlement, setStoreEntitlement] = useState<ProEntitlement | null>(null);
-  const [serverStatus, setServerStatus] = useState<ProStatus | null>(null);
-  const [plans, setPlans] = useState<ProPlan[]>([]);
-  const [plansState, setPlansState] = useState<PlansState>("loading");
-  const [busy, setBusy] = useState<ProContextValue["busy"]>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [live, setLive] = useState<ProStatus | null>(null);
+  const [saved, setSaved] = useState<ProStatus | null>(null);
+  const [paywall, setPaywall] = useState<PaywallState>(CLOSED_PAYWALL);
+  const userIdRef = useRef(userId);
+  userIdRef.current = userId;
 
-  // Answers that arrive for an earlier user are ignored, like useSettings.
-  const currentUserId = useRef(userId);
-  currentUserId.current = userId;
-
-  // Best effort: the app keeps working on the store's answer if the server can't be reached.
-  const syncServer = useCallback(async (forUser: string) => {
-    try {
-      const status = await syncProStatus();
-      if (currentUserId.current === forUser) setServerStatus(status);
-    } catch {
-      // Logged by proApi; the next app start or purchase tries again.
-    }
+  // The server's copy (for Siri) is refreshed whenever the store's answer changes, at most once per change.
+  const lastSynced = useRef<string | null>(null);
+  const syncServer = useCallback((status: ProStatus) => {
+    const key = `${userIdRef.current}:${status.active}:${status.expiresAt}`;
+    if (lastSynced.current === key) return;
+    lastSynced.current = key;
+    syncProWithServer().catch(() => {
+      lastSynced.current = null; // logged by proApi; the next store answer tries again
+    });
   }, []);
 
-  const reloadPlans = useCallback(async () => {
-    if (!proStore.available) {
-      setPlansState("ready");
-      return;
-    }
-    setPlansState("loading");
-    try {
-      const loaded = await proStore.loadPlans();
-      setPlans(loaded);
-      setPlansState("ready");
-    } catch (e) {
-      console.warn("[usePro] plans failed to load", e);
-      setPlansState("failed");
-    }
-  }, []);
-
-  useEffect(() => {
-    // A new user starts clean: nothing of the previous user's state or pending action stays.
-    setStoreEntitlement(null);
-    setServerStatus(null);
-    setBusy(null);
-    setError(null);
-    setNotice(null);
-    if (!userId) return;
-    let active = true;
-    let unsubscribe: () => void = () => {};
-
-    (async () => {
-      try {
-        await proStore.identify(userId);
-        if (!active) return;
-        const entitlement = await proStore.readEntitlement();
-        if (active) setStoreEntitlement(entitlement);
-      } catch (e) {
-        console.warn("[usePro] could not read the subscription from the store", e);
-      }
-      if (!active) return;
-      // Listening only once the store is on this user, so a late update for the previous one can't land here.
-      // Renewals, refunds and purchases made elsewhere arrive here while the app is open.
-      unsubscribe = proStore.onEntitlementChange((entitlement) => {
-        if (!active) return;
-        setStoreEntitlement(entitlement);
-        void syncServer(userId);
-      });
-      void syncServer(userId);
-      void reloadPlans();
-    })();
-
-    return () => {
-      active = false;
-      unsubscribe();
-    };
-  }, [userId, syncServer, reloadPlans]);
-
-  const purchase = useCallback(
-    async (planId: ProPlanId): Promise<boolean> => {
-      if (!userId || busy) return false;
-      setBusy("purchase");
-      setError(null);
-      setNotice(null);
-      try {
-        const outcome = await proStore.purchase(planId);
-        if (outcome.status === "cancelled") {
-          console.log("[usePro] purchase cancelled by the user");
-          return false;
-        }
-        const entitlement = outcome.entitlement;
-        if (currentUserId.current !== userId) return false;
-        setStoreEntitlement(entitlement);
-        await syncServer(userId);
-        console.log(`[usePro] purchased ${planId}`);
-        return isEntitlementActive(entitlement, new Date());
-      } catch (e) {
-        console.warn("[usePro] purchase failed", e);
-        if (currentUserId.current === userId) setError(PURCHASE_FAILED);
-        return false;
-      } finally {
-        setBusy(null); // always, or a user change mid-purchase would block every later one
-      }
+  const applyLive = useCallback(
+    (status: ProStatus) => {
+      setLive(status);
+      setSaved(status);
+      void saveProStatus(status);
+      syncServer(status);
     },
-    [userId, busy, syncServer]
+    [syncServer],
   );
 
-  const restore = useCallback(async (): Promise<boolean> => {
-    if (!userId || busy) return false;
-    setBusy("restore");
-    setError(null);
-    setNotice(null);
+  const refreshStatus = useCallback(async () => {
+    const id = userIdRef.current;
+    if (!storeAvailable || !id) return;
     try {
-      const entitlement = await proStore.restore();
-      if (currentUserId.current !== userId) return false;
-      setStoreEntitlement(entitlement);
-      await syncServer(userId);
-      const restored = isEntitlementActive(entitlement, new Date());
-      if (!restored) setNotice(NOTHING_TO_RESTORE);
-      return restored;
+      applyLive(await connectPurchases(id));
     } catch (e) {
-      console.warn("[usePro] restore failed", e);
-      if (currentUserId.current === userId) setError(PRO_LOAD_FAILED);
-      return false;
-    } finally {
-      setBusy(null);
+      // Offline or store down: the saved status keeps applying (see effectiveProStatus).
+      console.warn("[usePro] could not reach the store", e);
     }
-  }, [userId, busy, syncServer]);
+  }, [applyLive]);
 
-  const clearMessages = useCallback(() => {
-    setError(null);
-    setNotice(null);
+  useEffect(() => {
+    if (!storeAvailable) return;
+    void loadProStatus().then(setSaved);
   }, []);
 
-  const entitlement = storeEntitlement ?? serverStatus?.entitlement ?? null;
-  const isPro = isEntitlementActive(storeEntitlement, new Date()) || Boolean(serverStatus?.isPro);
+  // A new account (sign-in, account deleted) starts from the store's answer for that account.
+  useEffect(() => {
+    setLive(null);
+    void refreshStatus();
+  }, [userId, refreshStatus]);
+
+  useEffect(() => {
+    if (!storeAvailable || !userId) return;
+    const unsubscribe = onProStatusChange(applyLive);
+    const appState = AppState.addEventListener("change", (state) => {
+      if (state === "active") void refreshStatus();
+    });
+    return () => {
+      unsubscribe();
+      appState.remove();
+    };
+  }, [userId, applyLive, refreshStatus]);
+
+  const status = useMemo<ProStatus>(
+    () => (storeAvailable && !testerBuild ? effectiveProStatus(live, saved, Date.now()) : UNLOCKED_STATUS),
+    [live, saved],
+  );
+  const isPro = status.active;
+
+  const loadPlans = useCallback(async () => {
+    setPaywall((current) => ({ ...current, plans: null, message: null }));
+    try {
+      const plans = await fetchPlans();
+      setPaywall((current) => ({
+        ...current,
+        plans,
+        message: plans.length ? null : t(PRO_PLANS_UNAVAILABLE),
+      }));
+    } catch (e) {
+      console.warn("[usePro] could not load plans", e);
+      setPaywall((current) => ({
+        ...current,
+        plans: [],
+        message: t(PRO_PLANS_UNAVAILABLE),
+      }));
+    }
+  }, []);
+
+  const openPaywall = useCallback(
+    (reason: ProFeature | null = null) => {
+      console.log(`[usePro] paywall opened${reason ? ` for ${reason}` : ""}`);
+      setPaywall({ ...CLOSED_PAYWALL, visible: true, reason });
+      if (storeAvailable) void loadPlans();
+    },
+    [loadPlans],
+  );
+
+  const closePaywall = useCallback(() => setPaywall(CLOSED_PAYWALL), []);
+
+  const requirePro = useCallback(
+    (feature: ProFeature, action: () => void) => {
+      if (isPro) action();
+      else openPaywall(feature);
+    },
+    [isPro, openPaywall],
+  );
+
+  const purchase = useCallback(
+    async (planId: PlanId) => {
+      setPaywall((current) => ({
+        ...current,
+        busyPlanId: planId,
+        message: null,
+      }));
+      try {
+        const result = await purchasePlan(planId);
+        if (result.kind === "purchased") applyLive(result.status);
+        setPaywall((current) => ({ ...current, busyPlanId: null }));
+      } catch (e) {
+        console.warn(`[usePro] purchase of ${planId} failed`, e);
+        setPaywall((current) => ({
+          ...current,
+          busyPlanId: null,
+          message: t(PRO_PURCHASE_FAILED),
+        }));
+      }
+    },
+    [applyLive],
+  );
+
+  const restore = useCallback(async () => {
+    setPaywall((current) => ({ ...current, restoring: true, message: null }));
+    try {
+      const restored = await restorePurchases();
+      applyLive(restored);
+      setPaywall((current) => ({
+        ...current,
+        restoring: false,
+        message: restored.active ? null : t(PRO_RESTORE_NOTHING),
+      }));
+    } catch (e) {
+      console.warn("[usePro] restore failed", e);
+      setPaywall((current) => ({
+        ...current,
+        restoring: false,
+        message: t(PRO_RESTORE_FAILED),
+      }));
+    }
+  }, [applyLive]);
+
+  const manageSubscription = useCallback(() => {
+    showManageSubscriptions().catch((e) => console.warn("[usePro] could not open subscriptions", e));
+  }, []);
+
   const value = useMemo<ProContextValue>(
     () => ({
-      available: proStore.available,
       isPro,
-      entitlement,
-      aiBrainDump: serverStatus?.aiBrainDump ?? false,
-      plans,
-      plansState,
-      busy,
-      error,
-      notice,
-      reloadPlans,
+      status,
+      storeAvailable,
+      requirePro,
+      openPaywall,
+      closePaywall,
       purchase,
       restore,
-      clearMessages,
+      manageSubscription,
+      paywall,
     }),
-    [isPro, entitlement, serverStatus, plans, plansState, busy, error, notice, reloadPlans, purchase, restore, clearMessages]
+    [isPro, status, requirePro, openPaywall, closePaywall, purchase, restore, manageSubscription, paywall],
   );
 
   return <ProContext.Provider value={value}>{children}</ProContext.Provider>;
 }
 
-// The current user's PaceTasks Pro state and actions (see ProProvider).
 export function usePro(): ProContextValue {
   const context = useContext(ProContext);
   if (!context) throw new Error("usePro must be used inside ProProvider");

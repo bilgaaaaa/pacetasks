@@ -6,7 +6,6 @@ import { brainDumpRequestSchema } from "@server/brainDump/brainDumpRequest";
 import type { BrainDumpRepository } from "@server/brainDump/brainDumpRepository";
 import { createRulesAIProvider } from "@server/ai/rulesAIProvider";
 import { ApiError } from "@server/http/apiError";
-import { getDemoProStatus } from "./demoPro";
 import { createDemoTask, demoTables, getDemoUserId, newDemoId } from "./demoStore";
 
 // Demo-mode replacements for the brain-dump Edge Function and its RPCs. The
@@ -21,10 +20,6 @@ let usageToday = 0;
 const demoRepository: BrainDumpRepository = {
   async getUserId() {
     return getDemoUserId();
-  },
-
-  async isPro() {
-    return getDemoProStatus().isPro;
   },
 
   async incrementUsage() {
@@ -104,7 +99,7 @@ export async function invokeDemoBrainDump(
 
     const proposal = await runBrainDump(parsed.data, {
       repository: demoRepository,
-      createAI: () => createRulesAIProvider(), // the demo never calls an AI model, Pro or not
+      ai: createRulesAIProvider(),
       now: () => new Date(),
       dailyLimit: DEMO_DAILY_LIMIT,
     });

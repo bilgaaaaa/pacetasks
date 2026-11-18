@@ -1,4 +1,3 @@
-import { usesRulesProvider } from "../_shared/server/ai/providerFactory.ts";
 import { createSupabaseAuthenticator, requireEnv } from "../_shared/server/http/supabaseAuth.ts";
 import { createProSyncDeps } from "../_shared/server/pro/proDeps.ts";
 import { handleProSyncHttp } from "../_shared/server/pro/proHttp.ts";
@@ -13,12 +12,4 @@ const authenticate = createSupabaseAuthenticator({
   supabaseAnonKey: requireEnv("pro-sync", "SUPABASE_ANON_KEY"),
 });
 
-Deno.serve((request) =>
-  handleProSyncHttp(request, {
-    ...deps,
-    authenticate,
-    // Read per request, like brain-dump, so switching AI_PROVIDER needs no redeploy.
-    aiBrainDump: () => !usesRulesProvider((name) => Deno.env.get(name)),
-    now: () => new Date(),
-  })
-);
+Deno.serve((request) => handleProSyncHttp(request, { ...deps, authenticate, now: () => new Date() }));

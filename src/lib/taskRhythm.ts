@@ -1,6 +1,8 @@
 import { daysBetween, toLocalDateKey } from "@domain/dates";
+import { median } from "@domain/median";
 import { normalizeTitle } from "@domain/taskHistory";
 import { Task, TaskTiming } from "./types";
+import { t } from "../i18n";
 
 // How often each recurring task actually gets done, learned from completed
 // tasks: when it was last done and its usual gap between times. Feeds the
@@ -17,12 +19,6 @@ export interface TaskRhythm {
   daysSince: number;
   usualGapDays: number | null; // median days between completions; null until done on 2+ days
   lateByDays: number | null; // days past the usual gap; negative = still ahead of it
-}
-
-function median(values: number[]): number {
-  const sorted = [...values].sort((a, b) => a - b);
-  const mid = Math.floor(sorted.length / 2);
-  return sorted.length % 2 ? sorted[mid] : Math.round((sorted[mid - 1] + sorted[mid]) / 2);
 }
 
 // One rhythm per task name that has been completed at least once.
@@ -78,6 +74,6 @@ export function isLate(rhythm: TaskRhythm): boolean {
 // "Today", "Yesterday", or "9 days ago", plus "· usually 7 days" (the usual gap) when a rhythm is known.
 export function describeLastDone(rhythm: TaskRhythm): string {
   const when =
-    rhythm.daysSince <= 0 ? "Today" : rhythm.daysSince === 1 ? "Yesterday" : `${rhythm.daysSince} days ago`;
-  return rhythm.usualGapDays !== null && rhythm.usualGapDays > 1 ? `${when} · usually ${rhythm.usualGapDays} days` : when;
+    rhythm.daysSince <= 0 ? t("Today") : rhythm.daysSince === 1 ? t("Yesterday") : t("{0} days ago", rhythm.daysSince);
+  return rhythm.usualGapDays !== null && rhythm.usualGapDays > 1 ? t("{0} · usually {1} days", when, rhythm.usualGapDays) : when;
 }

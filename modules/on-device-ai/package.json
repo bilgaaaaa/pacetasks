@@ -1,0 +1,6 @@
+{
+  "name": "on-device-ai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Apple's on-device language model (Foundation Models) for Brain Dump, free and private"
+}

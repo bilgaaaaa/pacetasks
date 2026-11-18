@@ -1,4 +1,4 @@
-import { emptyFilterMessage, greetingForHour, totalsLine } from "../todayCopy";
+import { dayEyebrow, dayTitle, emptyFilterMessage, greetingForHour, totalsLine } from "../todayCopy";
 
 describe("todayCopy", () => {
   it("greets by the part of the day, with a calm line late at night", () => {
@@ -16,5 +16,16 @@ describe("todayCopy", () => {
   it("explains an empty filter", () => {
     expect(emptyFilterMessage("due")).toBe("Nothing is due today.");
     expect(emptyFilterMessage("quick")).toMatch(/No quick wins/);
+  });
+
+  it("titles a day by the greeting on today, otherwise by which day it is", () => {
+    expect(dayTitle("2026-10-14", "2026-10-14", 9)).toBe("Good morning");
+    expect(dayTitle("2026-10-15", "2026-10-14", 9)).toBe("Tomorrow");
+    expect(dayTitle("2026-10-13", "2026-10-14", 9)).toBe("Yesterday");
+    expect(dayTitle("2026-10-16", "2026-10-14", 9)).toBe("Friday");
+  });
+
+  it("labels the shown day over the title", () => {
+    expect(dayEyebrow("2026-10-04")).toBe("SUNDAY · OCTOBER 4");
   });
 });

@@ -1,5 +1,6 @@
 import AppIntents
-import PaceSessionStore
+// Matches the "internal import" in Expo's generated ExpoModulesProvider.swift; Swift rejects mixed import levels.
+internal import PaceSessionStore
 
 // PaceTasks' Siri and Shortcuts actions. Each asks the PaceTasks server, which
 // does the work and answers with the sentence Siri says (see supabase/functions/siri).
@@ -7,7 +8,7 @@ import PaceSessionStore
 
 struct AddTasksIntent: AppIntent {
   static let title: LocalizedStringResource = "Add to PaceTasks"
-  static let description = IntentDescription("Add one or more tasks by voice, in English, Italian or Turkish.")
+  static let description = IntentDescription("Add one or more tasks by voice, in English or Italian.")
   static let openAppWhenRun = false
 
   @Parameter(title: "Tasks", requestValueDialog: "What should I add?")

@@ -12,6 +12,7 @@ import {
   updateMessage,
 } from "../lib/appUpdateCopy";
 import { Button } from "./Button";
+import { t } from "../i18n";
 
 interface Props {
   update: AvailableUpdate | null; // null hides the prompt
@@ -28,26 +29,26 @@ export function UpdateSheet({ update, onUpdateNow, onLater }: Props) {
 
   return (
     <Modal visible={update !== null} transparent animationType="fade" onRequestClose={onLater}>
-      <Pressable style={styles.backdrop} onPress={onLater} accessibilityLabel={UPDATE_LATER_LABEL}>
+      <Pressable style={styles.backdrop} onPress={onLater} accessibilityLabel={t(UPDATE_LATER_LABEL)}>
         {/* Taps inside the panel must not reach the backdrop. */}
         <Pressable style={styles.panel} onPress={() => {}}>
           <View style={styles.icon}>
             <Ionicons name="sparkles-outline" size={24} color={theme.colors.accentDark} />
           </View>
           <Text style={styles.title} accessibilityRole="header">
-            {UPDATE_TITLE}
+            {t(UPDATE_TITLE)}
           </Text>
           {update && (
             <Text style={styles.message}>{updateMessage(update.release.version, update.installedVersion)}</Text>
           )}
           {notes && (
             <View style={styles.notes}>
-              <Text style={styles.notesLabel}>{UPDATE_NOTES_LABEL}</Text>
+              <Text style={styles.notesLabel}>{t(UPDATE_NOTES_LABEL)}</Text>
               <Text style={styles.notesText}>{notes}</Text>
             </View>
           )}
-          <Button label={UPDATE_NOW_LABEL} onPress={onUpdateNow} style={styles.primary} />
-          <Button label={UPDATE_LATER_LABEL} variant="secondary" onPress={onLater} />
+          <Button label={t(UPDATE_NOW_LABEL)} onPress={onUpdateNow} style={styles.primary} />
+          <Button label={t(UPDATE_LATER_LABEL)} variant="secondary" onPress={onLater} />
         </Pressable>
       </Pressable>
     </Modal>

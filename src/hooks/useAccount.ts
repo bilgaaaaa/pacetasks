@@ -7,6 +7,7 @@ import { AccountError, AccountMode, Profile, ProfileInput } from "../lib/account
 import { accountDeletionReducer, INITIAL_ACCOUNT_DELETION_STATE } from "../lib/accountDeletionState";
 import { accountReducer, formErrors, INITIAL_ACCOUNT_STATE } from "../lib/accountState";
 import { isAppleSignInAvailable } from "../lib/appleAuth";
+import { t } from "../i18n";
 
 // Drives the account card and sheets: who is signed in, their profile, the
 // passwordless flow (details → emailed code → verified, or Sign in with Apple) and deleting the account.
@@ -234,5 +235,5 @@ export function useAccount(session: Session | null) {
 function toMessage(error: unknown): string {
   if (error instanceof AccountError) return error.message;
   console.warn("[useAccount] unexpected error", error);
-  return "Something went wrong. Try again.";
+  return t("Something went wrong. Try again.");
 }
