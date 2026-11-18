@@ -57,6 +57,14 @@ enum DeskTaskFormatter {
         return timeFormatter.string(from: start)
     }
 
+    /// Start time, "All day" or "To-do" at the end of a one-line row, such as tomorrow's in the widget.
+    static func timeLabel(for task: DeskTask) -> String {
+        if let start = startTime(for: task) { return start }
+        if task.isEvent { return String(localized: "All day") }
+        if !task.isAllDay, let due = task.dueDate { return timeFormatter.string(from: due) }
+        return String(localized: "To-do")
+    }
+
     /// Label above the "Up next" card, e.g. "Up next · in 25 min", "Happening now" or "Overdue".
     static func upNextLabel(for task: DeskTask, now: Date = .now) -> String {
         if task.isEvent, !task.isAllDay, let start = task.startDate {

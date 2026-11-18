@@ -2,7 +2,7 @@ import AppIntents
 import AppKit
 import SwiftUI
 
-/// Menu bar popover: the selected day with arrows, a focus banner while a session runs, and sync status.
+/// Menu bar popover: the selected day with arrows (today also shows tomorrow), a focus banner while a session runs, and sync status.
 struct MenuBarView: View {
     @Environment(AppModel.self) private var model
 
@@ -91,29 +91,28 @@ struct MenuBarView: View {
     }
 
     private func taskList(now: Date) -> some View {
-        let tasks = model.agenda.tasks(on: model.agenda.selectedDay, snapshot: model.snapshot, now: now)
+        let agenda = model.agenda
+        let tasks = agenda.tasks(on: agenda.selectedDay, snapshot: model.snapshot, now: now)
+        // Today also looks ahead to tomorrow, like the widget; other days show only themselves.
+        let tomorrowTasks = agenda.isShowingToday ? agenda.tomorrowTasks(snapshot: model.snapshot, now: now) : []
 
         return Group {
-            if tasks.isEmpty {
-                VStack(spacing: 10) {
-                    Text(hasCalendarAccess ? String(localized: "Nothing planned for this day.") : String(localized: "Connect your calendars in Settings to see your tasks."))
-                        .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                    // Without any calendar the list stays empty, so lead straight to where that is fixed.
-                    if !hasCalendarAccess {
-                        Button("Open Settings") { model.showSettings() }
-                            .controlSize(.small)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 20)
+            if tasks.isEmpty && tomorrowTasks.isEmpty {
+                emptyState
             } else {
                 ScrollView {
-                    VStack(spacing: 2) {
-                        ForEach(tasks) { task in
-                            MenuTaskRow(task: task, now: now)
+                    VStack(spacing: 10) {
+                        if tasks.isEmpty {
+                            emptyState
+                        } else {
+                            VStack(spacing: 2) {
+                                ForEach(tasks) { task in
+                                    MenuTaskRow(task: task, now: now)
+                                }
+                            }
+                        }
+                        if !tomorrowTasks.isEmpty {
+                            TomorrowSectionView(tasks: tomorrowTasks, openAction: { agenda.moveDay(by: 1) })
                         }
                     }
                     .padding(.horizontal, 8)
@@ -122,6 +121,23 @@ struct MenuBarView: View {
                 .frame(maxHeight: 340)
             }
         }
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 10) {
+            Text(hasCalendarAccess ? String(localized: "Nothing planned for this day.") : String(localized: "Connect your calendars in Settings to see your tasks."))
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            // Without any calendar the list stays empty, so lead straight to where that is fixed.
+            if !hasCalendarAccess {
+                Button("Open Settings") { model.showSettings() }
+                    .controlSize(.small)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .center)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 20)
     }
 
     private var footer: some View {

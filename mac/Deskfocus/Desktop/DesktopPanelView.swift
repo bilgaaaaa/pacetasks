@@ -113,7 +113,7 @@ private struct PanelContextMenu: View {
     }
 }
 
-/// Closed layout, styled like the purple widget: weekday, big date, progress ring, then the day's items.
+/// Closed layout, styled like the purple widget: weekday, big date, progress ring, then the day's items and, on today, tomorrow's.
 /// Day arrows and the open button stay visible at the top right; a new day's list slides in from the side it came from.
 private struct DayPanelContent: View {
     @Environment(AppModel.self) private var model
@@ -205,6 +205,15 @@ private struct DayPanelContent: View {
                     }
                     .buttonStyle(DeskfocusGlassButtonStyle())
                     .transition(.opacity)
+                }
+                // Today also looks ahead to tomorrow, like the widget; other days show only themselves.
+                if agenda.isShowingToday {
+                    let tomorrowTasks = agenda.tomorrowTasks(snapshot: model.snapshot, now: now)
+                    if !tomorrowTasks.isEmpty {
+                        TomorrowSectionView(tasks: tomorrowTasks, openAction: { agenda.moveDay(by: 1) })
+                            .padding(.top, 4)
+                            .transition(.opacity)
+                    }
                 }
             }
             .transition(.opacity)

@@ -15,6 +15,11 @@ enum EventKitTasks {
         await items(in: DateInterval.day(containing: now), includesEarlier: true, settings: settings)
     }
 
+    /// Events overlapping tomorrow, plus incomplete reminders due tomorrow.
+    static func tomorrow(now: Date, settings: DeskfocusSettings) async -> [DeskTask] {
+        await items(in: DateInterval.day(containing: DateInterval.day(containing: now).end), includesEarlier: false, settings: settings)
+    }
+
     /// Events overlapping `day`, plus incomplete reminders due in it. `includesEarlier` adds overdue and
     /// (if enabled) undated reminders, which belong to today.
     static func items(in day: DateInterval, includesEarlier: Bool, settings: DeskfocusSettings) async -> [DeskTask] {

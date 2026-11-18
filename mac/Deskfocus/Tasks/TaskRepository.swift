@@ -58,7 +58,7 @@ final class TaskRepository {
         return containers
     }
 
-    /// Reloads today's list; a failing source keeps its previous tasks so one outage never empties the list.
+    /// Reloads today's and tomorrow's lists; a failing source keeps its previous tasks so one outage never empties them.
     func refresh(now: Date = .now) async {
         guard !isSyncing else {
             Log.sync.debug("Refresh skipped, already syncing")
@@ -69,13 +69,18 @@ final class TaskRepository {
 
         let previous = SharedStore.shared.load()
         let today = DateInterval.day(containing: now)
-        let result = await fetchTasks(in: today)
-        let kept = previous.tasks.filter { result.failedSources.contains($0.source) }
-        let tasks = (result.tasks + kept).sortedForToday()
-        let taskIds = Set(tasks.map(\.id))
+        let tomorrow = DateInterval.day(containing: today.end)
+        // One fetch covers both days, so the widget's "Tomorrow" section costs no extra requests.
+        let result = await fetchTasks(in: DateInterval(start: today.start, end: tomorrow.end))
+        let tasks = (Agenda.tasks(result.tasks, on: today, today: today)
+            + previous.tasks.filter { result.failedSources.contains($0.source) }).sortedForToday()
+        let tomorrowTasks = (Agenda.tasks(result.tasks, on: tomorrow, today: today)
+            + previous.tomorrowTasks.filter { result.failedSources.contains($0.source) }).sortedForToday()
+        let taskIds = Set((tasks + tomorrowTasks).map(\.id))
 
         SharedStore.shared.update { snapshot in
             snapshot.tasks = tasks
+            snapshot.tomorrowTasks = tomorrowTasks
             let pending = snapshot.pendingCompletionIds
             let focusTaskId = snapshot.focus?.taskId
             // Other-day items stay only while something still needs them. To-dos are done in their source
@@ -101,7 +106,7 @@ final class TaskRepository {
 
         let failedNames = result.failedSources.map(\.displayName)
         lastErrorMessage = failedNames.isEmpty ? nil : String(localized: "Could not update \(failedNames.joined(separator: ", ")).")
-        Log.sync.info("Synced \(tasks.count) items for today, \(failedNames.count) source failures")
+        Log.sync.info("Synced \(tasks.count) items for today, \(tomorrowTasks.count) for tomorrow, \(failedNames.count) source failures")
 
         await processPendingCompletions()
     }

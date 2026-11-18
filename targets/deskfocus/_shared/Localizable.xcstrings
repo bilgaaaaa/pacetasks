@@ -171,6 +171,36 @@
         }
       }
     },
+    "All day": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutto il giorno"
+          }
+        }
+      }
+    },
+    "Nothing left today": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nient'altro per oggi"
+          }
+        }
+      }
+    },
+    "Open tomorrow": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apri domani"
+          }
+        }
+      }
+    },
     "The DeskFocus widget on your desktop, and PaceTasks in the menu bar.": {
       "localizations": {
         "it": {
@@ -2007,6 +2037,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Titolo"
+          }
+        }
+      }
+    },
+    "To-do": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Da fare"
           }
         }
       }

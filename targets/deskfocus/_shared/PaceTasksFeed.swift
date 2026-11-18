@@ -41,14 +41,28 @@ enum PaceTasksFeed {
     /// Today's tasks from the last list the app wrote, which also holds tomorrow's so the widget is right after midnight
     /// before the app is opened; empty before the first write or when the JSON is unreadable.
     static func tasks(now: Date) -> [DeskTask] {
+        let todayKey = dayKeyFormatter.string(from: now)
+        return payloads().filter { $0.isDue(onDayKey: todayKey) }.map { task(from: $0, on: now) }
+    }
+
+    /// Tasks that join the list tomorrow: due tomorrow and not already due today, for the widget's "Tomorrow" section.
+    static func tomorrowTasks(now: Date) -> [DeskTask] {
+        let tomorrow = DateInterval.day(containing: now).end
+        let todayKey = dayKeyFormatter.string(from: now)
+        let tomorrowKey = dayKeyFormatter.string(from: tomorrow)
+        return payloads()
+            .filter { $0.isDue(onDayKey: tomorrowKey) && !$0.isDue(onDayKey: todayKey) }
+            .map { task(from: $0, on: tomorrow, isDated: true) }
+    }
+
+    /// Every task in the app's last write; empty before the first write or when the JSON is unreadable.
+    private static func payloads() -> [Payload] {
         guard let json = defaults?.string(forKey: DeskfocusConstants.paceTasksKey), let data = json.data(using: .utf8) else {
             Log.sync.debug("No PaceTasks tasks written yet")
             return []
         }
         do {
-            let payloads = try JSONDecoder().decode([Payload].self, from: data)
-            let todayKey = dayKeyFormatter.string(from: now)
-            return payloads.filter { $0.isDue(onDayKey: todayKey) }.map { task(from: $0, now: now) }
+            return try JSONDecoder().decode([Payload].self, from: data)
         } catch {
             Log.sync.error("Could not read PaceTasks tasks: \(error.localizedDescription, privacy: .public)")
             return []
@@ -74,8 +88,9 @@ enum PaceTasksFeed {
         Log.sync.debug("\(completions.count) PaceTasks completions waiting for the app")
     }
 
-    private static func task(from payload: Payload, now: Date) -> DeskTask {
-        let scheduled = payload.scheduledTime.flatMap { time(today: now, hhmm: $0) }
+    /// Today's tasks stay undated, as PaceTasks places them; tomorrow's carry their day so `Agenda` puts them on it.
+    private static func task(from payload: Payload, on day: Date, isDated: Bool = false) -> DeskTask {
+        let scheduled = payload.scheduledTime.flatMap { time(on: day, hhmm: $0) }
         return DeskTask(
             id: DeskTask.makeId(source: .paceTasks, containerIdentifier: containerIdentifier, sourceIdentifier: payload.id),
             source: .paceTasks,
@@ -85,7 +100,7 @@ enum PaceTasksFeed {
             startDate: nil,
             endDate: nil,
             // Undated tasks still belong to today in PaceTasks, so the widget shows them as today's to-dos.
-            dueDate: scheduled,
+            dueDate: scheduled ?? (isDated ? Calendar.current.startOfDay(for: day) : nil),
             isAllDay: scheduled == nil,
             listName: "PaceTasks",
             colorHex: DeskfocusConstants.paceTasksColorHex,
@@ -93,11 +108,11 @@ enum PaceTasksFeed {
         )
     }
 
-    /// Today at "HH:MM", or nil when the text is not a valid time.
-    private static func time(today now: Date, hhmm: String) -> Date? {
+    /// That day at "HH:MM", or nil when the text is not a valid time.
+    private static func time(on day: Date, hhmm: String) -> Date? {
         let parts = hhmm.split(separator: ":").compactMap { Int($0) }
         guard parts.count == 2, (0..<24).contains(parts[0]), (0..<60).contains(parts[1]) else { return nil }
-        return Calendar.current.date(bySettingHour: parts[0], minute: parts[1], second: 0, of: now)
+        return Calendar.current.date(bySettingHour: parts[0], minute: parts[1], second: 0, of: day)
     }
 }
 

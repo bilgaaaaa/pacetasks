@@ -11,6 +11,8 @@ struct SavedFocusProgress: Codable, Equatable {
 struct DeskfocusSnapshot: Codable, Equatable {
     /// Today's list, as shown by the widget.
     var tasks: [DeskTask] = []
+    /// Tomorrow's events and to-dos, for the widget's "Tomorrow" section.
+    var tomorrowTasks: [DeskTask] = []
     /// Items from other days the user started or checked off, so actions can find them.
     var referencedTasks: [DeskTask] = []
     /// Items checked off locally; hidden from every list until a sync drops them.
@@ -37,6 +39,7 @@ struct DeskfocusSnapshot: Codable, Equatable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         tasks = try container.decodeIfPresent([DeskTask].self, forKey: .tasks) ?? []
+        tomorrowTasks = try container.decodeIfPresent([DeskTask].self, forKey: .tomorrowTasks) ?? []
         referencedTasks = try container.decodeIfPresent([DeskTask].self, forKey: .referencedTasks) ?? []
         completedTaskIds = try container.decodeIfPresent(Set<String>.self, forKey: .completedTaskIds) ?? []
         pendingCompletionIds = try container.decodeIfPresent(Set<String>.self, forKey: .pendingCompletionIds) ?? []
@@ -63,6 +66,15 @@ struct DeskfocusSnapshot: Codable, Equatable {
     /// Today's list as shown to the user: not checked off and not already over.
     func visibleTasks(at now: Date) -> [DeskTask] {
         tasks.filter { !completedTaskIds.contains($0.id) && !$0.hasEnded(at: now) }
+    }
+
+    /// Tomorrow's list as shown under today: not checked off, and only items that really fall on the day after `now`,
+    /// so a list saved before midnight never shows today's items as tomorrow's.
+    func visibleTomorrowTasks(after now: Date) -> [DeskTask] {
+        let today = DateInterval.day(containing: now)
+        let tomorrow = DateInterval.day(containing: today.end)
+        let open = tomorrowTasks.filter { !completedTaskIds.contains($0.id) }
+        return Agenda.tasks(open, on: tomorrow, today: today)
     }
 
     /// How many items were checked off today, for the progress ring.
