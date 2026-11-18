@@ -1,5 +1,13 @@
 import { makeTask } from "../testing/makeTask";
-import { countResetReasons, resetOutcome, resetPatch, selectResetItems } from "../weeklyReset";
+import {
+  countResetReasons,
+  keepResetTask,
+  keptIdsThisWeek,
+  parseKeptResetTasks,
+  resetOutcome,
+  resetPatch,
+  selectResetItems,
+} from "../weeklyReset";
 
 const TODAY = "2026-09-28"; // a Monday
 const RECENT = "2026-09-25T08:00:00.000Z";
@@ -43,12 +51,68 @@ describe("selectResetItems", () => {
     expect(selectResetItems(tasks, TODAY)).toEqual([]);
   });
 
+  it("skips the tasks already kept this week", () => {
+    const tasks = [
+      makeTask({ id: "kept", due_date: "2026-09-26", created_at: RECENT }),
+      makeTask({ id: "open", due_date: "2026-09-27", created_at: RECENT }),
+    ];
+
+    expect(selectResetItems(tasks, TODAY, { keptIds: ["kept"] }).map((item) => item.task.id)).toEqual(["open"]);
+  });
+
   it("measures an undated task's age in the phone's days", () => {
     // 22:30 UTC on the 14th is already the 15th in Rome: 13 days before the 28th, not 14.
     const task = makeTask({ due_date: null, created_at: "2026-09-14T22:30:00.000Z" });
 
-    expect(selectResetItems([task], TODAY, "Europe/Rome")).toEqual([]);
-    expect(selectResetItems([task], TODAY, "UTC").map((item) => item.reason)).toEqual(["undated_old"]);
+    expect(selectResetItems([task], TODAY, { timeZone: "Europe/Rome" })).toEqual([]);
+    expect(selectResetItems([task], TODAY, { timeZone: "UTC" }).map((item) => item.reason)).toEqual(["undated_old"]);
+  });
+});
+
+describe("kept tasks", () => {
+  const SUNDAY = "2026-10-04"; // the last day of TODAY's week
+  const NEXT_MONDAY = "2026-10-05";
+
+  it("remembers a kept task for the rest of its Monday-to-Sunday week", () => {
+    const kept = keepResetTask(null, "a", "2026-09-30");
+
+    expect(kept).toEqual({ weekStart: TODAY, taskIds: ["a"] });
+    expect(keptIdsThisWeek(kept, SUNDAY)).toEqual(["a"]);
+  });
+
+  it("offers a kept task again once the next week starts", () => {
+    const kept = keepResetTask(null, "a", SUNDAY);
+
+    expect(keptIdsThisWeek(kept, NEXT_MONDAY)).toEqual([]);
+    expect(keptIdsThisWeek(null, TODAY)).toEqual([]);
+  });
+
+  it("adds to this week's tasks, each listed once", () => {
+    const kept = keepResetTask(keepResetTask(keepResetTask(null, "a", TODAY), "b", SUNDAY), "a", SUNDAY);
+
+    expect(kept.taskIds).toEqual(["a", "b"]);
+  });
+
+  it("drops an earlier week's tasks when one is kept in a new week", () => {
+    const lastWeek = keepResetTask(null, "old", SUNDAY);
+
+    expect(keepResetTask(lastWeek, "new", NEXT_MONDAY)).toEqual({ weekStart: NEXT_MONDAY, taskIds: ["new"] });
+  });
+});
+
+describe("parseKeptResetTasks", () => {
+  it("reads back what was stored", () => {
+    const kept = keepResetTask(null, "a", TODAY);
+
+    expect(parseKeptResetTasks(JSON.stringify(kept))).toEqual(kept);
+  });
+
+  it("treats missing or damaged storage as nothing kept", () => {
+    expect(parseKeptResetTasks(null)).toBeNull();
+    expect(parseKeptResetTasks("not json")).toBeNull();
+    expect(parseKeptResetTasks(JSON.stringify(["a"]))).toBeNull();
+    expect(parseKeptResetTasks(JSON.stringify({ weekStart: "this week", taskIds: ["a"] }))).toBeNull();
+    expect(parseKeptResetTasks(JSON.stringify({ weekStart: TODAY }))).toBeNull();
   });
 });
 

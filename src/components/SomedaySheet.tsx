@@ -1,79 +1,70 @@
 import React from "react";
 import { Modal, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { getCategory } from "../lib/categories";
 import { makeStyles, useTheme } from "../hooks/useTheme";
 import { Task } from "../lib/types";
 import { ErrorBanner } from "./ErrorBanner";
+import { TaskActionRow } from "./TaskActionRow";
+import { t } from "../i18n";
 
 interface Props {
   visible: boolean;
   tasks: Task[]; // parked tasks, from selectSomedayTasks
   errorMessage: string | null; // a failed save from the task list, which this sheet covers
   onBringBack: (taskId: string) => void;
-  onDelete: (taskId: string) => void;
+  onDelete: (taskId: string) => void; // already confirmed by the row
+  onEdit: (task: Task) => void; // the screen closes this sheet, then opens the task sheet
+  onDismissed: () => void; // the sheet has fully gone (iOS): lets the screen open the next sheet
   onClose: () => void;
 }
 
 // Full-screen sheet listing the "someday" tasks: things worth keeping but not
-// part of the daily workload. Each can be brought back to Today or deleted.
+// part of the daily workload. Each can be brought back to Today or deleted
+// (after a confirmation, see TaskActionRow).
 // Purely presentational — the list and the actions come from the screen.
-export function SomedaySheet({ visible, tasks, errorMessage, onBringBack, onDelete, onClose }: Props) {
+export function SomedaySheet({ visible, tasks, errorMessage, onBringBack, onDelete, onEdit, onDismissed, onClose }: Props) {
   const { theme } = useTheme();
   const styles = useStyles();
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+      onDismiss={onDismissed}
+    >
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <View style={styles.flex}>
-            <Text style={styles.eyebrow}>SOMEDAY</Text>
-            <Text style={styles.title}>Not now, maybe later</Text>
+            <Text style={styles.eyebrow}>{t("SOMEDAY")}</Text>
+            <Text style={styles.title}>{t("Not now, maybe later")}</Text>
           </View>
-          <TouchableOpacity onPress={onClose} hitSlop={8} style={styles.closeButton} accessibilityLabel="Close">
+          <TouchableOpacity onPress={onClose} hitSlop={8} style={styles.closeButton} accessibilityLabel={t("Close")}>
             <Ionicons name="close" size={18} color={theme.colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
         <ScrollView style={styles.flex} contentContainerStyle={styles.content}>
           <Text style={styles.subtitle}>
-            Parked tasks stay out of your day until you bring them back.
+            {t("Parked tasks stay out of your day until you bring them back.")}
           </Text>
 
           {errorMessage && <ErrorBanner style={styles.error} message={errorMessage} />}
 
           {tasks.length === 0 ? (
             <View style={styles.empty}>
-              <Text style={styles.emptyText}>Nothing parked right now.</Text>
+              <Text style={styles.emptyText}>{t("Nothing parked right now.")}</Text>
             </View>
           ) : (
             tasks.map((task) => (
-              <View key={task.id} style={styles.row}>
-                <View style={styles.rowText}>
-                  <Text style={styles.taskTitle}>{task.title}</Text>
-                  <Text style={styles.meta}>
-                    {[task.category ? getCategory(task.category).label : null, `~${task.estimated_minutes} min`]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  style={styles.bringBackButton}
-                  onPress={() => onBringBack(task.id)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Bring back ${task.title}`}
-                >
-                  <Text style={styles.bringBackText}>Bring back</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.deleteButton}
-                  onPress={() => onDelete(task.id)}
-                  hitSlop={8}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Delete ${task.title}`}
-                >
-                  <Ionicons name="trash-outline" size={16} color={theme.colors.textTertiary} />
-                </TouchableOpacity>
-              </View>
+              <TaskActionRow
+                key={task.id}
+                task={task}
+                actionLabel={t("Bring back")}
+                onAction={(parked) => onBringBack(parked.id)}
+                onEdit={onEdit}
+                onDelete={onDelete}
+              />
             ))
           )}
         </ScrollView>
@@ -129,47 +120,6 @@ const useStyles = makeStyles((theme) => ({
   },
   error: {
     marginBottom: theme.spacing.md,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: theme.spacing.sm,
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.lg,
-    padding: theme.spacing.md,
-    marginBottom: theme.spacing.sm,
-  },
-  rowText: {
-    flex: 1,
-    gap: 2,
-  },
-  taskTitle: {
-    color: theme.colors.textPrimary,
-    fontSize: theme.typography.headline.fontSize,
-    fontWeight: theme.typography.headline.fontWeight,
-  },
-  meta: {
-    color: theme.colors.textSecondary,
-    fontSize: theme.typography.footnote.fontSize,
-  },
-  bringBackButton: {
-    backgroundColor: theme.colors.accentDark,
-    borderRadius: theme.radius.pill,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-  },
-  bringBackText: {
-    color: theme.colors.onAccent,
-    fontSize: theme.typography.footnote.fontSize,
-    fontWeight: "700",
-  },
-  deleteButton: {
-    width: 28,
-    height: 28,
-    borderRadius: theme.radius.sm,
-    backgroundColor: theme.colors.surfaceAlt,
-    alignItems: "center",
-    justifyContent: "center",
   },
   empty: {
     backgroundColor: theme.colors.surfaceAlt,

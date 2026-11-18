@@ -106,6 +106,13 @@ export function selectedDrafts(state: BrainDumpState): TaskDraft[] {
     .map((edit) => ({ ...edit.draft, title: edit.draft.title.trim() }));
 }
 
+// The session to discard when the sheet closes: a proposal the user reviewed but did not add.
+// Null while it is being committed, or the discard could land first and the confirmed tasks be lost.
+export function sessionToDiscardOnClose(state: BrainDumpState): string | null {
+  if (state.phase !== "review" || state.proposal?.status !== "proposed") return null;
+  return state.proposal.sessionId;
+}
+
 function updateAt<T>(items: T[], index: number, update: (item: T) => T): T[] {
   return items.map((item, i) => (i === index ? update(item) : item));
 }

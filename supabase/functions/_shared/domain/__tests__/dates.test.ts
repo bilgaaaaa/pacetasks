@@ -4,6 +4,7 @@ import {
   isValidDateKey,
   isValidTimeOfDay,
   nextWeekendDay,
+  startOfWeek,
   toLocalDateKey,
   weekdayIndex,
 } from "../dates";
@@ -59,6 +60,13 @@ describe("weekend helpers", () => {
   it("gives the day of the week, Sunday first", () => {
     expect(weekdayIndex("2026-09-27")).toBe(0);
     expect(weekdayIndex("2026-09-28")).toBe(1);
+  });
+
+  it("names a week by its Monday, Sunday being the last day", () => {
+    expect(startOfWeek("2026-09-28")).toBe("2026-09-28"); // Monday
+    expect(startOfWeek("2026-10-01")).toBe("2026-09-28"); // Thursday
+    expect(startOfWeek("2026-10-04")).toBe("2026-09-28"); // Sunday
+    expect(startOfWeek("2026-10-05")).toBe("2026-10-05"); // the next Monday
   });
 
   it("finds the first weekend day after a date", () => {

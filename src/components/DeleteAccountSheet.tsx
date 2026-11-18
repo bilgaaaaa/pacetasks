@@ -16,6 +16,7 @@ import { AccountDeletionState } from "../lib/accountDeletionState";
 import { makeStyles, useTheme } from "../hooks/useTheme";
 import { Button } from "./Button";
 import { ErrorBanner } from "./ErrorBanner";
+import { t } from "../i18n";
 
 interface Props {
   state: AccountDeletionState;
@@ -36,8 +37,8 @@ export function DeleteAccountSheet({ state, onConfirm, onClose }: Props) {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <View style={styles.flex}>
-            <Text style={styles.eyebrow}>{DATA_SECTION_LABEL}</Text>
-            <Text style={styles.title}>{phase === "deleted" ? "Done" : deletionTitle(hasAccount)}</Text>
+            <Text style={styles.eyebrow}>{t(DATA_SECTION_LABEL)}</Text>
+            <Text style={styles.title}>{phase === "deleted" ? t("Done") : deletionTitle(hasAccount)}</Text>
           </View>
           {!isDeleting && (
             <TouchableOpacity
@@ -45,7 +46,7 @@ export function DeleteAccountSheet({ state, onConfirm, onClose }: Props) {
               hitSlop={8}
               style={styles.closeButton}
               accessibilityRole="button"
-              accessibilityLabel="Close"
+              accessibilityLabel={t("Close")}
             >
               <Ionicons name="close" size={18} color={theme.colors.textSecondary} />
             </TouchableOpacity>
@@ -60,7 +61,7 @@ export function DeleteAccountSheet({ state, onConfirm, onClose }: Props) {
             <Text style={styles.doneText} accessibilityRole="alert">
               {deletionDoneMessage(hasAccount)}
             </Text>
-            <Button style={styles.doneButton} label="Close" onPress={onClose} />
+            <Button style={styles.doneButton} label={t("Close")} onPress={onClose} />
           </View>
         ) : (
           <ScrollView style={styles.flex} contentContainerStyle={styles.content}>
@@ -73,18 +74,18 @@ export function DeleteAccountSheet({ state, onConfirm, onClose }: Props) {
                 </View>
               ))}
             </View>
-            <Text style={styles.warning}>{DELETION_WARNING}</Text>
+            <Text style={styles.warning}>{t(DELETION_WARNING)}</Text>
 
             {error && <ErrorBanner message={error} />}
 
             <Button
               style={styles.onSurface}
-              label={isDeleting ? DELETION_BUSY_LABEL : deletionConfirmLabel(hasAccount)}
+              label={isDeleting ? t(DELETION_BUSY_LABEL) : deletionConfirmLabel(hasAccount)}
               variant="destructive"
               loading={isDeleting}
               onPress={onConfirm}
             />
-            <Button label={DELETION_CANCEL_LABEL} disabled={isDeleting} onPress={onClose} />
+            <Button label={t(DELETION_CANCEL_LABEL)} disabled={isDeleting} onPress={onClose} />
           </ScrollView>
         )}
       </SafeAreaView>

@@ -4,7 +4,9 @@ name: Verify
 on:
   push:
     branches: [main]
+    paths-ignore: ['mac/**', '.github/workflows/mac*.yml']
   pull_request:
+    paths-ignore: ['mac/**', '.github/workflows/mac*.yml']
 
 concurrency:
   group: verify-${{ github.ref }}
@@ -12,7 +14,7 @@ concurrency:
 
 jobs:
   verify:
-    # Pinned: ubuntu-latest moved to 26.04, where Playwright cannot install Chromium yet.
+    # Pinned: ubuntu-latest is now Ubuntu 26.04, where Playwright 1.56 can't install Chromium.
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -24,6 +26,8 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
+      # The Italian website is built from the English pages; this fails when it has fallen behind.
+      - run: python3 scripts/build_site_it.py --check
       - run: npx playwright install --with-deps chromium
       - run: npm run e2e
       # Kept even when a step fails, so the film shows what went wrong.

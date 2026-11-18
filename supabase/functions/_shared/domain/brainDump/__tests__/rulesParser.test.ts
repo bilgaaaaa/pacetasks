@@ -1,5 +1,20 @@
 import { brainDumpAiResultSchema } from "../aiResult";
+import { resolveDate } from "../resolveDate";
 import { parseBrainDumpWithRules } from "../rulesParser";
+
+const MONDAY = "2026-10-12";
+
+// Title, resolved day and clock time of each task, with today a Monday.
+function summarize(text: string, todayKey = MONDAY): Array<[string, string | null, string | null]> {
+  return parseBrainDumpWithRules(text).candidates.map((candidate) => {
+    const resolution = candidate.when ? resolveDate(candidate.when, todayKey) : null;
+    return [candidate.title, resolution?.ok ? resolution.dueDate : null, candidate.dueTime];
+  });
+}
+
+function categoriesOf(lines: string[]): Array<string | null> {
+  return parseBrainDumpWithRules(lines.join("\n")).candidates.map((candidate) => candidate.category);
+}
 
 describe("parseBrainDumpWithRules", () => {
   it("splits a dump into tasks with dates, times and durations", () => {
@@ -61,8 +76,8 @@ describe("parseBrainDumpWithRules", () => {
 
     expect(result.candidates.map((c) => c.when)).toEqual([
       { kind: "relative_day", offsetDays: 3, relation: "by", text: "within 3 days" },
-      { kind: "weekday", weekday: 6, relation: "on", text: "this weekend" },
-      { kind: "weekday", weekday: 1, relation: "next", text: "pazartesi" },
+      { kind: "weekend", relation: "on", text: "this weekend" },
+      { kind: "weekday", weekday: 1, relation: "next_week", text: "pazartesi" },
       { kind: "vague", text: "next week" },
     ]);
     expect(result.candidates[3].flexible).toBe(false);
@@ -199,10 +214,396 @@ describe("parseBrainDumpWithRules", () => {
   it("tags each task's language, ignoring foreign date words and names", () => {
     const result = parseBrainDumpWithRules("domani call the bank, poi comprare il pane, buy a gift for Ayşe, markete git");
 
-    expect(result.candidates.map((c) => c.language)).toEqual(["en", "it", "en", "en"]);
+    expect(result.candidates.map((c) => c.language)).toEqual(["en", "it", "en", "tr"]);
     expect(parseBrainDumpWithRules("yarın markete git, faturayı öde").candidates.map((c) => c.language)).toEqual([
       "tr",
       "tr",
+    ]);
+  });
+
+  it("tags short tasks by one Turkish letter, a final Turkish verb or an Italian marker", () => {
+    const result = parseBrainDumpWithRules("ilaç al\nişe git\nriunione alle 15\ninsalata al tonno\ncall Ayşe");
+
+    expect(result.candidates.map((c) => [c.title, c.language])).toEqual([
+      ["İlaç al", "tr"],
+      ["İşe git", "tr"],
+      ["Riunione", "it"],
+      ["Insalata al tonno", "it"],
+      ["Call Ayşe", "en"],
+    ]);
+  });
+
+  it("falls back to the phone's locale only when the text gives no clue", () => {
+    expect(parseBrainDumpWithRules("sinema", "tr-TR").candidates[0]).toMatchObject({ title: "Sinema", language: "tr" });
+    expect(parseBrainDumpWithRules("sinema", "de-DE").candidates[0].language).toBe("en");
+    expect(parseBrainDumpWithRules("call the bank", "tr-TR").candidates[0].language).toBe("en");
+  });
+
+  it("files bills, rent and taxes under home in every language", () => {
+    expect(
+      categoriesOf([
+        "pay the bill on friday",
+        "pagare la bolletta venerdì",
+        "cuma günü faturayı öde",
+        "kirayı öde",
+        "aidatı yatır",
+        "pagare le tasse",
+        "send the invoices",
+      ])
+    ).toEqual(["home", "home", "home", "home", "home", "home", "home"]);
+    expect(categoriesOf(["kiraz al"])).toEqual([null]);
+  });
+
+  it("knows everyday category words, their plurals and Turkish suffixes", () => {
+    expect(
+      categoriesOf([
+        "raporu müdüre gönder",
+        "e-postaları yanıtla",
+        "riunioni con i clienti",
+        "prepare the reports",
+        "marketten süt al",
+        "andare al supermercato",
+        "evi temizlik yap",
+        "passare l'aspirapolvere",
+        "koşuya çık",
+        "ilaç al",
+        "chiama il dottore",
+        "kitap oku",
+        "telefonare a Luca",
+      ])
+    ).toEqual([
+      "work",
+      "work",
+      "work",
+      "work",
+      "shopping",
+      "shopping",
+      "home",
+      "home",
+      "health",
+      "health",
+      "health",
+      "personal",
+      "personal",
+    ]);
+  });
+
+  it("does not read 'after work' or 'sometime' wording as a category", () => {
+    expect(
+      categoriesOf(["işten sonra spor", "prima del lavoro passare in farmacia", "bir ara dolabı düzenle", "okuldan çocukları al"])
+    ).toEqual(["health", "health", null, null]);
+  });
+
+  it("keeps the 'e' of e-mail and e-posta", () => {
+    expect(summarize("e-mail the boss\ne-postaları yanıtla").map(([title]) => title)).toEqual([
+      "E-mail the boss",
+      "E-postaları yanıtla",
+    ]);
+  });
+
+  it("keeps a list of things joined by and / e / ve as one task", () => {
+    expect(
+      summarize("buy bread and milk\ncomprare pane e latte\nekmek ve süt al\nMarco e Anna cena sabato").map(
+        ([title]) => title
+      )
+    ).toEqual(["Buy bread and milk", "Comprare pane e latte", "Ekmek ve süt al", "Marco e Anna cena"]);
+  });
+
+  it("splits at and / e / ve when the next part is a task of its own", () => {
+    expect(summarize("call mom and email the boss").map(([title]) => title)).toEqual(["Call mom", "Email the boss"]);
+    expect(summarize("chiamare Luca e comprare il pane").map(([title]) => title)).toEqual([
+      "Chiamare Luca",
+      "Comprare il pane",
+    ]);
+    expect(summarize("annemi ara ve faturayı öde").map(([title]) => title)).toEqual(["Annemi ara", "Faturayı öde"]);
+    expect(summarize("call mom at 5pm and dad at 6")).toEqual([
+      ["Call mom", null, "17:00"],
+      ["Dad", null, "18:00"],
+    ]);
+  });
+
+  it("splits at 'sonra' only between two finished Turkish tasks", () => {
+    expect(
+      summarize(
+        "toplantıdan sonra Ali'yi ara\nAli'yi sonra ara\n2 saat sonra annemi ara\nmarkete git sonra eczaneye uğra"
+      ).map(([title]) => title)
+    ).toEqual([
+      "Toplantıdan sonra Ali'yi ara",
+      "Ali'yi sonra ara",
+      "2 saat sonra annemi ara",
+      "Markete git",
+      "Eczaneye uğra",
+    ]);
+  });
+
+  it("resolves a day of next week inside next week and cuts the whole phrase", () => {
+    expect(
+      summarize(
+        "haftaya cuma toplantı\ngelecek hafta salı toplantı\nnext week friday call bank\nsettimana prossima martedì riunione"
+      )
+    ).toEqual([
+      ["Toplantı", "2026-10-23", null],
+      ["Toplantı", "2026-10-20", null],
+      ["Call bank", "2026-10-23", null],
+      ["Riunione", "2026-10-20", null],
+    ]);
+    expect(summarize("next friday dentist\nvenerdì prossimo dentista")).toEqual([
+      ["Dentist", "2026-10-16", null],
+      ["Dentista", "2026-10-16", null],
+    ]);
+  });
+
+  it("reads 'this weekend' as today once the weekend has started", () => {
+    const sunday = "2026-10-18";
+    const text = "this weekend clean the garage\nbu hafta sonu dolabı topla\npulire casa questo weekend";
+
+    expect(summarize(text, sunday).map(([, day]) => day)).toEqual([sunday, sunday, sunday]);
+    expect(summarize(text).map(([, day]) => day)).toEqual(["2026-10-17", "2026-10-17", "2026-10-17"]);
+    expect(summarize("pulire casa questo weekend\nby the weekend finish taxes").map(([title]) => title)).toEqual([
+      "Pulire casa",
+      "Finish taxes",
+    ]);
+    expect(parseBrainDumpWithRules("by the weekend finish taxes").candidates[0].when).toMatchObject({ relation: "by" });
+  });
+
+  it("takes an early hour as afternoon unless something says morning", () => {
+    expect(
+      summarize(
+        "meeting at 3\ncall mom at 5\ncena alle 7\nsaat 5'te annemi ara\ndomani mattina alle 7 palestra\nwake up at 6am\ndoctor at 07:30\ntreno alle 6.45\nstandup at 9"
+      ).map(([, , time]) => time)
+    ).toEqual(["15:00", "17:00", "19:00", "17:00", "07:00", "06:00", "07:30", "06:45", "09:00"]);
+  });
+
+  it("reads dotted, spoken and approximate times", () => {
+    expect(
+      summarize("dentista 16.30 martedì\ncena alle 19 e 30\nriunione alle 9 e mezza\nsaat 3 gibi toplantı\nyarın akşam 7’de koşu")
+    ).toEqual([
+      ["Dentista", "2026-10-13", "16:30"],
+      ["Cena", null, "19:30"],
+      ["Riunione", null, "09:30"],
+      ["Toplantı", null, "15:00"],
+      ["Koşu", "2026-10-13", "19:00"],
+    ]);
+    expect(
+      summarize("pay 4.30 for coffee\npay 15.00 euros to Marco\npagare bolletta 18.30").map(([, , time]) => time)
+    ).toEqual([null, null, null]);
+  });
+
+  it("leaves 'in 2 hours' in the title instead of reading it as a duration", () => {
+    const result = parseBrainDumpWithRules("call mom in 2 hours\ntra 2 ore chiamare Luca\n20 dakika sonra ocağı kapat");
+
+    expect(result.candidates.map((c) => [c.title, c.estimatedDurationMinutes])).toEqual([
+      ["Call mom in 2 hours", null],
+      ["Tra 2 ore chiamare Luca", null],
+      ["20 dakika sonra ocağı kapat", null],
+    ]);
+  });
+
+  it("reads durations written in words", () => {
+    const result = parseBrainDumpWithRules(
+      "walk the dog half an hour\nmezz'ora di yoga\nyarım saat yürüyüş\nstudiare un'ora\nread for an hour\nbir saat kitap oku\nwork on thesis for an hour and a half"
+    );
+
+    expect(result.candidates.map((c) => [c.title, c.estimatedDurationMinutes])).toEqual([
+      ["Walk the dog", 30],
+      ["Yoga", 30],
+      ["Yürüyüş", 30],
+      ["Studiare", 60],
+      ["Read", 60],
+      ["Kitap oku", 60],
+      ["Work on thesis", 90],
+    ]);
+  });
+
+  it("recognises inflected Turkish times of day", () => {
+    const result = parseBrainDumpWithRules("çarşamba akşamı sinema\nöğleden sonra 3'te toplantı");
+
+    expect(result.candidates.map((c) => [c.title, c.timeOfDay, c.dueTime])).toEqual([
+      ["Sinema", "evening", null],
+      ["Toplantı", "afternoon", "15:00"],
+    ]);
+    expect(result.candidates[0].when).toMatchObject({ kind: "weekday", weekday: 3 });
+  });
+
+  it("cuts a day that can only be a date, wherever it stands", () => {
+    expect(
+      summarize(
+        "faturayı cuma günü öde\npay the bill friday morning\ncall the bank on october 15 about the loan\ndentist friday 3pm with mom"
+      )
+    ).toEqual([
+      ["Faturayı öde", "2026-10-16", null],
+      ["Pay the bill", "2026-10-16", null],
+      ["Call the bank about the loan", "2026-10-15", null],
+      ["Dentist with mom", "2026-10-16", "15:00"],
+    ]);
+  });
+
+  it("reads days of the month and the end of the month", () => {
+    expect(
+      summarize(
+        "15 ekim'de doktor randevusu\nil 15 ottobre dentista\non march 3rd renew passport\nby the 15th submit report\nentro il 20 pagare le tasse\nayın 15'inde kira öde\nFriday 16 October dentist checkup"
+      )
+    ).toEqual([
+      ["Doktor randevusu", "2026-10-15", null],
+      ["Dentista", "2026-10-15", null],
+      ["Renew passport", "2027-03-03", null],
+      ["Submit report", "2026-10-15", null],
+      ["Pagare le tasse", "2026-10-20", null],
+      ["Kira öde", "2026-10-15", null],
+      ["Dentist checkup", "2026-10-16", null],
+    ]);
+    expect(summarize("finish report by end of month\npagare affitto entro fine mese\nay sonuna kadar raporu bitir")).toEqual([
+      ["Finish report", "2026-10-31", null],
+      ["Pagare affitto", "2026-10-31", null],
+      ["Raporu bitir", "2026-10-31", null],
+    ]);
+    expect(parseBrainDumpWithRules("by the 15th submit report").candidates[0].when).toEqual({
+      kind: "month_day",
+      month: null,
+      day: 15,
+      relation: "by",
+      text: "the 15th",
+    });
+  });
+
+  it("does not mistake ordinals and counts for a day of the month", () => {
+    expect(
+      summarize("meeting on the 3rd floor\nplan the 21st birthday party\ncomprare il 3 in 1 per la lavatrice").map(
+        ([title, day]) => [title, day]
+      )
+    ).toEqual([
+      ["Meeting on the 3rd floor", null],
+      ["Plan the 21st birthday party", null],
+      ["Comprare il 3 in 1 per la lavatrice", null],
+    ]);
+  });
+
+  it("leaves a repeating day in the title and sets no date", () => {
+    expect(summarize("water plants every monday\nogni lunedì palestra\nher pazartesi spor")).toEqual([
+      ["Water plants every monday", null, null],
+      ["Ogni lunedì palestra", null, null],
+      ["Her pazartesi spor", null, null],
+    ]);
+  });
+
+  it("decides the half of the day from context words before guessing", () => {
+    expect(
+      summarize(
+        "wake up at 6\nsveglia alle 6\nsaat 6'da kalk\ntrain at 5:30\ndinner at 8\ncena alle 8\nparty at 10\ngym at 7\npick up kids at 3:30"
+      ).map(([, , time]) => time)
+    ).toEqual(["06:00", "06:00", "06:00", "05:30", "20:00", "20:00", "22:00", "07:00", "03:30"]);
+  });
+
+  it("asks for a check when the half of the day was a guess", () => {
+    const result = parseBrainDumpWithRules("meeting at 3\npick up kids at 3:30\nmeeting at 3pm\nwake up at 6\nstandup at 9");
+
+    expect(result.candidates.map((c) => c.ambiguities)).toEqual([
+      [{ field: "scheduled_time", reason: '"at 3" could be morning or afternoon' }],
+      [{ field: "scheduled_time", reason: '"at 3:30" could be morning or afternoon' }],
+      [],
+      [],
+      [],
+    ]);
+  });
+
+  it("reads 'at N' as a time only where a time can stand", () => {
+    expect(summarize("look at 3 apartments\ndrop package at 12 Main Street\ntomorrow at 5 pick up kids\ndinner at 8 with Sara")).toEqual([
+      ["Look at 3 apartments", null, null],
+      ["Drop package at 12 Main Street", null, null],
+      ["Pick up kids", "2026-10-13", "17:00"],
+      ["Dinner with Sara", null, "20:00"],
+    ]);
+  });
+
+  it("reads deadlines written with 'prima del', 'before the' and '…dan önce'", () => {
+    const result = parseBrainDumpWithRules(
+      "pagare le tasse prima del 15 aprile\nconsegnare prima dell'8 marzo\nfinish report before the 15th\n15 nisandan önce vergiyi öde\nyarına kadar ödevi bitir\ncumadan önce raporu gönder"
+    );
+
+    expect(result.candidates.map((c) => [c.title, c.when?.kind === "vague" ? null : c.when?.relation])).toEqual([
+      ["Pagare le tasse", "by"],
+      ["Consegnare", "by"],
+      ["Finish report", "by"],
+      ["Vergiyi öde", "by"],
+      ["Ödevi bitir", "by"],
+      ["Raporu gönder", "by"],
+    ]);
+    expect(summarize("yarın önce süt al")).toEqual([["Önce süt al", "2026-10-13", null]]);
+  });
+
+  it("cuts the 'di' that led in a day", () => {
+    expect(
+      summarize("guardare la partita di domenica sera\ncomprare biglietti per il concerto di venerdì prossimo").map(
+        ([title]) => title
+      )
+    ).toEqual(["Guardare la partita", "Comprare biglietti per il concerto"]);
+  });
+
+  it("keeps the Turkish verb 'at' at the end of a title", () => {
+    const result = parseBrainDumpWithRules("yarın Ali'ye mail at\nbugün 3 mail at");
+
+    expect(result.candidates.map((c) => [c.title, c.language])).toEqual([
+      ["Ali'ye mail at", "tr"],
+      ["3 mail at", "tr"],
+    ]);
+  });
+
+  it("starts a new task at 'and I should…'", () => {
+    expect(summarize("I need to call the bank and I should buy milk").map(([title]) => title)).toEqual([
+      "I need to call the bank",
+      "I should buy milk",
+    ]);
+  });
+
+  it("reads rules through Turkish capitals and keeps them in the title", () => {
+    const result = parseBrainDumpWithRules("ACİL: faturayı gönder\nÖNEMLİ: sunumu bitir\nİSTANBUL bileti al PAZARTESİ");
+
+    expect(result.candidates.map((c) => [c.title, c.priority, c.when?.text ?? null])).toEqual([
+      ["Faturayı gönder", "high", null],
+      ["Sunumu bitir", "high", null],
+      ["İSTANBUL bileti al", null, "PAZARTESİ"],
+    ]);
+  });
+
+  it("drops list markers but keeps ordinals and 'p.m.' inside a sentence", () => {
+    const result = parseBrainDumpWithRules(
+      "1. buy milk\n2) call mom\n- water plants\n• pay rent\n[ ] book flights\nmeeting at 5 p.m. with Bob"
+    );
+
+    expect(result.unparsedFragments).toEqual([]);
+    expect(result.candidates.map((c) => [c.title, c.dueTime])).toEqual([
+      ["Buy milk", null],
+      ["Call mom", null],
+      ["Water plants", null],
+      ["Pay rent", null],
+      ["Book flights", null],
+      ["Meeting with Bob", "17:00"],
+    ]);
+    expect(summarize("5. bölümü oku")).toEqual([["5. bölümü oku", null, null]]);
+  });
+
+  it("adds up durations written in two parts", () => {
+    const result = parseBrainDumpWithRules(
+      "study 2 hours 30 min\n1 saat 30 dakika ders çalış\nstudiare 1 ora e 30 minuti\nrun 1h30\nwrite 1.5 hours\nlavorare 2 ore 15 minuti"
+    );
+
+    expect(result.candidates.map((c) => [c.title, c.estimatedDurationMinutes, c.dueTime])).toEqual([
+      ["Study", 150, null],
+      ["Ders çalış", 90, null],
+      ["Studiare", 90, null],
+      ["Run", 90, null],
+      ["Write", 90, null],
+      ["Lavorare", 135, null],
+    ]);
+  });
+
+  it("keeps a day name that is part of what the task is called", () => {
+    expect(summarize("cuma namazı\npazar kahvaltısı hazırla\nsunday roast with family\npranzo della domenica\ncuma toplantı")).toEqual([
+      ["Cuma namazı", "2026-10-16", null],
+      ["Pazar kahvaltısı hazırla", "2026-10-18", null],
+      ["Sunday roast with family", "2026-10-18", null],
+      ["Pranzo della domenica", "2026-10-18", null],
+      ["Toplantı", "2026-10-16", null],
     ]);
   });
 

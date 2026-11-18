@@ -35,7 +35,7 @@ describe("taskRhythm", () => {
       lateByDays: 2,
     });
     expect(isLate(laundry)).toBe(true);
-    expect(describeLastDone(laundry)).toBe("9 days ago · usually 7");
+    expect(describeLastDone(laundry)).toBe("9 days ago · usually 7 days");
   });
 
   it("has no rhythm for a task done only once", () => {

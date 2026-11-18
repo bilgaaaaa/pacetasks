@@ -1,6 +1,11 @@
 import type { BrainDumpCandidate, BrainDumpProposal } from "@domain/brainDump/types";
 import { makeTask } from "@domain/testing/makeTask";
-import { brainDumpReducer, INITIAL_BRAIN_DUMP_STATE, selectedDrafts } from "../brainDumpState";
+import {
+  brainDumpReducer,
+  INITIAL_BRAIN_DUMP_STATE,
+  selectedDrafts,
+  sessionToDiscardOnClose,
+} from "../brainDumpState";
 
 function candidate(index: number, title: string, duplicateOf: string | null = null): BrainDumpCandidate {
   return {
@@ -77,5 +82,36 @@ describe("brainDumpReducer", () => {
     const failed = { ...INITIAL_BRAIN_DUMP_STATE, error: { message: "x", retryable: false } };
     expect(brainDumpReducer(failed, { type: "setText", text: "y" }).error).toBeNull();
     expect(brainDumpReducer(failed, { type: "reset" })).toBe(INITIAL_BRAIN_DUMP_STATE);
+  });
+});
+
+describe("sessionToDiscardOnClose", () => {
+  const reviewing = brainDumpReducer(INITIAL_BRAIN_DUMP_STATE, { type: "proposalReceived", proposal: proposal() });
+
+  it("discards a proposal that is closed while being reviewed", () => {
+    expect(sessionToDiscardOnClose(reviewing)).toBe("s1");
+  });
+
+  it("never discards while the commit is on its way, nor after it", () => {
+    const committing = brainDumpReducer(reviewing, { type: "commitStarted" });
+    expect(sessionToDiscardOnClose(committing)).toBeNull();
+
+    const done = brainDumpReducer(committing, { type: "committed", tasks: [makeTask({ id: "t1" })] });
+    expect(sessionToDiscardOnClose(done)).toBeNull();
+  });
+
+  it("discards again once a failed commit is back on the review", () => {
+    const committing = brainDumpReducer(reviewing, { type: "commitStarted" });
+    const failed = brainDumpReducer(committing, { type: "failed", error: { message: "offline", retryable: true } });
+    expect(sessionToDiscardOnClose(failed)).toBe("s1");
+  });
+
+  it("has nothing to discard before a proposal, or when the server already created the tasks", () => {
+    expect(sessionToDiscardOnClose(INITIAL_BRAIN_DUMP_STATE)).toBeNull();
+    const committed = brainDumpReducer(INITIAL_BRAIN_DUMP_STATE, {
+      type: "proposalReceived",
+      proposal: proposal({ status: "committed", needsReview: false, createdTasks: [makeTask({ id: "t1" })] }),
+    });
+    expect(sessionToDiscardOnClose(committed)).toBeNull();
   });
 });

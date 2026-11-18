@@ -1,4 +1,9 @@
+import { median } from "./median.ts";
 import type { EnergyLevel, Task, TaskTiming } from "./task.ts";
+
+export const HISTORY_POLICY = {
+  recentTimings: 5, // a task's usual length comes from its latest timed runs only, so a changed habit shows quickly
+} as const;
 
 export interface TaskHistoryEntry {
   title: string; // most recent casing used for this task name
@@ -6,6 +11,8 @@ export interface TaskHistoryEntry {
   category: string | null; // most recently used category for this task
   energyLevel: EnergyLevel | null; // most recent energy this task was given, if ever
   lastMinutes: number; // last actual time if ever completed, else last estimate
+  usualMinutes: number; // median of the latest timed runs, else lastMinutes; what the add sheet fills in
+  recentMinutes: number[]; // latest timed runs, newest first, at most HISTORY_POLICY.recentTimings
   minMinutes: number | null; // only meaningful once completed at least once
   maxMinutes: number | null;
   timesCompleted: number;
@@ -35,6 +42,8 @@ export function buildTaskHistory(tasks: Task[]): Map<string, TaskHistoryEntry> {
         category: task.category,
         energyLevel: task.energy_level,
         lastMinutes: task.actual_minutes ?? task.estimated_minutes,
+        usualMinutes: task.actual_minutes ?? task.estimated_minutes,
+        recentMinutes: task.actual_minutes !== null ? [task.actual_minutes] : [],
         minMinutes: task.actual_minutes,
         maxMinutes: task.actual_minutes,
         timesCompleted: task.actual_minutes !== null ? 1 : 0,
@@ -53,6 +62,10 @@ export function buildTaskHistory(tasks: Task[]): Map<string, TaskHistoryEntry> {
           ? task.actual_minutes
           : Math.max(entry.maxMinutes, task.actual_minutes);
       entry.timesCompleted += 1;
+      if (entry.recentMinutes.length < HISTORY_POLICY.recentTimings) {
+        entry.recentMinutes.push(task.actual_minutes);
+        entry.usualMinutes = median(entry.recentMinutes);
+      }
     }
   }
 

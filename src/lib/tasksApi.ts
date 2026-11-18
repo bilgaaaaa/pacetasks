@@ -1,3 +1,4 @@
+import { toLocalDateKey } from "@domain/dates";
 import { supabase } from "./supabase";
 import { Task, TaskDraft, TaskPatch } from "./types";
 
@@ -22,25 +23,22 @@ export async function createTask(draft: TaskDraft): Promise<Task> {
   return data as Task;
 }
 
+// Completes a task through public.complete_task, the single completion path shared
+// with the Mac app. For a repeating task it also returns the next occurrence it added.
 // `actualMinutes` is null when the real time is unknown (e.g. completed via
 // Siri), so the estimate-accuracy stat isn't skewed by a guess.
 export async function completeTask(
   taskId: string,
   actualMinutes: number | null
-): Promise<Task> {
-  const { data, error } = await supabase
-    .from("tasks")
-    .update({
-      status: "done",
-      actual_minutes: actualMinutes,
-      completed_at: new Date().toISOString(),
-    })
-    .eq("id", taskId)
-    .select()
-    .single();
+): Promise<{ completed: Task; next: Task | null }> {
+  const { data, error } = await supabase.rpc("complete_task", {
+    task_id: taskId,
+    actual_minutes: actualMinutes,
+    local_day: toLocalDateKey(new Date()),
+  });
 
   if (error) throw error;
-  return data;
+  return data as { completed: Task; next: Task | null };
 }
 
 // Moves or parks a task. Patches come from @domain/taskPatch, so the same few
@@ -57,11 +55,3 @@ export async function deleteTask(taskId: string): Promise<void> {
   if (error) throw error;
 }
 
-export async function clearCompletedTasks(userId: string): Promise<void> {
-  const { error } = await supabase
-    .from("tasks")
-    .delete()
-    .eq("user_id", userId)
-    .eq("status", "done");
-  if (error) throw error;
-}

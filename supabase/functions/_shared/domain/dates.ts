@@ -36,6 +36,18 @@ export function isValidTimeOfDay(value: string): boolean {
   return TIME_OF_DAY_PATTERN.test(value);
 }
 
+// The local clock time "HH:MM" of `date` in `timeZone`, e.g. for "what's next?" on the phone's own clock.
+export function toLocalTimeOfDay(date: Date, timeZone: string): string {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone,
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const part = (type: string) => parts.find((p) => p.type === type)?.value ?? "00";
+  return `${part("hour")}:${part("minute")}`;
+}
+
 // Shifts a date key by whole days; pure calendar math, unaffected by DST.
 export function addDays(dateKey: string, days: number): string {
   const date = new Date(`${dateKey}T00:00:00Z`);
@@ -54,6 +66,12 @@ export function daysBetween(from: string, to: string): number {
 // Day of the week of a date key: 0 = Sunday … 6 = Saturday.
 export function weekdayIndex(dateKey: string): number {
   return new Date(`${dateKey}T00:00:00Z`).getUTCDay();
+}
+
+// The Monday of the Monday-to-Sunday week `dateKey` falls in; it names that week.
+export function startOfWeek(dateKey: string): string {
+  const daysSinceMonday = (weekdayIndex(dateKey) + 6) % 7;
+  return addDays(dateKey, -daysSinceMonday);
 }
 
 // The first Saturday or Sunday strictly after `dateKey`: "this weekend" seen from

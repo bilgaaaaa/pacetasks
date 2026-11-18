@@ -5,7 +5,8 @@ import type { AccountMode } from "./accountApi";
 // State machine behind the account sheet, kept pure so every transition is
 // unit-tested; useAccount only performs the network calls around it.
 
-export type AccountPhase = "form" | "sending" | "code" | "verifying" | "done";
+// "connecting" is the wait while a sign-in provider (Apple) shows its own screen and answers.
+export type AccountPhase = "form" | "sending" | "connecting" | "code" | "verifying" | "done";
 
 export interface AccountState {
   mode: AccountMode;
@@ -30,7 +31,9 @@ export type AccountAction =
   | { type: "codeSent" }
   | { type: "setCode"; code: string }
   | { type: "verifyStarted" }
-  | { type: "verified" }
+  | { type: "verified"; mode?: AccountMode } // a provider reports which it turned out to be: a new account or an existing one
+  | { type: "providerStarted" }
+  | { type: "providerCanceled" }
   | { type: "failed"; message: string }
   | { type: "editEmail" }
   | { type: "emailSuggested"; suggestion: string }
@@ -95,11 +98,19 @@ export function accountReducer(state: AccountState, action: AccountAction): Acco
       return { ...state, phase: "verifying", error: null };
 
     case "verified":
-      return { ...state, phase: "done", code: "", error: null };
+      return { ...state, mode: action.mode ?? state.mode, phase: "done", code: "", error: null };
+
+    case "providerStarted":
+      return { ...state, phase: "connecting", fieldErrors: {}, error: null };
+
+    // Closing the provider's screen is not a failure: back to the form, nothing to report.
+    case "providerCanceled":
+      return { ...state, phase: "form" };
 
     // A failed request returns to the step it came from, keeping what was typed.
     case "failed": {
-      const phase = state.phase === "verifying" ? "code" : state.phase === "sending" ? "form" : state.phase;
+      const cameFromForm = state.phase === "sending" || state.phase === "connecting";
+      const phase = state.phase === "verifying" ? "code" : cameFromForm ? "form" : state.phase;
       return { ...state, phase, error: action.message };
     }
 

@@ -7,12 +7,17 @@ import { actionLabel, introLines, itemReason, progressLabel, summaryLine } from 
 import { WeeklyResetPhase } from "../lib/weeklyResetState";
 import { Button } from "./Button";
 import { ErrorBanner } from "./ErrorBanner";
+import { t } from "../i18n";
 
 // Move decisions, laid out two per row; delete and keep sit below them.
 const MOVE_ACTION_ROWS: ResetAction[][] = [
   ["today", "tomorrow"],
   ["weekend", "someday"],
 ];
+
+// A title can be 200 characters: it shrinks, then is cut off, so it never runs into the header or the buttons.
+const TITLE_MAX_LINES = 4;
+const TITLE_MIN_SCALE = 0.6;
 
 interface Props {
   visible: boolean;
@@ -57,9 +62,9 @@ export function WeeklyResetSheet({
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <Text style={styles.eyebrow}>
-            {phase === "reviewing" ? `WEEKLY RESET · ${progressLabel(index, total).toUpperCase()}` : "WEEKLY RESET"}
+            {phase === "reviewing" ? t("WEEKLY RESET · {0}", progressLabel(index, total).toUpperCase()) : t("WEEKLY RESET")}
           </Text>
-          <TouchableOpacity onPress={onClose} hitSlop={8} style={styles.closeButton} accessibilityLabel="Close">
+          <TouchableOpacity onPress={onClose} hitSlop={8} style={styles.closeButton} accessibilityLabel={t("Close")}>
             <Ionicons name="close" size={18} color={theme.colors.textSecondary} />
           </TouchableOpacity>
         </View>
@@ -69,7 +74,7 @@ export function WeeklyResetSheet({
             <View style={styles.center}>
               {pendingCount > 0 ? (
                 <>
-                  <Text style={styles.title}>Let's clean up your brain.</Text>
+                  <Text style={styles.title}>{t("Let's clean up your brain.")}</Text>
                   {introLines(reasonCounts).map((line) => (
                     <Text key={line} style={styles.meta}>
                       {line}
@@ -78,16 +83,16 @@ export function WeeklyResetSheet({
                 </>
               ) : (
                 <>
-                  <Text style={styles.title}>Nothing to clean up.</Text>
-                  <Text style={styles.meta}>Your list is in good shape.</Text>
+                  <Text style={styles.title}>{t("Nothing to clean up.")}</Text>
+                  <Text style={styles.meta}>{t("Your list is in good shape.")}</Text>
                 </>
               )}
             </View>
             <View style={styles.actions}>
               {pendingCount > 0 ? (
-                <Button label="Start" onPress={onStart} />
+                <Button label={t("Start")} onPress={onStart} />
               ) : (
-                <Button label="Close" onPress={onClose} />
+                <Button label={t("Close")} onPress={onClose} />
               )}
             </View>
           </View>
@@ -96,7 +101,9 @@ export function WeeklyResetSheet({
         {phase === "reviewing" && item && (
           <View style={styles.body}>
             <View style={styles.center}>
-              <Text style={styles.title}>{item.task.title}</Text>
+              <Text style={styles.title} numberOfLines={TITLE_MAX_LINES} adjustsFontSizeToFit minimumFontScale={TITLE_MIN_SCALE}>
+                {item.task.title}
+              </Text>
               <Text style={styles.meta}>{itemReason(item, todayKey)}</Text>
             </View>
             <View style={styles.actions}>
@@ -141,11 +148,11 @@ export function WeeklyResetSheet({
               <View style={styles.doneIcon}>
                 <Ionicons name="checkmark" size={32} color={theme.colors.onAccent} />
               </View>
-              <Text style={styles.title}>Reset done.</Text>
-              <Text style={styles.meta}>{summaryLine(tally) || "Nothing needed changing."}</Text>
+              <Text style={styles.title}>{t("Reset done.")}</Text>
+              <Text style={styles.meta}>{summaryLine(tally) || t("Nothing needed changing.")}</Text>
             </View>
             <View style={styles.actions}>
-              <Button label="Close" onPress={onClose} />
+              <Button label={t("Close")} onPress={onClose} />
             </View>
           </View>
         )}

@@ -35,6 +35,25 @@ describe("computeStats", () => {
     expect(stats.totalCompleted).toBe(4);
   });
 
+  it("keeps yesterday's streak alive until today's first task is done", () => {
+    const done = (id: string, completedAt: string) =>
+      makeTask({ id, status: "done", actual_minutes: 5, completed_at: completedAt });
+    const untilYesterday = [done("1", "2026-09-28T07:00:00Z"), done("2", "2026-09-27T07:00:00Z")];
+
+    expect(computeStats(untilYesterday).currentStreakDays).toBe(2);
+    expect(computeStats([...untilYesterday, done("3", "2026-09-29T06:00:00Z")]).currentStreakDays).toBe(3);
+    expect(computeStats([done("old", "2026-09-27T07:00:00Z")]).currentStreakDays).toBe(0);
+  });
+
+  it("scores an estimate that was too long the same as one that was too short", () => {
+    const finished = (estimated: number, actual: number) =>
+      makeTask({ status: "done", estimated_minutes: estimated, actual_minutes: actual, completed_at: "2026-09-29T07:00:00Z" });
+
+    expect(computeStats([finished(20, 10)]).estimateAccuracyPercent).toBe(50);
+    expect(computeStats([finished(10, 20)]).estimateAccuracyPercent).toBe(50);
+    expect(computeStats([finished(15, 15)]).estimateAccuracyPercent).toBe(100);
+  });
+
   it("ignores completions without real minutes in estimate accuracy", () => {
     const stats = computeStats([
       makeTask({ id: "1", status: "done", estimated_minutes: 10, actual_minutes: 20, completed_at: "2026-09-29T07:00:00Z" }),

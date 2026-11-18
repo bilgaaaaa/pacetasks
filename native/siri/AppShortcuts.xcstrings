@@ -1,0 +1,156 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Add to ${applicationName}": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi a ${applicationName}"
+          }
+        }
+      }
+    },
+    "Add a task in ${applicationName}": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi un'attività in ${applicationName}"
+          }
+        }
+      }
+    },
+    "Brain dump in ${applicationName}": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Svuota la mente in ${applicationName}"
+          }
+        }
+      }
+    },
+    "What's next in ${applicationName}": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cosa c'è dopo in ${applicationName}"
+          }
+        }
+      }
+    },
+    "What should I do next in ${applicationName}": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cosa faccio adesso in ${applicationName}"
+          }
+        }
+      }
+    },
+    "What's on today in ${applicationName}": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cosa c'è oggi in ${applicationName}"
+          }
+        }
+      }
+    },
+    "What's left today in ${applicationName}": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cosa mi resta oggi in ${applicationName}"
+          }
+        }
+      }
+    },
+    "New task in ${applicationName}": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nuova attività in ${applicationName}"
+          }
+        }
+      }
+    },
+    "Add something to ${applicationName}": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi qualcosa a ${applicationName}"
+          }
+        }
+      }
+    },
+    "Add on ${applicationName}": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi su ${applicationName}"
+          }
+        }
+      }
+    },
+    "Add in ${applicationName}": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi in ${applicationName}"
+          }
+        }
+      }
+    },
+    "New event in ${applicationName}": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nuovo evento in ${applicationName}"
+          }
+        }
+      }
+    },
+    "New plan in ${applicationName}": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nuovo impegno in ${applicationName}"
+          }
+        }
+      }
+    },
+    "Write down in ${applicationName}": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Segna su ${applicationName}"
+          }
+        }
+      }
+    },
+    "${applicationName} add": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "${applicationName} aggiungi"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

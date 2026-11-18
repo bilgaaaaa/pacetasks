@@ -1,4 +1,6 @@
 import {
+  accountEmailLabel,
+  appleHint,
   codePrompt,
   deletionConfirmLabel,
   deletionConsequences,
@@ -7,24 +9,40 @@ import {
   deletionIntro,
   deletionTitle,
   doneMessage,
-  EMAIL_SUGGESTION_KEEP_HINT,
+  emailSuggestionKeepHint,
   emailSuggestionQuestion,
   fieldErrorLabel,
-  SEND_CODE_LABEL,
+  MARKETING_CONSENT_HINT,
+  MARKETING_CONSENT_LABEL,
   sheetTitle,
   switchModeLabel,
 } from "../accountCopy";
+import { setLanguage, t } from "../../i18n";
 
 describe("accountCopy", () => {
+  it("tells people what the email switch signs them up for", () => {
+    expect(MARKETING_CONSENT_LABEL).toBe("Send me tips and product news by email");
+    expect(MARKETING_CONSENT_HINT).toContain("Optional");
+    expect(MARKETING_CONSENT_HINT).toContain("at most one every day or two");
+    expect(MARKETING_CONSENT_HINT).toContain("You can switch them off in Settings at any time");
+  });
+
   it("says what to fix in a field", () => {
     expect(fieldErrorLabel("firstName", "required")).toBe("First name is needed");
     expect(fieldErrorLabel("lastName", "too_long")).toBe("Keep it under 50 characters");
     expect(fieldErrorLabel("email", "invalid")).toBe("That doesn't look like an email address");
   });
 
-  it("asks about a likely typo and names the button that keeps the address", () => {
+  it("asks about a likely typo and names the button that keeps the address, in each language", () => {
     expect(emailSuggestionQuestion("bilge@icloud.com")).toBe("Did you mean bilge@icloud.com?");
-    expect(EMAIL_SUGGESTION_KEEP_HINT).toContain(`"${SEND_CODE_LABEL}"`);
+    expect(emailSuggestionKeepHint()).toBe("No? Tap “Email me a code” again to keep what you typed.");
+
+    setLanguage("it");
+    try {
+      expect(emailSuggestionKeepHint()).toContain(`“${t("Email me a code")}”`);
+    } finally {
+      setLanguage("en");
+    }
   });
 
   it("words the sheet for each mode", () => {
@@ -37,6 +55,18 @@ describe("accountCopy", () => {
     expect(codePrompt("bilge@example.com")).toBe("Enter the code we sent to bilge@example.com.");
     expect(doneMessage("sign_up", "Bilge")).toBe("You're all set, Bilge.");
     expect(doneMessage("sign_in", null)).toBe("Welcome back.");
+  });
+
+  it("explains what the Apple button does to this phone's tasks in each mode", () => {
+    expect(appleHint("sign_up")).toMatch(/tasks stay with you/);
+    expect(appleHint("sign_in")).toMatch(/^Opens the account made with your Apple ID\./);
+    expect(appleHint("sign_in")).toMatch(/creates one/); // signing in with a new Apple ID makes an account, so it says so
+  });
+
+  it("shows the account's email, without exposing Apple's relay address", () => {
+    expect(accountEmailLabel("bilge@example.com")).toBe("bilge@example.com");
+    expect(accountEmailLabel("abc123@privaterelay.appleid.com")).toBe("Signed in with Apple (email hidden)");
+    expect(accountEmailLabel(null)).toBe("Signed in");
   });
 
   it("words the deletion for an account and for a phone without one", () => {

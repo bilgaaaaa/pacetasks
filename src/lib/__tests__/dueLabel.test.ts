@@ -1,4 +1,4 @@
-import { formatDueLabel } from "../dueLabel";
+import { formatDayLabel, formatDueLabel } from "../dueLabel";
 
 const MONDAY = "2026-09-28";
 
@@ -16,5 +16,15 @@ describe("formatDueLabel", () => {
     ["2026-11-15", "by", "by 15 Nov"],
   ] as const)("%s (%s) → %s", (dueDate, dueKind, expected) => {
     expect(formatDueLabel(dueDate, dueKind, MONDAY)).toBe(expected);
+  });
+});
+
+describe("formatDayLabel", () => {
+  it.each([
+    ["2026-10-12", "Mon 12 Oct"],
+    ["2026-01-04", "Sun 4 Jan"],
+    ["2025-12-31", "Wed 31 Dec"],
+  ])("%s → %s", (dateKey, expected) => {
+    expect(formatDayLabel(dateKey)).toBe(expected);
   });
 });

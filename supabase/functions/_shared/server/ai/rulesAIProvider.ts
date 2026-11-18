@@ -11,7 +11,7 @@ export function createRulesAIProvider(): AIProvider {
   return {
     parseBrainDump(request: BrainDumpInterpretationRequest): Promise<AIInterpretation<BrainDumpAiResult>> {
       // Same contract check as an AI provider: an invalid shape fails here, not in normalize.
-      const result = brainDumpAiResultSchema.parse(parseBrainDumpWithRules(request.text));
+      const result = brainDumpAiResultSchema.parse(parseBrainDumpWithRules(request.text, request.localeHint));
       console.log(
         `[rulesAI] ${result.candidates.length} candidate(s), ${result.unparsedFragments.length} unparsed`
       );

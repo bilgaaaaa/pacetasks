@@ -83,6 +83,22 @@ export const EVAL_CASES: EvalCase[] = [
     text: "send the signed contract to the landlord within 3 days",
     tasks: [{ keywords: ["contract"], language: "en", dueDate: "2026-10-01", dueKind: "by" }],
   },
+  {
+    id: "en-list",
+    text: "buy bread and milk, then call mom at 5",
+    tasks: [
+      { keywords: ["bread", "milk"], language: "en", dueDate: null },
+      { keywords: ["mom"], language: "en", scheduledTime: "17:00" },
+    ],
+  },
+  {
+    id: "en-month-day",
+    text: "call the bank on October 15 about the loan and submit the report by the end of the month",
+    tasks: [
+      { keywords: ["bank", "loan"], language: "en", dueDate: "2026-10-15", dueKind: "on" },
+      { keywords: ["report"], language: "en", dueDate: "2026-09-30", dueKind: "by" },
+    ],
+  },
 
   // Italian
   {
@@ -135,6 +151,22 @@ export const EVAL_CASES: EvalCase[] = [
       { keywords: ["dolce"], language: "it", dueDate: "2026-10-04", dueKind: "on" },
     ],
   },
+  {
+    id: "it-next-week-day",
+    text: "settimana prossima martedì riunione con i clienti, pagare la bolletta entro il 15",
+    tasks: [
+      { keywords: ["riunione"], language: "it", dueDate: "2026-10-06", dueKind: "on" },
+      { keywords: ["bolletta"], language: "it", dueDate: "2026-10-15", dueKind: "by" },
+    ],
+  },
+  {
+    id: "it-list",
+    text: "comprare pane e latte, cena alle 19 e 30 con Marco e Anna",
+    tasks: [
+      { keywords: ["pane", "latte"], language: "it" },
+      { keywords: ["cena", "marco", "anna"], language: "it", scheduledTime: "19:30" },
+    ],
+  },
 
   // Turkish
   {
@@ -179,6 +211,23 @@ export const EVAL_CASES: EvalCase[] = [
     id: "tr-filler",
     text: "Bugün çok yoğundu. Hafta sonu balkonu temizle.",
     tasks: [{ keywords: ["balkon"], language: "tr", dueDate: "2026-10-03" }],
+  },
+  {
+    id: "tr-next-week-day",
+    text: "haftaya cuma toplantı, ay sonuna kadar raporu bitir",
+    tasks: [
+      { keywords: ["toplantı"], language: "tr", dueDate: "2026-10-09", dueKind: "on" },
+      { keywords: ["rapor"], language: "tr", dueDate: "2026-09-30", dueKind: "by" },
+    ],
+  },
+  {
+    id: "tr-list",
+    text: "ekmek ve süt al, toplantıdan sonra Ali'yi ara, saat 5'te ilaç al",
+    tasks: [
+      { keywords: ["ekmek", "süt"], language: "tr" },
+      { keywords: ["ali"], language: "tr" },
+      { keywords: ["ilaç"], language: "tr", scheduledTime: "17:00" },
+    ],
   },
 
   // Mixed-language

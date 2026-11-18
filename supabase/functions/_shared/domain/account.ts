@@ -54,6 +54,19 @@ export function validateSignUp(input: SignUpInput): AccountFieldErrors {
   return errors;
 }
 
+export interface ProviderName {
+  firstName: string;
+  lastName: string;
+}
+
+// The name a sign-in provider (Apple, Google) hands over, made to fit a profile.
+// Providers may send only part of a name, or none after the first sign-in: then there is no name.
+export function providerName(givenName: string | null | undefined, familyName: string | null | undefined): ProviderName | null {
+  const firstName = (givenName ?? "").trim().slice(0, ACCOUNT_LIMITS.nameMaxLength).trim();
+  const lastName = (familyName ?? "").trim().slice(0, ACCOUNT_LIMITS.nameMaxLength).trim();
+  return firstName && lastName ? { firstName, lastName } : null;
+}
+
 // Providers most people sign up with: an address a slip or two away from one of
 // these is far more likely a typo than a real domain. Earlier entries win ties.
 const COMMON_EMAIL_DOMAINS = [

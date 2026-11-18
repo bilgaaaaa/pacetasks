@@ -1,6 +1,7 @@
 import React from "react";
 import { Text, View } from "react-native";
 import { makeStyles } from "../hooks/useTheme";
+import { t } from "../i18n";
 
 interface Props {
   lines: string[]; // one sentence per insight, from paceInsightLines
@@ -12,7 +13,7 @@ export function PaceInsightsCard({ lines }: Props) {
   const styles = useStyles();
   return (
     <View style={styles.card}>
-      <Text style={styles.eyebrow}>MY PACE</Text>
+      <Text style={styles.eyebrow}>{t("MY PACE")}</Text>
       {lines.map((line) => (
         <Text key={line} style={styles.line}>
           {line}
