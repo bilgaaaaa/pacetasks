@@ -1,5 +1,6 @@
 import { addDays, isValidTimeOfDay, toLocalDateKey } from "./dates.ts";
 import type { Task } from "./task.ts";
+import { reminderAnchor } from "./taskTime.ts";
 
 // When a task's own reminder goes off. Pure and clock-free, so the phone's
 // reminder plan, the add sheet's "We'll nudge you at…" line and the tests share
@@ -13,7 +14,7 @@ export const DEFAULT_REMINDER_MINUTES = 10;
 
 export type ReminderTask = Pick<
   Task,
-  "id" | "status" | "scheduled_time" | "reminder_minutes_before" | "due_date" | "due_kind"
+  "id" | "status" | "scheduled_time" | "window_start" | "window_end" | "reminder_minutes_before" | "due_date" | "due_kind"
 >;
 
 export interface TaskReminderMoment {
@@ -31,26 +32,27 @@ export function localDateTime(dateKey: string, time: string): Date | null {
   return new Date(year, month - 1, day, hour, minute, 0, 0);
 }
 
-// The next start of a task that has a time. A task "on" a later day starts that
+// The next start of a task that has a time (its fixed start, or the start of its window). A task "on" a later day starts that
 // day. Everything else on Today (no day, a deadline, overdue) starts at its time
 // today, or tomorrow once today's reminder moment has passed, but never after a
 // deadline that is still ahead.
 export function nextStart(task: ReminderTask, now: Date): Date | null {
-  if (!task.scheduled_time) return null;
+  const startTime = reminderAnchor(task);
+  if (!startTime) return null;
   const todayKey = toLocalDateKey(now);
 
   if (task.due_kind === "on" && task.due_date && task.due_date > todayKey) {
-    return localDateTime(task.due_date, task.scheduled_time);
+    return localDateTime(task.due_date, startTime);
   }
 
-  const todayStart = localDateTime(todayKey, task.scheduled_time);
+  const todayStart = localDateTime(todayKey, startTime);
   if (!todayStart) return null;
   const leadMs = (task.reminder_minutes_before ?? 0) * 60_000;
   const dayKey = todayStart.getTime() - leadMs > now.getTime() ? todayKey : addDays(todayKey, 1);
 
   const deadlineAhead = task.due_kind === "by" && task.due_date !== null && task.due_date >= todayKey;
   if (deadlineAhead && dayKey > task.due_date!) return null;
-  return localDateTime(dayKey, task.scheduled_time);
+  return localDateTime(dayKey, startTime);
 }
 
 // The reminder of one task, or null when it has none, isn't open, or its moment has passed.

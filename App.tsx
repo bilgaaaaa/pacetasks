@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useRef } from "react";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 import { NavigationContainer, DarkTheme, DefaultTheme } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -8,6 +8,8 @@ import { useSession } from "./src/hooks/useSession";
 import { useAppUpdate } from "./src/hooks/useAppUpdate";
 import { UpdateSheet } from "./src/components/UpdateSheet";
 import { PaywallSheet } from "./src/components/PaywallSheet";
+import { isFocusBridgeAvailable } from "./src/lib/deskfocusBridge";
+import { DESKFOCUS_LINK_PREFIX, DESKFOCUS_SETTINGS_PATH } from "./src/lib/widgetSettings";
 import { ProProvider, usePro } from "./src/hooks/usePro";
 import { SettingsProvider } from "./src/hooks/useSettings";
 import { TasksProvider } from "./src/hooks/useTasks";
@@ -16,8 +18,19 @@ import { SESSION_ERROR_HINT, SESSION_ERROR_TITLE, SESSION_RETRY_LABEL } from "./
 import { TaskListScreen } from "./src/screens/TaskListScreen";
 import { StatsScreen } from "./src/screens/StatsScreen";
 import { SettingsScreen } from "./src/screens/SettingsScreen";
+import { DeskfocusScreen } from "./src/screens/DeskfocusScreen";
+import { Language, t } from "./src/i18n";
 
 const Tab = createBottomTabNavigator();
+
+// DeskFocus is the iPhone widget, so its tab exists only where the widget does.
+const hasDeskfocus = isFocusBridgeAvailable();
+
+// The widget's gear opens pacetasks://deskfocus-settings, which lands on the DeskFocus tab.
+const LINKING = {
+  prefixes: [DESKFOCUS_LINK_PREFIX],
+  config: { screens: { DeskFocus: DESKFOCUS_SETTINGS_PATH } },
+};
 
 // Text-only pill tab bar matching the design: a single rounded bar, the
 // active tab shown as a filled ink pill, inactive tabs plain secondary text.
@@ -55,6 +68,8 @@ function PillTabBar({ state, descriptors, navigation, insets }: any) {
               <Text
                 style={[styles.tabLabel, isFocused && styles.tabLabelActive]}
                 numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.75}
                 maxFontSizeMultiplier={1.3}
               >
                 {label}
@@ -85,10 +100,18 @@ function ProPaywall() {
 
 // Waits for the anonymous Supabase session and the saved appearance, loads the
 // user's settings, tasks and Pro status once (SettingsProvider, TasksProvider, ProProvider), then wires the
-// three tabs (Today / Pace / Settings) behind the pill tab bar.
+// tabs (Today / Pace / DeskFocus on iPhone / Settings) behind the pill tab bar.
 // A newer App Store version is offered on top, once the app is ready.
 function AppContent() {
-  const { theme, appearanceLoaded } = useTheme();
+  const { theme, language, appearanceLoaded } = useTheme();
+  // A language change rebuilds the screens so every text switches at once. It can
+  // only happen in Settings, so that is where the rebuilt app opens.
+  const shownLanguage = useRef<Language | null>(null);
+  const languageChanged = useRef(false);
+  if (appearanceLoaded && shownLanguage.current !== language) {
+    languageChanged.current = shownLanguage.current !== null;
+    shownLanguage.current = language;
+  }
   const styles = useStyles();
   const { session, loading, failed, retry } = useSession();
   const appUpdate = useAppUpdate();
@@ -120,10 +143,10 @@ function AppContent() {
     return (
       <View style={styles.centered}>
         <Text style={styles.errorTitle} accessibilityRole="header">
-          {SESSION_ERROR_TITLE}
+          {t(SESSION_ERROR_TITLE)}
         </Text>
-        <Text style={styles.errorHint}>{SESSION_ERROR_HINT}</Text>
-        <Button label={SESSION_RETRY_LABEL} onPress={retry} style={styles.retryButton} />
+        <Text style={styles.errorHint}>{t(SESSION_ERROR_HINT)}</Text>
+        <Button label={t(SESSION_RETRY_LABEL)} onPress={retry} style={styles.retryButton} />
       </View>
     );
   }
@@ -134,19 +157,21 @@ function AppContent() {
     <SettingsProvider userId={userId}>
       <TasksProvider userId={userId}>
         <ProProvider userId={userId}>
-          <NavigationContainer theme={navigationTheme}>
+          <NavigationContainer key={language} theme={navigationTheme} linking={hasDeskfocus ? LINKING : undefined}>
             <StatusBar style={theme.isDark ? "light" : "dark"} />
             <Tab.Navigator
+              initialRouteName={languageChanged.current ? "Settings" : "Tasks"}
               screenOptions={{ headerShown: false }}
               tabBar={(props) => <PillTabBar {...props} />}
             >
-              <Tab.Screen name="Tasks" options={{ tabBarLabel: "Today" }}>
+              <Tab.Screen name="Tasks" options={{ tabBarLabel: t("Today") }}>
                 {() => <TaskListScreen userId={userId} />}
               </Tab.Screen>
-              <Tab.Screen name="Stats" options={{ tabBarLabel: "Pace" }}>
+              <Tab.Screen name="Stats" options={{ tabBarLabel: t("Pace") }}>
                 {() => <StatsScreen />}
               </Tab.Screen>
-              <Tab.Screen name="Settings" options={{ tabBarLabel: "Settings" }}>
+              {hasDeskfocus && <Tab.Screen name="DeskFocus" component={DeskfocusScreen} options={{ tabBarLabel: "DeskFocus" }} />}
+              <Tab.Screen name="Settings" options={{ tabBarLabel: t("Settings") }}>
                 {() => <SettingsScreen userId={userId} session={session} />}
               </Tab.Screen>
             </Tab.Navigator>

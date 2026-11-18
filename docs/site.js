@@ -26,6 +26,13 @@
     setInterval(render, 30_000);
   };
 
+  // The page's language decides the texts this script writes.
+  const TEXTS = {
+    en: { demoTitle: "PaceTasks demo", openFullScreen: "Open the demo full screen" },
+    it: { demoTitle: "Demo di PaceTasks", openFullScreen: "Apri la demo a schermo intero" },
+  };
+  const texts = TEXTS[document.documentElement.lang] || TEXTS.en;
+
   // On wide screens the demo starts inside the hero phone; on a phone the link opens it full screen.
   const initDemo = () => {
     const wideScreen = window.matchMedia("(min-width: 960px)");
@@ -40,14 +47,14 @@
 
       const frame = document.createElement("iframe");
       frame.src = launch.href;
-      frame.title = "PaceTasks demo";
+      frame.title = texts.demoTitle;
       phone.querySelector(".phone__screen").replaceChildren(frame);
       // The DeskFocus widget steps aside (see site.css) so the whole phone screen can be used.
       stage.dataset.demoLive = "true";
       stage.scrollIntoView({ behavior: "smooth", block: "center" });
 
       // Once the demo runs here, the same button opens it full screen.
-      launch.textContent = "Open the demo full screen";
+      launch.textContent = texts.openFullScreen;
       frame.focus({ preventScroll: true });
       log("demo started in the hero phone");
     });

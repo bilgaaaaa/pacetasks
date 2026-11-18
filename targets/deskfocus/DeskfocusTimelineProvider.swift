@@ -79,6 +79,12 @@ extension DeskfocusSnapshot {
             DeskTask(id: "preview-2", source: .paceTasks, sourceIdentifier: "2", containerIdentifier: PaceTasksFeed.containerIdentifier, title: "Write the weekly report", startDate: nil, endDate: nil, dueDate: nil, isAllDay: true, listName: "PaceTasks", colorHex: DeskfocusConstants.paceTasksColorHex, plannedMinutes: 25),
             DeskTask(id: "preview-3", source: .paceTasks, sourceIdentifier: "3", containerIdentifier: PaceTasksFeed.containerIdentifier, title: "Book flights", startDate: nil, endDate: nil, dueDate: nil, isAllDay: true, listName: "PaceTasks", colorHex: DeskfocusConstants.paceTasksColorHex, plannedMinutes: 15)
         ]
+        let tomorrow = DateInterval.day(containing: now).end
+        let standup = Calendar.current.date(byAdding: .minute, value: 9 * 60 + 30, to: tomorrow) ?? tomorrow
+        snapshot.tomorrowTasks = [
+            DeskTask(id: "preview-4", source: .appleCalendar, sourceIdentifier: "4", containerIdentifier: "work", title: "Team standup", startDate: standup, endDate: standup.addingTimeInterval(900), dueDate: nil, isAllDay: false, listName: "Work", colorHex: "#4285F4"),
+            DeskTask(id: "preview-5", source: .paceTasks, sourceIdentifier: "5", containerIdentifier: PaceTasksFeed.containerIdentifier, title: "Pick up the parcel", startDate: nil, endDate: nil, dueDate: tomorrow, isAllDay: true, listName: "PaceTasks", colorHex: DeskfocusConstants.paceTasksColorHex, plannedMinutes: 10)
+        ]
         return snapshot
     }
 }

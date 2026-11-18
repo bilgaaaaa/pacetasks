@@ -3,6 +3,7 @@ import { AccessibilityInfo, Animated, Easing, Image, Text, TouchableOpacity, Vie
 import { LinearGradient } from "expo-linear-gradient";
 import { makeStyles, useTheme } from "../hooks/useTheme";
 import { HeroMessage } from "../lib/heroCopy";
+import { t } from "../i18n";
 
 const GRAIN = require("../assets/grain.png");
 // The 128px grain tile, laid out by hand: resizeMode "repeat" isn't honoured
@@ -113,7 +114,7 @@ export function TodayHero({ message, totals, showAction, onPick }: Props) {
             activeOpacity={0.85}
             accessibilityRole="button"
           >
-            <Text style={styles.ctaText}>Pick my next task</Text>
+            <Text style={styles.ctaText}>{t("Pick my next task")}</Text>
           </TouchableOpacity>
         )}
       </View>

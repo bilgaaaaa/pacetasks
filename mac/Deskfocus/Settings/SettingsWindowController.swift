@@ -17,7 +17,7 @@ final class SettingsWindowController {
 
         let view = SettingsView().environment(model)
         let window = NSWindow(contentViewController: NSHostingController(rootView: view))
-        window.title = String(localized: "DeskFocus Settings")
+        window.title = String(localized: "PaceTasks Settings")
         window.styleMask = [.titled, .closable, .miniaturizable]
         window.isReleasedWhenClosed = false
         window.center()

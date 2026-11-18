@@ -42,9 +42,10 @@ struct CalendarAccountsSection: View {
         } header: {
             Text("Your accounts")
         } footer: {
-            Text("If access was denied before, allow DeskFocus in System Settings › Privacy & Security.")
+            Text("If access was denied before, allow PaceTasks in System Settings › Privacy & Security.")
         }
 
+        PaceTasksAccountSection()
         GoogleAccountSection()
     }
 
@@ -83,7 +84,7 @@ private struct CalendarsSettingsView: View {
         }
         .formStyle(.grouped)
         .toggleStyle(ColorfulSwitchToggleStyle())
-        // Reloads when access is granted or a Google account is connected or removed.
+        // Reloads when access is granted, or a Google or PaceTasks account is connected or removed.
         .task(id: accessState) { await loadContainers() }
         .onReceive(NotificationCenter.default.publisher(for: .EKEventStoreChanged)) { _ in
             Task { await loadContainers() }
@@ -96,7 +97,7 @@ private struct CalendarsSettingsView: View {
     }
 
     private var accessState: [Bool] {
-        [model.eventKit.hasCalendarAccess, model.eventKit.hasRemindersAccess, model.googleAuth.isConnected]
+        [model.eventKit.hasCalendarAccess, model.eventKit.hasRemindersAccess, model.googleAuth.isConnected, model.paceAuth.isSignedIn]
     }
 
     @ViewBuilder
@@ -105,7 +106,7 @@ private struct CalendarsSettingsView: View {
         let items = containers.filter { $0.source == kind }
 
         Section {
-            Toggle("Show in DeskFocus", isOn: model.sourceBinding(kind))
+            Toggle("Show in PaceTasks", isOn: model.sourceBinding(kind))
             if isSourceOn {
                 if items.isEmpty && isLoadingContainers {
                     LabeledContent("Loading…") { ProgressView().controlSize(.small) }
@@ -247,7 +248,7 @@ private struct GeneralSettingsView: View {
                 }
                 if model.snapshot.settings.language != model.launchLanguage {
                     HStack {
-                        Text("Restart DeskFocus to switch language.")
+                        Text("Restart PaceTasks to switch language.")
                             .foregroundStyle(.secondary)
                         Spacer()
                         Button("Restart Now") { model.relaunch() }
@@ -292,7 +293,7 @@ private struct GeneralSettingsView: View {
             }
 
             Section {
-                Toggle("Open DeskFocus at login", isOn: $launchAtLogin)
+                Toggle("Open PaceTasks at login", isOn: $launchAtLogin)
                     .onChange(of: launchAtLogin) { _, enabled in
                         LaunchAtLogin.setEnabled(enabled)
                         launchAtLogin = LaunchAtLogin.isEnabled
@@ -333,7 +334,7 @@ private struct UpdatesSection: View {
             Text("Updates")
         } footer: {
             Text(updater.isAvailable
-                 ? "DeskFocus looks for a new version once a day and updates itself in place. Your settings and tasks stay as they are."
+                 ? "PaceTasks looks for a new version once a day and updates itself in place. Your settings and tasks stay as they are."
                  : "This build doesn't update itself. Builds made with the release script do.")
         }
     }

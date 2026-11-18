@@ -54,7 +54,7 @@ struct OnboardingView: View {
                 Button("Back") { step = step.moved(by: -1) }
             }
             if step.isLast {
-                Button("Start Using DeskFocus") {
+                Button("Start Using PaceTasks") {
                     Log.app.info("Welcome guide finished")
                     onFinish()
                 }
@@ -78,13 +78,13 @@ private struct WelcomePage: View {
                 .frame(width: 88, height: 88)
                 .accessibilityHidden(true)
             OnboardingHeader(
-                title: "Welcome to DeskFocus",
+                title: "Welcome to PaceTasks",
                 subtitle: "Today's tasks and a focus timer, right on your desktop."
             )
             VStack(alignment: .leading, spacing: 16) {
                 OnboardingTipRow(systemImage: "calendar", title: "Your day in one list", text: "Events and to-dos from Calendar, Reminders and Google.")
                 OnboardingTipRow(systemImage: "play.circle", title: "Focus on one thing", text: "Press ▶ on any task to start a timer and keep distracting apps away.")
-                OnboardingTipRow(systemImage: "macwindow", title: "Always in sight", text: "A glass widget on your desktop, and DeskFocus in the menu bar.")
+                OnboardingTipRow(systemImage: "macwindow", title: "Always in sight", text: "The DeskFocus widget on your desktop, and PaceTasks in the menu bar.")
             }
             .padding(.horizontal, 40)
         }
@@ -98,7 +98,7 @@ private struct CalendarsPage: View {
         VStack(spacing: 8) {
             OnboardingHeader(
                 title: "Connect your calendars",
-                subtitle: "DeskFocus shows the calendars and reminders on this Mac. Pick which ones any time in Settings › Calendars."
+                subtitle: "PaceTasks shows the calendars and reminders on this Mac. Pick which ones any time in Settings › Calendars."
             )
             .padding(.horizontal, 32)
             .padding(.top, 28)
@@ -156,11 +156,11 @@ private struct ReadyPage: View {
             .padding(.top, 28)
             Form {
                 Section {
-                    OnboardingTipRow(systemImage: "gearshape", title: "Settings", text: "Click ⚙︎ on the widget, or the DeskFocus icon in the menu bar and then ⚙︎.")
+                    OnboardingTipRow(systemImage: "gearshape", title: "Settings", text: "Click ⚙︎ on the widget, or the PaceTasks icon in the menu bar and then ⚙︎.")
                     OnboardingTipRow(systemImage: "plus.circle", title: "New task", text: "Click + on the widget to add an event or a to-do.")
                 }
                 Section {
-                    Toggle("Open DeskFocus at login", isOn: $launchAtLogin)
+                    Toggle("Open PaceTasks at login", isOn: $launchAtLogin)
                         .onChange(of: launchAtLogin) { _, enabled in
                             LaunchAtLogin.setEnabled(enabled)
                             launchAtLogin = LaunchAtLogin.isEnabled

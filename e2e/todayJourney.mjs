@@ -2,12 +2,13 @@ import { runJourney } from "./harness.mjs";
 
 // One simulated day in PaceTasks, start to finish: finish a task, sort out what
 // was carried over, add tasks for today and for later, let the app pick the next,
-// dump a few thoughts, tidy up (Someday, Weekly Reset), then check Pace, the
+// dump a few thoughts, tidy up (Someday, Weekly Reset), rescue the evening, then check Pace, the
 // themes, an account and dark mode.
 // Elements are found by the same labels and wording a person (or VoiceOver) meets.
 
 const NEW_TASK_TITLE = "Buy cat food";
 const LATER_TASK_TITLE = "Water the plants";
+const PLANNED_TASK_TITLE = "Pick up the parcel";
 // Thursday of the harness's fixed week (it starts on Monday 12 October 2026).
 const LATER_DAY = { pickerLabel: /^Thu 15 /, weekStripLabel: /^Thu 15(,|$)/, heading: "Thu 15 Oct" };
 const SOMEDAY_TASK_TITLE = "Learn Spanish";
@@ -15,6 +16,9 @@ const COLOR_THEMES = ["Pastel Night", "Sunny", "Sage"]; // ends on the default, 
 // The demo backend accepts any code except 000000.
 const ACCOUNT = { firstName: "Ada", lastName: "Rossi", email: "ada@example.com", code: "123456" };
 const WEEKLY_RESET_MAX_DECISIONS = 12;
+const REPEAT_TASK_TITLE = "Stretch for ten minutes";
+// Evening of the harness's fixed day, when the rest of the list no longer fits before 22:00.
+const RESCUE_TIME = "2026-10-12T21:30:00+02:00";
 const BRAIN_DUMP_TEXT = "Tomorrow call the vet, domani comprare il pane, cuma günü faturayı öde";
 
 const passed = await runJourney("today-journey", async ({ page, baseUrl, step, snapshot }) => {
@@ -52,8 +56,8 @@ const passed = await runJourney("today-journey", async ({ page, baseUrl, step, s
     await page.getByLabel("Duration: 5 minutes").click();
     await page.getByRole("radio", { name: "15 min", exact: true }).click();
     await snapshot("Duration panel");
-    await page.getByLabel("Start time and reminder").click();
-    await page.getByText("Set a start time").click();
+    await page.getByLabel("Time and reminder").click();
+    await page.getByRole("radio", { name: "At", exact: true }).click();
     // The hour is typed: any time can be entered, not only the shortcuts.
     await page.getByLabel(/^hour, /).fill("18");
     await page.getByRole("radio", { name: "15 min", exact: true }).last().click();
@@ -81,6 +85,26 @@ const passed = await runJourney("today-journey", async ({ page, baseUrl, step, s
     await page.getByLabel(`Complete ${LATER_TASK_TITLE}`).waitFor({ state: "detached" });
   });
 
+  await step("A daily task comes back tomorrow once it's done", async () => {
+    await page.getByLabel("Add a task").click();
+    await page.getByPlaceholder("What needs doing?").fill(REPEAT_TASK_TITLE);
+    await page.getByLabel("Day: Any day").click();
+    await page.getByRole("radio", { name: "Every day", exact: true }).click();
+    await page.getByLabel("Day: Today · ↻ Every day").waitFor();
+    await snapshot("Repeat set to every day");
+    await page.getByText(`Add “${REPEAT_TASK_TITLE}”`).click();
+    await page.getByLabel("Close", { exact: true }).click();
+    await page.getByText(/↻ Every day/).first().waitFor();
+    await page.getByLabel(`Complete ${REPEAT_TASK_TITLE}`).click();
+    await page.getByText("Done", { exact: true }).first().click();
+    // Done for today; tomorrow's occurrence waits in Upcoming.
+    await page.getByLabel(`Complete ${REPEAT_TASK_TITLE}`).waitFor({ state: "detached" });
+    await page.getByText(/^Upcoming · \d+$/).click();
+    await page.getByLabel(`Move to Today: ${REPEAT_TASK_TITLE}`).waitFor();
+    await page.getByLabel("Close").last().click();
+    await page.getByText("UPCOMING", { exact: true }).waitFor({ state: "detached" });
+  });
+
   await step("Upcoming lists it under its day", async () => {
     await page.getByText(/^Upcoming · \d+$/).click();
     await page.getByText("UPCOMING", { exact: true }).waitFor();
@@ -91,10 +115,25 @@ const passed = await runJourney("today-journey", async ({ page, baseUrl, step, s
     await page.getByText("UPCOMING", { exact: true }).waitFor({ state: "detached" });
   });
 
-  await step("Thursday in the week strip opens that day, and the task moves to Today", async () => {
+  await step("Thursday in the week strip shows that day, and a task added there is set for it", async () => {
     await page.getByLabel(LATER_DAY.weekStripLabel).click();
-    await page.getByText("UPCOMING", { exact: true }).waitFor();
-    await snapshot("Upcoming opened on Thursday");
+    await page.getByText("Planned ahead.").waitFor();
+    await page.getByLabel(`Complete ${LATER_TASK_TITLE}`).waitFor();
+    await snapshot("Thursday shown in place of today");
+    await page.getByLabel("Add a task").click();
+    await page.getByPlaceholder("What needs doing?").fill(PLANNED_TASK_TITLE);
+    await page.getByLabel("Day: Thu").waitFor();
+    await page.getByText(`Add “${PLANNED_TASK_TITLE}”`).click();
+    await page.getByText(`Added “${PLANNED_TASK_TITLE}” for Thu`).waitFor();
+    await page.getByLabel("Close", { exact: true }).click();
+    await page.getByLabel(`Complete ${PLANNED_TASK_TITLE}`).waitFor();
+    await page.getByLabel("Back to today").click();
+    await page.getByText("Good morning").waitFor();
+    await page.getByLabel(`Complete ${PLANNED_TASK_TITLE}`).waitFor({ state: "detached" });
+  });
+
+  await step("Upcoming moves Thursday's task to Today", async () => {
+    await page.getByText(/^Upcoming · \d+$/).click();
     await page.getByLabel(`Move to Today: ${LATER_TASK_TITLE}`).click();
     await page.getByLabel(`Move to Today: ${LATER_TASK_TITLE}`).waitFor({ state: "detached" });
     await page.getByLabel("Close").last().click();
@@ -182,6 +221,21 @@ const passed = await runJourney("today-journey", async ({ page, baseUrl, step, s
     const weeklyResetLink = page.getByText(/^Weekly reset · /);
     await page.getByText(/^Someday · \d+ parked$/).scrollIntoViewIfNeeded();
     await weeklyResetLink.waitFor({ state: "detached" });
+  });
+
+  await step("Rescue my day offers to move what no longer fits the evening", async () => {
+    // Late in the day what's left can't all fit. Leaving the app and coming back makes Today read the new time.
+    await page.clock.setSystemTime(new Date(RESCUE_TIME));
+    await page.evaluate(() => {
+      for (const state of ["hidden", "visible"]) {
+        Object.defineProperty(document, "visibilityState", { value: state, configurable: true });
+        document.dispatchEvent(new Event("visibilitychange"));
+      }
+    });
+    await page.getByLabel(/^Running behind · /).click();
+    await snapshot("Rescue my day with proposed moves");
+    await page.getByText("Not now", { exact: true }).click();
+    await page.getByLabel(/^Running behind · /).waitFor({ state: "detached" });
   });
 
   await step("Pace shows today's numbers", async () => {

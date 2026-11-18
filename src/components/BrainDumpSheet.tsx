@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   KeyboardAvoidingView,
   Modal,
@@ -18,10 +18,14 @@ import { addButtonLabel, doneMessage, reviewSummary } from "../lib/brainDumpCopy
 import { BrainDumpState, selectedDrafts } from "../lib/brainDumpState";
 import { BrainDumpCandidateRow } from "./BrainDumpCandidateRow";
 import { Button } from "./Button";
+import { DictationBar } from "./DictationBar";
 import { ErrorBanner } from "./ErrorBanner";
+import { t } from "../i18n";
 
 interface Props {
   visible: boolean;
+  listenOnOpen: boolean; // opened from a mic: listening starts right away
+  taskTitles: string[]; // the user's task names, as hints for Talk
   state: BrainDumpState;
   onChangeText: (text: string) => void;
   onSubmit: () => void;
@@ -31,11 +35,13 @@ interface Props {
   onClose: () => void;
 }
 
-// Full-screen sheet for Brain Dump: write (or dictate with the keyboard mic, in
-// any language) everything on your mind, then review what PaceTasks understood
-// before anything is added. Purely presentational — state comes from useBrainDump.
+// Full-screen sheet for Brain Dump: write or say (see DictationBar) everything
+// on your mind, then review what PaceTasks understood before anything is added.
+// The Brain Dump state comes from useBrainDump; the sheet only owns the microphone.
 export function BrainDumpSheet({
   visible,
+  listenOnOpen,
+  taskTitles,
   state,
   onChangeText,
   onSubmit,
@@ -51,6 +57,7 @@ export function BrainDumpSheet({
   const isReviewPhase = phase === "review" || phase === "committing";
   const todayKey = toLocalDateKey(new Date());
   const selectedCount = selectedDrafts(state).length;
+  const [listening, setListening] = useState(false); // while the mic writes into the field, typing waits
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
@@ -58,12 +65,12 @@ export function BrainDumpSheet({
         <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <View style={styles.header}>
             <View style={styles.flex}>
-              <Text style={styles.eyebrow}>BRAIN DUMP</Text>
+              <Text style={styles.eyebrow}>{t("BRAIN DUMP")}</Text>
               <Text style={styles.title}>
-                {isReviewPhase ? "Here's what I understood" : phase === "done" ? "All set" : "What's on your mind?"}
+                {isReviewPhase ? t("Here's what I understood") : phase === "done" ? t("All set") : t("What's on your mind?")}
               </Text>
             </View>
-            <TouchableOpacity onPress={onClose} hitSlop={8} style={styles.closeButton} accessibilityLabel="Close">
+            <TouchableOpacity onPress={onClose} hitSlop={8} style={styles.closeButton} accessibilityLabel={t("Close")}>
               <Ionicons name="close" size={18} color={theme.colors.textSecondary} />
             </TouchableOpacity>
           </View>
@@ -71,29 +78,39 @@ export function BrainDumpSheet({
           {isInputPhase && (
             <View style={styles.flex}>
               <Text style={styles.subtitle}>
-                Everything, in any language. Tap the mic on your keyboard to talk instead.
+                {t("Everything, in English or Italian. Type it, or tap Talk and say it.")}
               </Text>
               <TextInput
                 style={styles.input}
                 value={state.text}
                 onChangeText={onChangeText}
-                placeholder={"Tomorrow call the vet, finish the presentation before Friday, belki spora giderim…"}
+                placeholder={t("Tomorrow call the vet, finish the presentation before Friday, belki spora giderim…")}
                 placeholderTextColor={theme.colors.textTertiary}
                 multiline
-                autoFocus
-                editable={phase === "input"}
+                autoFocus={!listenOnOpen}
+                editable={phase === "input" && !listening}
                 maxLength={BRAIN_DUMP_MAX_TEXT_LENGTH}
                 textAlignVertical="top"
               />
               <Text style={styles.counter}>
                 {state.text.length}/{BRAIN_DUMP_MAX_TEXT_LENGTH}
               </Text>
+              <DictationBar
+                style={styles.dictation}
+                text={state.text}
+                maxLength={BRAIN_DUMP_MAX_TEXT_LENGTH}
+                disabled={phase !== "input"}
+                onChangeText={onChangeText}
+                onListeningChange={setListening}
+                startListening={listenOnOpen && state.text === ""}
+                taskTitles={taskTitles}
+              />
               {state.error && <ErrorBanner style={styles.errorBanner} message={state.error.message} />}
               <Button
                 style={styles.action}
-                label={phase === "interpreting" ? "Reading your brain dump…" : state.error?.retryable ? "Try again" : "Sort it out"}
+                label={phase === "interpreting" ? t("Reading your brain dump…") : state.error?.retryable ? t("Try again") : t("Sort it out")}
                 loading={phase === "interpreting"}
-                disabled={state.text.trim().length === 0}
+                disabled={state.text.trim().length === 0 || listening}
                 onPress={onSubmit}
               />
             </View>
@@ -116,7 +133,7 @@ export function BrainDumpSheet({
                 ))}
                 {proposal.unparsedFragments.length > 0 && (
                   <View style={styles.unparsed}>
-                    <Text style={styles.unparsedTitle}>Not turned into tasks</Text>
+                    <Text style={styles.unparsedTitle}>{t("Not turned into tasks")}</Text>
                     {proposal.unparsedFragments.map((fragment, i) => (
                       <Text key={i} style={styles.unparsedText}>
                         "{fragment}"
@@ -129,13 +146,13 @@ export function BrainDumpSheet({
               {proposal.candidates.length > 0 ? (
                 <Button
                   style={styles.action}
-                  label={phase === "committing" ? "Adding…" : addButtonLabel(selectedCount)}
+                  label={phase === "committing" ? t("Adding…") : addButtonLabel(selectedCount)}
                   loading={phase === "committing"}
                   disabled={selectedCount === 0}
                   onPress={onCommit}
                 />
               ) : (
-                <Button style={styles.action} label="Close" onPress={onClose} />
+                <Button style={styles.action} label={t("Close")} onPress={onClose} />
               )}
             </View>
           )}
@@ -146,7 +163,7 @@ export function BrainDumpSheet({
                 <Ionicons name="checkmark" size={32} color={theme.colors.onAccent} />
               </View>
               <Text style={styles.doneText}>{doneMessage(state.createdTasks.length)}</Text>
-              <Button style={styles.action} label="Done" onPress={onClose} />
+              <Button style={styles.action} label={t("Done")} onPress={onClose} />
             </View>
           )}
         </KeyboardAvoidingView>
@@ -213,6 +230,10 @@ const useStyles = makeStyles((theme) => ({
     fontSize: theme.typography.caption.fontSize,
     paddingHorizontal: theme.spacing.lg,
     marginTop: theme.spacing.xs,
+  },
+  dictation: {
+    marginHorizontal: theme.spacing.lg,
+    marginTop: theme.spacing.sm,
   },
   list: {
     paddingHorizontal: theme.spacing.lg,

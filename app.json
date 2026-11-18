@@ -2,6 +2,7 @@
   "expo": {
     "name": "PaceTasks",
     "slug": "pacetasks",
+    "scheme": "pacetasks",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -15,7 +16,9 @@
       "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSSupportsLiveActivities": true
+        "NSSupportsLiveActivities": true,
+        "CFBundleAllowMixedLocalizations": true,
+        "NSPhotoLibraryUsageDescription": "PaceTasks doesn't use your photos. Apple requires this text because a system file component used by the app can open the photo library."
       },
       "entitlements": {
         "com.apple.security.application-groups": [
@@ -95,17 +98,29 @@
       [
         "expo-calendar",
         {
-          "calendarPermission": "PaceTasks shows today's calendar events in the DeskFocus widget.",
-          "remindersPermission": "PaceTasks shows today's reminders in the DeskFocus widget and checks them off when you do."
+          "calendarPermission": "PaceTasks shows your calendar events on Today and in the DeskFocus widget, from iCloud, Google and every account on this iPhone.",
+          "remindersPermission": "PaceTasks shows your reminders on Today and in the DeskFocus widget, and checks them off when you do."
         }
       ],
-      "@bacons/apple-targets"
+      "@bacons/apple-targets",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "PaceTasks listens while you say your tasks out loud in Brain Dump.",
+          "speechRecognitionPermission": "PaceTasks turns what you say in Brain Dump into text."
+        }
+      ],
+      "expo-localization",
+      "./plugins/withPaceSiri"
     ],
     "extra": {
       "eas": {
         "projectId": "4b7e2dbc-8401-4288-85fc-bbb367fc9296"
       }
     },
-    "owner": "bilgaaaa"
+    "owner": "bilgaaaa",
+    "locales": {
+      "it": "./locales/it.json"
+    }
   }
 }

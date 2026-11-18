@@ -21,6 +21,7 @@ import { PaceInsightsCard } from "../components/PaceInsightsCard";
 import { ProLockCard } from "../components/ProLockCard";
 import { StatCard } from "../components/StatCard";
 import { WeekHeatmap } from "../components/WeekHeatmap";
+import { t } from "../i18n";
 
 // "Compete with yourself" ("Your pace"): a 2-column stat grid, the "My Pace"
 // insights (best hours, strongest day, estimates vs reality), a weekday
@@ -45,9 +46,9 @@ export function StatsScreen() {
     >
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Your pace</Text>
+          <Text style={styles.headerTitle}>{t("Your pace")}</Text>
           <Text style={styles.headerSubtitle}>
-            Beat yesterday's you, not anyone else.
+            {t("Beat yesterday's you, not anyone else.")}
           </Text>
         </View>
 
@@ -55,8 +56,8 @@ export function StatsScreen() {
           <ActivityIndicator color={theme.colors.accent} style={styles.loader} />
         ) : loadFailed ? (
           <View style={styles.loadError}>
-            <ErrorBanner message={`Your history could not be loaded. ${error}`} />
-            <Button label="Try again" variant="secondary" onPress={refresh} />
+            <ErrorBanner message={t("Your history could not be loaded. {0}", error)} />
+            <Button label={t("Try again")} variant="secondary" onPress={refresh} />
           </View>
         ) : (
           <FlatList
@@ -66,30 +67,30 @@ export function StatsScreen() {
             ListHeaderComponent={
               <View>
                 <View style={styles.grid}>
-                  <StatCard label="Done today" value={String(stats.todayCompleted)} />
-                  <StatCard label="Minutes today" value={String(stats.todayActualMinutes)} />
+                  <StatCard label={t("Done today")} value={String(stats.todayCompleted)} />
+                  <StatCard label={t("Minutes today")} value={String(stats.todayActualMinutes)} />
                   {isPro && (
                     <>
                       <StatCard
-                        label="Current streak"
-                        value={`${stats.currentStreakDays}d`}
+                        label={t("Current streak")}
+                        value={t("{0}d", stats.currentStreakDays)}
                         valueColor={theme.colors.accentDark}
-                        hint="consecutive days with a task done"
+                        hint={t("consecutive days with a task done")}
                       />
-                      <StatCard label="Best streak" value={`${stats.bestStreakDays}d`} />
+                      <StatCard label={t("Best streak")} value={t("{0}d", stats.bestStreakDays)} />
                       <StatCard
-                        label="Best day"
+                        label={t("Best day")}
                         value={String(stats.bestDayCount)}
-                        hint="most tasks done in one day"
+                        hint={t("most tasks done in one day")}
                       />
                       <StatCard
-                        label="Estimate accuracy"
+                        label={t("Estimate accuracy")}
                         value={
                           stats.estimateAccuracyPercent === null
                             ? "—"
                             : `${stats.estimateAccuracyPercent}%`
                         }
-                        hint="estimates vs reality"
+                        hint={t("estimates vs reality")}
                       />
                     </>
                   )}
@@ -103,14 +104,14 @@ export function StatsScreen() {
                 ) : (
                   <ProLockCard
                     eyebrow={PACE_LOCK_EYEBROW}
-                    title={PACE_LOCK_TITLE}
-                    body={PACE_LOCK_BODY}
+                    title={t(PACE_LOCK_TITLE)}
+                    body={t(PACE_LOCK_BODY)}
                     onSeePlans={() => openPaywall("paceHistory")}
                   />
                 )}
 
                 {isPro && stats.dailyBreakdown.length > 0 && (
-                  <Text style={styles.sectionHeader}>History</Text>
+                  <Text style={styles.sectionHeader}>{t("History")}</Text>
                 )}
               </View>
             }
@@ -124,7 +125,7 @@ export function StatsScreen() {
                   <View style={styles.dayInfo}>
                     <Text style={styles.dayDate}>{formatDayLabel(item.date)}</Text>
                     <Text style={styles.dayMeta}>
-                      {item.completedCount === 1 ? "1 task" : `${item.completedCount} tasks`} · {item.actualMinutes} min
+                      {item.completedCount === 1 ? t("1 task") : t("{0} tasks", item.completedCount)} · {item.actualMinutes} min
                     </Text>
                   </View>
                   <View style={styles.dayProgressTrack}>
@@ -138,7 +139,7 @@ export function StatsScreen() {
               isPro ? (
                 <View style={styles.emptyState}>
                   <Text style={styles.emptyText}>
-                    Complete a task to start building your history.
+                    {t("Complete a task to start building your history.")}
                   </Text>
                 </View>
               ) : null

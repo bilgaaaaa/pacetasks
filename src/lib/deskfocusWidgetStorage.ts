@@ -46,14 +46,3 @@ export function readWidgetCompletions(): string | null {
     return null;
   }
 }
-
-// Redraws the widget, e.g. right after calendar access was granted.
-export function reloadWidget(): void {
-  const Storage = extensionStorage();
-  if (!Storage) return;
-  try {
-    Storage.reloadWidget(WIDGET_KIND);
-  } catch (e) {
-    console.warn("[deskfocusWidgetStorage] reload failed", e);
-  }
-}

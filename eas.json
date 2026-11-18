@@ -11,6 +11,12 @@
     "production": {
       "autoIncrement": true,
       "environment": "production"
+    },
+    "testflight": {
+      "extends": "production",
+      "env": {
+        "EXPO_PUBLIC_TESTER_BUILD": "1"
+      }
     }
   },
   "submit": {
@@ -18,6 +24,9 @@
       "ios": {
         "ascAppId": "6828773431"
       }
+    },
+    "testflight": {
+      "extends": "production"
     }
   }
 }

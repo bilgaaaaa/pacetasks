@@ -1,16 +1,18 @@
 import Foundation
 import WidgetKit
 
-/// Rebuilds today's list in the shared state from PaceTasks and EventKit, and settles completions made in the widget.
+/// Rebuilds today's and tomorrow's lists in the shared state from PaceTasks and EventKit, and settles completions made in the widget.
 enum WidgetTaskSync {
-    /// Reloads today's list; the widget calls it for every timeline and the app after each button press.
+    /// Reloads today's and tomorrow's lists; the widget calls it for every timeline and the app after each button press.
     @discardableResult
     static func refresh(now: Date = .now) async -> DeskfocusSnapshot {
         let settings = SharedStore.shared.load().settings
         let paceTasks = PaceTasksFeed.tasks(now: now)
         let tasks = (paceTasks + (await EventKitTasks.today(now: now, settings: settings))).sortedForToday()
+        let tomorrowPaceTasks = PaceTasksFeed.tomorrowTasks(now: now)
+        let tomorrowTasks = (tomorrowPaceTasks + (await EventKitTasks.tomorrow(now: now, settings: settings))).sortedForToday()
         let paceTaskIds = Set(paceTasks.map(\.id))
-        let taskIds = Set(tasks.map(\.id))
+        let taskIds = Set((tasks + tomorrowTasks).map(\.id))
         let today = DateInterval.day(containing: now)
 
         let snapshot = SharedStore.shared.update { snapshot in
@@ -18,13 +20,14 @@ enum WidgetTaskSync {
             // Items still needed after they leave today's list: completions not yet applied, and the focus task.
             let stillNeeded = snapshot.tasks.filter { snapshot.pendingCompletionIds.contains($0.id) || $0.id == focusTaskId }
             snapshot.tasks = tasks
+            snapshot.tomorrowTasks = tomorrowTasks
             stillNeeded.forEach { snapshot.reference($0) }
             // A PaceTasks task leaves the app's list once Supabase has it done (or it moved to another day),
             // which settles its completion: it must not be completed again later.
             let settled = snapshot.pendingCompletionIds.filter { id in
                 snapshot.task(withId: id)?.source == .paceTasks && !paceTaskIds.contains(id)
             }
-            snapshot.pendingCompletionIds.subtract(settled)
+            snapshot.settleCompletions(settled)
             let pending = snapshot.pendingCompletionIds
             snapshot.referencedTasks = snapshot.referencedTasks.filter { pending.contains($0.id) || $0.id == focusTaskId }
             snapshot.completedTaskIds = snapshot.completedTaskIds.filter { taskIds.contains($0) || pending.contains($0) }
@@ -36,7 +39,7 @@ enum WidgetTaskSync {
             snapshot.lastSyncDate = now
         }
         PaceTasksFeed.publishPendingCompletions(of: snapshot)
-        Log.sync.info("Widget list: \(paceTasks.count) PaceTasks tasks, \(tasks.count - paceTasks.count) calendar items")
+        Log.sync.info("Widget list: \(paceTasks.count) PaceTasks tasks, \(tasks.count - paceTasks.count) calendar items, \(tomorrowTasks.count) for tomorrow")
         return snapshot
     }
 
@@ -62,7 +65,7 @@ enum WidgetTaskSync {
         }
         guard !done.isEmpty || !dropped.isEmpty else { return }
         SharedStore.shared.update { snapshot in
-            snapshot.pendingCompletionIds.subtract(done.union(dropped))
+            snapshot.settleCompletions(done.union(dropped))
             snapshot.completedTaskIds.subtract(dropped)
         }
     }

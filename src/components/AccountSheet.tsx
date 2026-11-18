@@ -35,6 +35,7 @@ import { AppleSignInButton } from "./AppleSignInButton";
 import { Button } from "./Button";
 import { ErrorBanner } from "./ErrorBanner";
 import { TextField } from "./TextField";
+import { t } from "../i18n";
 
 interface Props {
   visible: boolean;
@@ -93,10 +94,10 @@ export function AccountSheet({
         <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <View style={styles.header}>
             <View style={styles.flex}>
-              <Text style={styles.eyebrow}>ACCOUNT</Text>
-              <Text style={styles.title}>{phase === "done" ? "Done" : sheetTitle(mode)}</Text>
+              <Text style={styles.eyebrow}>{t("ACCOUNT")}</Text>
+              <Text style={styles.title}>{phase === "done" ? t("Done") : sheetTitle(mode)}</Text>
             </View>
-            <TouchableOpacity onPress={onClose} hitSlop={8} style={styles.closeButton} accessibilityLabel="Close">
+            <TouchableOpacity onPress={onClose} hitSlop={8} style={styles.closeButton} accessibilityLabel={t("Close")}>
               <Ionicons name="close" size={18} color={theme.colors.textSecondary} />
             </TouchableOpacity>
           </View>
@@ -152,24 +153,24 @@ export function AccountSheet({
               {isSignUp && (
                 <View style={styles.consentRow}>
                   <View style={styles.consentText}>
-                    <Text style={styles.consentLabel}>{MARKETING_CONSENT_LABEL}</Text>
-                    <Text style={styles.hint}>{MARKETING_CONSENT_HINT}</Text>
+                    <Text style={styles.consentLabel}>{t(MARKETING_CONSENT_LABEL)}</Text>
+                    <Text style={styles.hint}>{t(MARKETING_CONSENT_HINT)}</Text>
                   </View>
                   <Switch
                     value={state.marketingOptIn}
                     disabled={phase !== "form"}
                     onValueChange={onChangeMarketingOptIn}
                     trackColor={{ false: theme.colors.border, true: theme.colors.accentDark }}
-                    accessibilityLabel={MARKETING_CONSENT_LABEL}
+                    accessibilityLabel={t(MARKETING_CONSENT_LABEL)}
                   />
                 </View>
               )}
 
               {isSignUp && (
                 <View style={styles.privacyNote}>
-                  <Text style={styles.hint}>{SIGN_UP_PRIVACY_NOTE}</Text>
+                  <Text style={styles.hint}>{t(SIGN_UP_PRIVACY_NOTE)}</Text>
                   <TouchableOpacity onPress={onOpenPrivacyPolicy} hitSlop={12} accessibilityRole="link">
-                    <Text style={styles.link}>{PRIVACY_POLICY_LABEL}</Text>
+                    <Text style={styles.link}>{t(PRIVACY_POLICY_LABEL)}</Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -177,7 +178,7 @@ export function AccountSheet({
               {state.error && <ErrorBanner message={state.error} />}
 
               <Button
-                label={phase === "sending" ? "Sending the code…" : "Email me a code"}
+                label={phase === "sending" ? t("Sending the code…") : t("Email me a code")}
                 loading={phase === "sending"}
                 disabled={phase === "connecting"}
                 onPress={onSubmit}
@@ -212,7 +213,7 @@ export function AccountSheet({
             <ScrollView style={styles.flex} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
               <Text style={styles.subtitle}>{codePrompt(normalizeEmail(state.email))}</Text>
               <TextField
-                label="Code"
+                label={t("Code")}
                 value={state.code}
                 onChangeText={onChangeCode}
                 editable={phase === "code"}
@@ -228,24 +229,24 @@ export function AccountSheet({
               {state.error && <ErrorBanner message={state.error} />}
 
               <Button
-                label={phase === "verifying" ? "Checking…" : "Confirm"}
+                label={phase === "verifying" ? t("Checking…") : t("Confirm")}
                 loading={phase === "verifying"}
                 disabled={!isCompleteCode(state.code)}
                 onPress={onVerify}
               />
               <Button
-                label={resending ? "Sending a new code…" : "Send a new code"}
+                label={resending ? t("Sending a new code…") : t("Send a new code")}
                 variant="secondary"
                 disabled={phase === "verifying" || resending}
                 onPress={onResendCode}
               />
               <Button
-                label="Use a different email"
+                label={t("Use a different email")}
                 variant="secondary"
                 disabled={phase === "verifying" || resending}
                 onPress={onEditEmail}
               />
-              <Text style={styles.hint}>The code can take a minute to arrive. Check your spam folder too.</Text>
+              <Text style={styles.hint}>{t("The code can take a minute to arrive. Check your spam folder too.")}</Text>
             </ScrollView>
           )}
 
@@ -257,7 +258,7 @@ export function AccountSheet({
               <Text style={styles.doneText}>
                 {doneMessage(mode, (isSignUp && state.firstName.trim()) || profileFirstName)}
               </Text>
-              <Button style={styles.doneButton} label="Close" onPress={onClose} />
+              <Button style={styles.doneButton} label={t("Close")} onPress={onClose} />
             </View>
           )}
         </KeyboardAvoidingView>

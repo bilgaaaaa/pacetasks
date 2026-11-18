@@ -13,6 +13,10 @@ import { TIMING_LABELS } from "../lib/taskSections";
 import { rangeTimeUpCopy } from "../lib/timerAlertCopy";
 import { isQuickWin } from "@domain/todayTasks";
 import { toLocalDateKey } from "@domain/dates";
+import { t } from "../i18n";
+import { taskTimeOf } from "@domain/taskTime";
+import { repeatTag } from "../lib/repeatCopy";
+import { taskTimeLabel } from "../lib/taskTimeLabel";
 
 interface Props {
   task: Task;
@@ -113,9 +117,11 @@ export function TaskItem({
     setIsConfirming(false);
   };
 
-  // A timed task shows its minutes here: its pill shows the start time instead.
+  // A timed task shows its minutes here: its pill shows the start time instead. A window ("after 20:00") leads the line.
+  const windowLabel = task.scheduled_time ? null : taskTimeLabel(taskTimeOf(task));
   const baseSubtitle = [
-    task.scheduled_time ? `${task.estimated_minutes} min` : null,
+    windowLabel,
+    task.scheduled_time ? t("{0} min", task.estimated_minutes) : null,
     TIMING_LABELS[task.timing],
     category?.label,
   ]
@@ -124,14 +130,20 @@ export function TaskItem({
   // Due day and "maybe" come first when set (e.g. from Brain Dump): "by Fri · maybe · Anytime · Work".
   const dueLabel =
     task.due_date && !isDone ? formatDueLabel(task.due_date, task.due_kind, toLocalDateKey(new Date())) : null;
-  const restSubtitle = [task.flexible && !isDone ? "maybe" : null, baseSubtitle].filter(Boolean).join(" · ");
+  const restSubtitle = [
+    task.repeat_rule && !isDone ? repeatTag(task.repeat_rule) : null,
+    task.flexible && !isDone ? "maybe" : null,
+    baseSubtitle,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   const showMenu = () => {
     Alert.alert(task.title, task.notes ?? undefined, [
-      ...(isDone ? [] : [{ text: "Edit", onPress: () => onEdit(task) }]),
-      ...(isDone ? [] : [{ text: "Move to Someday", onPress: () => onPark(task.id) }]),
-      { text: "Delete", style: "destructive" as const, onPress: () => onDelete(task.id) },
-      { text: "Cancel", style: "cancel" as const },
+      ...(isDone ? [] : [{ text: t("Edit"), onPress: () => onEdit(task) }]),
+      ...(isDone ? [] : [{ text: t("Move to Someday"), onPress: () => onPark(task.id) }]),
+      { text: t("Delete"), style: "destructive" as const, onPress: () => onDelete(task.id) },
+      { text: t("Cancel"), style: "cancel" as const },
     ]);
   };
 
@@ -152,7 +164,7 @@ export function TaskItem({
           <Text style={styles.metaDone} numberOfLines={1}>{restSubtitle}</Text>
         </View>
         <Text style={styles.minutesDone}>{task.actual_minutes ?? task.estimated_minutes} min</Text>
-        <TouchableOpacity style={styles.menuButton} onPress={showMenu} accessibilityLabel={`Options for ${task.title}`}>
+        <TouchableOpacity style={styles.menuButton} onPress={showMenu} accessibilityLabel={t("Options for {0}", task.title)}>
           <Ionicons name="ellipsis-horizontal" size={16} color={theme.colors.textTertiary} />
         </TouchableOpacity>
       </View>
@@ -167,7 +179,7 @@ export function TaskItem({
           onPress={openConfirm}
           accessibilityRole="checkbox"
           accessibilityState={{ checked: false }}
-          accessibilityLabel={`Complete ${task.title}`}
+          accessibilityLabel={t("Complete {0}", task.title)}
         >
           <View style={styles.checkCircle} />
         </TouchableOpacity>
@@ -176,13 +188,13 @@ export function TaskItem({
           style={styles.mainLine}
           onPress={() => onEdit(task)}
           accessibilityRole="button"
-          accessibilityLabel={`Edit ${task.title}`}
+          accessibilityLabel={t("Edit {0}", task.title)}
         >
           <Text style={styles.title} numberOfLines={2}>{task.title}</Text>
           <View style={styles.metaRow}>
             {categoryDot}
             {task.notes && (
-              <Ionicons name="document-text-outline" size={12} color={theme.colors.textTertiary} accessibilityLabel="Has details" />
+              <Ionicons name="document-text-outline" size={12} color={theme.colors.textTertiary} accessibilityLabel={t("Has details")} />
             )}
             <Text style={styles.meta} numberOfLines={1}>
               {dueLabel && (
@@ -202,18 +214,18 @@ export function TaskItem({
               <TouchableOpacity
                 style={[styles.pill, styles.pillFocus]}
                 onPress={() => onStartFocus(task)}
-                accessibilityLabel={`Start focus session for ${task.title}`}
+                accessibilityLabel={t("Start focus session for {0}", task.title)}
               >
                 {task.reminder_minutes_before !== null && (
-                  <Ionicons name="notifications" size={12} color={theme.colors.surface} accessibilityLabel="Reminder set" />
+                  <Ionicons name="notifications" size={12} color={theme.colors.surface} accessibilityLabel={t("Reminder set")} />
                 )}
-                <Text style={[styles.pillText, styles.pillTextFocus]}>Focus {task.scheduled_time}</Text>
+                <Text style={[styles.pillText, styles.pillTextFocus]}>{t("Focus {0}", task.scheduled_time)}</Text>
               </TouchableOpacity>
             ) : timer.isRunning ? (
               <TouchableOpacity
                 style={[styles.pill, inRange && styles.pillQuick]}
                 onPress={stopRangeTimer}
-                accessibilityLabel="Stop timer"
+                accessibilityLabel={t("Stop timer")}
               >
                 <Text style={[styles.pillText, inRange && styles.pillTextQuick]}>
                   {formatClock(timer.remainingSeconds)}
@@ -223,12 +235,12 @@ export function TaskItem({
               <TouchableOpacity
                 style={[styles.pill, quickWin && styles.pillQuick]}
                 onPress={startRangeTimer}
-                accessibilityLabel={`Start ${task.estimated_minutes} minute timer`}
+                accessibilityLabel={t("Start {0} minute timer", task.estimated_minutes)}
               >
                 <Text style={[styles.pillText, quickWin && styles.pillTextQuick]}>{task.estimated_minutes} min</Text>
               </TouchableOpacity>
             )}
-            <TouchableOpacity style={styles.menuButton} onPress={showMenu} accessibilityLabel={`Options for ${task.title}`}>
+            <TouchableOpacity style={styles.menuButton} onPress={showMenu} accessibilityLabel={t("Options for {0}", task.title)}>
               <Ionicons name="ellipsis-horizontal" size={16} color={theme.colors.textTertiary} />
             </TouchableOpacity>
           </>
@@ -238,11 +250,11 @@ export function TaskItem({
       {/* On its own line, so the title and details above keep the row's full width. */}
       {isConfirming && (
         <View style={styles.confirmRow}>
-          <Text style={styles.confirmLabel}>It took</Text>
+          <Text style={styles.confirmLabel}>{t("It took")}</Text>
           <TouchableOpacity
             onPress={() => setConfirmingMinutes((m) => Math.max(1, m - 1))}
             hitSlop={8}
-            accessibilityLabel="One minute less"
+            accessibilityLabel={t("One minute less")}
           >
             <Ionicons name="remove-circle" size={26} color={theme.colors.accent} />
           </TouchableOpacity>
@@ -250,7 +262,7 @@ export function TaskItem({
           <TouchableOpacity
             onPress={() => setConfirmingMinutes((m) => m + 1)}
             hitSlop={8}
-            accessibilityLabel="One minute more"
+            accessibilityLabel={t("One minute more")}
           >
             <Ionicons name="add-circle" size={26} color={theme.colors.accent} />
           </TouchableOpacity>
@@ -259,16 +271,16 @@ export function TaskItem({
               style={styles.cancelButton}
               onPress={cancelConfirm}
               accessibilityRole="button"
-              accessibilityLabel={`Cancel completing ${task.title}`}
+              accessibilityLabel={t("Cancel completing {0}", task.title)}
             >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+              <Text style={styles.cancelButtonText}>{t("Cancel")}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.confirmButton}
               onPress={() => onComplete(task.id, confirmingMinutes)}
               accessibilityRole="button"
             >
-              <Text style={styles.confirmButtonText}>Done</Text>
+              <Text style={styles.confirmButtonText}>{t("Done")}</Text>
             </TouchableOpacity>
           </View>
         </View>

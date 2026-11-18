@@ -6,18 +6,67 @@
   const TICK_MS = 250;
   const SVG_NS = "http://www.w3.org/2000/svg";
 
+  // Every text this script writes, in the page's language (<html lang>).
+  const TEXTS = {
+    en: {
+      tasks: {
+        "morning-run": "Morning run",
+        "deep-work": "Deep work: launch plan",
+        "design-review": "Design review",
+        dentist: "Call the dentist",
+        "train-tickets": "Book train tickets",
+      },
+      sources: { PaceTasks: "PaceTasks", Calendar: "Calendar", Reminders: "Reminders" },
+      messages: "Messages",
+      allDone: "Everything is done for today",
+      start: "Start",
+      pause: "Pause",
+      startAgain: "Start again",
+      minutes: (minutes) => `${minutes} min`,
+      progress: (done, total) => `${done} of ${total} done`,
+      doneLabel: (title) => `Done: ${title}`,
+      focusLabel: (title, source) => `Focus on ${title}, from ${source}`,
+      hiddenApps: (names) => `Hidden while you focus: ${names}`,
+      noHiddenApps: "No apps hidden while you focus",
+    },
+    it: {
+      tasks: {
+        "morning-run": "Corsa del mattino",
+        "deep-work": "Lavoro profondo: piano di lancio",
+        "design-review": "Revisione del design",
+        dentist: "Chiamare il dentista",
+        "train-tickets": "Prenotare i biglietti del treno",
+      },
+      sources: { PaceTasks: "PaceTasks", Calendar: "Calendario", Reminders: "Promemoria" },
+      messages: "Messaggi",
+      allDone: "Per oggi è tutto fatto",
+      start: "Inizia",
+      pause: "Pausa",
+      startAgain: "Ricomincia",
+      minutes: (minutes) => `${minutes} min`,
+      progress: (done, total) => `${done} di ${total} fatte`,
+      doneLabel: (title) => `Fatta: ${title}`,
+      focusLabel: (title, source) => `Focus su ${title}, da ${source}`,
+      hiddenApps: (names) => `Nascoste mentre ti concentri: ${names}`,
+      noHiddenApps: "Nessuna app nascosta mentre ti concentri",
+    },
+  };
+  const language = document.documentElement.lang in TEXTS ? document.documentElement.lang : "en";
+  const texts = TEXTS[language];
+
   // The sample day from the PaceTasks screenshots, with a calendar event and a reminder mixed in.
+  // `source` is the key the styles use; its name on screen comes from the texts.
   const TASKS = [
-    { id: "morning-run", title: "Morning run", source: "PaceTasks", minutes: 30 },
-    { id: "deep-work", title: "Deep work: launch plan", source: "PaceTasks", minutes: 25 },
-    { id: "design-review", title: "Design review", source: "Calendar", minutes: 30 },
-    { id: "dentist", title: "Call the dentist", source: "PaceTasks", minutes: 5 },
-    { id: "train-tickets", title: "Book train tickets", source: "Reminders", minutes: 10 },
-  ];
+    { id: "morning-run", source: "PaceTasks", minutes: 30 },
+    { id: "deep-work", source: "PaceTasks", minutes: 25 },
+    { id: "design-review", source: "Calendar", minutes: 30 },
+    { id: "dentist", source: "PaceTasks", minutes: 5 },
+    { id: "train-tickets", source: "Reminders", minutes: 10 },
+  ].map((task) => ({ ...task, title: texts.tasks[task.id] }));
 
   const APPS = [
     { id: "mail", name: "Mail", hidden: true },
-    { id: "messages", name: "Messages", hidden: false },
+    { id: "messages", name: texts.messages, hidden: false },
     { id: "slack", name: "Slack", hidden: true },
     { id: "whatsapp", name: "WhatsApp", hidden: true },
   ];
@@ -45,7 +94,7 @@
     appSwitches: query("data-app-switches"),
   };
   const taskRows = new Map();
-  const listFormat = new Intl.ListFormat("en", { style: "long", type: "conjunction" });
+  const listFormat = new Intl.ListFormat(language, { style: "long", type: "conjunction" });
 
   const log = (message) => console.info(`${LOG_PREFIX} ${message}`);
 
@@ -63,15 +112,15 @@
     const totalSeconds = task ? task.minutes * 60 : 0;
     const progress = totalSeconds ? state.remainingSeconds / totalSeconds : 0;
 
-    elements.focusTask.textContent = task ? task.title : "Everything is done for today";
+    elements.focusTask.textContent = task ? task.title : texts.allDone;
     elements.focusTime.textContent = formatTime(state.remainingSeconds);
     elements.focusRing.style.strokeDashoffset = String(RING_LENGTH * (1 - progress));
     elements.focusToggle.disabled = !task;
     elements.focusDone.disabled = !task;
 
-    if (isTimerRunning()) elements.focusToggle.textContent = "Pause";
-    else if (task && state.remainingSeconds === 0) elements.focusToggle.textContent = "Start again";
-    else elements.focusToggle.textContent = "Start";
+    if (isTimerRunning()) elements.focusToggle.textContent = texts.pause;
+    else if (task && state.remainingSeconds === 0) elements.focusToggle.textContent = texts.startAgain;
+    else elements.focusToggle.textContent = texts.start;
   };
 
   const stopTimer = () => {
@@ -134,7 +183,7 @@
       select.setAttribute("aria-pressed", String(isSelected));
       select.disabled = isDone;
     });
-    elements.progress.textContent = `${state.doneTaskIds.size} of ${TASKS.length} done`;
+    elements.progress.textContent = texts.progress(state.doneTaskIds.size, TASKS.length);
   };
 
   const render = () => {
@@ -202,21 +251,21 @@
     const check = document.createElement("button");
     check.type = "button";
     check.className = "task__check";
-    check.setAttribute("aria-label", `Done: ${task.title}`);
+    check.setAttribute("aria-label", texts.doneLabel(task.title));
     check.append(createCheckIcon());
     check.addEventListener("click", () => toggleTaskDone(task.id));
 
     const select = document.createElement("button");
     select.type = "button";
     select.className = "task__select";
-    select.setAttribute("aria-label", `Focus on ${task.title}, from ${task.source}`);
+    select.setAttribute("aria-label", texts.focusLabel(task.title, texts.sources[task.source]));
     select.addEventListener("click", () => selectTask(task.id));
 
     const text = createSpan("task__text", "");
-    const source = createSpan("task__source source-dot", task.source);
+    const source = createSpan("task__source source-dot", texts.sources[task.source]);
     source.dataset.source = task.source;
     text.append(createSpan("task__title", task.title), source);
-    select.append(text, createSpan("task__minutes", `${task.minutes} min`));
+    select.append(text, createSpan("task__minutes", texts.minutes(task.minutes)));
 
     row.append(check, select);
     return { row, check, select };
@@ -228,8 +277,8 @@
     if (!elements.hiddenApps) return;
     const names = APPS.filter((app) => state.hiddenAppIds.has(app.id)).map((app) => app.name);
     elements.hiddenApps.textContent = names.length
-      ? `Hidden while you focus: ${listFormat.format(names)}`
-      : "No apps hidden while you focus";
+      ? texts.hiddenApps(listFormat.format(names))
+      : texts.noHiddenApps;
   };
 
   const setAppHidden = (app, isHidden) => {

@@ -3,6 +3,7 @@ import { isQuickWin, TIMING_ORDER } from "@domain/todayTasks";
 import { Task, TaskTiming } from "./types";
 import { GroupBy } from "./appearance";
 import { getCategory, NO_CATEGORY } from "./categories";
+import { localized, msg, t } from "../i18n";
 
 // Splits Today's pending tasks into the sections the user picked in Settings
 // (by size, place, category, time of day, or one plain list). Pure, so the
@@ -12,18 +13,18 @@ export type TaskPlace = "home" | "out" | "work" | "anywhere";
 
 export const PLACE_ORDER: TaskPlace[] = ["home", "out", "work", "anywhere"];
 
-export const PLACE_LABELS: Record<TaskPlace, string> = {
-  home: "At home",
-  out: "Out & about",
-  work: "At work",
-  anywhere: "Anywhere",
-};
+export const PLACE_LABELS: Record<TaskPlace, string> = localized({
+  home: msg("At home"),
+  out: msg("Out & about"),
+  work: msg("At work"),
+  anywhere: msg("Anywhere"),
+});
 
-export const TIMING_LABELS: Record<TaskTiming, string> = {
-  before_work: "Before work",
-  anytime: "Anytime",
-  after_work: "After work",
-};
+export const TIMING_LABELS: Record<TaskTiming, string> = localized({
+  before_work: msg("Before work"),
+  anytime: msg("Anytime"),
+  after_work: msg("After work"),
+});
 
 export interface TaskSection {
   key: string;
@@ -67,11 +68,11 @@ function buildSections(
 export function groupTodayTasks(pending: Task[], groupBy: GroupBy, quickWinMinutes: number): TaskSection[] {
   switch (groupBy) {
     case "all":
-      return buildSections(pending, [{ key: "all", title: "Today's plan", matches: () => true }]);
+      return buildSections(pending, [{ key: "all", title: t("Today's plan"), matches: () => true }]);
     case "size":
       return buildSections(pending, [
-        { key: "quick", title: "Quick wins", matches: (t) => isQuickWin(t, quickWinMinutes) },
-        { key: "longer", title: "Takes a while", matches: (t) => !isQuickWin(t, quickWinMinutes) },
+        { key: "quick", title: t("Quick wins"), matches: (t) => isQuickWin(t, quickWinMinutes) },
+        { key: "longer", title: t("Takes a while"), matches: (t) => !isQuickWin(t, quickWinMinutes) },
       ]);
     case "place":
       return buildSections(

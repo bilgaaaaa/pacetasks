@@ -11,7 +11,9 @@ protocol TaskSource: AnyObject {
     /// Events overlapping the interval and to-dos due in it; when it includes today, also overdue and undated to-dos.
     /// Calendars and lists switched off in Settings are skipped.
     func fetchTasks(in interval: DateInterval, settings: DeskfocusSettings) async throws -> [DeskTask]
-    func complete(_ task: DeskTask) async throws
+    /// `focusedMinutes`: time really spent in a focus session on it, when there was one; sources that keep no
+    /// durations ignore it.
+    func complete(_ task: DeskTask, focusedMinutes: Int?) async throws
 }
 
 extension DeskTask {

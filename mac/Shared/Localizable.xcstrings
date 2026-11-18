@@ -171,12 +171,42 @@
         }
       }
     },
-    "A glass widget on your desktop, and DeskFocus in the menu bar.": {
+    "All day": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Un widget in vetro sulla scrivania e DeskFocus nella barra dei menu."
+            "value": "Tutto il giorno"
+          }
+        }
+      }
+    },
+    "Nothing left today": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nient'altro per oggi"
+          }
+        }
+      }
+    },
+    "Open tomorrow": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apri domani"
+          }
+        }
+      }
+    },
+    "The DeskFocus widget on your desktop, and PaceTasks in the menu bar.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il widget DeskFocus sulla scrivania e PaceTasks nella barra dei menu."
           }
         }
       }
@@ -481,12 +511,12 @@
         }
       }
     },
-    "Click ⚙︎ on the widget, or the DeskFocus icon in the menu bar and then ⚙︎.": {
+    "Click ⚙︎ on the widget, or the PaceTasks icon in the menu bar and then ⚙︎.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Fai clic su ⚙︎ nel widget, oppure sull'icona di DeskFocus nella barra dei menu e poi su ⚙︎."
+            "value": "Fai clic su ⚙︎ nel widget, oppure sull'icona di PaceTasks nella barra dei menu e poi su ⚙︎."
           }
         }
       }
@@ -671,22 +701,22 @@
         }
       }
     },
-    "DeskFocus Settings": {
+    "PaceTasks Settings": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Impostazioni di DeskFocus"
+            "value": "Impostazioni di PaceTasks"
           }
         }
       }
     },
-    "DeskFocus shows the calendars and reminders on this Mac. Pick which ones any time in Settings › Calendars.": {
+    "PaceTasks shows the calendars and reminders on this Mac. Pick which ones any time in Settings › Calendars.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "DeskFocus mostra i calendari e i promemoria di questo Mac. Scegli quali in qualsiasi momento in Impostazioni › Calendari."
+            "value": "PaceTasks mostra i calendari e i promemoria di questo Mac. Scegli quali in qualsiasi momento in Impostazioni › Calendari."
           }
         }
       }
@@ -1101,12 +1131,12 @@
         }
       }
     },
-    "If access was denied before, allow DeskFocus in System Settings › Privacy & Security.": {
+    "If access was denied before, allow PaceTasks in System Settings › Privacy & Security.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Se in passato hai negato l'accesso, consenti DeskFocus in Impostazioni di Sistema › Privacy e sicurezza."
+            "value": "Se in passato hai negato l'accesso, consenti PaceTasks in Impostazioni di Sistema › Privacy e sicurezza."
           }
         }
       }
@@ -1361,12 +1391,12 @@
         }
       }
     },
-    "Open DeskFocus at login": {
+    "Open PaceTasks at login": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Apri DeskFocus al login"
+            "value": "Apri PaceTasks al login"
           }
         }
       }
@@ -1571,12 +1601,12 @@
         }
       }
     },
-    "Quit DeskFocus": {
+    "Quit PaceTasks": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Esci da DeskFocus"
+            "value": "Esci da PaceTasks"
           }
         }
       }
@@ -1631,12 +1661,12 @@
         }
       }
     },
-    "Restart DeskFocus to switch language.": {
+    "Restart PaceTasks to switch language.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Riavvia DeskFocus per cambiare lingua."
+            "value": "Riavvia PaceTasks per cambiare lingua."
           }
         }
       }
@@ -1781,12 +1811,12 @@
         }
       }
     },
-    "Show in DeskFocus": {
+    "Show in PaceTasks": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mostra in DeskFocus"
+            "value": "Mostra in PaceTasks"
           }
         }
       }
@@ -1871,12 +1901,12 @@
         }
       }
     },
-    "Start Using DeskFocus": {
+    "Start Using PaceTasks": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Inizia a usare DeskFocus"
+            "value": "Inizia a usare PaceTasks"
           }
         }
       }
@@ -2007,6 +2037,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Titolo"
+          }
+        }
+      }
+    },
+    "To-do": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Da fare"
           }
         }
       }
@@ -2161,12 +2201,12 @@
         }
       }
     },
-    "Welcome to DeskFocus": {
+    "Welcome to PaceTasks": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ti diamo il benvenuto in DeskFocus"
+            "value": "Ti diamo il benvenuto in PaceTasks"
           }
         }
       }
@@ -2311,12 +2351,12 @@
         }
       }
     },
-    "DeskFocus looks for a new version once a day and updates itself in place. Your settings and tasks stay as they are.": {
+    "PaceTasks looks for a new version once a day and updates itself in place. Your settings and tasks stay as they are.": {
       "localizations": {
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "DeskFocus cerca una nuova versione una volta al giorno e si aggiorna da sola. Impostazioni e attività restano come sono."
+            "value": "PaceTasks cerca una nuova versione una volta al giorno e si aggiorna da sola. Impostazioni e attività restano come sono."
           }
         }
       }
@@ -2407,6 +2447,628 @@
           "stringUnit": {
             "state": "translated",
             "value": "Account Google"
+          }
+        }
+      }
+    },
+    "Add to PaceTasks": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi a PaceTasks"
+          }
+        }
+      }
+    },
+    "Add one or more tasks by voice, in English or Italian.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi una o più attività con la voce, in inglese o in italiano."
+          }
+        }
+      }
+    },
+    "Tasks": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Attività"
+          }
+        }
+      }
+    },
+    "What should I add?": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cosa aggiungo?"
+          }
+        }
+      }
+    },
+    "Add ${text} to PaceTasks": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi ${text} a PaceTasks"
+          }
+        }
+      }
+    },
+    "What's next in PaceTasks": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cosa c'è dopo in PaceTasks"
+          }
+        }
+      }
+    },
+    "Hear the one task to do now.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ascolta l'attività da fare adesso."
+          }
+        }
+      }
+    },
+    "What's on today in PaceTasks": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cosa c'è oggi in PaceTasks"
+          }
+        }
+      }
+    },
+    "Hear how many tasks are left today and how long they take.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ascolta quante attività restano oggi e quanto tempo richiedono."
+          }
+        }
+      }
+    },
+    "Add tasks": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi attività"
+          }
+        }
+      }
+    },
+    "What's next": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cosa c'è dopo"
+          }
+        }
+      }
+    },
+    "siri.failed": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Al momento non è stato possibile. Riprova tra poco."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PaceTasks couldn't do that right now. Try again in a moment."
+          }
+        }
+      }
+    },
+    "siri.openApp": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apri PaceTasks una volta, così Siri può raggiungere le tue attività."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open PaceTasks once so Siri can reach your tasks."
+          }
+        }
+      }
+    },
+    "This build can't reach PaceTasks. Add the server address to Config/Secrets.xcconfig.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questa build non raggiunge PaceTasks. Aggiungi l'indirizzo del server in Config/Secrets.xcconfig."
+          }
+        }
+      }
+    },
+    "PaceTasks didn't answer (error %lld). Please try again.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PaceTasks non ha risposto (errore %lld). Riprova."
+          }
+        }
+      }
+    },
+    "Sign in with your PaceTasks account first.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prima accedi con il tuo account PaceTasks."
+          }
+        }
+      }
+    },
+    "No PaceTasks account uses this email. Create one in PaceTasks on your iPhone first.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessun account PaceTasks usa questa email. Creane uno prima in PaceTasks sul tuo iPhone."
+          }
+        }
+      }
+    },
+    "That code is wrong or has expired. Check the newest email, or send a new code.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il codice è sbagliato o scaduto. Controlla l'email più recente o invia un nuovo codice."
+          }
+        }
+      }
+    },
+    "Too many codes were asked for. Wait a minute and try again.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sono stati richiesti troppi codici. Aspetta un minuto e riprova."
+          }
+        }
+      }
+    },
+    "PaceTasks account": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account PaceTasks"
+          }
+        }
+      }
+    },
+    "Not available in this build": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non disponibile in questa build"
+          }
+        }
+      }
+    },
+    "Signed in": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accesso effettuato"
+          }
+        }
+      }
+    },
+    "Sign Out": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esci"
+          }
+        }
+      }
+    },
+    "Code from the email to %@": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Codice dall'email inviata a %@"
+          }
+        }
+      }
+    },
+    "Use Another Email": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usa un'altra email"
+          }
+        }
+      }
+    },
+    "Signing In…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accesso in corso…"
+          }
+        }
+      }
+    },
+    "Sign In": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accedi"
+          }
+        }
+      }
+    },
+    "Email": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Email"
+          }
+        }
+      }
+    },
+    "Sending…": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invio in corso…"
+          }
+        }
+      }
+    },
+    "Email Me a Code": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inviami un codice"
+          }
+        }
+      }
+    },
+    "PaceTasks": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PaceTasks"
+          }
+        }
+      }
+    },
+    "Use the same account as PaceTasks on your iPhone, and your tasks show up here and in the DeskFocus widget.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usa lo stesso account di PaceTasks sul tuo iPhone: le tue attività compariranno qui e nel widget DeskFocus."
+          }
+        }
+      }
+    },
+    "PaceTasks did not confirm the new task. Please try again.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PaceTasks non ha confermato la nuova attività. Riprova."
+          }
+        }
+      }
+    },
+    "Repeat": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ripeti"
+          }
+        }
+      }
+    },
+    "Doesn't repeat": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non si ripete"
+          }
+        }
+      }
+    },
+    "Every day": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ogni giorno"
+          }
+        }
+      }
+    },
+    "Weekdays": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giorni feriali"
+          }
+        }
+      }
+    },
+    "Every week": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ogni settimana"
+          }
+        }
+      }
+    },
+    "Every month": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ogni mese"
+          }
+        }
+      }
+    },
+    "Tomorrow": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Domani"
+          }
+        }
+      }
+    },
+    "Weekend": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weekend"
+          }
+        }
+      }
+    },
+    "Someday": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prima o poi"
+          }
+        }
+      }
+    },
+    "Deadline passed": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scadenza passata"
+          }
+        }
+      }
+    },
+    "High priority": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alta priorità"
+          }
+        }
+      }
+    },
+    "Moved several times already": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Già spostata più volte"
+          }
+        }
+      }
+    },
+    "A maybe": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un forse"
+          }
+        }
+      }
+    },
+    "Today is full": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oggi è pieno"
+          }
+        }
+      }
+    },
+    "Its time has passed": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'orario è passato"
+          }
+        }
+      }
+    },
+    "Its window has closed": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La sua fascia oraria è finita"
+          }
+        }
+      }
+    },
+    "Due today": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In scadenza oggi"
+          }
+        }
+      }
+    },
+    "Running behind · 1 task to move": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sei in ritardo · 1 attività da spostare"
+          }
+        }
+      }
+    },
+    "Running behind · %lld tasks to move": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sei in ritardo · %lld attività da spostare"
+          }
+        }
+      }
+    },
+    "%@ left today, %@ planned. Here's what I'd keep and what I'd move. Change any, then apply.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oggi restano %@, ne hai in programma %@. Ecco cosa terrei e cosa sposterei. Cambia ciò che vuoi, poi applica."
+          }
+        }
+      }
+    },
+    "Review": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rivedi"
+          }
+        }
+      }
+    },
+    "Hide": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nascondi"
+          }
+        }
+      }
+    },
+    "Not now": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non ora"
+          }
+        }
+      }
+    },
+    "Apply changes": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Applica le modifiche"
+          }
+        }
+      }
+    },
+    "Move %@ to": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sposta %@ in"
+          }
+        }
+      }
+    },
+    "Couldn't move the tasks. Check your connection and try again.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non è stato possibile spostare le attività. Controlla la connessione e riprova."
+          }
+        }
+      }
+    },
+    "Hide calendars": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nascondi i calendari"
+          }
+        }
+      }
+    },
+    "Show calendars": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra i calendari"
           }
         }
       }

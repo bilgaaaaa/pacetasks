@@ -39,8 +39,14 @@ you compete only with your own past pace.
     **Done** logs how long it took and offers the next one; **Not now** skips it.
   - **Fit my time** asks how much time (5 min to 1 hour) and energy (low, normal,
     high) you have, then lists the tasks that fit back to back.
-- **Week strip** — this week at a glance, with a dot under each day that has
-  tasks due.
+- **Week strip** — the week at a glance, with a dot under each day that has
+  tasks dated there. Tap any day to show it in place of today, ‹ › for another
+  week: a later day lists what is set for it, and tasks added while it shows
+  are set for it; an earlier day lists what was finished. **Today** goes back.
+- **Calendars switch** — beside the greeting. Open: the day's events and
+  reminders (Apple, Google and every account picked in the DeskFocus tab) show
+  under their own heading next to the PaceTasks tasks; closed: only PaceTasks
+  tasks. A reminder's circle checks it off in Reminders.
 - **Carried over** — when earlier tasks are still open, one slim row
   ("4 tasks carried over · Review") proposes where each should go: Today,
   Tomorrow, the Weekend or Someday. Change any of them, then apply.
@@ -82,6 +88,17 @@ you compete only with your own past pace.
   without deleting it.
 - **Day cleared card** — appears once nothing is left, with today's count,
   minutes and streak.
+
+### DeskFocus (iPhone tab)
+
+- **Accounts** — **Apple Calendar and Reminders**: one tap connects iCloud and
+  every calendar account on the iPhone. **Google Calendar** comes in through
+  the Google account added to the iPhone (Settings › Calendar › Accounts); the
+  tab shows which Google accounts are connected.
+- **Calendars and reminder lists** — every one, grouped by account, with a switch:
+  what the DeskFocus widget and Today's calendar switch show. Undated reminders on/off.
+- **Widget look and focus length** — glass and accent colors, and the length ▶ uses.
+- The gear on the widget opens this tab (`pacetasks://deskfocus-settings`).
 
 ### Pace
 
@@ -328,8 +345,18 @@ missing (or when demo mode is set), so a broken build never reaches a phone.
 ### Put the app on your iPhone (TestFlight)
 
 ```bash
-npm run ios:testflight         # builds, then uploads to App Store Connect by itself
+npm run ios:testflight         # builds, uploads, and hands the build to every tester group
 ```
+
+The command runs the EAS workflow in `.eas/workflows/testflight.yml`: it builds with the `testflight`
+profile, then gives the build to **Team (Expo)** (internal) and to the external **testers** group, with
+its Beta App Review submitted for you. A new external group only needs its name added to
+`external_groups` there; never add builds to groups by hand.
+
+TestFlight builds use the `testflight` profile, which sets `EXPO_PUBLIC_TESTER_BUILD=1`: every Pro
+feature is unlocked for you and your testers, with no purchase. The build for the App Store comes from
+`npm run ios:release` (the `production` profile), where Pro is sold as usual. Don't send a TestFlight
+build to App Review.
 
 The first run asks you to sign in with your Apple ID and lets EAS create the
 certificate, the profile and the App Store Connect app for `com.pacetasks.app`.
@@ -343,7 +370,9 @@ phone and accept the invite. Internal builds need no review.
 2. App Store Connect → TestFlight → **External Testing** → create a group, add
    the build, and fill in the test info (what to test, feedback email).
 3. The first build goes through a short Beta App Review (usually under a day).
-4. Turn on **Public Link** for the group and send the link. Friends install
+4. Add the group's name to `external_groups` in `.eas/workflows/testflight.yml`,
+   so every `npm run ios:testflight` reaches it.
+5. Turn on **Public Link** for the group and send the link. Friends install
    TestFlight, open the link, and get every new build automatically.
 
 Each build expires after 90 days; `npm run ios:testflight` again replaces it.
@@ -442,6 +471,13 @@ a section takes the other product's colours by carrying that attribute.
 | `fonts/` | Plus Jakarta Sans, served from the site itself (SIL Open Font License) |
 | `og-image.png`, `og-deskfocus.png` | Link previews of each tab, rendered from the heroes by `node design/site/build_og_image.mjs` |
 | `icon.png`, `deskfocus-icon.svg` | Both app icons |
+| `lang.js` | Opens the site in the visitor's language and remembers the choice made with the language link |
+| `it/`, `i18n/it.json` | The Italian site, built from the English pages and the Italian of every text |
+
+The English pages are the source of the Italian ones: after changing any text,
+add its Italian to `docs/i18n/it.json` and run `python3 scripts/build_site_it.py`.
+CI runs it with `--check` and fails when a text has no Italian, when `it.json`
+holds a text no page uses, or when `docs/it/` is out of date.
 
 1. The pages name Bilge Ozcanbaz as the developer and `pacetasks@bilgalog.dev`
    as the contact address (forwarded by Cloudflare Email Routing), in the policy

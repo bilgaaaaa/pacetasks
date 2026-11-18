@@ -66,7 +66,7 @@ final class GoogleTasksSource: TaskSource {
         return tasks
     }
 
-    func complete(_ task: DeskTask) async throws {
+    func complete(_ task: DeskTask, focusedMinutes: Int?) async throws {
         let taskURL = URL(string: "\(baseURL.absoluteString)/lists/\(GoogleAPIClient.pathSegment(task.containerIdentifier))/tasks/\(GoogleAPIClient.pathSegment(task.sourceIdentifier))")!
         try await client.patch(taskURL, json: ["status": "completed"])
         Log.sync.info("Task completed in Google Tasks")

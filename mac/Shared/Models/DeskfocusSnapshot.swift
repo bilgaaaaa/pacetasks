@@ -11,12 +11,17 @@ struct SavedFocusProgress: Codable, Equatable {
 struct DeskfocusSnapshot: Codable, Equatable {
     /// Today's list, as shown by the widget.
     var tasks: [DeskTask] = []
+    /// Tomorrow's events and to-dos, for the widget's "Tomorrow" section.
+    var tomorrowTasks: [DeskTask] = []
     /// Items from other days the user started or checked off, so actions can find them.
     var referencedTasks: [DeskTask] = []
     /// Items checked off locally; hidden from every list until a sync drops them.
     var completedTaskIds: Set<String> = []
     /// To-dos marked done that the app still has to complete in Reminders or Google Tasks.
     var pendingCompletionIds: Set<String> = []
+    /// Minutes really spent in focus on a to-do checked off after a session, sent with its completion so
+    /// PaceTasks learns the real pace. Kept only while the completion is pending.
+    var completionFocusMinutes: [String: Int] = [:]
     /// When each item was checked off, so "done today" stays right after synced items disappear.
     var completionDates: [String: Date] = [:]
     /// Focus time the user picked for a to-do, in minutes.
@@ -34,9 +39,11 @@ struct DeskfocusSnapshot: Codable, Equatable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         tasks = try container.decodeIfPresent([DeskTask].self, forKey: .tasks) ?? []
+        tomorrowTasks = try container.decodeIfPresent([DeskTask].self, forKey: .tomorrowTasks) ?? []
         referencedTasks = try container.decodeIfPresent([DeskTask].self, forKey: .referencedTasks) ?? []
         completedTaskIds = try container.decodeIfPresent(Set<String>.self, forKey: .completedTaskIds) ?? []
         pendingCompletionIds = try container.decodeIfPresent(Set<String>.self, forKey: .pendingCompletionIds) ?? []
+        completionFocusMinutes = try container.decodeIfPresent([String: Int].self, forKey: .completionFocusMinutes) ?? [:]
         completionDates = try container.decodeIfPresent([String: Date].self, forKey: .completionDates) ?? [:]
         taskFocusMinutes = try container.decodeIfPresent([String: Int].self, forKey: .taskFocusMinutes) ?? [:]
         taskFocusMinutesUpdated = try container.decodeIfPresent([String: Date].self, forKey: .taskFocusMinutesUpdated) ?? [:]
@@ -46,6 +53,12 @@ struct DeskfocusSnapshot: Codable, Equatable {
         lastSyncDate = try container.decodeIfPresent(Date.self, forKey: .lastSyncDate)
     }
 
+    /// Forgets completions that were applied, dropped or settled elsewhere, with their focus minutes.
+    mutating func settleCompletions(_ ids: Set<String>) {
+        pendingCompletionIds.subtract(ids)
+        completionFocusMinutes = completionFocusMinutes.filter { pendingCompletionIds.contains($0.key) }
+    }
+
     func task(withId id: String) -> DeskTask? {
         tasks.first(where: { $0.id == id }) ?? referencedTasks.first(where: { $0.id == id })
     }
@@ -53,6 +66,15 @@ struct DeskfocusSnapshot: Codable, Equatable {
     /// Today's list as shown to the user: not checked off and not already over.
     func visibleTasks(at now: Date) -> [DeskTask] {
         tasks.filter { !completedTaskIds.contains($0.id) && !$0.hasEnded(at: now) }
+    }
+
+    /// Tomorrow's list as shown under today: not checked off, and only items that really fall on the day after `now`,
+    /// so a list saved before midnight never shows today's items as tomorrow's.
+    func visibleTomorrowTasks(after now: Date) -> [DeskTask] {
+        let today = DateInterval.day(containing: now)
+        let tomorrow = DateInterval.day(containing: today.end)
+        let open = tomorrowTasks.filter { !completedTaskIds.contains($0.id) }
+        return Agenda.tasks(open, on: tomorrow, today: today)
     }
 
     /// How many items were checked off today, for the progress ring.

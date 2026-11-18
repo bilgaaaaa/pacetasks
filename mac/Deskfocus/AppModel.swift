@@ -10,10 +10,13 @@ import WidgetKit
 final class AppModel {
     let eventKit: EventKitAccess
     let googleAuth: GoogleAuthService
+    let paceAuth: PaceTasksAuthService
     let repository: TaskRepository
     let agenda: AgendaModel
     let taskCreator: TaskCreationService
     let focus: FocusCoordinator
+    /// Rescue my day for PaceTasks tasks, shown in the menu bar.
+    let rescue: PaceRescueModel
 
     private(set) var snapshot: DeskfocusSnapshot
     var googleErrorMessage: String?
@@ -36,7 +39,10 @@ final class AppModel {
         let eventKit = EventKitAccess()
         let googleAuth = GoogleAuthService()
         let googleClient = GoogleAPIClient(auth: googleAuth)
+        let paceAuth = PaceTasksAuthService()
+        let paceTasks = PaceTasksSource(auth: paceAuth)
         let repository = TaskRepository(sources: [
+            paceTasks,
             AppleCalendarSource(access: eventKit),
             AppleRemindersSource(access: eventKit),
             GoogleCalendarSource(auth: googleAuth, client: googleClient),
@@ -45,20 +51,23 @@ final class AppModel {
 
         self.eventKit = eventKit
         self.googleAuth = googleAuth
+        self.paceAuth = paceAuth
         self.repository = repository
         self.agenda = AgendaModel(repository: repository)
-        self.taskCreator = TaskCreationService(eventKit: eventKit, googleAuth: googleAuth, googleClient: googleClient)
+        self.taskCreator = TaskCreationService(eventKit: eventKit, googleAuth: googleAuth, googleClient: googleClient, paceTasks: paceTasks)
         self.focus = FocusCoordinator()
+        self.rescue = PaceRescueModel(paceTasks: paceTasks)
         let snapshot = SharedStore.shared.load()
         self.snapshot = snapshot
         self.launchLanguage = snapshot.settings.language
         LanguagePreference.apply(snapshot.settings.language)
 
+        rescue.onApplied = { [weak self] in await self?.refresh() }
         startObserving()
         FocusNotifier.requestAuthorization()
         focus.reconcile()
         applyDesktopPanelSetting()
-        Log.app.info("DeskFocus started")
+        Log.app.info("PaceTasks for Mac started")
         Task { await refresh() }
     }
 
@@ -98,6 +107,7 @@ final class AppModel {
         await repository.refresh()
         reloadSnapshot()
         await agenda.reload()
+        await rescue.refresh()
     }
 
     /// Starts or resumes focus on a task from any day; `minutes` is the length picked for a to-do.
@@ -210,6 +220,18 @@ final class AppModel {
             googleErrorMessage = error.localizedDescription
             Log.google.error("Google sign-in failed: \(error.localizedDescription, privacy: .public)")
         }
+    }
+
+    /// Finishes the PaceTasks sign-in with the emailed code, then loads its tasks.
+    func signInToPaceTasks(email: String, code: String) async throws {
+        try await paceAuth.verify(email: email, code: code)
+        await refresh()
+    }
+
+    /// Signs out of PaceTasks; its tasks leave the list and the widget.
+    func signOutOfPaceTasks() async {
+        await paceAuth.signOut()
+        await refresh()
     }
 
     func disconnectGoogle() async {

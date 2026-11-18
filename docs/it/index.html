@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PaceTasks — Dimmi cosa devo fare.</title>
+  <meta name="description" content="PaceTasks organizza le tue attività intorno al lavoro, su iPhone. DeskFocus, incluso, tiene sulla scrivania del Mac quella che stai facendo, con un timer per il focus.">
+  <meta name="theme-color" content="#000000">
+  <link rel="canonical" href="https://pacetasks.bilgalog.dev/it/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="PaceTasks con DeskFocus">
+  <meta property="og:description" content="Dimmi cosa devo fare. PaceTasks lo pianifica sul tuo iPhone; DeskFocus ti aiuta a non perderlo di vista sul Mac.">
+  <meta property="og:url" content="https://pacetasks.bilgalog.dev/it/">
+  <meta property="og:image" content="https://pacetasks.bilgalog.dev/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="alternate" hreflang="en" href="https://pacetasks.bilgalog.dev/">
+  <link rel="alternate" hreflang="it" href="https://pacetasks.bilgalog.dev/it/">
+  <link rel="alternate" hreflang="x-default" href="https://pacetasks.bilgalog.dev/">
+  <link rel="icon" href="../icon.png">
+  <link rel="apple-touch-icon" href="../icon.png">
+  <link rel="preload" href="../fonts/plus-jakarta-sans.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="../site.css">
+  <script src="../lang.js"></script>
+  <!-- Enables scroll animations only when JS runs, so content stays visible without it. -->
+  <script>document.documentElement.classList.add("js");</script>
+  <script src="../site.js" defer></script>
+  <script src="../widget.js" defer></script>
+  <script src="../effects.js" defer></script>
+</head>
+<body data-product="pacetasks">
+  <a class="skip-link" href="#main">Vai al contenuto</a>
+
+  <!-- Floating pill navigation with the two product tabs -->
+  <header class="site-header">
+    <nav class="nav" aria-label="Principale">
+      <ul class="product-tabs">
+        <li><a class="product-tabs__tab" href="./" aria-current="page"><img class="product-tabs__icon" src="../icon.png" alt="" width="26" height="26">PaceTasks</a></li>
+        <li><a class="product-tabs__tab" href="deskfocus.html"><img class="product-tabs__icon" src="../deskfocus-icon.svg" alt="" width="26" height="26">DeskFocus</a></li>
+      </ul>
+      <div class="nav__end">
+        <ul class="nav__links">
+          <li><a href="#how">Come funziona</a></li>
+          <li><a href="#pricing">Prezzi</a></li>
+          <li><a href="#faq">Domande</a></li>
+          <li><a href="support.html">Aiuto</a></li>
+        </ul>
+        <a class="button button--gradient button--small" href="https://bilgaaaaa.github.io/PaceTasksWebsite/demo/">Prova la demo</a>
+      </div>
+      <a class="lang-switch" href="../" hreflang="en" lang="en">English</a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <!-- Hero: the PaceTasks phone with the DeskFocus widget beside it -->
+    <section id="top" class="hero" data-section="overview">
+      <div class="hero__glow" aria-hidden="true"></div>
+      <div class="container hero__inner">
+        <h1 class="hero__title">Dimmi cosa<br><span class="hero__title-fade">devo fare.</span></h1>
+        <p class="hero__lead">PaceTasks capisce come farle entrare nella tua vita. Annota le attività appena ti vengono in mente, poi portale a termine prima o dopo il lavoro, con il tempo e l'energia che hai davvero.</p>
+        <div class="hero__actions">
+          <!-- The demo is built from this repository by bilgaaaaa/PaceTasksWebsite's deploy workflow. -->
+          <a class="button button--gradient button--large" href="https://bilgaaaaa.github.io/PaceTasksWebsite/demo/" data-demo-launch>Prova PaceTasks nel tuo browser</a>
+          <a class="button button--ghost button--large" href="deskfocus.html">
+            <img src="../deskfocus-icon.svg" alt="" width="22" height="22">
+            Scopri DeskFocus per Mac
+          </a>
+        </div>
+        <!-- Swap for the App Store link once PaceTasks is live. -->
+        <p class="hero__note">In arrivo su iPhone, con DeskFocus per il tuo Mac incluso.</p>
+
+        <div class="scene showcase" data-hero-stage data-reveal>
+          <figure class="phone" data-demo-phone>
+            <div class="phone__screen">
+              <img src="../screens/today-light.webp" width="393" height="852"
+              alt="PaceTasks Oggi: una scheda che dice Parti in piccolo, vinci in grande, i giorni di questa settimana, quattro attività rimandate e il piano di oggi.">
+            </div>
+          </figure>
+
+          <div class="widget" role="group" aria-labelledby="widgetTitle" data-widget data-product="deskfocus">
+            <div class="widget__header">
+              <span class="widget__title" id="widgetTitle">Oggi</span>
+              <span class="widget__meta" data-widget-progress></span>
+            </div>
+            <div class="widget__focus">
+              <svg class="timer-ring" width="104" height="104" viewBox="0 0 104 104" aria-hidden="true">
+                <defs>
+                  <linearGradient id="timerGradient" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#60a5fa"/>
+                    <stop offset="55%" stop-color="#a855f7"/>
+                    <stop offset="100%" stop-color="#ec4899"/>
+                  </linearGradient>
+                </defs>
+                <circle class="timer-ring__track" cx="52" cy="52" r="44"/>
+                <circle class="timer-ring__value" cx="52" cy="52" r="44" data-focus-ring/>
+                <text class="timer-ring__label" x="52" y="59" text-anchor="middle" data-focus-time>25:00</text>
+              </svg>
+              <div class="widget__focus-info">
+                <span class="widget__meta">Focus su</span>
+                <span class="widget__task-name" data-focus-task aria-live="polite"></span>
+                <div class="widget__controls">
+                  <button type="button" class="button button--gradient button--compact" data-focus-toggle>Inizia</button>
+                  <button type="button" class="button button--ghost button--compact" data-focus-done>Fatto</button>
+                </div>
+              </div>
+            </div>
+            <ul class="task-list" data-widget-tasks></ul>
+            <div class="widget__footer">
+              <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4M3 3l18 18"/></svg>
+              <span data-hidden-apps></span>
+            </div>
+          </div>
+        </div>
+        <p class="scene__note">Scegli un'attività nel widget DeskFocus e premi Inizia. Le attività di PaceTasks nel widget arriveranno presto. La demo usa attività di esempio e nulla di ciò che scrivi lascia il tuo browser.</p>
+      </div>
+    </section>
+
+    <!-- Scroll-driven statement -->
+    <section class="statement" aria-label="Ecco PaceTasks" data-statement>
+      <div class="statement__sticky">
+        <span class="shape shape--square" aria-hidden="true"></span>
+        <span class="shape shape--circle" aria-hidden="true"></span>
+        <span class="shape shape--triangle" aria-hidden="true"></span>
+        <span class="shape shape--pill" aria-hidden="true"></span>
+        <span class="shape shape--diamond" aria-hidden="true"></span>
+        <p class="statement__track" data-statement-track>L'app delle attività che si organizza intorno <span class="gradient-text gradient-text--one">al tuo lavoro</span>, <span class="gradient-text gradient-text--two">alla tua energia</span> e <span class="gradient-text gradient-text--three">al tuo ritmo</span> <span class="statement__intro">— ecco <span class="gradient-text gradient-text--brand">PaceTasks</span></span></p>
+      </div>
+    </section>
+
+    <!-- Feature: Brain Dump -->
+    <section id="feature-dump" class="feature" data-section="dump" aria-labelledby="feature-dump-title">
+      <div class="container feature__grid">
+        <div class="feature__copy" data-reveal>
+          <span class="badge badge--pro">
+            <svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.7 4.7 1.8-4.7 1.8L12 16l-1.8-4.7-4.7-1.8 4.7-1.8z"/></svg>
+            PaceTasks Pro
+          </span>
+          <h2 id="feature-dump-title" class="feature__title gradient-text gradient-text--one">Di' tutto in una volta.</h2>
+          <p class="feature__subtitle">Scrivi o detta. Al resto pensa PaceTasks.</p>
+          <p class="feature__body" data-reveal-text>Tocca il microfono e di' tutto ciò che hai in mente, in inglese, italiano, turco o un misto. PaceTasks mostra le attività che ha capito, con i loro giorni, prima di aggiungere qualcosa.</p>
+          <blockquote class="feature__quote">“Tomorrow call the vet, domani comprare il pane, cuma günü faturayı öde”</blockquote>
+        </div>
+        <div class="feature__visual feature__visual--phone" data-reveal>
+          <figure class="phone">
+            <div class="phone__screen">
+              <img src="../screens/brain-dump.webp" width="393" height="852" loading="lazy"
+              alt="Brain Dump che trasforma quella frase in tre attività: Call the vet e Comprare il pane domani, Faturayı öde venerdì.">
+            </div>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- Feature: Pick my next task -->
+    <section id="feature-pick" class="feature" data-section="pick" aria-labelledby="feature-pick-title">
+      <div class="container feature__grid feature__grid--reversed">
+        <div class="feature__copy" data-reveal>
+          <span class="badge">
+            <svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>
+            Incluso in PaceTasks
+          </span>
+          <h2 id="feature-pick-title" class="feature__title gradient-text gradient-text--two">Sceglie lui per te.</h2>
+          <p class="feature__subtitle">Non sai decidere? Tocca Scegli la mia prossima attività.</p>
+          <p class="feature__body" data-reveal-text>Decidi per me mostra una sola attività: una vittoria rapida finché ce n'è una, poi ciò che conta di più. Adatta al mio tempo chiede quanto tempo hai, da cinque minuti a un'ora, ed elenca le attività che ci stanno.</p>
+        </div>
+        <div class="feature__visual feature__visual--phone" data-reveal>
+          <figure class="phone">
+            <div class="phone__screen">
+              <img src="../screens/pick-next.webp" width="393" height="852" loading="lazy"
+              alt="Decidi per me che mostra una sola attività, Chiamare il dentista, circa 5 minuti, con Fatto e Non ora.">
+            </div>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- Feature: carried-over tasks -->
+    <section id="feature-rollover" class="feature" data-section="rollover" aria-labelledby="feature-rollover-title">
+      <div class="container feature__grid">
+        <div class="feature__copy" data-reveal>
+          <span class="badge">
+            <svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>
+            Incluso in PaceTasks
+          </span>
+          <h2 id="feature-rollover-title" class="feature__title gradient-text gradient-text--three">Le attività non finite trovano un nuovo giorno.</h2>
+          <p class="feature__subtitle">Gli avanzi di ieri non si accumulano.</p>
+          <p class="feature__body" data-reveal-text>Una riga in Oggi propone dove mettere ogni attività non finita: oggi, domani, nel weekend o prima o poi. Cambia ciò che vuoi, poi applica. Quando le attività aspettano da troppo, Weekly Reset te le fa rivedere una alla volta.</p>
+        </div>
+        <div class="feature__visual feature__visual--phone" data-reveal>
+          <figure class="phone">
+            <div class="phone__screen">
+              <img src="../screens/carried-over.webp" width="393" height="852" loading="lazy"
+              alt="Quattro attività rimandate, ognuna con un giorno proposto: Prima o poi, Weekend o Oggi.">
+            </div>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- Feature: My Pace -->
+    <section id="feature-pace" class="feature" data-section="pace" aria-labelledby="feature-pace-title">
+      <div class="container feature__grid feature__grid--reversed">
+        <div class="feature__copy" data-reveal>
+          <span class="badge badge--pro">
+            <svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.7 4.7 1.8-4.7 1.8L12 16l-1.8-4.7-4.7-1.8 4.7-1.8z"/></svg>
+            La storia con PaceTasks Pro
+          </span>
+          <h2 id="feature-pace-title" class="feature__title gradient-text gradient-text--four">Gareggia solo con il tuo ritmo.</h2>
+          <p class="feature__subtitle">Supera la tua versione di ieri, non gli altri.</p>
+          <p class="feature__body" data-reveal-text>I numeri di oggi sono gratis. Con Pro, Il mio ritmo aggiunge la tua settimana e la tua storia: serie, minuti, una mappa di 13 settimane e quanto le tue stime si avvicinano alla realtà, e dopo dieci attività finite, frasi semplici su quando fai di più.</p>
+        </div>
+        <div class="feature__visual feature__visual--phone" data-reveal>
+          <figure class="phone">
+            <div class="phone__screen">
+              <img src="../screens/pace.webp" width="393" height="852" loading="lazy"
+              alt="Il tuo ritmo: attività e minuti fatti oggi, serie attuale e migliore, precisione delle stime e una mappa di 13 settimane.">
+            </div>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- DeskFocus, in its own colours: the other tab -->
+    <section id="feature-desk" class="feature feature--raised" data-section="desk" data-product="deskfocus" aria-labelledby="feature-desk-title">
+      <div class="container feature__grid">
+        <div class="feature__copy" data-reveal>
+          <span class="badge">
+            <svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>
+            Incluso con PaceTasks
+          </span>
+          <h2 id="feature-desk-title" class="feature__title gradient-text gradient-text--brand">La tua scrivania, a fuoco.</h2>
+          <p class="feature__subtitle">DeskFocus mette sul tuo Mac la lista di oggi e un timer per il focus.</p>
+          <p class="feature__body" data-reveal-text>Quando ti siedi a lavorare, DeskFocus tiene sulla scrivania l'attività che hai davanti, fa partire il suo timer e nasconde le app che ti distraggono. Presto arriverà anche la tua lista di PaceTasks.</p>
+          <div class="feature__actions">
+            <a class="button button--gradient button--large" href="deskfocus.html">Esplora DeskFocus</a>
+            <!-- Switch to https://github.com/bilgaaaaa/pacetasks/releases/latest once the first mac-v release is published there. -->
+            <a class="button button--ghost button--large" href="https://github.com/bilgaaaaa/deskfocus/releases/latest">Scarica per Mac</a>
+          </div>
+        </div>
+        <div class="mini-desktop feature__visual" data-reveal aria-hidden="true">
+          <div class="mini-desktop__menubar">
+            <span>Finder</span><span>File</span><span>Modifica</span><span>Vista</span>
+          </div>
+          <div class="mini-desktop__widget">
+            <div class="mini-desktop__row">
+              <span class="widget__title">Oggi</span>
+              <span class="gradient-text gradient-text--brand mini-desktop__time">24:10</span>
+            </div>
+            <div class="progress"><div class="progress__value"></div></div>
+            <span>Lavoro profondo: piano di lancio</span>
+            <span class="text-muted">Revisione del design</span>
+            <span class="text-muted">Chiamare il dentista</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Marquee of everything included -->
+    <section id="everything" class="more" data-section="everything" aria-labelledby="more-title">
+      <div class="container feature__copy--centered" data-reveal>
+        <span class="badge">
+          <svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>
+          Tutto incluso in PaceTasks
+        </span>
+        <h2 id="more-title" class="more__title">Tutto per una giornata su misura.</h2>
+        <p class="feature__subtitle feature__subtitle--muted">Pianifica intorno al lavoro, poi porta a termine tutto con il tuo ritmo.</p>
+      </div>
+      <div class="marquee" data-marquee>
+        <ul class="marquee__track">
+          <li class="marquee__item"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Brain Dump</li>
+          <li class="marquee__item"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h9M8.5 3v2M6 12c2-2 3.5-4.5 4-7M10 12c-1.5-1-2.8-2.4-3.6-4"/><path d="m12 21 4.5-10 4.5 10M13.6 17.5h5.8"/></svg>Inglese, italiano e turco</li>
+          <li class="marquee__item"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.7 4.7 1.8-4.7 1.8L12 16l-1.8-4.7-4.7-1.8 4.7-1.8z"/></svg>Scegli la mia prossima attività</li>
+          <li class="marquee__item"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M10 2h4"/></svg>Adatta al mio tempo</li>
+          <li class="marquee__item"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>Vittorie rapide</li>
+          <li class="marquee__item"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17v-2a6 6 0 0 1 6-6h10"/><path d="m16 5 4 4-4 4"/></svg>Attività rimandate</li>
+          <li class="marquee__item"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 2l4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>Weekly Reset</li>
+          <li class="marquee__item"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg>Promemoria</li>
+          <li class="marquee__item"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22c4 0 7-3 7-7 0-4-3-6-4-10-2 2-3 4-3 6-1-1-2-2-2-4-2 2-5 5-5 8 0 4 3 7 7 7Z"/></svg>Serie</li>
+          <li class="marquee__item"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Mappa di 13 settimane</li>
+          <li class="marquee__item"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Nessun account necessario</li>
+          <li class="marquee__item"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>DeskFocus per Mac</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section id="how" class="feature" data-section="how" aria-labelledby="how-title">
+      <div class="container">
+        <div class="feature__copy feature__copy--centered" data-reveal>
+          <h2 id="how-title" class="more__title">Tre passi per una giornata più calma.</h2>
+        </div>
+        <ol class="steps">
+          <li class="card step" data-reveal>
+            <span class="step__number gradient-text gradient-text--one">01</span>
+            <h3 class="step__title">Annotala</h3>
+            <p class="text-muted">Aggiungi un'attività appena ti viene in mente, oppure, con Pro, di' tutto in una volta e lascia che sia Brain Dump a mettere ordine.</p>
+          </li>
+          <li class="card step" data-reveal>
+            <span class="step__number gradient-text gradient-text--two">02</span>
+            <h3 class="step__title">Lascia che scelga lui</h3>
+            <p class="text-muted">Quando hai un momento, Scegli la mia prossima attività ti mostra cosa si adatta al tempo e all'energia che hai.</p>
+          </li>
+          <li class="card step" data-reveal data-product="deskfocus">
+            <span class="step__number gradient-text gradient-text--brand">03</span>
+            <h3 class="step__title">Concentrati alla scrivania</h3>
+            <p class="text-muted">Sul Mac, DeskFocus tiene davanti a te l'attività con un timer e nasconde le app che ti distraggono.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Both apps, sold together -->
+    <section id="both" class="feature feature--raised" data-section="both" aria-labelledby="both-title">
+      <div class="container">
+        <div class="feature__copy feature__copy--centered" data-reveal>
+          <h2 id="both-title" class="more__title">Due app. Vendute insieme.</h2>
+          <p class="feature__subtitle feature__subtitle--muted">Pianifica sul tuo iPhone, concentrati sul tuo Mac. Presto le tue attività di PaceTasks compariranno anche in DeskFocus.</p>
+        </div>
+        <div class="offer">
+          <article class="card offer__card" data-reveal aria-labelledby="offer-pacetasks">
+            <div class="offer__head">
+              <img class="offer__icon" src="../icon.png" alt="" width="56" height="56">
+              <div>
+                <h3 id="offer-pacetasks" class="offer__name">PaceTasks</h3>
+                <p class="offer__platform">Per iPhone</p>
+              </div>
+            </div>
+            <p class="offer__summary">Pianifica le tue attività intorno al lavoro, con il tempo e l'energia che hai davvero.</p>
+            <ul class="check-list">
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>Tutte le attività che vuoi, con promemoria</li>
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>Scegli la mia prossima attività e Adatta al mio tempo</li>
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>Le attività non finite passano a un nuovo giorno</li>
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>Con Pro: Brain Dump e la storia del tuo ritmo</li>
+            </ul>
+            <a class="button button--gradient" href="https://bilgaaaaa.github.io/PaceTasksWebsite/demo/">Prova PaceTasks nel tuo browser</a>
+            <p class="offer__note">In arrivo su iPhone.</p>
+          </article>
+          <article class="card offer__card" data-reveal data-product="deskfocus" aria-labelledby="offer-deskfocus">
+            <div class="offer__head">
+              <img class="offer__icon" src="../deskfocus-icon.svg" alt="" width="56" height="56">
+              <div>
+                <h3 id="offer-deskfocus" class="offer__name">DeskFocus</h3>
+                <p class="offer__platform">Per Mac</p>
+              </div>
+            </div>
+            <p class="offer__summary">Tiene la lista di oggi e un timer per il focus sulla tua scrivania, a portata di sguardo.</p>
+            <ul class="check-list">
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>Widget sulla scrivania, barra dei menu e pannello di vetro</li>
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>Liste di iCloud e Google in una sola, PaceTasks in arrivo</li>
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>Un timer per il focus su qualsiasi attività, in qualsiasi giorno</li>
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>Nasconde le app che scegli mentre ti concentri</li>
+            </ul>
+            <!-- Switch to https://github.com/bilgaaaaa/pacetasks/releases/latest once the first mac-v release is published there. -->
+            <a class="button button--gradient" href="https://github.com/bilgaaaaa/deskfocus/releases/latest">Scarica DeskFocus per Mac</a>
+            <p class="offer__note">macOS 14 Sonoma o successivo. Un download diretto che si aggiorna da solo.</p>
+          </article>
+        </div>
+        <p class="offer__refund">Guarda <a href="#pricing">cosa è gratis e quanto costa Pro</a>.</p>
+      </div>
+    </section>
+
+    <!-- Pricing: what stays free, and the one Pro that covers both apps. Prices match the App Store products. -->
+    <section id="pricing" class="feature" data-section="pricing" aria-labelledby="pricing-title">
+      <div class="container">
+        <div class="feature__copy feature__copy--centered" data-reveal>
+          <h2 id="pricing-title" class="more__title">Gratis per pianificare la tua giornata.<br><span class="hero__title-fade">Pro quando vuoi di più.</span></h2>
+          <p class="feature__subtitle feature__subtitle--muted">Tutto ciò che ti serve per oggi è gratis, senza limiti di attività. Un solo Pro copre PaceTasks sul tuo iPhone e DeskFocus sul tuo Mac.</p>
+        </div>
+        <div class="plans">
+          <article class="card plan" data-reveal aria-labelledby="plan-free">
+            <h3 id="plan-free" class="plan__name">Gratis</h3>
+            <p class="plan__price"><strong>€0</strong> <span>per tutto il tempo che vuoi</span></p>
+            <ul class="check-list">
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>Tutte le attività che vuoi, in qualsiasi giorno</li>
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>Orari di inizio, durate e promemoria scelti da te</li>
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>Scegli la mia prossima attività e Adatta al mio tempo</li>
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>Un timer su ogni attività</li>
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>I numeri di oggi in Il mio ritmo</li>
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>Il widget DeskFocus sul tuo Mac</li>
+            </ul>
+            <p class="offer__note">Senza account e senza carta.</p>
+          </article>
+          <article class="card plan plan--pro" data-reveal aria-labelledby="plan-pro">
+            <h3 id="plan-pro" class="plan__name">Pro</h3>
+            <ul class="plan__options" aria-label="Modi per pagare Pro">
+              <li><strong>€24,99</strong> <span>all'anno, dopo 7 giorni di prova gratuita</span> <em class="plan__tag">Più conveniente</em></li>
+              <li><strong>€3,99</strong> <span>al mese</span></li>
+              <li><strong>€59,99</strong> <span>una volta sola, tuo per sempre</span></li>
+            </ul>
+            <ul class="check-list">
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>Tutto ciò che c'è in Gratis</li>
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>Brain Dump: di' tutto in una volta, in inglese, italiano o turco</li>
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>Il mio ritmo oltre oggi: la tua settimana e la tua cronologia</li>
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>Siri, appena sarà pronta</li>
+              <li><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>DeskFocus Pro sul tuo Mac, senza costi aggiuntivi</li>
+            </ul>
+            <p class="offer__note">Pro arriva con l'uscita su iPhone. I prezzi sono in euro; l'App Store mostra il prezzo per il tuo paese. <a href="terms.html#refunds">Rimborso entro 14 giorni</a> su ogni acquisto.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Privacy promises -->
+    <section id="privacy" class="feature" data-section="privacy" aria-labelledby="privacy-title">
+      <div class="container">
+        <div class="feature__copy feature__copy--centered" data-reveal>
+          <h2 id="privacy-title" class="more__title">Le tue attività restano tue.</h2>
+        </div>
+        <ul class="promises">
+          <li class="card promise" data-reveal>
+            <span class="promise__icon"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.1A10 10 0 0 1 12 5c5 0 9 4.5 10 7a12.6 12.6 0 0 1-3.2 4.2M6.6 6.6C4.4 8 2.8 10 2 12c1 2.5 5 7 10 7 1.7 0 3.3-.5 4.6-1.2"/></svg></span>
+            <h3 class="promise__title">Niente pubblicità, niente tracciamento</h3>
+            <p class="text-muted">E nemmeno analisi, in nessuna delle due app.</p>
+          </li>
+          <li class="card promise" data-reveal>
+            <span class="promise__icon"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+            <h3 class="promise__title">Mai venduti</h3>
+            <p class="text-muted">I tuoi dati non vengono mai venduti né condivisi per il marketing.</p>
+          </li>
+          <li class="card promise" data-reveal>
+            <span class="promise__icon"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span>
+            <h3 class="promise__title">Nessun account necessario</h3>
+            <p class="text-muted">PaceTasks funziona appena lo apri. Aggiungi un account più tardi per ritrovare le tue attività su un nuovo telefono.</p>
+          </li>
+          <li class="card promise" data-reveal data-product="deskfocus">
+            <span class="promise__icon"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></span>
+            <h3 class="promise__title">DeskFocus resta sul tuo Mac</h3>
+            <p class="text-muted">Parla direttamente con Google, conserva il tuo accesso nel Portachiavi e nulla passa dal nostro server.</p>
+          </li>
+          <li class="card promise" data-reveal>
+            <span class="promise__icon"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0-3.5 10.9V17h7v-3.1A6 6 0 0 0 12 3Z"/><path d="M9.5 21h5"/></svg></span>
+            <h3 class="promise__title">Brain Dump resta con te</h3>
+            <p class="text-muted">Il tuo testo viene letto sul tuo iPhone dal modello di Apple, o dalle regole di PaceTasks, mai da un'azienda di intelligenza artificiale.</p>
+          </li>
+          <li class="card promise" data-reveal>
+            <span class="promise__icon"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></span>
+            <h3 class="promise__title">Cancella tutto</h3>
+            <p class="text-muted">Un'opzione nelle Impostazioni cancella subito le tue attività e il tuo account dal nostro server.</p>
+          </li>
+        </ul>
+        <p class="section-link"><a href="privacy.html">Leggi l'informativa sulla privacy</a></p>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" class="feature feature--raised" data-section="faq" aria-labelledby="faq-title">
+      <div class="container container--narrow">
+        <h2 id="faq-title" class="more__title text-center" data-reveal>Domande.</h2>
+        <div class="faq">
+          <details class="faq__item">
+            <summary class="faq__question">Quando posso averle?<svg class="faq__chevron icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <p class="faq__answer">DeskFocus è pronto da scaricare per Mac. PaceTasks si sta preparando alla sua prima beta su iPhone; nel frattempo la demo fa funzionare l'intera app nel tuo browser con attività di esempio.</p>
+          </details>
+          <details class="faq__item">
+            <summary class="faq__question">Mi serve un Mac per usare PaceTasks?<svg class="faq__chevron icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <p class="faq__answer">No. PaceTasks funziona da solo sul tuo iPhone. DeskFocus aggiunge la scrivania del Mac per le ore in cui ti siedi a lavorare.</p>
+          </details>
+          <details class="faq__item">
+            <summary class="faq__question">Quando compariranno in DeskFocus le mie attività di PaceTasks?<svg class="faq__chevron icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <p class="faq__answer">Presto, con un aggiornamento di entrambe le app. Oggi DeskFocus mostra Calendario di iCloud, Promemoria di iCloud, Google Calendar e Google Tasks.</p>
+          </details>
+          <details class="faq__item">
+            <summary class="faq__question">Quanto costa Pro?<svg class="faq__chevron icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <p class="faq__answer">€24,99 all'anno con 7 giorni di prova gratuita, €3,99 al mese, oppure €59,99 una volta per sempre. L'App Store mostra il prezzo per il tuo paese. Un solo Pro copre PaceTasks e DeskFocus; pianificare la giornata resta gratis.</p>
+          </details>
+          <details class="faq__item">
+            <summary class="faq__question">Posso avere un rimborso?<svg class="faq__chevron icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <p class="faq__answer">Sì, entro 14 giorni dall'addebito, per qualsiasi motivo. Le <a href="terms.html#refunds">regole sui rimborsi</a> spiegano come fare per gli acquisti su App Store e Paddle.</p>
+          </details>
+          <details class="faq__item">
+            <summary class="faq__question">Esiste una versione per Android?<svg class="faq__chevron icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <p class="faq__answer">Non ancora. PaceTasks è per iPhone e DeskFocus per Mac.</p>
+          </details>
+          <details class="faq__item">
+            <summary class="faq__question">La demo conserva ciò che scrivo?<svg class="faq__chevron icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <p class="faq__answer">No. Funziona interamente nel tuo browser con attività di esempio, e tutto si azzera quando ricarichi.</p>
+          </details>
+        </div>
+        <p class="section-link"><a href="support.html">Altre risposte in Aiuto e supporto</a></p>
+      </div>
+    </section>
+
+    <!-- Final call to action -->
+    <section id="get" class="cta" data-section="get" aria-labelledby="get-title">
+      <div class="container cta__inner" data-reveal>
+        <h2 id="get-title" class="cta__title">Inizia a pianificare<br><span class="hero__title-fade">la tua giornata.</span></h2>
+        <p class="feature__subtitle feature__subtitle--muted">Prova PaceTasks ora e metti DeskFocus sul tuo Mac.</p>
+        <div class="hero__actions">
+          <a class="button button--gradient button--large" href="https://bilgaaaaa.github.io/PaceTasksWebsite/demo/">Prova PaceTasks nel tuo browser</a>
+          <a class="button button--ghost button--large" href="deskfocus.html">Scopri DeskFocus per Mac</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container site-footer__inner">
+      <div class="site-footer__brand">
+        <p class="site-footer__logos"><img src="../icon.png" alt="" width="28" height="28"><img src="../deskfocus-icon.svg" alt="" width="28" height="28">PaceTasks con DeskFocus</p>
+        <p class="text-muted">Pianifica la giornata su iPhone. Concentrati al Mac.</p>
+        <p class="text-muted">Scrivi a <a href="mailto:pacetasks@bilgalog.dev">pacetasks@bilgalog.dev</a></p>
+      </div>
+      <div class="site-footer__column">
+        <h2 class="site-footer__heading">App</h2>
+        <ul>
+          <li><a href="./" aria-current="page">PaceTasks per iPhone</a></li>
+          <li><a href="deskfocus.html">DeskFocus per Mac</a></li>
+          <li><a href="https://bilgaaaaa.github.io/PaceTasksWebsite/demo/">Prova la demo</a></li>
+          <li><a href="https://github.com/bilgaaaaa/deskfocus/releases/latest">Scarica DeskFocus</a></li>
+        </ul>
+      </div>
+      <div class="site-footer__column">
+        <h2 class="site-footer__heading">Aiuto</h2>
+        <ul>
+          <li><a href="support.html">Aiuto e supporto</a></li>
+          <li><a href="privacy.html">Informativa sulla privacy</a></li>
+          <li><a href="terms.html">Condizioni e rimborsi</a></li>
+          <li><a href="https://github.com/bilgaaaaa/pacetasks">Codice sorgente</a></li>
+        </ul>
+      </div>
+    </div>
+    <p class="container site-footer__copyright">© <span data-current-year>2026</span> Bilge Ozcanbaz. Fatto a Padova.</p>
+  </footer>
+
+  <!-- Sticky section navigation -->
+  <nav class="section-nav" aria-label="Sezioni">
+    <ul class="section-nav__list">
+      <li><a class="section-nav__link" href="#top" data-section-link="overview">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/></svg>Panoramica</a></li>
+      <li><a class="section-nav__link" href="#feature-dump" data-section-link="dump">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Brain Dump</a></li>
+      <li><a class="section-nav__link" href="#feature-pick" data-section-link="pick">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.7 4.7 1.8-4.7 1.8L12 16l-1.8-4.7-4.7-1.8 4.7-1.8z"/></svg>Scelte</a></li>
+      <li><a class="section-nav__link" href="#feature-rollover" data-section-link="rollover">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17v-2a6 6 0 0 1 6-6h10"/><path d="m16 5 4 4-4 4"/></svg>Nuovo giorno</a></li>
+      <li><a class="section-nav__link" href="#feature-pace" data-section-link="pace">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22c4 0 7-3 7-7 0-4-3-6-4-10-2 2-3 4-3 6-1-1-2-2-2-4-2 2-5 5-5 8 0 4 3 7 7 7Z"/></svg>Ritmo</a></li>
+      <li><a class="section-nav__link" href="#feature-desk" data-section-link="desk">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>DeskFocus</a></li>
+      <li><a class="section-nav__link" href="#how" data-section-link="how">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h6"/></svg>Passi</a></li>
+      <li><a class="section-nav__link" href="#pricing" data-section-link="pricing">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z"/><path d="M7.5 7.5h.01"/></svg>Prezzi</a></li>
+      <li><a class="section-nav__link" href="#faq" data-section-link="faq">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/></svg>Domande</a></li>
+    </ul>
+  </nav>
+</body>
+</html>

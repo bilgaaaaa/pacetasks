@@ -1,26 +1,24 @@
 import { useCallback, useEffect, useState } from "react";
 import { AppState } from "react-native";
-import { CalendarAccess, getCalendarAccess, requestCalendarAccess } from "../lib/calendarAccess";
-import { reloadWidget } from "../lib/deskfocusWidgetStorage";
+import { CalendarAccess } from "../lib/calendarAccess";
+import { fetchCalendarAccess, requestCalendarAccessFromBridge } from "../lib/deskfocusBridge";
 
-// Calendar and Reminders access for the DeskFocus widget, re-read whenever the app returns
-// (the user may have changed it in the phone's Settings). The widget redraws once access changes.
+// Calendar and Reminders access, re-read whenever the app returns (the user may have changed it in the phone's
+// Settings). `request` shows iOS' prompts and returns the access afterwards; the widget redraws with it.
 export function useCalendarAccess() {
   const [access, setAccess] = useState<CalendarAccess>("unavailable");
 
   const refresh = useCallback(() => {
-    getCalendarAccess()
+    fetchCalendarAccess()
       .then(setAccess)
       .catch((e) => console.warn("[useCalendarAccess] could not read access", e));
   }, []);
 
-  const request = useCallback(async () => {
-    try {
-      setAccess(await requestCalendarAccess());
-      reloadWidget();
-    } catch (e) {
-      console.warn("[useCalendarAccess] request failed", e);
-    }
+  const request = useCallback(async (): Promise<CalendarAccess> => {
+    const granted = await requestCalendarAccessFromBridge();
+    setAccess(granted);
+    console.log(`[useCalendarAccess] access after asking: ${granted}`);
+    return granted;
   }, []);
 
   useEffect(() => {

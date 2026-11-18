@@ -1,4 +1,5 @@
 import { Platform } from "react-native";
+import { msg, t } from "../i18n";
 
 // Single source of truth for colors/spacing/typography. The user picks a color
 // theme (palette) in Settings: "Sage" is the original "PaceTasks Sage" design
@@ -10,6 +11,15 @@ import { Platform } from "react-native";
 
 export type ColorScheme = "light" | "dark";
 export const ACCENT_IDS = ["sage", "ocean", "clay", "plum", "ink"] as const;
+
+// The accents' names; kept by id so each one can be translated.
+const ACCENT_LABELS: Record<(typeof ACCENT_IDS)[number], string> = {
+  sage: msg("Sage"),
+  ocean: msg("Ocean"),
+  clay: msg("Clay"),
+  plum: msg("Plum"),
+  ink: msg("Ink"),
+};
 export type AccentId = (typeof ACCENT_IDS)[number];
 
 interface AccentColors {
@@ -150,7 +160,7 @@ const P = PALETTE;
 
 const PALETTES: Record<PaletteId, PaletteDefinition> = {
   sage: {
-    label: "Sage",
+    label: msg("Sage"),
     swatches: ["#A8AE96", "#4E8552", P.daffodil, P.hayFields, "#26332A"],
     base: BASE_COLORS,
     accent: null,
@@ -169,7 +179,7 @@ const PALETTES: Record<PaletteId, PaletteDefinition> = {
   },
   // Night Time, Peaches, Blue Skies, Cotton Candy, Baby Lavender.
   pastel: {
-    label: "Pastel Night",
+    label: msg("Pastel Night"),
     swatches: [P.nightTime, P.peaches, P.blueSkies, P.cottonCandy, P.babyLavender],
     base: {
       light: {
@@ -204,7 +214,7 @@ const PALETTES: Record<PaletteId, PaletteDefinition> = {
   },
   // Daffodil, Poppy Fields, Pool Time, Night Time, Peaches.
   sunny: {
-    label: "Sunny",
+    label: msg("Sunny"),
     swatches: [P.daffodil, P.poppyFields, P.poolTime, P.nightTime, P.peaches],
     base: {
       light: {
@@ -239,10 +249,12 @@ const PALETTES: Record<PaletteId, PaletteDefinition> = {
   },
 };
 
-// Name + swatches for the Settings color-theme picker.
+// Name + swatches for the Settings color-theme picker. Names are read when shown, so they follow the app's language.
 export const PALETTE_OPTIONS: { id: PaletteId; label: string; swatches: string[] }[] = PALETTE_IDS.map((id) => ({
   id,
-  label: PALETTES[id].label,
+  get label() {
+    return t(PALETTES[id].label);
+  },
   swatches: PALETTES[id].swatches,
 }));
 
@@ -255,7 +267,9 @@ export function paletteUsesAccent(paletteId: PaletteId): boolean {
 export const ACCENT_OPTIONS: { id: AccentId; label: string; swatch: Record<ColorScheme, string> }[] = ACCENT_IDS.map(
   (id) => ({
     id,
-    label: id.charAt(0).toUpperCase() + id.slice(1),
+    get label() {
+      return t(ACCENT_LABELS[id]);
+    },
     swatch: { light: ACCENTS[id].light.accentDark, dark: ACCENTS[id].dark.accent },
   })
 );

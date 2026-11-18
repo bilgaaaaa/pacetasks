@@ -1,6 +1,6 @@
 -- pgTAP tests for public.create_task. Run with `npx supabase test db` (needs the local stack: `npx supabase start`).
 begin;
-select plan(17);
+select plan(21);
 
 insert into auth.users (id) values
   ('11111111-1111-1111-1111-111111111111'),
@@ -63,6 +63,25 @@ select throws_ok(
 select throws_ok(
   $$ select public.create_task('{"title": "x", "scheduled_time": "09:00", "reminder_minutes_before": -5}') $$,
   '23514', null, 'rejects a negative reminder'
+);
+
+select is(
+  (select window_start || '-' || window_end from public.create_task(
+    '{"title": "aperitivo", "window_start": "19:00", "window_end": "21:00", "reminder_minutes_before": 10}')),
+  '19:00-21:00',
+  'keeps a time window, with a reminder before its start'
+);
+select throws_ok(
+  $$ select public.create_task('{"title": "x", "window_start": "21:00", "window_end": "19:00"}') $$,
+  '23514', null, 'rejects a window that ends before it starts'
+);
+select throws_ok(
+  $$ select public.create_task('{"title": "x", "scheduled_time": "09:00", "window_end": "18:00"}') $$,
+  '23514', null, 'rejects a fixed start together with a window'
+);
+select throws_ok(
+  $$ select public.create_task('{"title": "x", "window_end": "18:00", "reminder_minutes_before": 10}') $$,
+  '23514', null, 'rejects a reminder on a "before" window, which has no start'
 );
 
 -- User 2 must not see user 1's tasks.

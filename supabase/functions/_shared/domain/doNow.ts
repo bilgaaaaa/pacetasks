@@ -1,5 +1,8 @@
+import { EMPTY_PACE_MODEL, expectedMinutes } from "./pace.ts";
+import type { PaceModel } from "./pace.ts";
 import { ENERGY_LEVELS } from "./task.ts";
 import type { EnergyLevel, Task, TaskPriority, TaskTiming } from "./task.ts";
+import { isWindowOpen } from "./taskTime.ts";
 import { isPendingToday } from "./todayTasks.ts";
 
 // "What can I do now?" and One Thing mode: given the time and energy the user
@@ -15,6 +18,8 @@ export interface DoNowRankContext {
   todayKey: string; // the phone's local day, "YYYY-MM-DD"
   energy: EnergyLevel; // the energy the user has right now
   currentTiming: TaskTiming; // where "now" falls in the user's day, from timingForHour
+  timeOfDay?: string; // "HH:MM" now; when given, tasks outside their time window are left out
+  paceModel?: PaceModel; // the user's learned pace; without it tasks count their typed estimate
 }
 
 export interface DoNowContext extends DoNowRankContext {
@@ -23,7 +28,7 @@ export interface DoNowContext extends DoNowRankContext {
 
 export interface DoNowSelection {
   plan: Task[]; // best tasks that fit back to back in the available time, in order
-  planMinutes: number;
+  planMinutes: number; // at the user's learned pace when the context has one
   alternatives: Task[]; // also fit on their own, but not alongside the plan
 }
 
@@ -38,17 +43,27 @@ function energyRank(level: EnergyLevel): number {
 }
 
 // A task can be started at any moment when it is on today's list and has no
-// fixed start time (those belong to their slot and Focus mode).
-export function isDoableToday(task: Task, todayKey: string): boolean {
-  return isPendingToday(task, todayKey) && task.scheduled_time === null;
+// fixed start time (those belong to their slot and Focus mode). With the time of
+// day, a task whose window ("after 20:00", "before 18:00") is closed waits.
+export function isDoableToday(task: Task, todayKey: string, timeOfDay?: string): boolean {
+  return (
+    isPendingToday(task, todayKey) &&
+    task.scheduled_time === null &&
+    (timeOfDay === undefined || isWindowOpen(task, timeOfDay))
+  );
+}
+
+// How long a task will take for this user: learned pace when known, else the estimate.
+export function taskMinutes(task: Task, context: Pick<DoNowRankContext, "paceModel">): number {
+  return expectedMinutes(task, context.paceModel ?? EMPTY_PACE_MODEL);
 }
 
 // A task fits right now when it is doable today, fits the time, and doesn't need
 // more energy than the user has. Tasks with unknown energy are never hidden.
 export function fitsNow(task: Task, context: DoNowContext): boolean {
   return (
-    isDoableToday(task, context.todayKey) &&
-    task.estimated_minutes <= context.availableMinutes &&
+    isDoableToday(task, context.todayKey, context.timeOfDay) &&
+    taskMinutes(task, context) <= context.availableMinutes &&
     (task.energy_level === null || energyRank(task.energy_level) <= energyRank(context.energy))
   );
 }
@@ -57,10 +72,12 @@ type RankKey = number | string;
 
 // How length breaks a tie: the longest task makes the most of a set amount of
 // time, the shortest is the easiest way to get started.
-type DurationOrder = "longest_first" | "shortest_first";
+export type DurationOrder = "longest_first" | "shortest_first";
 
 // Sorts after every real date key, so undated tasks follow the ones with a deadline.
 const NO_DEADLINE_KEY = "9999-12-31";
+// Sorts after every real "HH:MM", so tasks without a window end follow those with one.
+const NO_WINDOW_END_KEY = "99:99";
 
 // True when the task's day has come: due today or overdue.
 function isDueNow(task: Task, todayKey: string): boolean {
@@ -78,12 +95,14 @@ function rankKeys(task: Task, context: DoNowRankContext, durationOrder: Duration
   return [
     dueNow ? 0 : 1,
     dueNow ? (task.due_date as string) : "",
+    // A window that closes today ("before 18:00") goes first, earliest end first.
+    task.window_end ?? NO_WINDOW_END_KEY,
     task.priority === null ? DEFAULT_PRIORITY_RANK : PRIORITY_RANK[task.priority],
     task.due_date ?? NO_DEADLINE_KEY,
     suitsNow ? 0 : 1,
     task.flexible ? 1 : 0,
     energyGap,
-    durationOrder === "longest_first" ? -task.estimated_minutes : task.estimated_minutes,
+    durationOrder === "longest_first" ? -taskMinutes(task, context) : taskMinutes(task, context),
     task.created_at,
     task.id,
   ];
@@ -104,7 +123,8 @@ function compareKeys(a: RankKey[], b: RankKey[]): number {
 }
 
 // Orders tasks from "do this first" to "do this last" for the current moment.
-function rankTasks(tasks: Task[], context: DoNowRankContext, durationOrder: DurationOrder): Task[] {
+// Shared with Rescue my day, so both keep the same tasks first.
+export function rankTasks(tasks: Task[], context: DoNowRankContext, durationOrder: DurationOrder): Task[] {
   return tasks
     .map((task) => ({ task, keys: rankKeys(task, context, durationOrder) }))
     .sort((a, b) => compareKeys(a.keys, b.keys))
@@ -125,9 +145,10 @@ export function selectDoNowTasks(tasks: Task[], context: DoNowContext): DoNowSel
   const alternatives: Task[] = [];
   let planMinutes = 0;
   for (const task of ranked) {
-    if (planMinutes + task.estimated_minutes <= context.availableMinutes) {
+    const minutes = taskMinutes(task, context);
+    if (planMinutes + minutes <= context.availableMinutes) {
       plan.push(task);
-      planMinutes += task.estimated_minutes;
+      planMinutes += minutes;
     } else {
       alternatives.push(task);
     }
@@ -137,16 +158,16 @@ export function selectDoNowTasks(tasks: Task[], context: DoNowContext): DoNowSel
 }
 
 // One Thing mode: every task that could be started today, best first, minus the
-// ones the user said "not now" to. Time and energy never hide a task here, since
-// the point is a single answer; energy only shapes the order, and among equals
-// the shortest comes first so starting is easy.
+// ones the user said "not now" to and the ones whose time window is closed.
+// Available time and energy never hide a task here, since the point is a single
+// answer; energy only shapes the order, and among equals the shortest comes first.
 export function selectOneThingQueue(
   tasks: Task[],
   context: DoNowRankContext,
   skippedTaskIds: ReadonlySet<string>
 ): Task[] {
   return rankTasks(
-    tasks.filter((task) => isDoableToday(task, context.todayKey) && !skippedTaskIds.has(task.id)),
+    tasks.filter((task) => isDoableToday(task, context.todayKey, context.timeOfDay) && !skippedTaskIds.has(task.id)),
     context,
     "shortest_first"
   );

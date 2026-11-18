@@ -149,6 +149,10 @@ enum FocusController {
             }
             if !task.isEvent {
                 snapshot.pendingCompletionIds.insert(task.id)
+                if let minutes = focusedMinutes(on: task.id, in: snapshot, now: now) {
+                    snapshot.completionFocusMinutes[task.id] = minutes
+                    Log.focus.info("Focused \(minutes) min before checking it off")
+                }
             }
             if snapshot.focus?.taskId == task.id {
                 snapshot.focus = nil
@@ -166,15 +170,34 @@ enum FocusController {
         WidgetCenter.shared.reloadTimelines(ofKind: DeskfocusConstants.widgetKind)
     }
 
+    /// Minutes really spent focusing on a task: its running or finished session, else its saved progress.
+    /// Nil when it was checked off without a session, so a guess never teaches the pace.
+    static func focusedMinutes(on taskId: String, in snapshot: DeskfocusSnapshot, now: Date) -> Int? {
+        let seconds: TimeInterval
+        if let session = snapshot.focus, session.taskId == taskId {
+            seconds = session.plannedDuration - session.remaining(at: now)
+        } else if let saved = snapshot.savedProgress[taskId] {
+            seconds = saved.planned - saved.remaining
+        } else {
+            return nil
+        }
+        let minutes = Int((seconds / 60).rounded())
+        return minutes >= 1 ? minutes : nil
+    }
+
     // MARK: Focus time
 
-    /// How long to focus, in order: saved progress, the minutes chosen for this task,
+    /// How long to focus, in order: saved progress, the minutes chosen for this task, the task's planned length,
     /// the event's own length (or what is left of it), then the default from Settings.
     static func focusTime(for task: DeskTask, in snapshot: DeskfocusSnapshot, now: Date) -> (remaining: TimeInterval, planned: TimeInterval) {
         if let saved = snapshot.savedProgress[task.id] {
             return (saved.remaining, saved.planned)
         }
         if let minutes = snapshot.taskFocusMinutes[task.id] {
+            let duration = DeskfocusSettings.clampedDuration(minutes: minutes)
+            return (duration, duration)
+        }
+        if let minutes = task.plannedMinutes {
             let duration = DeskfocusSettings.clampedDuration(minutes: minutes)
             return (duration, duration)
         }

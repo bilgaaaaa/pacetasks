@@ -405,6 +405,26 @@ fieldset {
   color: var(--color-text);
 }
 
+/* The link to the same page in the other language; it stays in the pill on a phone too. */
+.lang-switch {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+}
+
+.lang-switch:hover {
+  background: var(--color-card-hover);
+}
+
 /* ---------- Hero ---------- */
 
 .hero {
@@ -2086,8 +2106,25 @@ th {
     display: none;
   }
 
+  /* On a phone the pill holds only the two tabs and the language link, a little tighter. */
   .nav {
-    justify-content: center;
+    gap: 8px;
+  }
+
+  .product-tabs__tab {
+    gap: 6px;
+    padding: 0 12px 0 6px;
+    font-size: 14px;
+  }
+
+  .product-tabs__icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .lang-switch {
+    padding: 0 10px;
+    font-size: 12px;
   }
 
   .hero {

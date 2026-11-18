@@ -25,6 +25,7 @@ import {
   proStatusLine,
 } from "../lib/proCopy";
 import { Button } from "./Button";
+import { t } from "../i18n";
 
 // Apple's standard licence, the Terms of Use App Review expects next to subscriptions.
 const TERMS_OF_USE_URL = "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/";
@@ -51,7 +52,7 @@ export function PaywallSheet({ paywall, status, onPurchase, onRestore, onManage,
       <SafeAreaView style={styles.screen}>
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose} disabled={busy} accessibilityRole="button" style={styles.skip}>
-            <Text style={styles.skipText}>{PRO_SKIP_LABEL}</Text>
+            <Text style={styles.skipText}>{t(PRO_SKIP_LABEL)}</Text>
           </TouchableOpacity>
         </View>
 
@@ -60,24 +61,24 @@ export function PaywallSheet({ paywall, status, onPurchase, onRestore, onManage,
             <Ionicons name="sparkles" size={26} color={theme.colors.onAccent} />
           </View>
           <Text style={styles.title} accessibilityRole="header">
-            {status.active ? PRO_ACTIVE_TITLE : PRO_TITLE}
+            {status.active ? t(PRO_ACTIVE_TITLE) : t(PRO_TITLE)}
           </Text>
           <Text style={styles.subtitle}>
             {status.active
               ? proStatusLine(status)
               : paywall.reason
                 ? PRO_FEATURE_REASONS[paywall.reason]
-                : PRO_SUBTITLE}
+                : t(PRO_SUBTITLE)}
           </Text>
 
           {status.active ? (
-            !status.lifetime && <Button label={PRO_MANAGE_LABEL} variant="secondary" onPress={onManage} />
+            !status.lifetime && <Button label={t(PRO_MANAGE_LABEL)} variant="secondary" onPress={onManage} />
           ) : (
             <>
               {paywall.plans === null && (
                 <View style={styles.loading}>
                   <ActivityIndicator color={theme.colors.accent} />
-                  <Text style={styles.muted}>{PRO_PLANS_LOADING}</Text>
+                  <Text style={styles.muted}>{t(PRO_PLANS_LOADING)}</Text>
                 </View>
               )}
 
@@ -94,25 +95,25 @@ export function PaywallSheet({ paywall, status, onPurchase, onRestore, onManage,
               {paywall.message && (
                 <View style={styles.message}>
                   <Text style={styles.messageText}>{paywall.message}</Text>
-                  {paywall.plans?.length === 0 && <Button label="Try again" variant="secondary" onPress={onRetry} />}
+                  {paywall.plans?.length === 0 && <Button label={t("Try again")} variant="secondary" onPress={onRetry} />}
                 </View>
               )}
 
               <Button
-                label={PRO_RESTORE_LABEL}
+                label={t(PRO_RESTORE_LABEL)}
                 variant="secondary"
                 loading={paywall.restoring}
                 disabled={busy}
                 onPress={onRestore}
               />
-              <Text style={styles.legal}>{PRO_LEGAL}</Text>
+              <Text style={styles.legal}>{t(PRO_LEGAL)}</Text>
               <View style={styles.links}>
                 <Text style={styles.link} onPress={() => openExternalLink(TERMS_OF_USE_URL)} accessibilityRole="link">
-                  {PRO_TERMS_LABEL}
+                  {t(PRO_TERMS_LABEL)}
                 </Text>
                 <Text style={styles.muted}>·</Text>
                 <Text style={styles.link} onPress={() => openExternalLink(PRIVACY_POLICY_URL)} accessibilityRole="link">
-                  {PRO_PRIVACY_LABEL}
+                  {t(PRO_PRIVACY_LABEL)}
                 </Text>
               </View>
             </>

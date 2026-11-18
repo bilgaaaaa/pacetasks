@@ -6,6 +6,7 @@ import { confirmDestructive } from "../lib/confirmDestructive";
 import { deleteTaskPrompt, taskDetailLine } from "../lib/taskActionsCopy";
 import { makeStyles, useTheme } from "../hooks/useTheme";
 import { Task } from "../lib/types";
+import { t } from "../i18n";
 
 interface Props {
   task: Task;
@@ -27,7 +28,7 @@ export function TaskActionRow({ task, actionLabel, onAction, onEdit, onDelete }:
         style={styles.rowText}
         onPress={() => onEdit(task)}
         accessibilityRole="button"
-        accessibilityLabel={`Edit ${task.title}`}
+        accessibilityLabel={t("Edit {0}", task.title)}
       >
         <Text style={styles.taskTitle} numberOfLines={3}>
           {task.title}
@@ -49,7 +50,7 @@ export function TaskActionRow({ task, actionLabel, onAction, onEdit, onDelete }:
         onPress={() => confirmDestructive(deleteTaskPrompt(task.title), () => onDelete(task.id))}
         hitSlop={8}
         accessibilityRole="button"
-        accessibilityLabel={`Delete ${task.title}`}
+        accessibilityLabel={t("Delete {0}", task.title)}
       >
         <Ionicons name="trash-outline" size={16} color={theme.colors.textTertiary} />
       </TouchableOpacity>

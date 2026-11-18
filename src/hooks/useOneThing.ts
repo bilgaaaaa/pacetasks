@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toLocalDateKey } from "@domain/dates";
 import { selectOneThingQueue } from "@domain/doNow";
-import { getCurrentTiming } from "../lib/deviceContext";
+import { getCurrentTimeOfDay, getCurrentTiming } from "../lib/deviceContext";
 import { EnergyLevel, Task } from "../lib/types";
 
 const NOTHING_SKIPPED: ReadonlySet<string> = new Set();
@@ -29,15 +29,16 @@ export function useOneThing({ tasks, energy, workStartHour, workEndHour, onCompl
 
   const todayKey = toLocalDateKey(new Date());
   const currentTiming = getCurrentTiming(workStartHour, workEndHour);
+  const timeOfDay = getCurrentTimeOfDay();
   const queue = useMemo(
-    () => selectOneThingQueue(tasks, { todayKey, energy, currentTiming }, skippedTaskIds),
-    [tasks, todayKey, energy, currentTiming, skippedTaskIds]
+    () => selectOneThingQueue(tasks, { todayKey, energy, currentTiming, timeOfDay }, skippedTaskIds),
+    [tasks, todayKey, energy, currentTiming, timeOfDay, skippedTaskIds]
   );
   const task = queue[0] ?? null;
   // What a fresh visit opens with, whatever was skipped in this one; the Today hero words its line from it.
   const firstPick = useMemo(
-    () => selectOneThingQueue(tasks, { todayKey, energy, currentTiming }, NOTHING_SKIPPED)[0] ?? null,
-    [tasks, todayKey, energy, currentTiming]
+    () => selectOneThingQueue(tasks, { todayKey, energy, currentTiming, timeOfDay }, NOTHING_SKIPPED)[0] ?? null,
+    [tasks, todayKey, energy, currentTiming, timeOfDay]
   );
   const phase: OneThingPhase = completedTitle !== null ? "completed" : confirmingTask ? "confirming" : "choosing";
 

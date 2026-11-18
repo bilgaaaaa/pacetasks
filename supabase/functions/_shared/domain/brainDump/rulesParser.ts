@@ -285,6 +285,26 @@ const TIME_PATTERNS: TimePattern[] = [
     isTime: ({ before, after }) => DATE_WORD_BEFORE.test(before) || DATE_WORD_AFTER.test(after),
   },
 ];
+// Time windows: "after 8", "dopo le 20", "before 6pm", "entro le 18", "between 7 and 9 pm",
+// "tra le 19 e le 21", "dalle 19 alle 21". Checked before single times, which they contain.
+// "before the 15th", "prima dell'8 marzo": a day of the month, not a time. The "l'" forms
+// ("dopo l'una") are left out for the same reason; a month name after the number rules it out.
+const NOT_A_DATE = `(?!\\s*(?:${ANY_MONTH.replace("?<month>", "?:")}|st|nd|rd|th)${WORD_END})`;
+const CLOCK = (n: string) => `(?<hour${n}>\\d{1,2})(?:[:.](?<minute${n}>\\d{2}))?\\s*(?<meridiem${n}>[ap]\\.?m\\.?)?`;
+const WINDOW_PATTERNS: Array<{ edge: "between" | "after" | "before"; pattern: RegExp }> = [
+  {
+    edge: "between",
+    pattern: words(
+      `(?:between|from|tra le|fra le|dalle)\\s*${CLOCK("1")}\\s*(?:and|to|until|till|-|–|e le|alle|a)\\s*${CLOCK("2")}`
+    ),
+  },
+  { edge: "after", pattern: words(`(?:after|not before|dopo le|non prima delle)\\s*${CLOCK("1")}${NOT_A_DATE}`) },
+  {
+    edge: "before",
+    pattern: words(`(?:before|by|no later than|prima delle|entro le)\\s*${CLOCK("1")}${NOT_A_DATE}`),
+  },
+];
+
 const NOON_HOUR = 12;
 // "meeting at 3" is never 03:00: a bare hour up to this one is taken as afternoon
 // when nothing says which half of the day it is, and the task is flagged for a check.
@@ -478,7 +498,10 @@ export function parseBrainDumpWithRules(text: string, localeHint: string | null 
     } else if (outcome.kind === "detail" && previous) {
       // "email the landlord, 15 min": the detail completes the task before it, never overwriting it.
       previous.when ??= outcome.when;
-      previous.dueTime ??= outcome.dueTime;
+      if (!previous.dueTime && !previous.timeWindow) {
+        previous.dueTime = outcome.dueTime;
+        previous.timeWindow = outcome.timeWindow;
+      }
       previous.estimatedDurationMinutes ??= outcome.estimatedDurationMinutes;
     } else if (outcome.kind !== "empty") {
       unparsed.push(segment);
@@ -565,7 +588,7 @@ type SegmentOutcome =
   // `language` is null when neither the title nor the segment gives a clue.
   | { kind: "task"; candidate: AiTaskCandidate; language: Language | null }
   // Only a date, time or duration ("15 min"): it belongs to the task before it.
-  | ({ kind: "detail" } & Pick<AiTaskCandidate, "when" | "dueTime" | "estimatedDurationMinutes">)
+  | ({ kind: "detail" } & Pick<AiTaskCandidate, "when" | "dueTime" | "timeWindow" | "estimatedDurationMinutes">)
   // Only joining words were left ("also").
   | { kind: "empty" }
   // Not a task: a remark, or too little to act on.
@@ -599,7 +622,9 @@ function parseSegment(original: string): SegmentOutcome {
   const timeOfDay = TIME_OF_DAY.find(([, pattern]) => pattern.test(segment))?.[0] ?? null;
   let rest = segment;
 
-  const time = extractTime(rest, timeOfDay);
+  const window = extractWindow(rest, timeOfDay);
+  if (window) rest = rest.replace(window.matched, CUT);
+  const time = window ? null : extractTime(rest, timeOfDay);
   if (time) rest = rest.replace(time.matched, CUT);
 
   const duration = extractDuration(rest);
@@ -630,9 +655,12 @@ function parseSegment(original: string): SegmentOutcome {
 
   const when = date ? { ...date.expression, text: restoreOriginal(date.expression.text, segment, original) } : null;
   const dueTime = time?.value ?? null;
+  const timeWindow = window ? { start: window.start, end: window.end } : null;
   const estimatedDurationMinutes = duration?.minutes ?? null;
   if (title.length === 0) {
-    return date || time || duration ? { kind: "detail", when, dueTime, estimatedDurationMinutes } : { kind: "empty" };
+    return date || time || window || duration
+      ? { kind: "detail", when, dueTime, timeWindow, estimatedDurationMinutes }
+      : { kind: "empty" };
   }
   // The title is checked too: "çok yoruldum bugün" only reads as a remark once the date is cut.
   if (title.length < 3 || isRemark(title)) return { kind: "unparsed" };
@@ -647,6 +675,10 @@ function parseSegment(original: string): SegmentOutcome {
     const written = restoreOriginal(time.matched.trim(), segment, original);
     ambiguities.push({ field: "scheduled_time", reason: `"${written}" could be morning or afternoon` });
   }
+  if (window?.isHalfOfDayGuessed) {
+    const written = restoreOriginal(window.matched.trim(), segment, original);
+    ambiguities.push({ field: "time_window", reason: `"${written}" could be morning or afternoon` });
+  }
 
   const language = detectLanguage(title) ?? detectLanguage(original);
   const candidate: AiTaskCandidate = {
@@ -656,6 +688,7 @@ function parseSegment(original: string): SegmentOutcome {
     notes: null,
     when,
     dueTime,
+    timeWindow,
     timeOfDay,
     estimatedDurationMinutes,
     priority: isHighPriority(segment) ? "high" : null,
@@ -834,6 +867,55 @@ function extractMonthDate(segment: string): ExtractedDate | null {
   if (!monthEnd) return null;
   const relation = relationOf(segment, spanOf(monthEnd));
   return { expression: { kind: "month_end", relation, text: monthEnd[0] }, cutAlways: [monthEnd[0]], dayName };
+}
+
+interface ExtractedWindow {
+  start: string | null;
+  end: string | null;
+  matched: string;
+  isHalfOfDayGuessed: boolean;
+}
+
+// A window around the task's time; the hours follow the same morning/afternoon rules as single times.
+function extractWindow(text: string, timeOfDay: TimeOfDay | null): ExtractedWindow | null {
+  for (const { edge, pattern } of WINDOW_PATTERNS) {
+    const match = text.match(pattern);
+    if (!match?.groups) continue;
+    const g = match.groups;
+    // "between 7 and 9 pm": an am/pm written once covers both ends.
+    const sharedMeridiem = g.meridiem2 ?? g.meridiem1;
+    const first = clockValue(text, g.hour1, g.minute1, g.meridiem1 ?? (edge === "between" ? sharedMeridiem : undefined), timeOfDay);
+    if (!first) continue;
+    if (edge !== "between") {
+      return { start: edge === "after" ? first.value : null, end: edge === "before" ? first.value : null, matched: match[0], isHalfOfDayGuessed: first.isGuessed };
+    }
+    let second = clockValue(text, g.hour2, g.minute2, sharedMeridiem, timeOfDay);
+    if (!second) continue;
+    // "tra le 7 e le 9" read as 19:00 and 09:00 means the evening for both.
+    if (second.value <= first.value && Number(second.value.slice(0, 2)) < NOON_HOUR) {
+      const later = Number(second.value.slice(0, 2)) + NOON_HOUR;
+      second = { value: `${String(later).padStart(2, "0")}${second.value.slice(2)}`, isGuessed: true };
+    }
+    if (second.value <= first.value) continue;
+    return { start: first.value, end: second.value, matched: match[0], isHalfOfDayGuessed: first.isGuessed || second.isGuessed };
+  }
+  return null;
+}
+
+// One written clock time as "HH:MM", with the half of the day settled like a single time.
+function clockValue(
+  text: string,
+  hourText: string,
+  minuteText: string | undefined,
+  meridiem: string | undefined,
+  timeOfDay: TimeOfDay | null
+): { value: string; isGuessed: boolean } | null {
+  const writtenHour = Number(hourText);
+  const minute = Number(minuteText ?? 0);
+  const { half, isGuessed } = halfOfDay(text, hourText, { meridiem, hasMinutes: Boolean(minuteText), timeOfDay });
+  const hour = half === null ? writtenHour : (writtenHour % NOON_HOUR) + (half === "pm" ? NOON_HOUR : 0);
+  if (hour > 23 || minute > 59) return null;
+  return { value: `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`, isGuessed };
 }
 
 interface ExtractedTime {

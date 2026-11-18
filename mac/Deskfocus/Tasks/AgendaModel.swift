@@ -53,7 +53,21 @@ final class AgendaModel {
     // MARK: Data
 
     /// One day's list: today from the live snapshot, other days from the loaded week, checked-off items hidden.
+    /// With the calendar button off, only PaceTasks tasks remain.
     func tasks(on day: Date, snapshot: DeskfocusSnapshot, now: Date = .now) -> [DeskTask] {
+        Self.applyingCalendarButton(allTasks(on: day, snapshot: snapshot, now: now), settings: snapshot.settings)
+    }
+
+    /// Tomorrow's items shown under today, with the same calendar button rule as the day's list.
+    func tomorrowTasks(snapshot: DeskfocusSnapshot, now: Date = .now) -> [DeskTask] {
+        Self.applyingCalendarButton(snapshot.visibleTomorrowTasks(after: now), settings: snapshot.settings)
+    }
+
+    private static func applyingCalendarButton(_ tasks: [DeskTask], settings: DeskfocusSettings) -> [DeskTask] {
+        settings.showsCalendars ? tasks : tasks.filter { $0.source == .paceTasks }
+    }
+
+    private func allTasks(on day: Date, snapshot: DeskfocusSnapshot, now: Date) -> [DeskTask] {
         let dayInterval = DateInterval.day(containing: day)
         if Calendar.current.isDate(day, inSameDayAs: now) {
             return snapshot.visibleTasks(at: now)

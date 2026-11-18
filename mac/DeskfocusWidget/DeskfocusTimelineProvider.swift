@@ -73,6 +73,12 @@ extension DeskfocusSnapshot {
             DeskTask(id: "preview-2", source: .appleReminders, sourceIdentifier: "2", containerIdentifier: "home", title: "Write the weekly report", startDate: nil, endDate: nil, dueDate: now, isAllDay: true, listName: "Reminders", colorHex: "#FF9500"),
             DeskTask(id: "preview-3", source: .googleTasks, sourceIdentifier: "3", containerIdentifier: "list", title: "Book flights", startDate: nil, endDate: nil, dueDate: now, isAllDay: true, listName: "My Tasks", colorHex: "#1A73E8")
         ]
+        let tomorrow = DateInterval.day(containing: now).end
+        let standup = Calendar.current.date(byAdding: .minute, value: 9 * 60 + 30, to: tomorrow) ?? tomorrow
+        snapshot.tomorrowTasks = [
+            DeskTask(id: "preview-4", source: .googleCalendar, sourceIdentifier: "4", containerIdentifier: "work", title: "Team standup", startDate: standup, endDate: standup.addingTimeInterval(900), dueDate: nil, isAllDay: false, listName: "Work", colorHex: "#4285F4"),
+            DeskTask(id: "preview-5", source: .appleReminders, sourceIdentifier: "5", containerIdentifier: "home", title: "Pick up the parcel", startDate: nil, endDate: nil, dueDate: tomorrow, isAllDay: true, listName: "Reminders", colorHex: "#FF9500")
+        ]
         return snapshot
     }
 }

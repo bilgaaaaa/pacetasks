@@ -10,10 +10,12 @@ struct AddTaskTarget: Identifiable, Hashable {
         case reminder
         /// A Google Tasks list: creates a to-do.
         case googleTask
+        /// The signed-in PaceTasks account: creates a PaceTasks task.
+        case paceTask
     }
 
     let kind: Kind
-    /// EventKit calendar identifier or Google task list id.
+    /// EventKit calendar identifier, Google task list id, or PaceTasks' single list.
     let identifier: String
     let title: String
     let accountName: String
@@ -34,6 +36,8 @@ struct NewTaskDraft {
     let hasDueDate: Bool
     /// Focus time remembered for a to-do.
     let focusMinutes: Int
+    /// How a PaceTasks task repeats; ignored by the other sources.
+    let repeatRule: PaceRepeatRule?
 }
 
 /// Lists writable calendars and lists, and creates events and to-dos in them.
@@ -54,17 +58,22 @@ final class TaskCreationService {
     private let eventKit: EventKitAccess
     private let googleAuth: GoogleAuthService
     private let googleClient: GoogleAPIClient
+    private let paceTasks: PaceTasksSource
     private let googleTasksURL = URL(string: "https://tasks.googleapis.com/tasks/v1")!
 
-    init(eventKit: EventKitAccess, googleAuth: GoogleAuthService, googleClient: GoogleAPIClient) {
+    init(eventKit: EventKitAccess, googleAuth: GoogleAuthService, googleClient: GoogleAPIClient, paceTasks: PaceTasksSource) {
         self.eventKit = eventKit
         self.googleAuth = googleAuth
         self.googleClient = googleClient
+        self.paceTasks = paceTasks
     }
 
-    /// Every calendar and list the user can write to, calendars first.
+    /// Every place the user can add to: PaceTasks first, then calendars and lists.
     func targets() async -> [AddTaskTarget] {
         var targets: [AddTaskTarget] = []
+        if paceTasks.isAvailable, let container = try? await paceTasks.containers().first {
+            targets.append(AddTaskTarget(kind: .paceTask, identifier: container.identifier, title: container.title, accountName: container.accountName))
+        }
         let store = eventKit.store
 
         if eventKit.hasCalendarAccess {
@@ -99,6 +108,13 @@ final class TaskCreationService {
         case .event: return try createEvent(draft)
         case .reminder: return try createReminder(draft)
         case .googleTask: return try await createGoogleTask(draft)
+        case .paceTask:
+            return try await paceTasks.create(
+                title: draft.title,
+                minutes: draft.focusMinutes,
+                dueDay: draft.hasDueDate ? draft.date : nil,
+                repeatRule: draft.repeatRule
+            )
         }
     }
 
