@@ -20,6 +20,8 @@ import type { SiriOutcome, SiriReply, SiriRequest } from "./siriRequest.ts";
 
 export interface SiriServiceDeps {
   repository: Pick<TaskRepository, "getUserId" | "loadUserContext">;
+  // Whether this user may use Siri: their PaceTasks Pro subscription, or always true before the check is switched on.
+  hasSiriAccess: () => Promise<boolean>;
   runBrainDump: (request: BrainDumpRequest) => Promise<BrainDumpProposal>; // the same use case the app's Brain Dump runs
   now: () => Date;
 }
@@ -28,15 +30,16 @@ export interface SiriHandlerDeps {
   createDeps: (authorizationHeader: string) => SiriServiceDeps;
 }
 
-// Answers one Siri request. Adding goes through Brain Dump (which creates the
-// tasks right away for Siri), the others read Today. Siri is listed as Pro, but
-// the server doesn't know who is Pro yet (purchases live in RevenueCat on the
-// phone): the check joins here once RevenueCat reports purchases to the server.
+// Answers one Siri request. Siri is a Pro feature: the server knows who is Pro
+// from pro_entitlements, which pro-sync and the RevenueCat webhook keep current.
+// Adding goes through Brain Dump (which creates the tasks right away for Siri),
+// the others read Today.
 export async function answerSiri(request: SiriRequest, deps: SiriServiceDeps): Promise<SiriReply> {
   const language = siriLanguage(request.locale);
   const { repository } = deps;
 
   if (!(await repository.getUserId())) throw new ApiError(401, "unauthorized", "Sign in to use Siri");
+  if (!(await deps.hasSiriAccess())) throw new ApiError(402, "pro_required", "Siri is part of PaceTasks Pro");
 
   if (request.action === "add") {
     const proposal = await deps.runBrainDump({

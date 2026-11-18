@@ -404,7 +404,7 @@ sender only delivers to members of the Supabase team. Set it in Supabase →
 ### PaceTasks Pro
 
 One Pro, bought on iPhone, unlocks PaceTasks and DeskFocus for Mac. On iPhone it covers Brain Dump, the
-Pace tab beyond today and, once it ships, Siri. Purchases go through RevenueCat with StoreKit. The
+Pace tab beyond today and Siri. Purchases go through RevenueCat with StoreKit. The
 RevenueCat app user ID is the PaceTasks (Supabase) user ID, so the Mac sees the same Pro once it signs in
 to that account.
 
@@ -423,6 +423,22 @@ One-time setup:
 `react-native-purchases` is pinned to 10.12.1: later versions need native libraries that CocoaPods
 no longer receives, so `pod install` (and EAS) can't find them. Before upgrading, check with
 `pod trunk info PurchasesHybridCommon` that the version its podspec asks for exists.
+
+#### The server's copy (for Siri)
+
+The app can't be trusted to say who is Pro, so the server keeps its own copy in `pro_entitlements`,
+read by `is_pro()`. RevenueCat stays the source: `pro-sync` (called by the app whenever the store's
+answer changes) and `revenuecat-webhook` (renewals, cancellations, refunds, transfers, billing grace
+periods) always re-read the user from RevenueCat's API with the secret key.
+
+1. `npx supabase db push`, then
+   `npx supabase functions deploy siri pro-sync revenuecat-webhook`.
+2. `npx supabase secrets set REVENUECAT_SECRET_API_KEY=sk_... REVENUECAT_WEBHOOK_AUTH=<a long random string>`.
+3. RevenueCat › Integrations › **Webhooks**: URL
+   `https://<project-ref>.supabase.co/functions/v1/revenuecat-webhook`, Authorization header = the same
+   `REVENUECAT_WEBHOOK_AUTH` value.
+4. At launch: `npx supabase secrets set SIRI_REQUIRES_PRO=1`. Until then Siri works for everyone, like
+   TestFlight's unlocked Pro; once it is on, testers need a sandbox purchase to use Siri.
 
 Without the key (web demo, Android, a local build without it) nobody can buy, and Pro is unlocked for
 everyone. So set it before any App Store release. Sandbox tests: buy, then restore on a fresh install,
@@ -515,8 +531,11 @@ supabase/migrations/       Database schema, security policies and functions
 supabase/templates/        The sign-up and sign-in emails, pasted into the Supabase dashboard
 supabase/tests/database/   pgTAP tests for the database
 supabase/functions/_shared/domain/   Pure TypeScript shared by the app and Edge Functions (`@domain/...`)
-supabase/functions/_shared/server/   Deno-only server code: AI layer, Brain Dump service
+supabase/functions/_shared/server/   Deno-only server code: AI layer, Brain Dump, Siri and Pro services
 supabase/functions/brain-dump/       The Brain Dump Edge Function
+supabase/functions/siri/             What Siri calls: add, what's next, today
+supabase/functions/pro-sync/         Refreshes the caller's Pro state from RevenueCat
+supabase/functions/revenuecat-webhook/  RevenueCat's subscription events
 supabase/functions/_eval/            AI evaluation set and runner (never deployed)
 ```
 

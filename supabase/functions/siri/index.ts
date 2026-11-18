@@ -1,12 +1,14 @@
 import { createAIProvider } from "../_shared/server/ai/providerFactory.ts";
 import { runBrainDump } from "../_shared/server/brainDump/brainDumpService.ts";
 import { createSupabaseBrainDumpRepository } from "../_shared/server/brainDump/supabaseBrainDumpRepository.ts";
+import { createProAccessCheck, siriRequiresPro } from "../_shared/server/pro/proAccess.ts";
 import { handleSiriHttp } from "../_shared/server/siri/siriHandler.ts";
 import { createSupabaseTaskRepository } from "../_shared/server/tasks/taskRepository.ts";
 
 // POST /functions/v1/siri — what the iPhone's App Intents call: add tasks by voice,
 // "what's next?" and "what's on today?". Answers carry the words Siri says.
-// Adding uses brain-dump's secrets (AI_PROVIDER, BRAIN_DUMP_DAILY_LIMIT).
+// Adding uses brain-dump's secrets (AI_PROVIDER, BRAIN_DUMP_DAILY_LIMIT);
+// SIRI_REQUIRES_PRO=1 limits Siri to PaceTasks Pro subscribers.
 
 const DEFAULT_DAILY_LIMIT = 30;
 
@@ -18,8 +20,11 @@ Deno.serve((request) =>
   handleSiriHttp(request, {
     createDeps: (authorizationHeader) => {
       const connection = { supabaseUrl, supabaseAnonKey, authorizationHeader };
+      const checkPro = createProAccessCheck(connection);
       return {
         repository: createSupabaseTaskRepository(connection),
+        // Read per request, so switching the check on needs no redeploy.
+        hasSiriAccess: () => (siriRequiresPro((name) => Deno.env.get(name)) ? checkPro() : Promise.resolve(true)),
         runBrainDump: (brainDumpRequest) =>
           runBrainDump(brainDumpRequest, {
             repository: createSupabaseBrainDumpRepository(connection),

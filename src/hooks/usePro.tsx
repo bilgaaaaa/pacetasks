@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { AppState } from "react-native";
 import { effectiveProStatus, FREE_STATUS, Plan, PlanId, ProFeature, ProStatus } from "../lib/pro";
 import { PRO_PLANS_UNAVAILABLE, PRO_PURCHASE_FAILED, PRO_RESTORE_FAILED, PRO_RESTORE_NOTHING } from "../lib/proCopy";
+import { syncProWithServer } from "../lib/proApi";
 import { loadProStatus, saveProStatus } from "../lib/proStorage";
 import {
   connectPurchases,
@@ -65,11 +66,26 @@ export function ProProvider({ userId, children }: { userId: string | undefined; 
   const userIdRef = useRef(userId);
   userIdRef.current = userId;
 
-  const applyLive = useCallback((status: ProStatus) => {
-    setLive(status);
-    setSaved(status);
-    void saveProStatus(status);
+  // The server's copy (for Siri) is refreshed whenever the store's answer changes, at most once per change.
+  const lastSynced = useRef<string | null>(null);
+  const syncServer = useCallback((status: ProStatus) => {
+    const key = `${userIdRef.current}:${status.active}:${status.expiresAt}`;
+    if (lastSynced.current === key) return;
+    lastSynced.current = key;
+    syncProWithServer().catch(() => {
+      lastSynced.current = null; // logged by proApi; the next store answer tries again
+    });
   }, []);
+
+  const applyLive = useCallback(
+    (status: ProStatus) => {
+      setLive(status);
+      setSaved(status);
+      void saveProStatus(status);
+      syncServer(status);
+    },
+    [syncServer],
+  );
 
   const refreshStatus = useCallback(async () => {
     const id = userIdRef.current;

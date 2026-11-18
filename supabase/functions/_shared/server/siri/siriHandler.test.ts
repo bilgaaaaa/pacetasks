@@ -11,7 +11,9 @@ import type { SiriReply } from "./siriRequest.ts";
 // 17:30 UTC on Monday 28 Sep is 19:30 in Rome: after a 9–17 workday.
 const NOW = new Date("2026-09-28T17:30:00Z");
 
-function setup(options: { userId?: string | null; tasks?: Task[]; brainDump?: BrainDumpProposal | Error } = {}) {
+function setup(
+  options: { userId?: string | null; tasks?: Task[]; brainDump?: BrainDumpProposal | Error; siriAccess?: boolean } = {}
+) {
   const brainDumpCalls: BrainDumpRequest[] = [];
   const deps: SiriServiceDeps = {
     repository: {
@@ -24,6 +26,7 @@ function setup(options: { userId?: string | null; tasks?: Task[]; brainDump?: Br
       if (answer instanceof Error) return Promise.reject(answer);
       return Promise.resolve(answer ?? proposal([makeTask({ id: "new-1", title: "Chiamare il veterinario" })], 0));
     },
+    hasSiriAccess: () => Promise.resolve(options.siriAccess ?? true),
     now: () => NOW,
   };
   return { deps: { createDeps: () => deps }, brainDumpCalls };
@@ -102,6 +105,23 @@ Deno.test("failures still give Siri something to say", async () => {
   );
   assert.equal(crash.status, 500);
   assert.equal(crash.reply.speech, "Al momento non è stato possibile. Riprova tra poco.");
+});
+
+Deno.test("without Pro, Siri invites to the trial and nothing runs", async () => {
+  const { deps, brainDumpCalls } = setup({ siriAccess: false });
+  const response = await handleSiriHttp(
+    new Request("http://localhost/siri", {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: "Bearer token" },
+      body: JSON.stringify({ action: "add", text: "buy milk", timeZone: "Europe/Rome", locale: "en" }),
+    }),
+    deps
+  );
+  const reply = (await response.json()) as SiriReply;
+  assert.equal(response.status, 402);
+  assert.equal(reply.outcome, "pro_required");
+  assert.match(reply.speech, /PaceTasks Pro/);
+  assert.equal(brainDumpCalls.length, 0);
 });
 
 Deno.test("bad requests are refused in the asked language", async () => {
