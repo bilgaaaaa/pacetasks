@@ -405,6 +405,7 @@ export const it: Record<string, string> = {
   "Pick one task and give it your full attention.": "Scegli un'attività e dedicale tutta la tua attenzione.",
   "Today's plan": "Il piano di oggi",
   "The plan": "Il piano",
+  "Tomorrow's plan": "Il piano di domani",
   "Calendars on Today": "Calendari su Oggi",
   Calendar: "Calendario",
   "All day": "Tutto il giorno",

@@ -30,11 +30,12 @@ import { useWeeklyReset } from "../hooks/useWeeklyReset";
 import { useCalendarAccess } from "../hooks/useCalendarAccess";
 import { useCalendarItems } from "../hooks/useCalendarItems";
 import { useDaySwipe } from "../hooks/useDaySwipe";
+import { canSwipeDay } from "../lib/daySwipe";
 import { openAppSettings } from "../lib/links";
 import { DEFAULT_SETTINGS } from "../lib/settingsApi";
 import { computeStats } from "../lib/stats";
 import { filterTodayTasks, groupTodayTasks, summarizePending, TodayFilter } from "../lib/taskSections";
-import { dayEyebrow, dayTitle, emptyFilterMessage, totalsLine } from "../lib/todayCopy";
+import { dayEyebrow, dayTitle, emptyFilterMessage, planTitle, totalsLine } from "../lib/todayCopy";
 import { upcomingLink } from "../lib/upcomingCopy";
 import { dayHeroMessage, heroMessage, heroStart } from "../lib/heroCopy";
 import { buildWeek } from "../lib/weekStrip";
@@ -96,7 +97,7 @@ interface ListSection {
 // lists what is set for it, and tasks added there are set for it; an earlier day lists what was finished.
 // The calendars switch beside the title opens Today to the day's events and reminders (Apple, Google and every
 // account picked in the DeskFocus tab) next to the PaceTasks tasks; closed, only PaceTasks tasks show.
-// Swiping the day's list sideways turns to the next or previous day, like the week strip's days one by one.
+// Swiping the day's list sideways turns to the next or previous day, up to three days from today.
 export function TaskListScreen({ userId }: Props) {
   const { theme, appearance, updateAppearance } = useTheme();
   const styles = useStyles();
@@ -221,11 +222,11 @@ export function TaskListScreen({ userId }: Props) {
 
   const sections: ListSection[] = useMemo(() => {
     const shown = filterTodayTasks(shownDay.pending, shownFilter, appearance.quickWinMinutes, todayKey);
-    // The one-list heading says "Today's plan"; another day's list is that day's plan.
+    // The one-list heading names the day's plan: "Today's plan", "Tomorrow's plan", otherwise "The plan".
     const grouped = groupTodayTasks(shown, appearance.groupBy, appearance.quickWinMinutes).map(
       ({ key, title, totalMinutes, tasks: sectionTasks }) => ({
         key,
-        title: !isToday && key === "all" ? t("The plan") : title,
+        title: key === "all" ? planTitle(dayKey, todayKey) : title,
         totalMinutes,
         data: sectionTasks,
       })
@@ -240,7 +241,7 @@ export function TaskListScreen({ userId }: Props) {
       });
     }
     return grouped;
-  }, [shownDay, shownFilter, isToday, todayKey, appearance.groupBy, appearance.quickWinMinutes]);
+  }, [shownDay, shownFilter, dayKey, todayKey, appearance.groupBy, appearance.quickWinMinutes]);
 
   // Today's Focus tasks (any task with a fixed start time) ordered by that time —
   // this is what "SESSION X OF Y" in the Focus modal counts against.
@@ -289,8 +290,11 @@ export function TaskListScreen({ userId }: Props) {
   const week = useMemo(() => buildWeek(todayKey, tasks, dayKey), [todayKey, tasks, dayKey]);
   // Picking today again follows today from then on.
   const showDay = (key: string) => setShownDayKey(key === todayKey ? null : key);
-  // A sideways swipe on the day's content: left for the next day, right for the previous one.
-  const daySwipe = useDaySwipe(dayKey, (step) => showDay(addDays(dayKey, step)));
+  // A sideways swipe on the day's content: left for the next day, right for the previous one, within reach of today.
+  const daySwipe = useDaySwipe(dayKey, {
+    canStep: (step) => canSwipeDay(dayKey, todayKey, step),
+    onStep: (step) => showDay(addDays(dayKey, step)),
+  });
   const shownMinutes = shownDay.pending.reduce((total, task) => total + task.estimated_minutes, 0);
 
   return (

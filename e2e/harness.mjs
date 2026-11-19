@@ -15,6 +15,8 @@ const VIDEO_DIR = join(OUTPUT_DIR, "video");
 
 // iPhone 15 logical size; the app is iPhone-only for v1.
 const VIEWPORT = { width: 393, height: 852 };
+// A swipe's finger moves in this many steps of one frame each, about a quarter of a second in all.
+const SWIPE_STEPS = 16;
 // The same zone Jest is pinned to, so "today" means the same day in every suite.
 const TIME_ZONE = "Europe/Rome";
 // A fixed Monday morning: greeting, due labels and streaks never drift between runs.
@@ -66,7 +68,11 @@ export async function runJourney(journeyName, defineSteps) {
 
   const { server, baseUrl } = await startStaticServer();
   // E2E_CHROME_PATH runs an already installed Chrome where Playwright's own download isn't possible.
-  const browser = await chromium.launch({ executablePath: process.env.E2E_CHROME_PATH || undefined });
+  // Chrome's own swipe-to-go-back is off, so a sideways swipe reaches the app as it does on the phone.
+  const browser = await chromium.launch({
+    executablePath: process.env.E2E_CHROME_PATH || undefined,
+    args: ["--disable-features=OverscrollHistoryNavigation"],
+  });
   const context = await browser.newContext({
     viewport: VIEWPORT,
     deviceScaleFactor: 2,
@@ -96,17 +102,23 @@ export async function runJourney(journeyName, defineSteps) {
     await page.screenshot({ path: join(SHOTS_DIR, `${String(shotCount).padStart(2, "0")}-${slug(label)}.png`) });
   };
 
-  // Drags a finger across most of the screen's width at the height of `locator`, "left" or "right",
-  // in small steps like a real swipe, so the film shows the list following it.
+  // Swipes a finger across most of the screen's width at the height of `locator`, "left" or "right".
+  // Real touch events in small timed steps, like a phone sends: a mouse drag would select text and click
+  // links on the web, which a finger never does.
+  const touch = await page.context().newCDPSession(page);
   const swipe = async (locator, direction) => {
+    await locator.scrollIntoViewIfNeeded();
     const box = await locator.boundingBox();
     if (!box) throw new Error("Nothing on screen to swipe");
     const y = box.y + box.height / 2;
     const [start, end] = direction === "left" ? [0.85, 0.15] : [0.15, 0.85];
-    await page.mouse.move(VIEWPORT.width * start, y);
-    await page.mouse.down();
-    await page.mouse.move(VIEWPORT.width * end, y, { steps: 16 });
-    await page.mouse.up();
+    const at = (share) => ({ type: "touchMove", touchPoints: [{ x: VIEWPORT.width * share, y }] });
+    await touch.send("Input.dispatchTouchEvent", { ...at(start), type: "touchStart" });
+    for (let i = 1; i <= SWIPE_STEPS; i++) {
+      await touch.send("Input.dispatchTouchEvent", at(start + ((end - start) * i) / SWIPE_STEPS));
+      await page.waitForTimeout(16);
+    }
+    await touch.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
   };
 
   const step = async (name, run) => {

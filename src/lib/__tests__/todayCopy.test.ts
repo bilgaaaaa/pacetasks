@@ -1,4 +1,4 @@
-import { dayEyebrow, dayTitle, emptyFilterMessage, greetingForHour, totalsLine } from "../todayCopy";
+import { dayEyebrow, dayTitle, emptyFilterMessage, greetingForHour, planTitle, totalsLine } from "../todayCopy";
 
 describe("todayCopy", () => {
   it("greets by the part of the day, with a calm line late at night", () => {
@@ -23,6 +23,13 @@ describe("todayCopy", () => {
     expect(dayTitle("2026-10-15", "2026-10-14", 9)).toBe("Tomorrow");
     expect(dayTitle("2026-10-13", "2026-10-14", 9)).toBe("Yesterday");
     expect(dayTitle("2026-10-16", "2026-10-14", 9)).toBe("Friday");
+  });
+
+  it("names the plan for today and tomorrow, and keeps it short for other days", () => {
+    expect(planTitle("2026-10-14", "2026-10-14")).toBe("Today's plan");
+    expect(planTitle("2026-10-15", "2026-10-14")).toBe("Tomorrow's plan");
+    expect(planTitle("2026-10-13", "2026-10-14")).toBe("The plan");
+    expect(planTitle("2026-10-17", "2026-10-14")).toBe("The plan");
   });
 
   it("labels the shown day over the title", () => {
