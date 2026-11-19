@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { StyleSheet, useColorScheme } from "react-native";
+import { ImageStyle, StyleSheet, TextStyle, useColorScheme, ViewStyle } from "react-native";
 import { AppTheme, buildTheme } from "../lib/theme";
 import { useLocales } from "expo-localization";
 import { Language, languageFor, setLanguage } from "../i18n";
@@ -76,9 +76,13 @@ export function useTheme(): ThemeContextValue {
   return context;
 }
 
+// One style per key, as StyleSheet.create takes them. React Native 0.88's types no longer export
+// StyleSheet.NamedStyles, and this constraint is what keeps values like "row" from widening to string.
+type NamedStyles<T> = { [P in keyof T]: ViewStyle | TextStyle | ImageStyle };
+
 // Theme-aware replacement for a module-level StyleSheet.create: styles are
 // built once per theme object and reused until the theme changes.
-export function makeStyles<T extends StyleSheet.NamedStyles<T>>(factory: (theme: AppTheme) => T) {
+export function makeStyles<T extends NamedStyles<T>>(factory: (theme: AppTheme) => T) {
   const cache = new WeakMap<AppTheme, T>();
   return function useStyles(): T {
     const { theme } = useTheme();

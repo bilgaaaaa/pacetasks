@@ -363,7 +363,7 @@ export function TaskListScreen({ userId }: Props) {
                 <View style={styles.emptyState}>
                   <Text style={styles.emptyText}>{emptyFilterMessage(filter)}</Text>
                 </View>
-              ) : null
+              ) : undefined
             }
             ListHeaderComponent={
               <>
