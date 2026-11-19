@@ -33,6 +33,14 @@ export function dayTitle(dayKey: string, todayKey: string, hour: number): string
   return weekday.charAt(0).toUpperCase() + weekday.slice(1);
 }
 
+// The one-list heading: "Today's plan", "Tomorrow's plan", otherwise "The plan" (the title above names the day).
+export function planTitle(dayKey: string, todayKey: string): string {
+  const offset = daysBetween(todayKey, dayKey);
+  if (offset === 0) return t("Today's plan");
+  if (offset === 1) return t("Tomorrow's plan");
+  return t("The plan");
+}
+
 // The small label over the title: "SUNDAY · OCTOBER 4".
 export function dayEyebrow(dayKey: string): string {
   const date = localNoon(dayKey);

@@ -1,4 +1,4 @@
-import { DAY_SWIPE, isDaySwipe, swipeDayStep } from "../daySwipe";
+import { DAY_SWIPE, canSwipeDay, dragStep, isDaySwipe, swipeDayStep } from "../daySwipe";
 
 const WIDTH = 400;
 
@@ -16,6 +16,35 @@ describe("isDaySwipe", () => {
   it("leaves vertical and diagonal movements to the list's scrolling", () => {
     expect(isDaySwipe(4, 40)).toBe(false);
     expect(isDaySwipe(30, 25)).toBe(false);
+  });
+});
+
+describe("dragStep", () => {
+  it("points left to the next day and right to the day before", () => {
+    expect(dragStep(-5)).toBe(1);
+    expect(dragStep(5)).toBe(-1);
+  });
+});
+
+describe("canSwipeDay", () => {
+  const today = "2026-10-12";
+
+  it("reaches three days ahead and three days back", () => {
+    expect(canSwipeDay("2026-10-14", today, 1)).toBe(true);
+    expect(canSwipeDay("2026-10-15", today, 1)).toBe(false);
+    expect(canSwipeDay("2026-10-10", today, -1)).toBe(true);
+    expect(canSwipeDay("2026-10-09", today, -1)).toBe(false);
+  });
+
+  it("always lets a day further away come back toward today", () => {
+    expect(canSwipeDay("2026-10-15", today, -1)).toBe(true);
+    expect(canSwipeDay("2026-10-20", today, -1)).toBe(true);
+    expect(canSwipeDay("2026-10-20", today, 1)).toBe(false);
+  });
+
+  it("works across a month's end", () => {
+    expect(canSwipeDay("2026-11-02", "2026-10-31", 1)).toBe(true);
+    expect(canSwipeDay("2026-11-03", "2026-10-31", 1)).toBe(false);
   });
 });
 

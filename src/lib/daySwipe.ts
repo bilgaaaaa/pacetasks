@@ -1,6 +1,12 @@
+import { addDays, daysBetween } from "@domain/dates";
+
 // How a sideways swipe on Today's list turns into another day. Plain numbers and pure functions, so the feel
 // can be tuned and tested without a phone; `useDaySwipe` only animates what these decide.
 export const DAY_SWIPE = {
+  // Swiping reaches this many days before and after today; the week strip still opens any day.
+  reachDays: 3,
+  // Past that reach the day follows the finger only this much, then springs back.
+  edgeResistance: 0.25,
   // Sideways points before a touch counts as a swipe; less stays a tap or the start of a scroll.
   startDistance: 12,
   // How much more sideways than up or down the movement must be, so a scroll never turns the day.
@@ -22,6 +28,19 @@ export const DAY_SWIPE = {
 // One day later (+1) or earlier (-1).
 export type DaySwipeStep = -1 | 1;
 
+// The step a sideways drag points to: the finger going left turns to the next day, like a page.
+export function dragStep(dx: number): DaySwipeStep {
+  return dx < 0 ? 1 : -1;
+}
+
+// Whether a step from `dayKey` is allowed: it stays within reach of today, or comes back toward it
+// (a day the week strip opened further away can always be swiped home).
+export function canSwipeDay(dayKey: string, todayKey: string, step: DaySwipeStep): boolean {
+  const from = Math.abs(daysBetween(todayKey, dayKey));
+  const to = Math.abs(daysBetween(todayKey, addDays(dayKey, step)));
+  return to <= DAY_SWIPE.reachDays || to < from;
+}
+
 // Whether a moving touch is a sideways swipe rather than a vertical scroll or a tap.
 export function isDaySwipe(dx: number, dy: number): boolean {
   return Math.abs(dx) > DAY_SWIPE.startDistance && Math.abs(dx) > Math.abs(dy) * DAY_SWIPE.directionRatio;
@@ -35,5 +54,5 @@ export function swipeDayStep(dx: number, vx: number, width: number): DaySwipeSte
   const farEnough = Math.abs(dx) >= width * DAY_SWIPE.distanceRatio;
   const flicked = flung && Math.abs(dx) >= DAY_SWIPE.flickDistance;
   if (!farEnough && !flicked) return 0;
-  return dx < 0 ? 1 : -1;
+  return dragStep(dx);
 }
