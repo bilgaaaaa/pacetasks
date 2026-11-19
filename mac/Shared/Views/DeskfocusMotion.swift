@@ -52,7 +52,7 @@ private struct DeskfocusHoverHighlight: ViewModifier {
     func body(content: Content) -> some View {
         content
             .environment(\.deskfocusRowHovered, isHovered)
-            .background(Color.white.opacity(isHovered ? 0.08 : 0), in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .background(Color.primary.opacity(isHovered ? 0.08 : 0), in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             .onHover { hovering in
                 withAnimation(DeskfocusMotion.hover) { isHovered = hovering }
             }

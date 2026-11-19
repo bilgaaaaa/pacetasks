@@ -10,7 +10,7 @@ struct FocusLiveActivityWidget: Widget {
         ActivityConfiguration(for: FocusActivityAttributes.self) { context in
             FocusActivityLockScreenView(context: context)
                 .activityBackgroundTint(context.attributes.tint.activityBackground)
-                .activitySystemActionForegroundColor(.white)
+                .activitySystemActionForegroundColor(context.attributes.tint.activityActionForeground)
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
@@ -42,13 +42,16 @@ struct FocusLiveActivityWidget: Widget {
                 FocusActivityRing(context: context)
                     .frame(width: 20, height: 20)
             }
-            .keylineTint(context.attributes.accent.color)
+            // The Dynamic Island is always dark.
+            .keylineTint(context.attributes.accent.color(in: .dark))
         }
     }
 }
 
 /// Lock Screen and banner layout: ring, status and time in one line, the buttons below.
+/// On colored glass it is always light on dark; on clear glass it follows the Lock Screen's light or dark look.
 private struct FocusActivityLockScreenView: View {
+    @Environment(\.colorScheme) private var systemColorScheme
     let context: ActivityViewContext<FocusActivityAttributes>
 
     var body: some View {
@@ -66,12 +69,14 @@ private struct FocusActivityLockScreenView: View {
             FocusActivityControls(context: context)
         }
         .padding(16)
-        .foregroundStyle(.white)
+        .foregroundStyle(.primary)
+        .environment(\.colorScheme, context.attributes.tint.contentColorScheme(system: systemColorScheme))
     }
 }
 
 /// Accent ring that fills as the session runs, moving on its own between updates.
 private struct FocusActivityRing: View {
+    @Environment(\.colorScheme) private var colorScheme
     let context: ActivityViewContext<FocusActivityAttributes>
 
     var body: some View {
@@ -90,7 +95,7 @@ private struct FocusActivityRing: View {
             }
         }
         .progressViewStyle(.circular)
-        .tint(context.attributes.accent.color)
+        .tint(context.attributes.accent.color(in: colorScheme))
     }
 }
 
@@ -113,6 +118,7 @@ private struct FocusActivityTime: View {
 
 /// "FOCUSING", "PAUSED" or "TIME'S UP" in the accent, above the task's title.
 private struct FocusActivityStatus: View {
+    @Environment(\.colorScheme) private var colorScheme
     let context: ActivityViewContext<FocusActivityAttributes>
 
     var body: some View {
@@ -120,7 +126,7 @@ private struct FocusActivityStatus: View {
             Label(statusText, systemImage: statusSymbol)
                 .font(.system(size: 11, weight: .bold))
                 .tracking(0.8)
-                .foregroundStyle(context.attributes.accent.color)
+                .foregroundStyle(context.attributes.accent.color(in: colorScheme))
             Text(context.attributes.taskTitle)
                 .font(.system(size: 15, weight: .semibold))
                 .lineLimit(1)
@@ -191,9 +197,9 @@ private struct FocusActivityControls: View {
         Button(intent: intent) {
             label()
                 .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
                 .frame(maxWidth: .infinity, minHeight: 36)
-                .background(Color.white.opacity(0.16), in: Capsule())
+                .background(Color.primary.opacity(0.16), in: Capsule())
         }
         .buttonStyle(.plain)
     }
@@ -203,5 +209,10 @@ private extension GlassTint {
     /// Lock Screen background: the tint's deep color, or the system's own material for clear glass.
     var activityBackground: Color? {
         self == .clear ? nil : colors.bottom.opacity(0.92)
+    }
+
+    /// The system's buttons on the activity: white on the tint's color, the system's own choice on clear glass.
+    var activityActionForeground: Color? {
+        self == .clear ? nil : .white
     }
 }

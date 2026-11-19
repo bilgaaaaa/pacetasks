@@ -5,6 +5,7 @@ import SwiftUI
 /// Callers animate it with `.animation(_:value:)` on the progress, since a ticking timer and a day count want different curves.
 struct FocusRingView<Center: View>: View {
     @Environment(\.deskfocusAccent) private var accent
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.deskfocusAmbientMotion) private var ambientMotion
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let progress: Double
@@ -19,7 +20,7 @@ struct FocusRingView<Center: View>: View {
     var body: some View {
         ZStack {
             Circle()
-                .stroke(Color.white.opacity(0.16), lineWidth: lineWidth)
+                .stroke(Color.primary.opacity(0.16), lineWidth: lineWidth)
             if glows {
                 glow
             }
@@ -36,7 +37,7 @@ struct FocusRingView<Center: View>: View {
         Circle()
             .trim(from: 0, to: clampedProgress)
             .stroke(
-                AngularGradient(colors: [accent.colors.light, accent.colors.deep], center: .center, startAngle: .degrees(0), endAngle: .degrees(360 * max(clampedProgress, 0.01))),
+                AngularGradient(colors: accent.markColors(in: colorScheme), center: .center, startAngle: .degrees(0), endAngle: .degrees(360 * max(clampedProgress, 0.01))),
                 style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
             )
             .rotationEffect(.degrees(-90))

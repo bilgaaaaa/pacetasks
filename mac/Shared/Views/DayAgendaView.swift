@@ -9,6 +9,7 @@ enum AgendaDensity {
 /// Big weekday + date header with any trailing control (progress ring, day arrows).
 struct DayHeaderView<Trailing: View>: View {
     @Environment(\.deskfocusAccent) private var accent
+    @Environment(\.colorScheme) private var colorScheme
     let date: Date
     /// Which way the date rolls when it changes inside an animation.
     var movesForward = true
@@ -21,7 +22,7 @@ struct DayHeaderView<Trailing: View>: View {
                 Text(DeskTaskFormatter.weekday(date).uppercased())
                     .font(.system(size: density == .compact ? 10 : 11, weight: .bold))
                     .tracking(0.8)
-                    .foregroundStyle(accent.color)
+                    .foregroundStyle(accent.color(in: colorScheme))
                     .lineLimit(1)
                 Text(DeskTaskFormatter.dayMonth(date))
                     .font(.system(size: density == .compact ? 19 : 26, weight: .bold))
@@ -38,6 +39,7 @@ struct DayHeaderView<Trailing: View>: View {
 /// Small "2/6" ring showing how much of today is done; it turns into a tick once everything is.
 struct DayProgressRing: View {
     @Environment(\.deskfocusAccent) private var accent
+    @Environment(\.colorScheme) private var colorScheme
     let done: Int
     let total: Int
     var density: AgendaDensity = .regular
@@ -50,7 +52,7 @@ struct DayProgressRing: View {
             if isComplete {
                 Image(systemName: "checkmark")
                     .font(.system(size: isCompact ? 12 : 14, weight: .heavy))
-                    .foregroundStyle(accent.color)
+                    .foregroundStyle(accent.color(in: colorScheme))
                     .transition(.scale(scale: 0.4).combined(with: .opacity))
             } else {
                 Text("\(done)/\(total)")
@@ -73,6 +75,7 @@ struct DayProgressRing: View {
 /// The compact density leaves out "+N more", since the progress ring next to it already counts the day.
 struct DayAgendaView<CompleteAction: View, RowAction: View, UpNextAction: View>: View {
     @Environment(\.deskfocusAccent) private var accent
+    @Environment(\.colorScheme) private var colorScheme
     let tasks: [DeskTask]
     let now: Date
     let maxRows: Int
@@ -146,7 +149,7 @@ struct DayAgendaView<CompleteAction: View, RowAction: View, UpNextAction: View>:
         VStack(spacing: 6) {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 28))
-                .foregroundStyle(accent.gradient)
+                .foregroundStyle(accent.markGradient(in: colorScheme))
             Text("All clear")
                 .font(.system(size: 14, weight: .semibold))
             Text("Nothing planned for this day.")
@@ -162,7 +165,7 @@ struct DayAgendaView<CompleteAction: View, RowAction: View, UpNextAction: View>:
         HStack(spacing: 10) {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 22))
-                .foregroundStyle(accent.gradient)
+                .foregroundStyle(accent.markGradient(in: colorScheme))
             VStack(alignment: .leading, spacing: 1) {
                 Text("All clear")
                     .font(.system(size: 13, weight: .semibold))
@@ -210,7 +213,7 @@ private struct UpNextCard<Complete: View, Action: View>: View {
             }
         }
         .padding(isCompact ? 10 : 12)
-        .background(Color.white.opacity(0.1), in: shape)
+        .background(Color.primary.opacity(0.1), in: shape)
         .overlay(shape.strokeBorder(DeskfocusTheme.glassStroke))
     }
 
@@ -247,7 +250,7 @@ private struct UpNextCard<Complete: View, Action: View>: View {
     }
 
     private var statusColor: Color {
-        if task.isHappening(at: now) { return accent.color }
+        if task.isHappening(at: now) { return accent.color(in: colorScheme) }
         if task.isOverdue(at: now) { return DeskfocusTheme.overdue(in: colorScheme) }
         return .secondary
     }
@@ -256,15 +259,16 @@ private struct UpNextCard<Complete: View, Action: View>: View {
 /// Thin bar for how much of a happening event has passed.
 private struct EventProgressBar: View {
     @Environment(\.deskfocusAccent) private var accent
+    @Environment(\.colorScheme) private var colorScheme
     let progress: Double
 
     var body: some View {
         Capsule()
-            .fill(Color.white.opacity(0.16))
+            .fill(Color.primary.opacity(0.16))
             .overlay(alignment: .leading) {
                 GeometryReader { proxy in
                     Capsule()
-                        .fill(accent.gradient)
+                        .fill(accent.markGradient(in: colorScheme))
                         .frame(width: max(proxy.size.height, proxy.size.width * min(max(progress, 0), 1)))
                 }
             }

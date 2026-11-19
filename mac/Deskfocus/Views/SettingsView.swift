@@ -279,7 +279,7 @@ private struct GeneralSettingsView: View {
                     SwatchPicker(
                         options: AccentChoice.allCases,
                         selection: model.binding(\.accentColor),
-                        color: \.color,
+                        color: \.swatch,
                         name: \.displayName
                     )
                 }

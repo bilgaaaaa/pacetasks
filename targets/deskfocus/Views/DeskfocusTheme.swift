@@ -5,8 +5,8 @@ enum DeskfocusTheme {
     static let indigo = Color(.sRGB, red: 0.357, green: 0.314, blue: 0.941, opacity: 1)    // #5B50F0
     static let ink = Color(.sRGB, red: 0.110, green: 0.090, blue: 0.278, opacity: 1)       // #1C1747
 
-    /// Hairline used for separators and outlines on glass.
-    static let hairline = Color.white.opacity(0.12)
+    /// Hairline used for separators and outlines; `primary` keeps it visible on light backgrounds too.
+    static let hairline = Color.primary.opacity(0.12)
 
     /// Edge of glass cards and chips, brighter at the top like light falling on glass.
     static let glassStroke = LinearGradient(
@@ -102,7 +102,7 @@ private struct DeskfocusButtonBody: View {
         switch kind {
         case .primary: return AnyShapeStyle(accent.gradient)
         case .danger: return AnyShapeStyle(DeskfocusTheme.danger.opacity(configuration.isPressed ? 0.75 : 0.9))
-        case .glass: return AnyShapeStyle(Color.white.opacity(configuration.isPressed ? 0.2 : 0.12))
+        case .glass: return AnyShapeStyle(Color.primary.opacity(configuration.isPressed ? 0.2 : 0.12))
         }
     }
 

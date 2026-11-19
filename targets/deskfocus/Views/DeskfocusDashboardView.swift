@@ -70,7 +70,7 @@ private struct WidgetSettingsLink: View {
                 .font(.system(size: size * 0.46, weight: .semibold))
                 .foregroundStyle(.secondary)
                 .frame(width: size, height: size)
-                .background(Circle().fill(Color.white.opacity(0.14)))
+                .background(Circle().fill(Color.primary.opacity(0.14)))
         }
         .accessibilityLabel(Text("Widget settings"))
     }
