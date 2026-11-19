@@ -20,7 +20,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 DOCS = ROOT / "docs"
 OUT = DOCS / "it"
 TRANSLATIONS = DOCS / "i18n" / "it.json"
-PAGES = ["index.html", "support.html", "terms.html", "privacy.html"]
+PAGES = ["index.html", "deskfocus.html", "support.html", "terms.html", "privacy.html"]
 SITE = "https://pacetasks.bilgalog.dev/"
 
 # Elements translated as one piece, inline tags (links, bold) included, so a sentence can be reordered.
@@ -32,9 +32,13 @@ INLINE = "a|span|button"
 TEXT_ATTRIBUTES = "alt|aria-label"
 META_TEXTS = "description|og:title|og:description"
 # Files that live in docs/ and are shared by both languages.
-ASSETS = r"(?:icon\.png|deskfocus-icon\.svg|og-image\.png|site\.css|site\.js|widget\.js|lang\.js|fonts/|screens/)"
+ASSETS = r"(?:icon\.png|deskfocus-icon\.svg|og-image\.png|og-deskfocus\.png|site\.css|site\.js|widget\.js|effects\.js|lang\.js|fonts/|screens/)"
 
 HAS_WORDS = re.compile(r"[A-Za-zÀ-ÿ]{2,}")
+# Icons next to a text (a drawing or an image) are not words: the text around them is looked up on its own.
+ICON = re.compile(r"(\s*(?:\x00\d+\x00|<img\b[^>]*>)\s*)")
+# Tags left at the edges of a piece cut out around an icon (a link's opening or closing tag) stay as they are.
+EDGE_TAGS = re.compile(r"^((?:\s*<[^>]+>)*\s*)(.*?)((?:\s*<[^>]+>)*\s*)$", re.S)
 
 
 def normalize(text):
@@ -62,7 +66,14 @@ def translate_page(html, lookup):
         done.append(text)
         return f"\x01{len(done) - 1}\x01"
 
+    def words_around_icon(part):
+        lead, core, tail = EDGE_TAGS.match(part).groups()
+        return lead + piece(core) + tail if core else part
+
     def piece(text):
+        parts = ICON.split(text)
+        if len(parts) > 1:
+            return "".join(part if ICON.fullmatch(part) else words_around_icon(part) for part in parts)
         english = normalize(text)
         return lookup(english) if HAS_WORDS.search(re.sub(r"<[^>]+>|\x00\d+\x00", "", english)) else text
 
@@ -79,7 +90,8 @@ def translate_page(html, lookup):
     )
     block = re.compile(rf"(<({BLOCKS})\b[^>]*>)((?:(?!</?(?:{CONTAINERS})\b).)*?)(</\2>)", re.S)
     html = block.sub(lambda m: finish(m.group(1) + piece(m.group(3)) + m.group(4)), html)
-    inline = re.compile(rf"(<({INLINE})\b[^>]*>)([^<>\x00\x01]*)(</\2>)", re.S)
+    # An inline text may carry an icon (a drawing or an image) beside its words.
+    inline = re.compile(rf"(<({INLINE})\b[^>]*>)((?:[^<>\x01]|<img\b[^>]*>)*)(</\2>)", re.S)
     html = inline.sub(lambda m: finish(m.group(1) + piece(m.group(3)) + m.group(4)), html)
     # Descriptions of pictures and groups, for screen readers; empty ones are left as they are.
     html = re.sub(

@@ -5,44 +5,49 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>PaceTasks e DeskFocus — Aiuto e supporto</title>
   <meta name="description" content="Le risposte alle domande più frequenti su PaceTasks e DeskFocus, e come contattare una persona.">
-  <meta name="theme-color" content="#2f4636">
+  <meta name="theme-color" content="#000000">
   <link rel="canonical" href="https://pacetasks.bilgalog.dev/it/support.html">
   <link rel="alternate" hreflang="en" href="https://pacetasks.bilgalog.dev/support.html">
   <link rel="alternate" hreflang="it" href="https://pacetasks.bilgalog.dev/it/support.html">
   <link rel="alternate" hreflang="x-default" href="https://pacetasks.bilgalog.dev/support.html">
   <link rel="icon" href="../icon.png">
   <link rel="apple-touch-icon" href="../icon.png">
-  <link rel="preload" href="../fonts/bricolage-grotesque.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="../fonts/plus-jakarta-sans.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="../site.css">
   <script src="../lang.js"></script>
+  <script src="../site.js" defer></script>
 </head>
 <body>
 <a class="skip-link" href="#main">Vai al contenuto</a>
 
 <header class="site-header">
-  <a class="brand" href="./">
-    <span class="brand-icons"><img src="../icon.png" alt="" width="36" height="36"><img src="../deskfocus-icon.svg" alt="" width="36" height="36"></span>
-    <span class="brand-name">PaceTasks<span class="brand-with">con DeskFocus per Mac</span></span>
-  </a>
-  <nav class="site-nav" aria-label="Sito">
-    <a href="./#day">Come funziona</a>
-    <a href="./#both">Entrambe le app</a>
-    <a href="support.html" aria-current="page">Aiuto</a>
-    <a href="privacy.html">Privacy</a>
+  <nav class="nav" aria-label="Principale">
+    <ul class="product-tabs">
+      <li><a class="product-tabs__tab" href="./"><img class="product-tabs__icon" src="../icon.png" alt="" width="26" height="26">PaceTasks</a></li>
+      <li><a class="product-tabs__tab" href="deskfocus.html"><img class="product-tabs__icon" src="../deskfocus-icon.svg" alt="" width="26" height="26">DeskFocus</a></li>
+    </ul>
+    <div class="nav__end">
+      <ul class="nav__links">
+        <li><a href="support.html" aria-current="page">Aiuto</a></li>
+        <li><a href="privacy.html">Privacy</a></li>
+        <li><a href="terms.html">Condizioni</a></li>
+      </ul>
+    </div>
     <a class="lang-switch" href="../support.html" hreflang="en" lang="en">English</a>
   </nav>
 </header>
 
 <main id="main" class="page">
+  <div class="page__glow" aria-hidden="true"></div>
   <h1>Aiuto e supporto</h1>
-  <p class="meta">Le risposte alle domande più frequenti, per entrambe le app.</p>
+  <p class="page__meta">Le risposte alle domande più frequenti, per entrambe le app.</p>
 
-  <div class="card">
+  <div class="card page__card">
     <p><strong>Serve una mano?</strong> Scrivi a <a href="mailto:pacetasks@bilgalog.dev">pacetasks@bilgalog.dev</a>. Ogni messaggio viene letto da una persona.</p>
   </div>
 
-  <section class="page-part" aria-labelledby="pacetasksHelp">
-    <h2 class="page-part-title" id="pacetasksHelp"><img src="../icon.png" alt="" width="36" height="36">PaceTasks su iPhone</h2>
+  <section class="page__part" aria-labelledby="pacetasksHelp">
+    <h2 class="page__part-title" id="pacetasksHelp"><img src="../icon.png" alt="" width="36" height="36">PaceTasks su iPhone</h2>
 
     <h3>Mi serve un account?</h3>
     <p>No. PaceTasks funziona appena lo installi. Un account (Impostazioni → Crea un account) tiene al sicuro le tue attività se cambi o perdi il telefono, e ti permette di aprirle su un altro.</p>
@@ -69,8 +74,8 @@
     <p>Chiedilo entro 14 giorni dall'addebito. Per un acquisto su App Store usa <a href="https://reportaproblem.apple.com">reportaproblem.apple.com</a>; per un acquisto con Paddle scrivici con il numero dell'ordine. I dettagli sono nelle <a href="terms.html#refunds">regole sui rimborsi</a>.</p>
   </section>
 
-  <section class="page-part" aria-labelledby="deskfocusHelp">
-    <h2 class="page-part-title" id="deskfocusHelp"><img src="../deskfocus-icon.svg" alt="" width="36" height="36">DeskFocus su Mac</h2>
+  <section class="page__part" aria-labelledby="deskfocusHelp">
+    <h2 class="page__part-title" id="deskfocusHelp"><img src="../deskfocus-icon.svg" alt="" width="36" height="36">DeskFocus su Mac</h2>
 
     <h3>Come installo DeskFocus?</h3>
     <!-- Switch to https://github.com/bilgaaaaa/pacetasks/releases/latest once the first mac-v release is published there. -->
@@ -100,13 +105,32 @@
 </main>
 
 <footer class="site-footer">
-  <p>Fatto a Padova da <a href="https://bilgalog.dev">Bilge Ozcanbaz</a>. Scrivi a <a href="mailto:pacetasks@bilgalog.dev">pacetasks@bilgalog.dev</a>.</p>
-  <nav class="site-nav" aria-label="Piè di pagina">
-    <a href="support.html" aria-current="page">Aiuto e supporto</a>
-    <a href="privacy.html">Informativa sulla privacy</a>
-    <a href="terms.html">Condizioni e rimborsi</a>
-    <a href="https://github.com/bilgaaaaa/pacetasks">Codice sorgente</a>
-  </nav>
+  <div class="container site-footer__inner">
+    <div class="site-footer__brand">
+      <p class="site-footer__logos"><img src="../icon.png" alt="" width="28" height="28"><img src="../deskfocus-icon.svg" alt="" width="28" height="28">PaceTasks con DeskFocus</p>
+      <p class="text-muted">Pianifica la giornata su iPhone. Concentrati al Mac.</p>
+      <p class="text-muted">Scrivi a <a href="mailto:pacetasks@bilgalog.dev">pacetasks@bilgalog.dev</a></p>
+    </div>
+    <div class="site-footer__column">
+      <h2 class="site-footer__heading">App</h2>
+      <ul>
+        <li><a href="./">PaceTasks per iPhone</a></li>
+        <li><a href="deskfocus.html">DeskFocus per Mac</a></li>
+        <li><a href="https://bilgaaaaa.github.io/PaceTasksWebsite/demo/">Prova la demo</a></li>
+        <li><a href="https://github.com/bilgaaaaa/deskfocus/releases/latest">Scarica DeskFocus</a></li>
+      </ul>
+    </div>
+    <div class="site-footer__column">
+      <h2 class="site-footer__heading">Aiuto</h2>
+      <ul>
+        <li><a href="support.html" aria-current="page">Aiuto e supporto</a></li>
+        <li><a href="privacy.html">Informativa sulla privacy</a></li>
+        <li><a href="terms.html">Condizioni e rimborsi</a></li>
+        <li><a href="https://github.com/bilgaaaaa/pacetasks">Codice sorgente</a></li>
+      </ul>
+    </div>
+  </div>
+  <p class="container site-footer__copyright">© <span data-current-year>2026</span> Bilge Ozcanbaz. Fatto a Padova.</p>
 </footer>
 </body>
 </html>
