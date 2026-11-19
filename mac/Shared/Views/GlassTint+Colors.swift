@@ -20,6 +20,20 @@ extension GlassTint {
         LinearGradient(colors: [colors.top, colors.bottom], startPoint: .topLeading, endPoint: .bottomTrailing)
     }
 
+    /// Colored glass is always dark enough for light text; clear glass shows what lies behind it,
+    /// so its content follows the system's light or dark mode.
+    func contentColorScheme(system: ColorScheme) -> ColorScheme {
+        self == .clear ? system : .dark
+    }
+
+    /// The WidgetKit widget's background. A widget can't show the wallpaper, so clear glass becomes a soft neutral
+    /// card in the system's light or dark mode, like Apple's own widgets; colored glass keeps its gradient.
+    func widgetBackground(in colorScheme: ColorScheme) -> LinearGradient {
+        guard self == .clear else { return gradient }
+        let (top, bottom) = colorScheme == .dark ? (Self.rgb(0x2C2C30), Self.rgb(0x1A1A1D)) : (Self.rgb(0xFFFFFF), Self.rgb(0xF1F2F6))
+        return LinearGradient(colors: [top, bottom], startPoint: .topLeading, endPoint: .bottomTrailing)
+    }
+
     /// Color shown in the swatch picker.
     var swatch: Color {
         self == .clear ? Color.white.opacity(0.35) : colors.top

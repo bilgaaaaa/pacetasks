@@ -29,6 +29,7 @@ import { useRollover } from "../hooks/useRollover";
 import { useWeeklyReset } from "../hooks/useWeeklyReset";
 import { useCalendarAccess } from "../hooks/useCalendarAccess";
 import { useCalendarItems } from "../hooks/useCalendarItems";
+import { useDaySwipe } from "../hooks/useDaySwipe";
 import { openAppSettings } from "../lib/links";
 import { DEFAULT_SETTINGS } from "../lib/settingsApi";
 import { computeStats } from "../lib/stats";
@@ -48,6 +49,7 @@ import { PARK_PATCH, reschedulePatch, UNPARK_PATCH } from "@domain/taskPatch";
 import { addDays, toLocalDateKey } from "@domain/dates";
 import { AddTaskSheet } from "../components/AddTaskSheet";
 import { CalendarAgenda } from "../components/CalendarAgenda";
+import { DaySwipeArea } from "../components/DaySwipeArea";
 import { GradientSwitch } from "../components/GradientSwitch";
 import { isFocusBridgeAvailable } from "../lib/deskfocusBridge";
 import { TaskItem } from "../components/TaskItem";
@@ -94,6 +96,7 @@ interface ListSection {
 // lists what is set for it, and tasks added there are set for it; an earlier day lists what was finished.
 // The calendars switch beside the title opens Today to the day's events and reminders (Apple, Google and every
 // account picked in the DeskFocus tab) next to the PaceTasks tasks; closed, only PaceTasks tasks show.
+// Swiping the day's list sideways turns to the next or previous day, like the week strip's days one by one.
 export function TaskListScreen({ userId }: Props) {
   const { theme, appearance, updateAppearance } = useTheme();
   const styles = useStyles();
@@ -286,6 +289,8 @@ export function TaskListScreen({ userId }: Props) {
   const week = useMemo(() => buildWeek(todayKey, tasks, dayKey), [todayKey, tasks, dayKey]);
   // Picking today again follows today from then on.
   const showDay = (key: string) => setShownDayKey(key === todayKey ? null : key);
+  // A sideways swipe on the day's content: left for the next day, right for the previous one.
+  const daySwipe = useDaySwipe(dayKey, (step) => showDay(addDays(dayKey, step)));
   const shownMinutes = shownDay.pending.reduce((total, task) => total + task.estimated_minutes, 0);
 
   return (
@@ -339,17 +344,20 @@ export function TaskListScreen({ userId }: Props) {
             keyExtractor={(item) => item.id}
             stickySectionHeadersEnabled={false}
             renderSectionHeader={({ section }) => (
-              <View style={styles.sectionHeader}>
+              <DaySwipeArea swipe={daySwipe} style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle} accessibilityRole="header">
                   {section.title}
                 </Text>
                 <Text style={styles.sectionMeta}>
                   {section.data.length} · {section.totalMinutes} min
                 </Text>
-              </View>
+              </DaySwipeArea>
             )}
-            renderItem={({ item }) => renderTaskItem(item)}
+            renderItem={({ item }) => <DaySwipeArea swipe={daySwipe}>{renderTaskItem(item)}</DaySwipeArea>}
+            // While a finger drags the day sideways the list holds still, so the swipe never turns into a scroll.
+            scrollEnabled={!daySwipe.swiping}
             contentContainerStyle={styles.listContent}
+            ListFooterComponentStyle={styles.listFooter}
             refreshControl={
               <RefreshControl
                 refreshing={loading}
@@ -360,9 +368,9 @@ export function TaskListScreen({ userId }: Props) {
             ListEmptyComponent={
               // Another day's hero already says what the day holds.
               isToday ? (
-                <View style={styles.emptyState}>
+                <DaySwipeArea swipe={daySwipe} style={styles.emptyState}>
                   <Text style={styles.emptyText}>{emptyFilterMessage(filter)}</Text>
-                </View>
+                </DaySwipeArea>
               ) : undefined
             }
             ListHeaderComponent={
@@ -435,11 +443,16 @@ export function TaskListScreen({ userId }: Props) {
                     />
                   </View>
                 )}
-                {calendarsShown && <CalendarAgenda items={calendar.items} onCompleteReminder={calendar.complete} />}
+                {calendarsShown && (
+                  <DaySwipeArea swipe={daySwipe}>
+                    <CalendarAgenda items={calendar.items} onCompleteReminder={calendar.complete} />
+                  </DaySwipeArea>
+                )}
               </>
             }
             ListFooterComponent={
-              <>
+              // The foot fills the rest of the screen, so a short or empty day can still be swiped.
+              <DaySwipeArea swipe={daySwipe} style={styles.listFooter}>
                 {isToday && allDone && (
                   <EndOfDayCard
                     tasksToday={stats.todayCompleted}
@@ -474,7 +487,7 @@ export function TaskListScreen({ userId }: Props) {
                     <Text style={styles.footerLinkText}>{t("Someday · {0} parked", somedayTasks.length)}</Text>
                   </TouchableOpacity>
                 )}
-              </>
+              </DaySwipeArea>
             }
           />
         )}
@@ -708,9 +721,14 @@ const useStyles = makeStyles((theme) => ({
     marginTop: theme.spacing.xl,
   },
   listContent: {
+    flexGrow: 1, // lets the foot stretch to the bottom of a short list
     paddingHorizontal: theme.spacing.md,
     paddingTop: theme.spacing.xs,
     paddingBottom: theme.spacing.md,
+  },
+  // The list's foot and its swipe area reach down to the capture bar, however few tasks the day has.
+  listFooter: {
+    flexGrow: 1,
   },
   sectionHeader: {
     flexDirection: "row",

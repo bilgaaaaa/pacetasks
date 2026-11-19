@@ -96,6 +96,19 @@ export async function runJourney(journeyName, defineSteps) {
     await page.screenshot({ path: join(SHOTS_DIR, `${String(shotCount).padStart(2, "0")}-${slug(label)}.png`) });
   };
 
+  // Drags a finger across most of the screen's width at the height of `locator`, "left" or "right",
+  // in small steps like a real swipe, so the film shows the list following it.
+  const swipe = async (locator, direction) => {
+    const box = await locator.boundingBox();
+    if (!box) throw new Error("Nothing on screen to swipe");
+    const y = box.y + box.height / 2;
+    const [start, end] = direction === "left" ? [0.85, 0.15] : [0.15, 0.85];
+    await page.mouse.move(VIEWPORT.width * start, y);
+    await page.mouse.down();
+    await page.mouse.move(VIEWPORT.width * end, y, { steps: 16 });
+    await page.mouse.up();
+  };
+
   const step = async (name, run) => {
     try {
       await run();
@@ -110,7 +123,7 @@ export async function runJourney(journeyName, defineSteps) {
     }
   };
 
-  await defineSteps({ page, baseUrl, step, snapshot });
+  await defineSteps({ page, baseUrl, step, snapshot, swipe });
 
   const video = page.video();
   await context.close();

@@ -232,6 +232,7 @@ private struct DayPanelContent: View {
 /// Week layout: header with week arrows, an optional focus strip, then seven day columns.
 private struct WeekPanelContent: View {
     @Environment(\.deskfocusAccent) private var accent
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(AppModel.self) private var model
     let now: Date
 
@@ -246,7 +247,7 @@ private struct WeekPanelContent: View {
                     Text("WEEK")
                         .font(.system(size: 11, weight: .bold))
                         .tracking(0.8)
-                        .foregroundStyle(accent.color)
+                        .foregroundStyle(accent.color(in: colorScheme))
                     Text(DeskTaskFormatter.weekRange(week))
                         .font(.system(size: 26, weight: .bold))
                         .contentTransition(.numericText(countsDown: !agenda.isMovingForward))
@@ -295,6 +296,7 @@ private struct WeekPanelContent: View {
 /// One day in the week layout; the header opens that day in the day layout. Past days are dimmed.
 private struct WeekDayColumn: View {
     @Environment(\.deskfocusAccent) private var accent
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(AppModel.self) private var model
     let day: Date
     let tasks: [DeskTask]
@@ -315,7 +317,7 @@ private struct WeekDayColumn: View {
                     Text(DeskTaskFormatter.shortWeekday(day).uppercased())
                         .font(.system(size: 10.5, weight: .bold))
                         .tracking(0.6)
-                        .foregroundStyle(isToday ? accent.color : .secondary)
+                        .foregroundStyle(isToday ? accent.color(in: colorScheme) : .secondary)
                     Text(day.formatted(.dateTime.day()))
                         .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(isToday ? accent.onAccent : .primary)
@@ -365,7 +367,7 @@ private struct WeekDayColumn: View {
         .background(Color.white.opacity(isToday ? 0.12 : 0.05), in: shape)
         .overlay {
             if isToday {
-                shape.strokeBorder(accent.color.opacity(0.35))
+                shape.strokeBorder(accent.color(in: colorScheme).opacity(0.35))
             }
         }
         .opacity(isPast ? 0.6 : 1)
@@ -416,6 +418,7 @@ private struct WeekTaskCard: View {
 /// Running session squeezed into one line above the week columns.
 private struct FocusStrip: View {
     @Environment(\.deskfocusAccent) private var accent
+    @Environment(\.colorScheme) private var colorScheme
     let session: FocusSession
     let now: Date
 
@@ -434,7 +437,7 @@ private struct FocusStrip: View {
                 Text(statusLine)
                     .font(.system(size: 11.5))
                     .monospacedDigit()
-                    .foregroundStyle(accent.color)
+                    .foregroundStyle(accent.color(in: colorScheme))
                     .contentTransition(.numericText(countsDown: true))
                     .animation(DeskfocusMotion.digitRoll, value: statusLine)
             }
@@ -442,8 +445,8 @@ private struct FocusStrip: View {
             stripControls
         }
         .padding(10)
-        .background(accent.color.opacity(0.12), in: shape)
-        .overlay(shape.strokeBorder(accent.color.opacity(0.3)))
+        .background(accent.color(in: colorScheme).opacity(0.12), in: shape)
+        .overlay(shape.strokeBorder(accent.color(in: colorScheme).opacity(0.3)))
     }
 
     private var statusLine: String {

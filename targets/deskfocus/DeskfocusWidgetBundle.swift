@@ -16,10 +16,9 @@ struct DeskfocusWidget: Widget {
         StaticConfiguration(kind: DeskfocusConstants.widgetKind, provider: DeskfocusTimelineProvider()) { entry in
             DeskfocusWidgetView(entry: entry)
                 .containerBackground(for: .widget) {
-                    // DeskFocus' glass color, the same as on the Mac.
-                    entry.snapshot.settings.glassTint.gradient
+                    // DeskFocus' glass color, the same as on the Mac; clear glass follows light and dark mode.
+                    DeskfocusWidgetBackground(tint: entry.snapshot.settings.glassTint)
                 }
-                .environment(\.colorScheme, .dark)
         }
         .configurationDisplayName("DeskFocus")
         .description("Today's PaceTasks tasks, calendar and reminders, with a focus timer.")

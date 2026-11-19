@@ -43,6 +43,8 @@ you compete only with your own past pace.
   tasks dated there. Tap any day to show it in place of today, ‹ › for another
   week: a later day lists what is set for it, and tasks added while it shows
   are set for it; an earlier day lists what was finished. **Today** goes back.
+  Swiping the list sideways turns one day at a time: left for the next day,
+  right for the one before.
 - **Calendars switch** — beside the greeting. Open: the day's events and
   reminders (Apple, Google and every account picked in the DeskFocus tab) show
   under their own heading next to the PaceTasks tasks; closed: only PaceTasks
@@ -98,6 +100,8 @@ you compete only with your own past pace.
 - **Calendars and reminder lists** — every one, grouped by account, with a switch:
   what the DeskFocus widget and Today's calendar switch show. Undated reminders on/off.
 - **Widget look and focus length** — glass and accent colors, and the length ▶ uses.
+  Colored glass always reads light on dark; **Clear glass** follows the iPhone's
+  light or dark mode, with the accent in a deeper shade on light backgrounds.
 - The gear on the widget opens this tab (`pacetasks://deskfocus-settings`).
 
 ### Pace
