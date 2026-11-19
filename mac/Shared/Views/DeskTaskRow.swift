@@ -52,7 +52,7 @@ struct TaskSubtitleLine: View {
         HStack(spacing: 4) {
             if let resumeRemaining {
                 Label(DeskTaskFormatter.timeLeft(resumeRemaining), systemImage: "pause.circle.fill")
-                    .foregroundStyle(accent.color)
+                    .foregroundStyle(accent.color(in: colorScheme))
                 Text(verbatim: "·")
                     .foregroundStyle(.secondary)
             }

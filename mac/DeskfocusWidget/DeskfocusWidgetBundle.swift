@@ -15,10 +15,9 @@ struct DeskfocusWidget: Widget {
         StaticConfiguration(kind: DeskfocusConstants.widgetKind, provider: DeskfocusTimelineProvider()) { entry in
             DeskfocusWidgetView(entry: entry)
                 .containerBackground(for: .widget) {
-                    // Same color the user picked for the glass widget on the desktop.
-                    entry.snapshot.settings.glassTint.gradient
+                    // Same color the user picked for the glass widget on the desktop; clear glass follows light and dark mode.
+                    DeskfocusWidgetBackground(tint: entry.snapshot.settings.glassTint)
                 }
-                .environment(\.colorScheme, .dark)
         }
         .configurationDisplayName("DeskFocus")
         .description("Today's tasks and your focus timer in one place.")

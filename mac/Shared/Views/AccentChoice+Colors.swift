@@ -15,12 +15,43 @@ extension AccentChoice {
         }
     }
 
-    /// Labels such as "MONDAY" and "Today".
-    var color: Color { colors.light }
+    /// A darker shade of the same hue that stays readable on light backgrounds (contrast 5:1 or more on white),
+    /// where the light shade would fade away.
+    var ink: Color {
+        switch self {
+        case .amber: return Self.rgb(0xA34B07)
+        case .coral: return Self.rgb(0xB5352A)
+        case .pink: return Self.rgb(0xBE185D)
+        case .violet: return Self.rgb(0x5B3FD9)
+        case .sky: return Self.rgb(0x1565C0)
+        case .mint: return Self.rgb(0x04714F)
+        case .lime: return Self.rgb(0x45700B)
+        case .white: return Self.rgb(0x4A4A55)
+        }
+    }
 
-    /// Buttons, the play glyph and the focus ring.
+    /// Labels such as "MONDAY" and "Today": the light shade on dark glass, the ink shade on light backgrounds.
+    func color(in colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark ? colors.light : ink
+    }
+
+    /// The color shown in the accent picker, the same in light and dark mode.
+    var swatch: Color { colors.light }
+
+    /// Buttons and the play glyph: filled with the light shades, so `onAccent` ink always reads on them.
     var gradient: LinearGradient {
         LinearGradient(colors: [colors.light, colors.deep], startPoint: .topLeading, endPoint: .bottomTrailing)
+    }
+
+    /// Marks drawn straight on the background (the focus ring, icons, progress bars): light to deep on dark glass,
+    /// deep to ink on light backgrounds, so they never fade into white.
+    func markColors(in colorScheme: ColorScheme) -> [Color] {
+        colorScheme == .dark ? [colors.light, colors.deep] : [colors.deep, ink]
+    }
+
+    /// `markColors` as a diagonal gradient, for icons and bars.
+    func markGradient(in colorScheme: ColorScheme) -> LinearGradient {
+        LinearGradient(colors: markColors(in: colorScheme), startPoint: .topLeading, endPoint: .bottomTrailing)
     }
 
     /// Text and icons drawn on top of the accent gradient; dark ink reads on every light accent.

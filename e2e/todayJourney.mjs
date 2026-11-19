@@ -21,7 +21,7 @@ const REPEAT_TASK_TITLE = "Stretch for ten minutes";
 const RESCUE_TIME = "2026-10-12T21:30:00+02:00";
 const BRAIN_DUMP_TEXT = "Tomorrow call the vet, domani comprare il pane, cuma günü faturayı öde";
 
-const passed = await runJourney("today-journey", async ({ page, baseUrl, step, snapshot }) => {
+const passed = await runJourney("today-journey", async ({ page, baseUrl, step, snapshot, swipe }) => {
   await step("Today loads with the seeded day", async () => {
     await page.goto(baseUrl);
     await page.getByText("Good morning").waitFor();
@@ -130,6 +130,16 @@ const passed = await runJourney("today-journey", async ({ page, baseUrl, step, s
     await page.getByLabel("Back to today").click();
     await page.getByText("Good morning").waitFor();
     await page.getByLabel(`Complete ${PLANNED_TASK_TITLE}`).waitFor({ state: "detached" });
+  });
+
+  await step("Swiping the list sideways turns to tomorrow and back", async () => {
+    await swipe(page.getByText("Today's plan"), "left");
+    await page.getByText("Tomorrow", { exact: true }).waitFor();
+    await page.getByLabel("Back to today").waitFor();
+    await snapshot("Tomorrow, one swipe away");
+    await swipe(page.getByText("The plan", { exact: true }), "right");
+    await page.getByText("Good morning").waitFor();
+    await page.getByLabel("Back to today").waitFor({ state: "detached" });
   });
 
   await step("Upcoming moves Thursday's task to Today", async () => {

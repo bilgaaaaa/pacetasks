@@ -1,0 +1,38 @@
+# Type-checks the DeskFocus iPhone widget and Live Activity (targets/deskfocus) whenever they change.
+# The Expo app is only compiled for iOS on EAS, so this is where a Swift mistake shows up first.
+name: iOS widget
+
+on:
+  push:
+    branches: [main]
+    paths: ['targets/deskfocus/**', '.github/workflows/ios-widget.yml']
+  pull_request:
+    paths: ['targets/deskfocus/**', '.github/workflows/ios-widget.yml']
+
+concurrency:
+  group: ios-widget-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  typecheck:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      # Newest Xcode on the runner, the same choice as the Mac build.
+      - name: Select newest Xcode
+        run: |
+          latest=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
+          sudo xcode-select -s "$latest"
+          xcodebuild -version
+
+      # Every Swift file of the widget extension, against the iOS 17 simulator SDK it is deployed to.
+      - name: Type-check
+        run: |
+          find targets/deskfocus -name '*.swift' -print0 \
+            | xargs -0 xcrun --sdk iphonesimulator swiftc -typecheck -parse-as-library \
+                -target arm64-apple-ios17.0-simulator 2>&1 | tee typecheck.log
+          status=${PIPESTATUS[1]}
+          # Compiler errors as annotations, so they show on the pull request without opening the log.
+          grep -E ": error: " typecheck.log | sort -u | head -20 | sed 's/^/::error::/' || true
+          exit $status

@@ -5,6 +5,7 @@ import SwiftUI
 /// Controls are App Intents so they work the same in the widget and the app.
 struct FocusSessionView: View {
     @Environment(\.deskfocusAccent) private var accent
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.deskfocusAmbientMotion) private var ambientMotion
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -90,7 +91,7 @@ struct FocusSessionView: View {
         }
         .font(.system(size: 11, weight: .bold))
         .tracking(0.8)
-        .foregroundStyle(accent.color)
+        .foregroundStyle(accent.color(in: colorScheme))
         .accessibilityElement(children: .combine)
     }
 
@@ -115,7 +116,7 @@ struct FocusSessionView: View {
             .font(.system(size: 11, weight: .medium))
             .padding(.horizontal, 9)
             .padding(.vertical, 4)
-            .background(Color.white.opacity(0.12), in: Capsule())
+            .background(Color.primary.opacity(0.12), in: Capsule())
             .overlay(Capsule().strokeBorder(DeskfocusTheme.glassStroke))
     }
 
@@ -279,13 +280,14 @@ private struct FinishBurst: View {
     }
 
     @Environment(\.deskfocusAccent) private var accent
+    @Environment(\.colorScheme) private var colorScheme
     let isFinished: Bool
     let lineWidth: CGFloat
 
     var body: some View {
         PhaseAnimator(Stage.allCases, trigger: isFinished) { stage in
             Circle()
-                .stroke(accent.gradient, lineWidth: lineWidth * 0.5)
+                .stroke(accent.markGradient(in: colorScheme), lineWidth: lineWidth * 0.5)
                 .scaleEffect(stage == .spread ? 1.3 : 1)
                 .opacity(stage == .flash && isFinished ? 0.9 : 0)
         } animation: { stage in

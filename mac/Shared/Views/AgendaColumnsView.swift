@@ -5,6 +5,7 @@ import SwiftUI
 /// Widgets can't scroll, so a column with more items than fit pages through them with the button at its foot.
 struct AgendaColumnsView<Complete: View, Start: View, TomorrowAccessory: View>: View {
     @Environment(\.deskfocusAccent) private var accent
+    @Environment(\.colorScheme) private var colorScheme
     let today: [DeskTask]
     let tomorrow: [DeskTask]
     let date: Date
@@ -49,7 +50,7 @@ struct AgendaColumnsView<Complete: View, Start: View, TomorrowAccessory: View>: 
             ColumnHeader(
                 label: DeskTaskFormatter.weekday(date).uppercased(),
                 title: DeskTaskFormatter.dayMonth(date),
-                labelColor: accent.color,
+                labelColor: accent.color(in: colorScheme),
                 density: density
             ) {
                 DayProgressRing(done: doneCount, total: doneCount + today.count, density: .compact)
@@ -138,6 +139,7 @@ private struct ColumnHeader<Trailing: View>: View {
 /// A today item in its column: checkbox, color bar, title over its time, and ▶; the next item is set in bold.
 private struct ColumnTaskRow<Complete: View, Start: View>: View {
     @Environment(\.deskfocusAccent) private var accent
+    @Environment(\.colorScheme) private var colorScheme
     let task: DeskTask
     let now: Date
     let isNext: Bool
@@ -160,7 +162,7 @@ private struct ColumnTaskRow<Complete: View, Start: View>: View {
                 if isNext && task.isHappening(at: now) {
                     Text(DeskTaskFormatter.upNextLabel(for: task, now: now))
                         .font(.system(size: isCompact ? 10.5 : 11, weight: .semibold))
-                        .foregroundStyle(accent.color)
+                        .foregroundStyle(accent.color(in: colorScheme))
                 } else {
                     TaskSubtitleLine(task: task, now: now, resumeRemaining: resumeRemaining)
                         .font(.system(size: isCompact ? 10.5 : 11))
@@ -220,6 +222,7 @@ struct DayTaskLine: View {
 /// A short line in place of an empty column.
 private struct ColumnNote: View {
     @Environment(\.deskfocusAccent) private var accent
+    @Environment(\.colorScheme) private var colorScheme
     let text: String
     let systemImage: String
     let density: AgendaDensity
@@ -229,7 +232,7 @@ private struct ColumnNote: View {
             Text(text)
         } icon: {
             Image(systemName: systemImage)
-                .foregroundStyle(accent.gradient)
+                .foregroundStyle(accent.markGradient(in: colorScheme))
         }
         .font(.system(size: density == .compact ? 11.5 : 12.5, weight: .semibold))
         .foregroundStyle(.secondary)
@@ -255,7 +258,7 @@ private struct PageButton: View {
             .foregroundStyle(.secondary)
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
-            .background(Capsule().fill(Color.white.opacity(0.1)))
+            .background(Capsule().fill(Color.primary.opacity(0.1)))
             .contentShape(Capsule())
         }
         .buttonStyle(DeskfocusPressStyle())
