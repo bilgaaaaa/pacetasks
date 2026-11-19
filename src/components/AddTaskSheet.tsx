@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { ComponentRef, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Keyboard,
@@ -128,7 +128,7 @@ export function AddTaskSheet({
 }: Props) {
   const { theme } = useTheme();
   const styles = useStyles();
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<ComponentRef<typeof TextInput>>(null);
 
   const [title, setTitle] = useState("");
   const [minutes, setMinutes] = useState<number>(TASK_LIMITS.defaultEstimatedMinutes);

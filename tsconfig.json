@@ -6,7 +6,9 @@
     "paths": {
       "@domain/*": ["./supabase/functions/_shared/domain/*"],
       "@server/*": ["./supabase/functions/_shared/server/*"]
-    }
+    },
+    // TypeScript 6 no longer loads every @types package by itself: tests need Jest's globals, scripts Node's.
+    "types": ["jest", "node"]
   },
   "include": ["App.tsx", "src/**/*", "supabase/functions/_shared/domain/**/*"]
 }
