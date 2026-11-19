@@ -63,6 +63,18 @@ export function switchModeLabel(mode: AccountMode): string {
   return mode === "sign_up" ? t("I already have an account") : t("Create a new account instead");
 }
 
+// Asked once before sending when the domain looks mistyped ("icould.com").
+export function emailSuggestionQuestion(suggestion: string): string {
+  return t("Did you mean {0}?", suggestion);
+}
+
+export const EMAIL_SUGGESTION_ACCEPT_LABEL = msg("Yes, use that");
+
+// Names the send button through the same text, so the hint matches it in every language.
+export function emailSuggestionKeepHint(): string {
+  return t("No? Tap “{0}” again to keep what you typed.", t("Email me a code"));
+}
+
 export function codePrompt(email: string): string {
   return t("Enter the code we sent to {0}.", email);
 }
