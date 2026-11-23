@@ -132,12 +132,13 @@ const passed = await runJourney("today-journey", async ({ page, baseUrl, step, s
     await page.getByLabel(`Complete ${PLANNED_TASK_TITLE}`).waitFor({ state: "detached" });
   });
 
-  await step("Swiping the list sideways turns to tomorrow and back", async () => {
-    await swipe(page.getByText("Today's plan"), "left");
+  await step("Swiping the list sideways turns to tomorrow's plan and back", async () => {
+    // Started on a task row, the swipe turns the day; it doesn't open the task.
+    await swipe(page.getByText("Morning run"), "left");
     await page.getByText("Tomorrow", { exact: true }).waitFor();
-    await page.getByLabel("Back to today").waitFor();
-    await snapshot("Tomorrow, one swipe away");
-    await swipe(page.getByText("The plan", { exact: true }), "right");
+    await page.getByText("Tomorrow's plan").waitFor();
+    await snapshot("Tomorrow's plan, one swipe away");
+    await swipe(page.getByText("Stretch for ten minutes"), "right");
     await page.getByText("Good morning").waitFor();
     await page.getByLabel("Back to today").waitFor({ state: "detached" });
   });
@@ -231,6 +232,25 @@ const passed = await runJourney("today-journey", async ({ page, baseUrl, step, s
     const weeklyResetLink = page.getByText(/^Weekly reset · /);
     await page.getByText(/^Someday · \d+ parked$/).scrollIntoViewIfNeeded();
     await weeklyResetLink.waitFor({ state: "detached" });
+  });
+
+  await step("Swiping reaches three days ahead and stops there", async () => {
+    const heading = page.getByText(/^(Today's plan|Tomorrow's plan|The plan)$/);
+    await swipe(heading, "left");
+    await page.getByText("Tomorrow", { exact: true }).waitFor();
+    await swipe(heading, "left");
+    await page.getByText("Wednesday", { exact: true }).waitFor();
+    // Wednesday has nothing planned; a swipe that starts on one of the list's links turns the day, not the link.
+    await swipe(page.getByText(/^Upcoming · /), "left");
+    await page.getByText("Thursday", { exact: true }).waitFor();
+    await page.getByText("Set for a later day").waitFor({ state: "detached" });
+    // A fourth swipe only stretches and springs back: Friday is out of reach.
+    await swipe(heading, "left");
+    await page.waitForTimeout(600);
+    await page.getByText("Thursday", { exact: true }).waitFor();
+    await snapshot("Three days ahead is as far as a swipe goes");
+    await page.getByLabel("Back to today").click();
+    await page.getByText("Good morning").waitFor();
   });
 
   await step("Rescue my day offers to move what no longer fits the evening", async () => {

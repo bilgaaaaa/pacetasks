@@ -44,7 +44,8 @@ you compete only with your own past pace.
   week: a later day lists what is set for it, and tasks added while it shows
   are set for it; an earlier day lists what was finished. **Today** goes back.
   Swiping the list sideways turns one day at a time: left for the next day,
-  right for the one before.
+  right for the one before, up to three days either side of today. The list's
+  heading reads "Today's plan", "Tomorrow's plan" or "The plan".
 - **Calendars switch** — beside the greeting. Open: the day's events and
   reminders (Apple, Google and every account picked in the DeskFocus tab) show
   under their own heading next to the PaceTasks tasks; closed: only PaceTasks
