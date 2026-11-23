@@ -19,5 +19,9 @@ function assertBuildEnv(env) {
 
 module.exports = ({ config }) => {
   if (process.env.EAS_BUILD === "true") assertBuildEnv(process.env);
-  return config;
+  // WEB_BASE_URL serves the web export from a subpath: bilgaaaaa/PaceTasksWebsite builds the
+  // demo for its /demo/ path. Native builds and local runs leave it unset.
+  const baseUrl = process.env.WEB_BASE_URL;
+  if (!baseUrl) return config;
+  return { ...config, experiments: { ...config.experiments, baseUrl } };
 };

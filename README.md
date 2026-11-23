@@ -325,6 +325,10 @@ reload. To export a static build:
 EXPO_PUBLIC_DEMO_MODE=1 npx expo export --platform web
 ```
 
+To serve it from a subpath, set `WEB_BASE_URL`: `bilgaaaaa/PaceTasksWebsite`
+builds the demo with `WEB_BASE_URL=/PaceTasksWebsite/demo`, which `app.config.js`
+turns into Expo's `experiments.baseUrl` so the demo's files load from there.
+
 ## Build for TestFlight and the App Store
 
 Builds run on Expo's servers (EAS), so no Xcode is needed. Needs the Apple
@@ -488,7 +492,7 @@ Pages. Plain HTML, CSS and JavaScript, no build step.
 | `site.css` | Shared look: PaceTasks' Sage theme, DeskFocus' ink panels and ember focus ring |
 | `site.js` | Starts the PaceTasks web demo inside the hero phone on wide screens |
 | `widget.js` | The DeskFocus widget preview: tasks, focus timer, apps hidden during focus |
-| `screens/` | Screenshots of the web demo |
+| `screens/` | Screenshots of the web demo, taken again with `npm run site:screens` after a visible UI change |
 | `fonts/` | Bricolage Grotesque for headings, served from the site itself (SIL Open Font License) |
 | `og-image.png` | Link preview, rendered from the hero by `node design/site/build_og_image.mjs` |
 | `icon.png`, `deskfocus-icon.svg`, `grain.png` | Both app icons, and the grain the app lays over its hero card |
@@ -526,7 +530,7 @@ Once DeskFocus shows PaceTasks tasks, remove the "coming soon" wording from
 ```
 App.tsx                    Root: theme provider, session, the three tabs
 app.json, eas.json         Expo config and EAS build profiles
-app.config.js              stops an EAS build that has no Supabase settings
+app.config.js              stops an EAS build that has no Supabase settings; builds the web demo for a subpath (`WEB_BASE_URL`)
 store.config.json          App Store listing (EN, IT, TR) for `eas metadata:push`
 assets/                    App icon, splash images, notification icon, favicon
 design/icon/               Scripts and SVG sources for the icon set
