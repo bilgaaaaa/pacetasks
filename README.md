@@ -7,7 +7,7 @@ to capture personal tasks the moment they think of them, then get them done
 before or after work. It plans around the time and energy you really have, and
 you compete only with your own past pace.
 
-- **App:** Expo SDK 57 (React Native 0.86, TypeScript)
+- **App:** Expo SDK 58 (React Native 0.88, TypeScript); uses the iOS scene life cycle, which apps built with Xcode 27 need to launch
 - **Backend:** Supabase (Postgres with row-level security, Auth, Realtime, one Edge Function)
 - **Status:** ready for the first TestFlight build; iPhone only for v1
 
@@ -381,6 +381,14 @@ phone and accept the invite. Internal builds need no review.
    TestFlight, open the link, and get every new build automatically.
 
 Each build expires after 90 days; `npm run ios:testflight` again replaces it.
+
+When EAS has no cloud builds left (the free plan has a monthly limit), build on the Mac instead; it needs
+Xcode and `brew install fastlane`, and uses the same profile and EAS settings:
+
+```bash
+npx eas-cli build --platform ios --profile testflight --local --output pacetasks.ipa
+npx eas-cli submit --platform ios --profile testflight --path pacetasks.ipa
+```
 
 ### Accounts for testers
 

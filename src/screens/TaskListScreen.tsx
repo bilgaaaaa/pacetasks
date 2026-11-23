@@ -375,7 +375,7 @@ export function TaskListScreen({ userId }: Props) {
                 <DaySwipeArea swipe={daySwipe} style={styles.emptyState}>
                   <Text style={styles.emptyText}>{emptyFilterMessage(filter)}</Text>
                 </DaySwipeArea>
-              ) : null
+              ) : undefined
             }
             ListHeaderComponent={
               <>

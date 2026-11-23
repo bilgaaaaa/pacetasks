@@ -142,7 +142,7 @@ export function StatsScreen() {
                     {t("Complete a task to start building your history.")}
                   </Text>
                 </View>
-              ) : null
+              ) : undefined
             }
           />
         )}
