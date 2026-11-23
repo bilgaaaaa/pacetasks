@@ -18,6 +18,9 @@ import {
   appleHint,
   codePrompt,
   doneMessage,
+  EMAIL_SUGGESTION_ACCEPT_LABEL,
+  emailSuggestionKeepHint,
+  emailSuggestionQuestion,
   fieldErrorLabel,
   fieldLabel,
   MARKETING_CONSENT_HINT,
@@ -52,6 +55,7 @@ interface Props {
   onContinueWithApple: () => void;
   onResendCode: () => void;
   onEditEmail: () => void;
+  onAcceptEmailSuggestion: () => void;
   onOpenPrivacyPolicy: () => void;
   onClose: () => void;
 }
@@ -74,6 +78,7 @@ export function AccountSheet({
   onContinueWithApple,
   onResendCode,
   onEditEmail,
+  onAcceptEmailSuggestion,
   onOpenPrivacyPolicy,
   onClose,
 }: Props) {
@@ -87,6 +92,23 @@ export function AccountSheet({
     const issue = fieldErrors[field];
     return issue ? fieldErrorLabel(field, issue) : null;
   };
+
+  // "Did you mean …?" under the email: on the form it can also be ignored, on the code step it is the way out.
+  const renderEmailSuggestion = (canAccept: boolean, showKeepHint: boolean) =>
+    state.emailSuggestion && (
+      <View style={styles.suggestion}>
+        <Text style={styles.consentLabel}>{emailSuggestionQuestion(state.emailSuggestion)}</Text>
+        <TouchableOpacity
+          onPress={onAcceptEmailSuggestion}
+          disabled={!canAccept}
+          hitSlop={12}
+          accessibilityRole="button"
+        >
+          <Text style={styles.link}>{t(EMAIL_SUGGESTION_ACCEPT_LABEL)}</Text>
+        </TouchableOpacity>
+        {showKeepHint && <Text style={styles.hint}>{emailSuggestionKeepHint()}</Text>}
+      </View>
+    );
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
@@ -149,6 +171,7 @@ export function AccountSheet({
                 returnKeyType="done"
                 onSubmitEditing={onSubmit}
               />
+              {renderEmailSuggestion(phase === "form", true)}
 
               {isSignUp && (
                 <View style={styles.consentRow}>
@@ -212,6 +235,7 @@ export function AccountSheet({
           {isCodePhase && (
             <ScrollView style={styles.flex} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
               <Text style={styles.subtitle}>{codePrompt(normalizeEmail(state.email))}</Text>
+              {renderEmailSuggestion(phase === "code" && !resending, false)}
               <TextField
                 label={t("Code")}
                 value={state.code}
@@ -333,6 +357,13 @@ const useStyles = makeStyles((theme) => ({
     color: theme.colors.textTertiary,
     fontSize: theme.typography.footnote.fontSize,
     fontWeight: "400",
+  },
+  suggestion: {
+    gap: theme.spacing.xs,
+    alignItems: "flex-start",
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.lg,
+    padding: theme.spacing.md,
   },
   divider: {
     flexDirection: "row",

@@ -5,7 +5,7 @@ import type { AccountField } from "@domain/account";
 import * as accountApi from "../lib/accountApi";
 import { AccountError, AccountMode, Profile, ProfileInput } from "../lib/accountApi";
 import { accountDeletionReducer, INITIAL_ACCOUNT_DELETION_STATE } from "../lib/accountDeletionState";
-import { accountReducer, formErrors, INITIAL_ACCOUNT_STATE } from "../lib/accountState";
+import { accountReducer, emailSuggestionToAsk, formErrors, INITIAL_ACCOUNT_STATE } from "../lib/accountState";
 import { isAppleSignInAvailable } from "../lib/appleAuth";
 import { t } from "../i18n";
 
@@ -73,6 +73,7 @@ export function useAccount(session: Session | null) {
   const setMarketingOptIn = useCallback((value: boolean) => dispatch({ type: "setMarketingOptIn", value }), []);
   const setCode = useCallback((code: string) => dispatch({ type: "setCode", code }), []);
   const editEmail = useCallback(() => dispatch({ type: "editEmail" }), []);
+  const acceptEmailSuggestion = useCallback(() => dispatch({ type: "emailSuggestionAccepted" }), []);
 
   // What the sign-up form holds; nothing when signing in, where the name and consent fields are hidden.
   const signUpDetails = useMemo<ProfileInput | null>(
@@ -93,6 +94,13 @@ export function useAccount(session: Session | null) {
     const fieldErrors = formErrors(state);
     if (Object.keys(fieldErrors).length > 0) {
       dispatch({ type: "submitRejected", fieldErrors });
+      return;
+    }
+    // A code sent to a misspelled domain bounces silently, so a likely typo is asked about first.
+    const suggestion = emailSuggestionToAsk(state);
+    if (suggestion) {
+      console.log("[useAccount] email domain looks mistyped; asking before sending the code");
+      dispatch({ type: "emailSuggested", suggestion });
       return;
     }
     dispatch({ type: "sendStarted" });
@@ -219,6 +227,7 @@ export function useAccount(session: Session | null) {
     setMarketingOptIn,
     setCode,
     editEmail,
+    acceptEmailSuggestion,
     submit,
     resendCode,
     verify,

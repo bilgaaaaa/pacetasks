@@ -3,7 +3,7 @@ import { runJourney } from "./harness.mjs";
 // One simulated day in PaceTasks, start to finish: finish a task, sort out what
 // was carried over, add tasks for today and for later, let the app pick the next,
 // dump a few thoughts, tidy up (Someday, Weekly Reset), rescue the evening, then check Pace, the
-// themes, an account and dark mode.
+// themes, an account (catching a mistyped email first) and dark mode.
 // Elements are found by the same labels and wording a person (or VoiceOver) meets.
 
 const NEW_TASK_TITLE = "Buy cat food";
@@ -20,6 +20,8 @@ const REPEAT_TASK_TITLE = "Stretch for ten minutes";
 // Evening of the harness's fixed day, when the rest of the list no longer fits before 22:00.
 const RESCUE_TIME = "2026-10-12T21:30:00+02:00";
 const BRAIN_DUMP_TEXT = "Tomorrow call the vet, domani comprare il pane, cuma günü faturayı öde";
+// A real bounce: a sign-up code went to "icould.com" and never arrived.
+const MISTYPED_EMAIL = { typed: "ada@icould.com", suggested: "ada@icloud.com" };
 
 const passed = await runJourney("today-journey", async ({ page, baseUrl, step, snapshot, swipe }) => {
   await step("Today loads with the seeded day", async () => {
@@ -284,6 +286,21 @@ const passed = await runJourney("today-journey", async ({ page, baseUrl, step, s
       await page.getByLabel(colorTheme, { exact: true }).click();
       await snapshot(`${colorTheme} theme`);
     }
+  });
+
+  await step("Sign-up catches a mistyped email", async () => {
+    await page.getByText("Create account", { exact: true }).click();
+    await page.getByLabel("First name").fill(ACCOUNT.firstName);
+    await page.getByLabel("Last name").fill(ACCOUNT.lastName);
+    await page.getByLabel("Email", { exact: true }).fill(MISTYPED_EMAIL.typed);
+    await page.getByText("Email me a code").click();
+    await page.getByText(`Did you mean ${MISTYPED_EMAIL.suggested}?`).waitFor();
+    await snapshot("Typo question");
+    await page.getByText("Yes, use that", { exact: true }).click();
+    const email = await page.getByLabel("Email", { exact: true }).inputValue();
+    if (email !== MISTYPED_EMAIL.suggested) throw new Error(`email is "${email}", expected "${MISTYPED_EMAIL.suggested}"`);
+    await page.getByLabel("Close", { exact: true }).click();
+    await page.getByText("Create account", { exact: true }).waitFor();
   });
 
   await step("Create an account with the emailed code", async () => {

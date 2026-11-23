@@ -158,6 +158,7 @@ export function SettingsScreen({ userId, session }: Props) {
         onContinueWithApple={account.continueWithApple}
         onResendCode={account.resendCode}
         onEditEmail={account.editEmail}
+        onAcceptEmailSuggestion={account.acceptEmailSuggestion}
         onOpenPrivacyPolicy={() => openExternalLink(PRIVACY_POLICY_URL)}
         onClose={() => setAccountSheetOpen(false)}
       />

@@ -9,12 +9,15 @@ import {
   deletionIntro,
   deletionTitle,
   doneMessage,
+  emailSuggestionKeepHint,
+  emailSuggestionQuestion,
   fieldErrorLabel,
   MARKETING_CONSENT_HINT,
   MARKETING_CONSENT_LABEL,
   sheetTitle,
   switchModeLabel,
 } from "../accountCopy";
+import { setLanguage, t } from "../../i18n";
 
 describe("accountCopy", () => {
   it("tells people what the email switch signs them up for", () => {
@@ -28,6 +31,18 @@ describe("accountCopy", () => {
     expect(fieldErrorLabel("firstName", "required")).toBe("First name is needed");
     expect(fieldErrorLabel("lastName", "too_long")).toBe("Keep it under 50 characters");
     expect(fieldErrorLabel("email", "invalid")).toBe("That doesn't look like an email address");
+  });
+
+  it("asks about a likely typo and names the button that keeps the address, in each language", () => {
+    expect(emailSuggestionQuestion("bilge@icloud.com")).toBe("Did you mean bilge@icloud.com?");
+    expect(emailSuggestionKeepHint()).toBe("No? Tap “Email me a code” again to keep what you typed.");
+
+    setLanguage("it");
+    try {
+      expect(emailSuggestionKeepHint()).toContain(`“${t("Email me a code")}”`);
+    } finally {
+      setLanguage("en");
+    }
   });
 
   it("words the sheet for each mode", () => {
