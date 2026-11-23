@@ -5,39 +5,44 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>PaceTasks e DeskFocus — Condizioni d'uso e rimborsi</title>
   <meta name="description" content="Le condizioni per usare PaceTasks e DeskFocus, e le regole sul rimborso entro 14 giorni per gli acquisti su App Store e Paddle.">
-  <meta name="theme-color" content="#2f4636">
+  <meta name="theme-color" content="#000000">
   <link rel="canonical" href="https://pacetasks.bilgalog.dev/it/terms.html">
   <link rel="alternate" hreflang="en" href="https://pacetasks.bilgalog.dev/terms.html">
   <link rel="alternate" hreflang="it" href="https://pacetasks.bilgalog.dev/it/terms.html">
   <link rel="alternate" hreflang="x-default" href="https://pacetasks.bilgalog.dev/terms.html">
   <link rel="icon" href="../icon.png">
   <link rel="apple-touch-icon" href="../icon.png">
-  <link rel="preload" href="../fonts/bricolage-grotesque.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="../fonts/plus-jakarta-sans.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="../site.css">
   <script src="../lang.js"></script>
+  <script src="../site.js" defer></script>
 </head>
 <body>
 <a class="skip-link" href="#main">Vai al contenuto</a>
 
 <header class="site-header">
-  <a class="brand" href="./">
-    <span class="brand-icons"><img src="../icon.png" alt="" width="36" height="36"><img src="../deskfocus-icon.svg" alt="" width="36" height="36"></span>
-    <span class="brand-name">PaceTasks<span class="brand-with">con DeskFocus per Mac</span></span>
-  </a>
-  <nav class="site-nav" aria-label="Sito">
-    <a href="./#day">Come funziona</a>
-    <a href="./#both">Entrambe le app</a>
-    <a href="support.html">Aiuto</a>
-    <a href="privacy.html">Privacy</a>
+  <nav class="nav" aria-label="Principale">
+    <ul class="product-tabs">
+      <li><a class="product-tabs__tab" href="./"><img class="product-tabs__icon" src="../icon.png" alt="" width="26" height="26">PaceTasks</a></li>
+      <li><a class="product-tabs__tab" href="deskfocus.html"><img class="product-tabs__icon" src="../deskfocus-icon.svg" alt="" width="26" height="26">DeskFocus</a></li>
+    </ul>
+    <div class="nav__end">
+      <ul class="nav__links">
+        <li><a href="support.html">Aiuto</a></li>
+        <li><a href="privacy.html">Privacy</a></li>
+        <li><a href="terms.html" aria-current="page">Condizioni</a></li>
+      </ul>
+    </div>
     <a class="lang-switch" href="../terms.html" hreflang="en" lang="en">English</a>
   </nav>
 </header>
 
 <main id="main" class="page">
+  <div class="page__glow" aria-hidden="true"></div>
   <h1>Condizioni d'uso e rimborsi</h1>
-  <p class="meta">Data di entrata in vigore: 9 novembre 2026</p>
+  <p class="page__meta">Data di entrata in vigore: 9 novembre 2026</p>
 
-  <div class="card">
+  <div class="card page__card">
     <p><strong>In breve.</strong> PaceTasks per iPhone e DeskFocus per Mac sono venduti insieme. Usali per pianificare le tue giornate; ciò che scrivi resta tuo. Pro si acquista tramite l'App Store su iPhone e, più avanti, tramite Paddle su Mac. Se un acquisto non fa per te, chiedi il rimborso entro 14 giorni e riavrai i tuoi soldi.</p>
   </div>
 
@@ -98,13 +103,32 @@
 </main>
 
 <footer class="site-footer">
-  <p>Fatto a Padova da <a href="https://bilgalog.dev">Bilge Ozcanbaz</a>. Scrivi a <a href="mailto:pacetasks@bilgalog.dev">pacetasks@bilgalog.dev</a>.</p>
-  <nav class="site-nav" aria-label="Piè di pagina">
-    <a href="support.html">Aiuto e supporto</a>
-    <a href="privacy.html">Informativa sulla privacy</a>
-    <a href="terms.html" aria-current="page">Condizioni e rimborsi</a>
-    <a href="https://github.com/bilgaaaaa/pacetasks">Codice sorgente</a>
-  </nav>
+  <div class="container site-footer__inner">
+    <div class="site-footer__brand">
+      <p class="site-footer__logos"><img src="../icon.png" alt="" width="28" height="28"><img src="../deskfocus-icon.svg" alt="" width="28" height="28">PaceTasks con DeskFocus</p>
+      <p class="text-muted">Pianifica la giornata su iPhone. Concentrati al Mac.</p>
+      <p class="text-muted">Scrivi a <a href="mailto:pacetasks@bilgalog.dev">pacetasks@bilgalog.dev</a></p>
+    </div>
+    <div class="site-footer__column">
+      <h2 class="site-footer__heading">App</h2>
+      <ul>
+        <li><a href="./">PaceTasks per iPhone</a></li>
+        <li><a href="deskfocus.html">DeskFocus per Mac</a></li>
+        <li><a href="https://bilgaaaaa.github.io/PaceTasksWebsite/demo/">Prova la demo</a></li>
+        <li><a href="https://github.com/bilgaaaaa/deskfocus/releases/latest">Scarica DeskFocus</a></li>
+      </ul>
+    </div>
+    <div class="site-footer__column">
+      <h2 class="site-footer__heading">Aiuto</h2>
+      <ul>
+        <li><a href="support.html">Aiuto e supporto</a></li>
+        <li><a href="privacy.html">Informativa sulla privacy</a></li>
+        <li><a href="terms.html" aria-current="page">Condizioni e rimborsi</a></li>
+        <li><a href="https://github.com/bilgaaaaa/pacetasks">Codice sorgente</a></li>
+      </ul>
+    </div>
+  </div>
+  <p class="container site-footer__copyright">© <span data-current-year>2026</span> Bilge Ozcanbaz. Fatto a Padova.</p>
 </footer>
 </body>
 </html>
